@@ -18,37 +18,21 @@ describe("caching", function () {
     var value;
 
     describe("get() and set()", function () {
-        context("using redis store", function () {
-            beforeEach(function () {
-                cache = caching({store: 'redis'});
-                key = support.random.string(20);
-                value = support.random.string();
-            });
-
-            it("lets us set and get data in cache", function (done) {
-                cache.set(key, value, function (err) {
-                    check_err(err);
-                    cache.get(key, function (err, result) {
-                        assert.equal(result, value);
-                        done();
-                    });
+        ['redis', 'memory'].forEach(function (store) {
+            context("using " + store + " store", function () {
+                beforeEach(function () {
+                    cache = caching({store: store});
+                    key = support.random.string(20);
+                    value = support.random.string();
                 });
-            });
-        });
 
-        context("using memory store", function () {
-            beforeEach(function () {
-                cache = caching({store: 'memory'});
-                key = support.random.string(20);
-                value = support.random.string();
-            });
-
-            it("lets us set and get data in cache", function (done) {
-                cache.set(key, value, function (err) {
-                    check_err(err);
-                    cache.get(key, function (err, result) {
-                        assert.equal(result, value);
-                        done();
+                it("lets us set and get data in cache", function (done) {
+                    cache.set(key, value, function (err) {
+                        check_err(err);
+                        cache.get(key, function (err, result) {
+                            assert.equal(result, value);
+                            done();
+                        });
                     });
                 });
             });
