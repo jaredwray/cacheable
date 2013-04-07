@@ -93,6 +93,7 @@ node-cache-manager handles easily and transparently.
 
 ### Multi-Store
 
+```javascript
         var multi_cache = cache_manager.multi_caching([memory_cache, redis_cache]);
         user_id2 = 456;
         key2 = 'user_' + user_id; 
@@ -125,7 +126,7 @@ node-cache-manager handles easily and transparently.
                 console.log(user);
             });
         });
-
+```
 
 ## Tests
 
