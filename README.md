@@ -101,7 +101,7 @@ in an instance of it, or pass in the path to the module.
 E.g.,
 
 ```javascript
-    var my_store = require('your-homeade-store');
+    var my_store = require('your-homemade-store');
     var cache = cache_manager.caching({store: my_store});
     // or
     var cache = cache_manager.caching({store: '/path/to/your/store'});
