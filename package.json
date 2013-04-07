@@ -1,7 +1,7 @@
 {
-  "name": "cashew",
+  "name": "cache-manager",
   "version": "0.0.1",
-  "description": "Cache module for Node.JS",
+  "description": "Cache module for Node.js",
   "main": "index.js",
   "scripts": {
     "test": "mocha"
@@ -13,21 +13,23 @@
   "keywords": [
     "cache",
     "redis",
-    "lru-cache"
+    "lru-cache",
+    "memory cache",
+    "multiple cache"
   ],
   "author": "Bryan Donovan",
-  "license": "BSD",
+  "license": "MIT",
   "dependencies": {
-    "async": "0.1.22",
-    "hiredis": "0.1.14",
-    "lru-cache": "2.3.0",
-    "redis": "0.6.7"
+    "async": ">=0.1.22",
+    "hiredis": ">=0.1.14",
+    "lru-cache": ">=2.3.0",
+    "optimist": ">=0.3.5",
+    "redis": ">=0.6.7"
   },
   "devDependencies": {
-    "Faker" : "0.5.6",
-    "istanbul": "0.1.29",
-    "jshint": "1.0.0",
-    "mocha": "1.8.1",
-    "sinon": "1.5.2"
+    "istanbul": ">=0.1.29",
+    "jshint": ">=1.0.1",
+    "mocha": ">=1.8.1",
+    "sinon": ">=1.5.2"
   }
 }

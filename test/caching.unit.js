@@ -1,7 +1,6 @@
 var assert = require('assert');
 var sinon = require('sinon');
 var redis = require('redis');
-var Lru = require("lru-cache")
 var support = require('./support');
 var check_err = support.check_err;
 var caching = require('../index').caching;
@@ -11,25 +10,25 @@ function get_widget(name, cb) {
     cb(null, {name: name});
 }
 
-describe("caching", function() {
+describe("caching", function () {
     var cache;
     var key;
     var ttl;
     var name;
     var value;
 
-    describe("get() and set()", function() {
-        context("using redis store", function() {
-            beforeEach(function() {
+    describe("get() and set()", function () {
+        context("using redis store", function () {
+            beforeEach(function () {
                 cache = caching({store: 'redis'});
                 key = support.random.string(20);
                 value = support.random.string();
             });
 
-            it("lets us set and get data in cache", function(done) {
-                cache.set(key, value, function(err, result) {
+            it("lets us set and get data in cache", function (done) {
+                cache.set(key, value, function (err) {
                     check_err(err);
-                    cache.get(key, function(err, result) {
+                    cache.get(key, function (err, result) {
                         assert.equal(result, value);
                         done();
                     });
@@ -37,17 +36,17 @@ describe("caching", function() {
             });
         });
 
-        context("using memory store", function() {
-            beforeEach(function() {
+        context("using memory store", function () {
+            beforeEach(function () {
                 cache = caching({store: 'memory'});
                 key = support.random.string(20);
                 value = support.random.string();
             });
 
-            it("lets us set and get data in cache", function(done) {
-                cache.set(key, value, function(err, result) {
+            it("lets us set and get data in cache", function (done) {
+                cache.set(key, value, function (err) {
                     check_err(err);
-                    cache.get(key, function(err, result) {
+                    cache.get(key, function (err, result) {
                         assert.equal(result, value);
                         done();
                     });
@@ -56,27 +55,27 @@ describe("caching", function() {
         });
     });
 
-    describe("del()", function() {
-        ['redis', 'memory'].forEach(function(store) {
-            context("using " + store + " store", function() {
-                beforeEach(function(done) {
+    describe("del()", function () {
+        ['redis', 'memory'].forEach(function (store) {
+            context("using " + store + " store", function () {
+                beforeEach(function (done) {
                     cache = caching({store: store});
                     key = support.random.string(20);
                     value = support.random.string();
-                    cache.set(key, value, function(err, result) {
+                    cache.set(key, value, function (err) {
                         check_err(err);
                         done();
                     });
                 });
 
-                it("deletes data from cache", function(done) {
-                    cache.get(key, function(err, result) {
+                it("deletes data from cache", function (done) {
+                    cache.get(key, function (err, result) {
                         assert.equal(result, value);
 
-                        cache.del(key, function(err, result) {
+                        cache.del(key, function (err) {
                             check_err(err);
 
-                            cache.get(key, function(err, result) {
+                            cache.get(key, function (err, result) {
                                 assert.ok(!result);
                                 done();
                             });
@@ -87,42 +86,43 @@ describe("caching", function() {
         });
     });
 
-    describe("wrap()", function() {
-        context("using redis store", function() {
+    describe("wrap()", function () {
+        context("using redis store", function () {
             var redis_client;
 
-            before(function() {
+            before(function () {
                 redis_client = redis.createClient();
                 sinon.stub(redis, 'createClient').returns(redis_client);
             });
 
-            beforeEach(function() {
+            beforeEach(function () {
                 cache = caching({store: 'redis'});
                 key = support.random.string(20);
                 name = support.random.string();
             });
 
-            after(function() {
+            after(function () {
                 redis.createClient.restore();
             });
 
-            it("calls back with the result of the wrapped function", function(done) {
-                cache.wrap(key, function(cb) {
+            it("calls back with the result of the wrapped function", function (done) {
+                cache.wrap(key, function (cb) {
                     get_widget(name, cb);
-                }, function(err, widget) {
+                }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
                     done();
                 });
             });
 
-            it("caches the result of the function in redis", function(done) {
-                cache.wrap(key, function(cb) {
+            it("caches the result of the function in redis", function (done) {
+                cache.wrap(key, function (cb) {
                     get_widget(name, cb);
-                }, function(err, widget) {
+                }, function (err, widget) {
                     check_err(err);
+                    assert.ok(widget);
 
-                    redis_client.get(key, function(err, result) {
+                    redis_client.get(key, function (err, result) {
                         check_err(err);
                         assert.deepEqual(JSON.parse(result), {name: name});
 
@@ -131,20 +131,22 @@ describe("caching", function() {
                 });
             });
 
-            it("retrieves data from redis when available", function(done) {
-                cache.wrap(key, function(cb) {
+            it("retrieves data from redis when available", function (done) {
+                cache.wrap(key, function (cb) {
                     get_widget(name, cb);
-                }, function(err, widget) {
+                }, function (err, widget) {
                     check_err(err);
+                    assert.ok(widget);
 
-                    redis_client.get(key, function(err, result) {
+                    redis_client.get(key, function (err, result) {
                         check_err(err);
+                        assert.ok(result);
 
                         sinon.spy(redis_client, 'get');
 
-                        cache.wrap(key, function(cb) {
+                        cache.wrap(key, function (cb) {
                             get_widget(name, cb);
-                        }, function(err, widget) {
+                        }, function (err, widget) {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
                             assert.ok(redis_client.get.calledWith(key));
@@ -155,19 +157,20 @@ describe("caching", function() {
                 });
             });
 
-            context("when using ttl", function() {
-                beforeEach(function() {
+            context("when using ttl", function () {
+                beforeEach(function () {
                     ttl = 50;
                     cache = caching({store: 'redis', ttl: ttl});
                 });
 
-                it("expires cached result after ttl seconds", function(done) {
-                    cache.wrap(key, function(cb) {
+                it("expires cached result after ttl seconds", function (done) {
+                    cache.wrap(key, function (cb) {
                         get_widget(name, cb);
-                    }, function(err, widget) {
+                    }, function (err, widget) {
                         check_err(err);
+                        assert.ok(widget);
 
-                        redis_client.ttl(key, function(err, result) {
+                        redis_client.ttl(key, function (err, result) {
                             check_err(err);
                             support.assert_within(result, ttl, 2);
                             done();
@@ -178,10 +181,10 @@ describe("caching", function() {
         });
 
 
-        describe("using memory (lru-cache) store", function() {
+        describe("using memory (lru-cache) store", function () {
             var memory_store_stub;
 
-            beforeEach(function() {
+            beforeEach(function () {
                 ttl = 0.1;
                 memory_store_stub = memory_store.create({ttl: ttl});
 
@@ -192,38 +195,40 @@ describe("caching", function() {
                 name = support.random.string();
             });
 
-            afterEach(function() {
+            afterEach(function () {
                 memory_store.create.restore();
             });
 
-            it("calls back with the result of a function", function(done) {
-                cache.wrap(key, function(cb) {
+            it("calls back with the result of a function", function (done) {
+                cache.wrap(key, function (cb) {
                     get_widget(name, cb);
-                }, function(err, widget) {
+                }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
                     done();
                 });
             });
 
-            it("retrieves data from memory when available", function(done) {
-                cache.wrap(key, function(cb) {
+            it("retrieves data from memory when available", function (done) {
+                cache.wrap(key, function (cb) {
                     get_widget(name, cb);
-                }, function(err, widget) {
+                }, function (err, widget) {
                     check_err(err);
+                    assert.ok(widget);
 
-                    memory_store_stub.get(key, function(err, result) {
+                    memory_store_stub.get(key, function (err, result) {
                         check_err(err);
+                        assert.ok(result);
 
                         sinon.spy(memory_store_stub, 'get');
                         var func_called = false;
 
-                        cache.wrap(key, function(cb) {
-                            get_widget(name, function(err, result) {
+                        cache.wrap(key, function (cb) {
+                            get_widget(name, function (err, result) {
                                 func_called = true;
                                 cb(err, result);
                             });
-                        }, function(err, widget) {
+                        }, function (err, widget) {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
                             assert.ok(memory_store_stub.get.calledWith(key));
@@ -235,25 +240,26 @@ describe("caching", function() {
                 });
             });
 
-            it("expires cached result after ttl seconds", function(done) {
-                cache.wrap(key, function(cb) {
+            it("expires cached result after ttl seconds", function (done) {
+                cache.wrap(key, function (cb) {
                     get_widget(name, cb);
-                }, function(err, widget) {
+                }, function (err, widget) {
                     check_err(err);
+                    assert.deepEqual(widget, {name: name});
 
-                    memory_store_stub.get(key, function(err, result) {
+                    memory_store_stub.get(key, function (err, result) {
                         check_err(err);
-                        assert.deepEqual(widget, {name: name});
+                        assert.ok(result);
 
                         var func_called = false;
 
                         setTimeout(function () {
-                            cache.wrap(key, function(cb) {
-                                get_widget(name, function(err, result) {
+                            cache.wrap(key, function (cb) {
+                                get_widget(name, function (err, result) {
                                     func_called = true;
                                     cb(err, result);
                                 });
-                            }, function(err, widget) {
+                            }, function (err, widget) {
                                 check_err(err);
                                 assert.ok(func_called);
                                 assert.deepEqual(widget, {name: name});
@@ -263,28 +269,71 @@ describe("caching", function() {
                     });
                 });
             });
+
+            context("when store.get() calls back with an error", function () {
+                it("bubbles up that error", function (done) {
+                    var fake_error = new Error(support.random.string());
+
+                    sinon.stub(memory_store_stub, 'get', function (key, cb) {
+                        cb(fake_error);
+                    });
+
+                    cache.wrap(key, function (cb) {
+                        get_widget(name, cb);
+                    }, function (err) {
+                        assert.equal(err, fake_error);
+                        memory_store_stub.get.restore();
+                        done();
+                    });
+                });
+            });
+
+            context("when store.set() calls back with an error", function () {
+                it("bubbles up that error", function (done) {
+                    var fake_error = new Error(support.random.string());
+
+                    sinon.stub(memory_store_stub, 'set', function (key, val, cb) {
+                        cb(fake_error);
+                    });
+
+                    cache.wrap(key, function (cb) {
+                        get_widget(name, cb);
+                    }, function (err) {
+                        assert.equal(err, fake_error);
+                        memory_store_stub.set.restore();
+                        done();
+                    });
+                });
+            });
         });
     });
 
-    describe("instantiating with custom store", function() {
-        it("allows us to pass in our own store object", function(done) {
+    describe("instantiating with no store passed in", function () {
+        it("defaults to 'memory' store", function () {
+            var cache = caching();
+            assert.equal(cache.store.name, 'memory');
+        });
+    });
+
+    describe("instantiating with custom store", function () {
+        it("allows us to pass in our own store object", function (done) {
             var store = memory_store.create({ttl: ttl});
             cache = caching({store: store});
-            cache.set(key, value, function(err, result) {
+            cache.set(key, value, function (err) {
                 check_err(err);
-                cache.get(key, function(err, result) {
+                cache.get(key, function (err, result) {
                     assert.equal(result, value);
                     done();
                 });
             });
         });
 
-        it("allows us to pass in a path to our own store", function(done) {
+        it("allows us to pass in a path to our own store", function (done) {
             var store_path = '../lib/stores/memory';
             cache = caching({store: store_path});
-            cache.set(key, value, function(err, result) {
+            cache.set(key, value, function (err) {
                 check_err(err);
-                cache.get(key, function(err, result) {
+                cache.get(key, function (err, result) {
                     assert.equal(result, value);
                     done();
                 });
