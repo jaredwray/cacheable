@@ -1,4 +1,4 @@
-node-cashew
+node-cache-manager
 ======================
 
 # Flexible NodeJS cache module
@@ -18,11 +18,11 @@ priority cache(s) first.
 
 ## Installation
 
-    npm install node-cashew
+    npm install cache-manager
 
 ## Overview
 
-First, node-cashew features the standard functions you'd expect in most caches:
+First, node-cache-manager features the standard functions you'd expect in most caches:
 
     set(key, val, cb)
     get(key, cb)
@@ -31,23 +31,23 @@ First, node-cashew features the standard functions you'd expect in most caches:
 Second, it includes a `wrap` function that lets you wrap any function in cache.
 (Note, this was inspired by [node-caching](https://github.com/mape/node-caching).)
 
-Third, node-cashew lets you set up a tiered cache strategy.  This may be of
+Third, node-cache-manager lets you set up a tiered cache strategy.  This may be of
 limited use in most cases, but imagine a scenario where you expect tons of
 traffic, and don't want to hit Redis for every request.  You decide to store
 the most commonly-requested data in an in-memory cache (like [node-lru-cache](https://github.com/isaacs/node-lru-cache)),
 perhaps with a very short timeout and/or a small data size limit.  But you
 still want to store the data in Redis for backup, and for the requests that
 aren't as common as the ones you want to store in memory. This is something
-node-cashew handles easily and transparently.
+node-cache-manager handles easily and transparently.
 
 
 ## Usage Examples
 
 ### Single Store
 
-        var cashew = require('cashew');
-        var redis_cache = cashew.caching({store: 'redis', db: 1, ttl: 100/*seconds*/});
-        var memory_cache = cashew.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
+        var cache_manager = require('cache-manager');
+        var redis_cache = cache_manager.caching({store: 'redis', db: 1, ttl: 100/*seconds*/});
+        var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
 
         redis_cache.set('foo', 'bar', function(err) {
             if (err) { throw err; }
@@ -90,7 +90,7 @@ node-cashew handles easily and transparently.
 
 ### Multi-Store
 
-        var multi_cache = cashew.multi_caching([memory_cache, redis_cache]);
+        var multi_cache = cache_manager.multi_caching([memory_cache, redis_cache]);
         user_id2 = 456;
         key2 = 'user_' + user_id; 
 
@@ -143,4 +143,4 @@ for any new features or bug fixes.  Also run ``make`` before submitting the pull
 
 ## License
 
-node-cashew is licensed under the MIT license.
+node-cache-manager is licensed under the MIT license.

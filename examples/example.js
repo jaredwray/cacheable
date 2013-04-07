@@ -1,6 +1,6 @@
-var cashew = require('cashew');
-var redis_cache = cashew.caching({store: 'redis', db: 1, ttl: 100/*seconds*/});
-var memory_cache = cashew.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
+var cache_manager = require('cache-manager');
+var redis_cache = cache_manager.caching({store: 'redis', db: 1, ttl: 100/*seconds*/});
+var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
 
 redis_cache.set('foo', 'bar', function(err) {
     if (err) { throw err; }
@@ -41,7 +41,7 @@ redis_cache.wrap(key, function (cb) {
 // { id: 123, name: 'Bob' }
 
 
-var multi_cache = cashew.multi_caching([memory_cache, redis_cache]);
+var multi_cache = cache_manager.multi_caching([memory_cache, redis_cache]);
 user_id2 = 456;
 key2 = 'user_' + user_id; 
 
