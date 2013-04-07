@@ -1,0 +1,33 @@
+{
+  "name": "cashew",
+  "version": "0.0.1",
+  "description": "Cache module for Node.JS",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BryanDonovan/node-cashew.git"
+  },
+  "keywords": [
+    "cache",
+    "redis",
+    "lru-cache"
+  ],
+  "author": "Bryan Donovan",
+  "license": "BSD",
+  "dependencies": {
+    "async": "0.1.22",
+    "hiredis": "0.1.14",
+    "lru-cache": "2.3.0",
+    "redis": "0.6.7"
+  },
+  "devDependencies": {
+    "Faker" : "0.5.6",
+    "istanbul": "0.1.29",
+    "jshint": "1.0.0",
+    "mocha": "1.8.1",
+    "sinon": "1.5.2"
+  }
+}
