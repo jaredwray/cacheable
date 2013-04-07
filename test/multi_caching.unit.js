@@ -422,7 +422,7 @@ describe("multi_caching", function () {
         });
     });
 
-    context("when instantiated non-Array 'caches' arg", function () {
+    context("when instantiated with a non-Array 'caches' arg", function () {
         it("throws an error", function () {
             assert.throws(function () {
                 multi_caching({foo: 'bar'});
