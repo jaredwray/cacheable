@@ -45,6 +45,7 @@ node-cache-manager handles easily and transparently.
 
 ### Single Store
 
+```javascript
         var cache_manager = require('cache-manager');
         var redis_cache = cache_manager.caching({store: 'redis', db: 1, ttl: 100/*seconds*/});
         var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
@@ -88,7 +89,7 @@ node-cache-manager handles easily and transparently.
         // Returning user from slow database.
         // { id: 123, name: 'Bob' }
         // { id: 123, name: 'Bob' }
-
+```
 
 ### Multi-Store
 
