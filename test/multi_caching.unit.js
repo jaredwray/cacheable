@@ -61,6 +61,29 @@ describe("multi_caching", function () {
                     });
                 });
             });
+
+            it("lets us set data without a callback", function (done) {
+                multi_cache.set(key, value);
+                setTimeout(function () {
+                    multi_cache.get(key, function (err, result) {
+                        assert.equal(result, value);
+                        memory_cache.get(key, function (err, result) {
+                            assert.equal(result, value);
+
+                            redis_cache.get(key, function (err, result) {
+                                check_err(err);
+                                assert.equal(result, value);
+
+                                memory_cache2.get(key, function (err, result) {
+                                    check_err(err);
+                                    assert.equal(result, value);
+                                    done();
+                                });
+                            });
+                        });
+                    });
+                }, 20);
+            });
         });
 
         describe("get()", function () {
@@ -101,6 +124,31 @@ describe("multi_caching", function () {
                         });
                     });
                 });
+            });
+
+            it("lets us delete data without a callback", function (done) {
+                multi_cache.set(key, value, function (err) {
+                    check_err(err);
+
+                    multi_cache.del(key);
+
+                    setTimeout(function () {
+                        memory_cache.get(key, function (err, result) {
+                            assert.ok(!result);
+
+                            redis_cache.get(key, function (err, result) {
+                                check_err(err);
+                                assert.ok(!result);
+
+                                memory_cache2.get(key, function (err, result) {
+                                    check_err(err);
+                                    assert.ok(!result);
+                                    done();
+                                });
+                            });
+                        });
+                    });
+                }, 10);
             });
         });
     });
