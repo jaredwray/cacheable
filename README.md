@@ -89,6 +89,22 @@ node-cache-manager handles easily and transparently.
         // Returning user from slow database.
         // { id: 123, name: 'Bob' }
         // { id: 123, name: 'Bob' }
+
+```
+
+#### Custom Stores
+
+You can use your own custom store by creating one with the same API as the
+build-in redis and memory stores.  To use your own store, you can either pass
+in an instance of it, or pass in the path to the module.
+
+E.g.,
+
+```javascript
+    var my_store = require('your-homeade-store');
+    var cache = cache_manager.caching({store: my_store});
+    // or
+    var cache = cache_manager.caching({store: '/path/to/your/store'});
 ```
 
 ### Multi-Store
