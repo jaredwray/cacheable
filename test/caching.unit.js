@@ -87,7 +87,7 @@ describe("caching", function() {
         });
     });
 
-    describe("run()", function() {
+    describe("wrap()", function() {
         context("using redis store", function() {
             var redis_client;
 
@@ -107,7 +107,7 @@ describe("caching", function() {
             });
 
             it("calls back with the result of the wrapped function", function(done) {
-                cache.run(key, function(cb) {
+                cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -117,7 +117,7 @@ describe("caching", function() {
             });
 
             it("caches the result of the function in redis", function(done) {
-                cache.run(key, function(cb) {
+                cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -132,7 +132,7 @@ describe("caching", function() {
             });
 
             it("retrieves data from redis when available", function(done) {
-                cache.run(key, function(cb) {
+                cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -142,7 +142,7 @@ describe("caching", function() {
 
                         sinon.spy(redis_client, 'get');
 
-                        cache.run(key, function(cb) {
+                        cache.wrap(key, function(cb) {
                             get_widget(name, cb);
                         }, function(err, widget) {
                             check_err(err);
@@ -162,7 +162,7 @@ describe("caching", function() {
                 });
 
                 it("expires cached result after ttl seconds", function(done) {
-                    cache.run(key, function(cb) {
+                    cache.wrap(key, function(cb) {
                         get_widget(name, cb);
                     }, function(err, widget) {
                         check_err(err);
@@ -197,7 +197,7 @@ describe("caching", function() {
             });
 
             it("calls back with the result of a function", function(done) {
-                cache.run(key, function(cb) {
+                cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -207,7 +207,7 @@ describe("caching", function() {
             });
 
             it("retrieves data from memory when available", function(done) {
-                cache.run(key, function(cb) {
+                cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -218,7 +218,7 @@ describe("caching", function() {
                         sinon.spy(memory_store_stub, 'get');
                         var func_called = false;
 
-                        cache.run(key, function(cb) {
+                        cache.wrap(key, function(cb) {
                             get_widget(name, function(err, result) {
                                 func_called = true;
                                 cb(err, result);
@@ -236,7 +236,7 @@ describe("caching", function() {
             });
 
             it("expires cached result after ttl seconds", function(done) {
-                cache.run(key, function(cb) {
+                cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -248,7 +248,7 @@ describe("caching", function() {
                         var func_called = false;
 
                         setTimeout(function () {
-                            cache.run(key, function(cb) {
+                            cache.wrap(key, function(cb) {
                                 get_widget(name, function(err, result) {
                                     func_called = true;
                                     cb(err, result);
@@ -261,6 +261,32 @@ describe("caching", function() {
                             });
                         }, (ttl * 1000 + 10));
                     });
+                });
+            });
+        });
+    });
+
+    describe("instantiating with custom store", function() {
+        it("allows us to pass in our own store object", function(done) {
+            var store = memory_store.create({ttl: ttl});
+            cache = caching({store: store});
+            cache.set(key, value, function(err, result) {
+                check_err(err);
+                cache.get(key, function(err, result) {
+                    assert.equal(result, value);
+                    done();
+                });
+            });
+        });
+
+        it("allows us to pass in a path to our own store", function(done) {
+            var store_path = '../lib/stores/memory';
+            cache = caching({store: store_path});
+            cache.set(key, value, function(err, result) {
+                check_err(err);
+                cache.get(key, function(err, result) {
+                    assert.equal(result, value);
+                    done();
                 });
             });
         });

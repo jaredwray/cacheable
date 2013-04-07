@@ -105,14 +105,14 @@ describe("multi_caching", function() {
         });
     });
 
-    describe("run()", function() {
+    describe("wrap()", function() {
         describe("using a single cache store", function() {
             beforeEach(function() {
                 multi_cache = multi_caching([redis_cache]);
             });
 
             it("calls back with the result of a function", function(done) {
-                multi_cache.run(key, function(cb) {
+                multi_cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -128,7 +128,7 @@ describe("multi_caching", function() {
             });
 
             it("calls back with the result of a function", function(done) {
-                multi_cache.run(key, function(cb) {
+                multi_cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -138,7 +138,7 @@ describe("multi_caching", function() {
             });
 
             it("sets value in all caches", function(done) {
-                multi_cache.run(key, function(cb) {
+                multi_cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -160,7 +160,7 @@ describe("multi_caching", function() {
             context("when value exists in first store but not second", function() {
                 it("returns value from first store, does not set it in second", function(done) {
                     memory_cache.set(key, {name: name}, function(err) {
-                        multi_cache.run(key, function(cb) {
+                        multi_cache.wrap(key, function(cb) {
                             get_widget(name, cb);
                         }, function(err, widget) {
                             check_err(err);
@@ -179,7 +179,7 @@ describe("multi_caching", function() {
             context("when value exists in second store but not first", function() {
                 it("returns value from second store, sets it in first store", function(done) {
                     redis_cache.set(key, {name: name}, function(err) {
-                        multi_cache.run(key, function(cb) {
+                        multi_cache.wrap(key, function(cb) {
                             get_widget(name, cb);
                         }, function(err, widget) {
                             check_err(err);
@@ -202,7 +202,7 @@ describe("multi_caching", function() {
             });
 
             it("calls back with the result of a function", function(done) {
-                multi_cache.run(key, function(cb) {
+                multi_cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -212,7 +212,7 @@ describe("multi_caching", function() {
             });
 
             it("sets value in all caches", function(done) {
-                multi_cache.run(key, function(cb) {
+                multi_cache.wrap(key, function(cb) {
                     get_widget(name, cb);
                 }, function(err, widget) {
                     check_err(err);
@@ -239,7 +239,7 @@ describe("multi_caching", function() {
             context("when value exists in first store only", function() {
                 it("returns value from first store, does not set it in second or third", function(done) {
                     memory_cache.set(key, {name: name}, function(err) {
-                        multi_cache.run(key, function(cb) {
+                        multi_cache.wrap(key, function(cb) {
                             get_widget(name, cb);
                         }, function(err, widget) {
                             check_err(err);
@@ -263,7 +263,7 @@ describe("multi_caching", function() {
             context("when value exists in second store only", function() {
                 it("returns value from second store, sets it in first store, does not set third store", function(done) {
                     redis_cache.set(key, {name: name}, function(err) {
-                        multi_cache.run(key, function(cb) {
+                        multi_cache.wrap(key, function(cb) {
                             get_widget(name, cb);
                         }, function(err, widget) {
                             check_err(err);
@@ -287,7 +287,7 @@ describe("multi_caching", function() {
             context("when value exists in third store only", function() {
                 it("returns value from third store, sets it in first and second stores", function(done) {
                     memory_cache2.set(key, {name: name}, function(err) {
-                        multi_cache.run(key, function(cb) {
+                        multi_cache.wrap(key, function(cb) {
                             get_widget(name, cb);
                         }, function(err, widget) {
                             check_err(err);
