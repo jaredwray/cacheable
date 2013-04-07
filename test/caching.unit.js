@@ -35,6 +35,16 @@ describe("caching", function () {
                         });
                     });
                 });
+
+                it("lets us set data without a callback", function (done) {
+                    cache.set(key, value);
+                    setTimeout(function () {
+                        cache.get(key, function (err, result) {
+                            assert.equal(result, value);
+                            done();
+                        });
+                    }, 20);
+                });
             });
         });
     });
@@ -64,6 +74,21 @@ describe("caching", function () {
                                 done();
                             });
                         });
+                    });
+                });
+
+                it("lets us delete data without a callback", function (done) {
+                    cache.get(key, function (err, result) {
+                        assert.equal(result, value);
+
+                        cache.del(key);
+
+                        setTimeout(function () {
+                            cache.get(key, function (err, result) {
+                                assert.ok(!result);
+                                done();
+                            });
+                        }, 20);
                     });
                 });
             });

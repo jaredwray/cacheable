@@ -49,6 +49,8 @@ node-cache-manager handles easily and transparently.
         var redis_cache = cache_manager.caching({store: 'redis', db: 1, ttl: 100/*seconds*/});
         var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
 
+        // Note: callback is optional in set() and del().
+
         redis_cache.set('foo', 'bar', function(err) {
             if (err) { throw err; }
 
