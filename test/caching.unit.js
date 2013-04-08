@@ -348,5 +348,17 @@ describe("caching", function () {
                 });
             });
         });
+
+        it("allows us to pass in a module (uninstantiated)", function (done) {
+            var store = memory_store;
+            cache = caching({store: store});
+            cache.set(key, value, function (err) {
+                check_err(err);
+                cache.get(key, function (err, result) {
+                    assert.equal(result, value);
+                    done();
+                });
+            });
+        });
     });
 });
