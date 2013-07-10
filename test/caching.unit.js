@@ -6,9 +6,11 @@ var check_err = support.check_err;
 var caching = require('../index').caching;
 var memory_store = require('../lib/stores/memory');
 
-function get_widget(name, cb) {
-    cb(null, {name: name});
-}
+var methods = {
+    get_widget: function (name, cb) {
+        cb(null, {name: name});
+    }
+};
 
 describe("caching", function () {
     var cache;
@@ -116,7 +118,7 @@ describe("caching", function () {
 
             it("calls back with the result of the wrapped function", function (done) {
                 cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
@@ -126,7 +128,7 @@ describe("caching", function () {
 
             it("caches the result of the function in redis", function (done) {
                 cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.ok(widget);
@@ -140,9 +142,32 @@ describe("caching", function () {
                 });
             });
 
+            context("when wrapped function calls back with an error", function () {
+                it("calls back with that error and doesn't cache result", function (done) {
+                    var fake_error = new Error(support.random.string());
+                    sinon.stub(methods, 'get_widget', function (name, cb) {
+                        cb(fake_error, {name: name});
+                    });
+
+                    cache.wrap(key, function (cb) {
+                        methods.get_widget(name, cb);
+                    }, function (err, widget) {
+                        methods.get_widget.restore();
+                        assert.equal(err, fake_error);
+                        assert.ok(!widget);
+
+                        redis_client.get(key, function (err, result) {
+                            check_err(err);
+                            assert.ok(!result);
+                            done();
+                        });
+                    });
+                });
+            });
+
             it("retrieves data from redis when available", function (done) {
                 cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.ok(widget);
@@ -154,7 +179,7 @@ describe("caching", function () {
                         sinon.spy(redis_client, 'get');
 
                         cache.wrap(key, function (cb) {
-                            get_widget(name, cb);
+                            methods.get_widget(name, cb);
                         }, function (err, widget) {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
@@ -174,7 +199,7 @@ describe("caching", function () {
 
                 it("expires cached result after ttl seconds", function (done) {
                     cache.wrap(key, function (cb) {
-                        get_widget(name, cb);
+                        methods.get_widget(name, cb);
                     }, function (err, widget) {
                         check_err(err);
                         assert.ok(widget);
@@ -210,7 +235,7 @@ describe("caching", function () {
 
             it("calls back with the result of a function", function (done) {
                 cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
@@ -220,7 +245,7 @@ describe("caching", function () {
 
             it("retrieves data from memory when available", function (done) {
                 cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.ok(widget);
@@ -233,7 +258,7 @@ describe("caching", function () {
                         var func_called = false;
 
                         cache.wrap(key, function (cb) {
-                            get_widget(name, function (err, result) {
+                            methods.get_widget(name, function (err, result) {
                                 func_called = true;
                                 cb(err, result);
                             });
@@ -251,7 +276,7 @@ describe("caching", function () {
 
             it("expires cached result after ttl seconds", function (done) {
                 cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
@@ -264,7 +289,7 @@ describe("caching", function () {
 
                         setTimeout(function () {
                             cache.wrap(key, function (cb) {
-                                get_widget(name, function (err, result) {
+                                methods.get_widget(name, function (err, result) {
                                     func_called = true;
                                     cb(err, result);
                                 });
@@ -288,7 +313,7 @@ describe("caching", function () {
                     });
 
                     cache.wrap(key, function (cb) {
-                        get_widget(name, cb);
+                        methods.get_widget(name, cb);
                     }, function (err) {
                         assert.equal(err, fake_error);
                         memory_store_stub.get.restore();
@@ -306,7 +331,7 @@ describe("caching", function () {
                     });
 
                     cache.wrap(key, function (cb) {
-                        get_widget(name, cb);
+                        methods.get_widget(name, cb);
                     }, function (err) {
                         assert.equal(err, fake_error);
                         memory_store_stub.set.restore();
