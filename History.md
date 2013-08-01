@@ -1,3 +1,6 @@
+- 0.0.4 2013-08-01
+  Better error checking in multi_cache.wrap();
+
 - 0.0.3 2013-07-10
   Better error checking in cache.wrap();
 
@@ -10,4 +13,3 @@
   ```
 - 0.0.1 2013-04-08
   Initial release.
-
