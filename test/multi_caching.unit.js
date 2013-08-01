@@ -1,14 +1,17 @@
 var assert = require('assert');
 var sinon = require('sinon');
+var redis = require('redis');
 var support = require('./support');
 var check_err = support.check_err;
 var caching = require('../index').caching;
 var multi_caching = require('../index').multi_caching;
 var memory_store = require('../lib/stores/memory');
 
-function get_widget(name, cb) {
-    cb(null, {name: name});
-}
+var methods = {
+    get_widget: function (name, cb) {
+        cb(null, {name: name});
+    }
+};
 
 describe("multi_caching", function () {
     var redis_cache;
@@ -154,6 +157,17 @@ describe("multi_caching", function () {
     });
 
     describe("wrap()", function () {
+        var redis_client;
+
+        beforeEach(function () {
+            redis_client = redis.createClient();
+            sinon.stub(redis, 'createClient').returns(redis_client);
+        });
+
+        afterEach(function () {
+            redis.createClient.restore();
+        });
+
         describe("using a single cache store", function () {
             beforeEach(function () {
                 multi_cache = multi_caching([redis_cache]);
@@ -161,11 +175,34 @@ describe("multi_caching", function () {
 
             it("calls back with the result of a function", function (done) {
                 multi_cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
                     done();
+                });
+            });
+
+            context("when wrapped function calls back with an error", function () {
+                it("calls back with that error and doesn't cache result", function (done) {
+                    var fake_error = new Error(support.random.string());
+                    sinon.stub(methods, 'get_widget', function (name, cb) {
+                        cb(fake_error, {name: name});
+                    });
+
+                    multi_cache.wrap(key, function (cb) {
+                        methods.get_widget(name, cb);
+                    }, function (err, widget) {
+                        methods.get_widget.restore();
+                        assert.equal(err, fake_error);
+                        assert.ok(!widget);
+
+                        redis_client.get(key, function (err, result) {
+                            check_err(err);
+                            assert.ok(!result);
+                            done();
+                        });
+                    });
                 });
             });
         });
@@ -177,7 +214,7 @@ describe("multi_caching", function () {
 
             it("calls back with the result of a function", function (done) {
                 multi_cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
@@ -187,7 +224,7 @@ describe("multi_caching", function () {
 
             it("sets value in all caches", function (done) {
                 multi_cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
@@ -211,7 +248,7 @@ describe("multi_caching", function () {
                         check_err(err);
 
                         multi_cache.wrap(key, function (cb) {
-                            get_widget(name, cb);
+                            methods.get_widget(name, cb);
                         }, function (err, widget) {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
@@ -232,7 +269,7 @@ describe("multi_caching", function () {
                         check_err(err);
 
                         multi_cache.wrap(key, function (cb) {
-                            get_widget(name, cb);
+                            methods.get_widget(name, cb);
                         }, function (err, widget) {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
@@ -255,7 +292,7 @@ describe("multi_caching", function () {
 
             it("calls back with the result of a function", function (done) {
                 multi_cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
@@ -265,7 +302,7 @@ describe("multi_caching", function () {
 
             it("sets value in all caches", function (done) {
                 multi_cache.wrap(key, function (cb) {
-                    get_widget(name, cb);
+                    methods.get_widget(name, cb);
                 }, function (err, widget) {
                     check_err(err);
                     assert.deepEqual(widget, {name: name});
@@ -294,7 +331,7 @@ describe("multi_caching", function () {
                         check_err(err);
 
                         multi_cache.wrap(key, function (cb) {
-                            get_widget(name, cb);
+                            methods.get_widget(name, cb);
                         }, function (err, widget) {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
@@ -320,7 +357,7 @@ describe("multi_caching", function () {
                         check_err(err);
 
                         multi_cache.wrap(key, function (cb) {
-                            get_widget(name, cb);
+                            methods.get_widget(name, cb);
                         }, function (err, widget) {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
@@ -346,7 +383,7 @@ describe("multi_caching", function () {
                         check_err(err);
 
                         multi_cache.wrap(key, function (cb) {
-                            get_widget(name, cb);
+                            methods.get_widget(name, cb);
                         }, function (err, widget) {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
@@ -393,7 +430,7 @@ describe("multi_caching", function () {
                     });
 
                     multi_cache.wrap(key, function (cb) {
-                        get_widget(name, cb);
+                        methods.get_widget(name, cb);
                     }, function (err) {
                         assert.equal(err, fake_error);
                         memory_store_stub.get.restore();
@@ -411,7 +448,7 @@ describe("multi_caching", function () {
                     });
 
                     multi_cache.wrap(key, function (cb) {
-                        get_widget(name, cb);
+                        methods.get_widget(name, cb);
                     }, function (err) {
                         assert.equal(err, fake_error);
                         memory_store_stub.set.restore();
