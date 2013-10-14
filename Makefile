@@ -20,6 +20,7 @@ test-cov: cover check-coverage
 lint:
 	./node_modules/.bin/jshint ./lib --config $(BASE)/.jshintrc && \
 	./node_modules/.bin/jshint ./test --config $(BASE)/.jshintrc
+	./node_modules/.bin/jshint ./examples --config $(BASE)/.jshintrc
 
 
 .PHONY: test

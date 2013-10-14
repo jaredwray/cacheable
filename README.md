@@ -44,6 +44,9 @@ node-cache-manager handles easily and transparently.
 
 ## Usage Examples
 
+See examples below and in the examples directory.  See ``examples/redis_example`` for an example of how to implement a
+Redis cache store with connection pooling.
+
 ### Single Store
 
 ```javascript

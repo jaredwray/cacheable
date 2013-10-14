@@ -3,9 +3,6 @@
  * cache store with connection pooling.
  */
 
-// npm install redis
-// npm install sol-redis-pool
-
 var RedisPool = require('sol-redis-pool');
 
 function redis_store(args) {
@@ -29,7 +26,7 @@ function redis_store(args) {
                 return cb(err);
             }
 
-            if (args.db) {
+            if (args.db || args.db === 0) {
                 conn.select(args.db);
             }
 
@@ -87,5 +84,3 @@ var methods = {
 };
 
 module.exports = methods;
-
-process.exit();
