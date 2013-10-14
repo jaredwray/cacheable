@@ -1,3 +1,6 @@
+- 0.1.2 2013-10-13
+  Wrapping synchronous memory cache callbacks in process.nextTick() for the purists.
+
 - 0.1.1 2013-10-13
   Travis and Coveralls integration testing.
 
@@ -18,7 +21,7 @@
   Added ability to pass in a store module that isn't already instantiated.
   E.g.,
   ```javascript
-  var store = require('/path/my_memory_store');
+  var store = require('/path/to/my_memory_store');
   cache = caching({store: store});
   ```
 - 0.0.1 2013-04-08
