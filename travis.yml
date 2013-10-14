@@ -6,4 +6,3 @@ script: 'make test-travis'
 branches:
   only:
     - master
-    - develop
