@@ -1,6 +1,5 @@
 var assert = require('assert');
 var sinon = require('sinon');
-var redis = require('redis');
 var support = require('./support');
 var check_err = support.check_err;
 var caching = require('../index').caching;
@@ -14,22 +13,20 @@ var methods = {
 };
 
 describe("multi_caching", function () {
-    var redis_cache;
     var memory_cache;
     var memory_cache2;
+    var memory_cache3;
     var multi_cache;
     var key;
     var memory_ttl;
-    var redis_ttl;
     var name;
 
     beforeEach(function () {
         memory_ttl = 0.1;
-        redis_ttl = 1;
 
         memory_cache = caching({store: 'memory', ttl: memory_ttl});
         memory_cache2 = caching({store: 'memory', ttl: memory_ttl});
-        redis_cache = caching({store: 'redis', ttl: redis_ttl});
+        memory_cache3 = caching({store: 'memory', ttl: memory_ttl});
 
         key = support.random.string(20);
         name = support.random.string();
@@ -39,7 +36,7 @@ describe("multi_caching", function () {
         var value;
 
         beforeEach(function () {
-            multi_cache = multi_caching([memory_cache, redis_cache, memory_cache2]);
+            multi_cache = multi_caching([memory_cache, memory_cache2, memory_cache3]);
             key = support.random.string(20);
             value = support.random.string();
         });
@@ -51,11 +48,11 @@ describe("multi_caching", function () {
                     memory_cache.get(key, function (err, result) {
                         assert.equal(result, value);
 
-                        redis_cache.get(key, function (err, result) {
+                        memory_cache2.get(key, function (err, result) {
                             check_err(err);
                             assert.equal(result, value);
 
-                            memory_cache2.get(key, function (err, result) {
+                            memory_cache3.get(key, function (err, result) {
                                 check_err(err);
                                 assert.equal(result, value);
                                 done();
@@ -73,11 +70,11 @@ describe("multi_caching", function () {
                         memory_cache.get(key, function (err, result) {
                             assert.equal(result, value);
 
-                            redis_cache.get(key, function (err, result) {
+                            memory_cache2.get(key, function (err, result) {
                                 check_err(err);
                                 assert.equal(result, value);
 
-                                memory_cache2.get(key, function (err, result) {
+                                memory_cache3.get(key, function (err, result) {
                                     check_err(err);
                                     assert.equal(result, value);
                                     done();
@@ -91,7 +88,7 @@ describe("multi_caching", function () {
 
         describe("get()", function () {
             it("gets data from first cache that has it", function (done) {
-                redis_cache.set(key, value, function (err) {
+                memory_cache3.set(key, value, function (err) {
                     check_err(err);
 
                     multi_cache.get(key, function (err, result) {
@@ -114,11 +111,11 @@ describe("multi_caching", function () {
                         memory_cache.get(key, function (err, result) {
                             assert.ok(!result);
 
-                            redis_cache.get(key, function (err, result) {
+                            memory_cache2.get(key, function (err, result) {
                                 check_err(err);
                                 assert.ok(!result);
 
-                                memory_cache2.get(key, function (err, result) {
+                                memory_cache3.get(key, function (err, result) {
                                     check_err(err);
                                     assert.ok(!result);
                                     done();
@@ -139,11 +136,11 @@ describe("multi_caching", function () {
                         memory_cache.get(key, function (err, result) {
                             assert.ok(!result);
 
-                            redis_cache.get(key, function (err, result) {
+                            memory_cache2.get(key, function (err, result) {
                                 check_err(err);
                                 assert.ok(!result);
 
-                                memory_cache2.get(key, function (err, result) {
+                                memory_cache3.get(key, function (err, result) {
                                     check_err(err);
                                     assert.ok(!result);
                                     done();
@@ -157,20 +154,9 @@ describe("multi_caching", function () {
     });
 
     describe("wrap()", function () {
-        var redis_client;
-
-        beforeEach(function () {
-            redis_client = redis.createClient();
-            sinon.stub(redis, 'createClient').returns(redis_client);
-        });
-
-        afterEach(function () {
-            redis.createClient.restore();
-        });
-
         describe("using a single cache store", function () {
             beforeEach(function () {
-                multi_cache = multi_caching([redis_cache]);
+                multi_cache = multi_caching([memory_cache3]);
             });
 
             it("calls back with the result of a function", function (done) {
@@ -184,7 +170,7 @@ describe("multi_caching", function () {
             });
 
             context("when wrapped function calls back with an error", function () {
-                it("calls back with that error and doesn't cache result", function (done) {
+                it("calls back with that error", function (done) {
                     var fake_error = new Error(support.random.string());
                     sinon.stub(methods, 'get_widget', function (name, cb) {
                         cb(fake_error, {name: name});
@@ -196,12 +182,7 @@ describe("multi_caching", function () {
                         methods.get_widget.restore();
                         assert.equal(err, fake_error);
                         assert.ok(!widget);
-
-                        redis_client.get(key, function (err, result) {
-                            check_err(err);
-                            assert.ok(!result);
-                            done();
-                        });
+                        done();
                     });
                 });
             });
@@ -209,7 +190,7 @@ describe("multi_caching", function () {
 
         describe("using two cache stores", function () {
             beforeEach(function () {
-                multi_cache = multi_caching([memory_cache, redis_cache]);
+                multi_cache = multi_caching([memory_cache, memory_cache3]);
             });
 
             it("calls back with the result of a function", function (done) {
@@ -233,7 +214,7 @@ describe("multi_caching", function () {
                         check_err(err);
                         assert.deepEqual(result, {name: name});
 
-                        redis_cache.get(key, function (err, result) {
+                        memory_cache3.get(key, function (err, result) {
                             check_err(err);
                             assert.deepEqual(result, {name: name});
                             done();
@@ -253,7 +234,7 @@ describe("multi_caching", function () {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
 
-                            redis_cache.get(key, function (err, result) {
+                            memory_cache3.get(key, function (err, result) {
                                 check_err(err);
                                 assert.equal(result, null);
                                 done();
@@ -265,7 +246,7 @@ describe("multi_caching", function () {
 
             context("when value exists in second store but not first", function () {
                 it("returns value from second store, sets it in first store", function (done) {
-                    redis_cache.set(key, {name: name}, function (err) {
+                    memory_cache3.set(key, {name: name}, function (err) {
                         check_err(err);
 
                         multi_cache.wrap(key, function (cb) {
@@ -287,7 +268,7 @@ describe("multi_caching", function () {
 
         describe("using three cache stores", function () {
             beforeEach(function () {
-                multi_cache = multi_caching([memory_cache, redis_cache, memory_cache2]);
+                multi_cache = multi_caching([memory_cache, memory_cache3, memory_cache2]);
             });
 
             it("calls back with the result of a function", function (done) {
@@ -311,11 +292,11 @@ describe("multi_caching", function () {
                         check_err(err);
                         assert.deepEqual(result, {name: name});
 
-                        redis_cache.get(key, function (err, result) {
+                        memory_cache2.get(key, function (err, result) {
                             check_err(err);
                             assert.deepEqual(result, {name: name});
 
-                            memory_cache2.get(key, function (err, result) {
+                            memory_cache3.get(key, function (err, result) {
                                 check_err(err);
                                 assert.deepEqual(result, {name: name});
                                 done();
@@ -336,11 +317,11 @@ describe("multi_caching", function () {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
 
-                            redis_cache.get(key, function (err, result) {
+                            memory_cache2.get(key, function (err, result) {
                                 check_err(err);
                                 assert.equal(result, null);
 
-                                memory_cache2.get(key, function (err, result) {
+                                memory_cache3.get(key, function (err, result) {
                                     check_err(err);
                                     assert.equal(result, null);
                                     done();
@@ -353,7 +334,7 @@ describe("multi_caching", function () {
 
             context("when value exists in second store only", function () {
                 it("returns value from second store, sets it in first store, does not set third store", function (done) {
-                    redis_cache.set(key, {name: name}, function (err) {
+                    memory_cache3.set(key, {name: name}, function (err) {
                         check_err(err);
 
                         multi_cache.wrap(key, function (cb) {
@@ -388,7 +369,7 @@ describe("multi_caching", function () {
                             check_err(err);
                             assert.deepEqual(widget, {name: name});
 
-                            redis_cache.get(key, function (err, result) {
+                            memory_cache3.get(key, function (err, result) {
                                 check_err(err);
                                 assert.deepEqual(result, {name: name});
 

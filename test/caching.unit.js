@@ -1,6 +1,5 @@
 var assert = require('assert');
 var sinon = require('sinon');
-var redis = require('redis');
 var support = require('./support');
 var check_err = support.check_err;
 var caching = require('../index').caching;
@@ -20,7 +19,7 @@ describe("caching", function () {
     var value;
 
     describe("get() and set()", function () {
-        ['redis', 'memory'].forEach(function (store) {
+        ['memory'].forEach(function (store) {
             context("using " + store + " store", function () {
                 beforeEach(function () {
                     cache = caching({store: store});
@@ -52,7 +51,7 @@ describe("caching", function () {
     });
 
     describe("del()", function () {
-        ['redis', 'memory'].forEach(function (store) {
+        ['memory'].forEach(function (store) {
             context("using " + store + " store", function () {
                 beforeEach(function (done) {
                     cache = caching({store: store});
@@ -98,123 +97,6 @@ describe("caching", function () {
     });
 
     describe("wrap()", function () {
-        context("using redis store", function () {
-            var redis_client;
-
-            before(function () {
-                redis_client = redis.createClient();
-                sinon.stub(redis, 'createClient').returns(redis_client);
-            });
-
-            beforeEach(function () {
-                cache = caching({store: 'redis'});
-                key = support.random.string(20);
-                name = support.random.string();
-            });
-
-            after(function () {
-                redis.createClient.restore();
-            });
-
-            it("calls back with the result of the wrapped function", function (done) {
-                cache.wrap(key, function (cb) {
-                    methods.get_widget(name, cb);
-                }, function (err, widget) {
-                    check_err(err);
-                    assert.deepEqual(widget, {name: name});
-                    done();
-                });
-            });
-
-            it("caches the result of the function in redis", function (done) {
-                cache.wrap(key, function (cb) {
-                    methods.get_widget(name, cb);
-                }, function (err, widget) {
-                    check_err(err);
-                    assert.ok(widget);
-
-                    redis_client.get(key, function (err, result) {
-                        check_err(err);
-                        assert.deepEqual(JSON.parse(result), {name: name});
-
-                        done();
-                    });
-                });
-            });
-
-            context("when wrapped function calls back with an error", function () {
-                it("calls back with that error and doesn't cache result", function (done) {
-                    var fake_error = new Error(support.random.string());
-                    sinon.stub(methods, 'get_widget', function (name, cb) {
-                        cb(fake_error, {name: name});
-                    });
-
-                    cache.wrap(key, function (cb) {
-                        methods.get_widget(name, cb);
-                    }, function (err, widget) {
-                        methods.get_widget.restore();
-                        assert.equal(err, fake_error);
-                        assert.ok(!widget);
-
-                        redis_client.get(key, function (err, result) {
-                            check_err(err);
-                            assert.ok(!result);
-                            done();
-                        });
-                    });
-                });
-            });
-
-            it("retrieves data from redis when available", function (done) {
-                cache.wrap(key, function (cb) {
-                    methods.get_widget(name, cb);
-                }, function (err, widget) {
-                    check_err(err);
-                    assert.ok(widget);
-
-                    redis_client.get(key, function (err, result) {
-                        check_err(err);
-                        assert.ok(result);
-
-                        sinon.spy(redis_client, 'get');
-
-                        cache.wrap(key, function (cb) {
-                            methods.get_widget(name, cb);
-                        }, function (err, widget) {
-                            check_err(err);
-                            assert.deepEqual(widget, {name: name});
-                            assert.ok(redis_client.get.calledWith(key));
-                            redis_client.get.restore();
-                            done();
-                        });
-                    });
-                });
-            });
-
-            context("when using ttl", function () {
-                beforeEach(function () {
-                    ttl = 50;
-                    cache = caching({store: 'redis', ttl: ttl});
-                });
-
-                it("expires cached result after ttl seconds", function (done) {
-                    cache.wrap(key, function (cb) {
-                        methods.get_widget(name, cb);
-                    }, function (err, widget) {
-                        check_err(err);
-                        assert.ok(widget);
-
-                        redis_client.ttl(key, function (err, result) {
-                            check_err(err);
-                            support.assert_within(result, ttl, 2);
-                            done();
-                        });
-                    });
-                });
-            });
-        });
-
-
         describe("using memory (lru-cache) store", function () {
             var memory_store_stub;
 
@@ -339,6 +221,25 @@ describe("caching", function () {
                     });
                 });
             });
+
+            context("when wrapped function calls back with an error", function () {
+                it("calls back with that error", function (done) {
+                    var fake_error = new Error(support.random.string());
+                    sinon.stub(methods, 'get_widget', function (name, cb) {
+                        cb(fake_error, {name: name});
+                    });
+
+                    cache.wrap(key, function (cb) {
+                        methods.get_widget(name, cb);
+                    }, function (err, widget) {
+                        methods.get_widget.restore();
+                        assert.equal(err, fake_error);
+                        assert.ok(!widget);
+                        done();
+                    });
+                });
+            });
+
         });
     });
 

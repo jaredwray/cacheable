@@ -22,19 +22,20 @@ priority cache(s) first.
 
 ## Overview
 
-First, node-cache-manager features the standard functions you'd expect in most caches:
+First, it includes a `wrap` function that lets you wrap any function in cache.
+(Note, this was inspired by [node-caching](https://github.com/mape/node-caching).)
+
+Second, node-cache-manager features a built-in memory cache (using [node-lru-cache](https://github.com/isaacs/node-lru-cache)),
+with the standard functions you'd expect in most caches:
 
     set(key, val, cb)
     get(key, cb)
     del(key, cb)
 
-Second, it includes a `wrap` function that lets you wrap any function in cache.
-(Note, this was inspired by [node-caching](https://github.com/mape/node-caching).)
-
 Third, node-cache-manager lets you set up a tiered cache strategy.  This may be of
 limited use in most cases, but imagine a scenario where you expect tons of
-traffic, and don't want to hit Redis for every request.  You decide to store
-the most commonly-requested data in an in-memory cache (like [node-lru-cache](https://github.com/isaacs/node-lru-cache)),
+traffic, and don't want to hit your primary cache (like Redis) for every request.
+You decide to store the most commonly-requested data in an in-memory cache,
 perhaps with a very short timeout and/or a small data size limit.  But you
 still want to store the data in Redis for backup, and for the requests that
 aren't as common as the ones you want to store in memory. This is something
@@ -47,18 +48,17 @@ node-cache-manager handles easily and transparently.
 
 ```javascript
         var cache_manager = require('cache-manager');
-        var redis_cache = cache_manager.caching({store: 'redis', db: 1, ttl: 100/*seconds*/});
         var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
 
         // Note: callback is optional in set() and del().
 
-        redis_cache.set('foo', 'bar', function(err) {
+        memory_cache.set('foo', 'bar', function(err) {
             if (err) { throw err; }
 
-            redis_cache.get('foo', function(err, result) {
+            memory_cache.get('foo', function(err, result) {
                 console.log(result);
                 // >> 'bar'
-                redis_cache.del('foo', function(err) {});
+                memory_cache.del('foo', function(err) {});
             });
         });
 
@@ -72,13 +72,13 @@ node-cache-manager handles easily and transparently.
         var user_id = 123;
         var key = 'user_' + user_id; 
 
-        redis_cache.wrap(key, function (cb) {
+        memory_cache.wrap(key, function (cb) {
             get_user(user_id, cb);
         }, function (err, user) {
             console.log(user);
 
-            // Second time fetches user from redis_cache 
-            redis_cache.wrap(key, function (cb) {
+            // Second time fetches user from memory_cache
+            memory_cache.wrap(key, function (cb) {
                 get_user(user_id, cb);
             }, function (err, user) {
                 console.log(user);
@@ -95,7 +95,7 @@ node-cache-manager handles easily and transparently.
 #### Custom Stores
 
 You can use your own custom store by creating one with the same API as the
-build-in redis and memory stores.  To use your own store, you can either pass
+build-in memory stores (such as a redis or memcached store).  To use your own store, you can either pass
 in an instance of it, or pass in the path to the module.
 
 E.g.,
@@ -110,7 +110,7 @@ E.g.,
 ### Multi-Store
 
 ```javascript
-        var multi_cache = cache_manager.multi_caching([memory_cache, redis_cache]);
+        var multi_cache = cache_manager.multi_caching([memory_cache, some_other_cache]);
         user_id2 = 456;
         key2 = 'user_' + user_id; 
 
@@ -135,7 +135,7 @@ E.g.,
 
             // Second time fetches user from memory_cache, since it's highest priority.
             // If the data expires in the memory cache, the next fetch would pull it from
-            // the Redis cache, and set the data in memory again.
+            // the 'some_other_cache', and set the data in memory again.
             multi_cache.wrap(key2, function (cb) {
                 get_user(user_id2, cb);
             }, function (err, user) {

@@ -1,3 +1,7 @@
+- 0.1.0 2013-10-13
+  Removing built-in Redis store to emphasize that you should plug in your own
+  cache store.
+
 - 0.0.5 2013-10-13
   Removing hiredis requirement.
 
