@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "Cache module for Node.js",
   "main": "index.js",
   "scripts": {
@@ -12,7 +12,6 @@
   },
   "keywords": [
     "cache",
-    "redis",
     "lru-cache",
     "memory cache",
     "multiple cache"
@@ -21,8 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "async": ">=0.1.22",
-    "lru-cache": ">=2.3.0",
-    "redis": ">=0.6.7"
+    "lru-cache": ">=2.3.0"
   },
   "devDependencies": {
     "istanbul": ">=0.1.29",
