@@ -1,6 +1,7 @@
 // Setup:
 // npm install redis
 // npm install sol-redis-pool
+// node examples/redis_example/example.js
 
 var cache_manager = require('../../');
 var redis_store = require('./redis_store');
@@ -36,6 +37,7 @@ redis_cache.wrap(key, function (cb) {
         get_user(user_id, cb);
     }, function (err, user) {
         console.log(user);
+        process.exit();
     });
 });
 
@@ -43,5 +45,3 @@ redis_cache.wrap(key, function (cb) {
 // Returning user from slow database.
 // { id: 123, name: 'Bob' }
 // { id: 123, name: 'Bob' }
-
-process.exit();
