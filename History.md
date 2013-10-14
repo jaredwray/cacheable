@@ -1,3 +1,6 @@
+- 0.1.1 2013-10-13
+  Travis and Coveralls integration testing.
+
 - 0.1.0 2013-10-13
   Removing built-in Redis store to emphasize that you should plug in your own
   cache store.

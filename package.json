@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cache module for Node.js",
   "main": "index.js",
   "scripts": {
@@ -23,6 +23,7 @@
     "lru-cache": ">=2.3.0"
   },
   "devDependencies": {
+    "coveralls": "~2.3.0",
     "istanbul": ">=0.1.29",
     "jshint": ">=1.0.1",
     "mocha": ">=1.8.1",
