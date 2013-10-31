@@ -1,3 +1,6 @@
+- 0.2.0 2013-10-31
+  Better examples, version bump.
+
 - 0.1.3 2013-10-31
   Fixing unreleased connection in redis example.
 
