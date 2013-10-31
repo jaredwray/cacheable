@@ -39,7 +39,8 @@ function redis_store(args) {
             if (err) { return cb(err); }
 
             conn.get(key, function (err, result) {
-                if (err) { pool.release(conn); return cb(err); }
+                pool.release(conn);
+                if (err) { return cb(err); }
                 cb(null, JSON.parse(result));
             });
         });
