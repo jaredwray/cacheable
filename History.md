@@ -1,4 +1,4 @@
-- 0.1.2.1 2013-10-31
+- 0.1.3 2013-10-31
   Fixing unreleased connection in redis example.
 
 - 0.1.2 2013-10-13
