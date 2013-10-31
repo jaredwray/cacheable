@@ -27,6 +27,44 @@ priority cache(s) first.
 
 First, it includes a `wrap` function that lets you wrap any function in cache.
 (Note, this was inspired by [node-caching](https://github.com/mape/node-caching).)
+This is probably the feature you're looking for.  As an example, where you might have to do this
+
+```javascript
+function get_cached_user(id, cb) {
+    memory_cache.get(id, function (err, result) {
+        if (err) { return cb(err); }
+
+        if (result) {
+            return cb(null, result);
+        }
+
+        get_user(id, function (err, result) {
+            if (err) { return cb(err); }
+            memory_cache.set(id, result);
+            cb(null, result);
+        });
+    });
+}
+```
+... you can instead use the `wrap` function:
+
+```javascript
+function get_cached_user(id, cb) {
+    memory_cache.wrap(id, function (cache_callback) {
+        get_user(id, cache_callback);
+    }, cb);
+}
+
+get_cached_user(user_id, function (err, user) {
+    // First time fetches the user from the (fake) database:
+    console.log(user);
+
+    get_cached_user(user_id, function (err, user) {
+        // Second time fetches from cache.
+        console.log(user);
+    });
+});
+```
 
 Second, node-cache-manager features a built-in memory cache (using [node-lru-cache](https://github.com/isaacs/node-lru-cache)),
 with the standard functions you'd expect in most caches:
@@ -53,49 +91,69 @@ Redis cache store with connection pooling.
 ### Single Store
 
 ```javascript
-        var cache_manager = require('cache-manager');
-        var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
+var cache_manager = require('cache-manager');
+var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
 
-        // Note: callback is optional in set() and del().
+// Note: callback is optional in set() and del().
 
-        memory_cache.set('foo', 'bar', function(err) {
-            if (err) { throw err; }
+memory_cache.set('foo', 'bar', function(err) {
+    if (err) { throw err; }
 
-            memory_cache.get('foo', function(err, result) {
-                console.log(result);
-                // >> 'bar'
-                memory_cache.del('foo', function(err) {});
-            });
-        });
+    memory_cache.get('foo', function(err, result) {
+        console.log(result);
+        // >> 'bar'
+        memory_cache.del('foo', function(err) {});
+    });
+});
 
-        function get_user(id, cb) {
-            setTimeout(function () {
-                console.log("Returning user from slow database.");
-                cb(null, {id: id, name: 'Bob'});
-            }, 100);
-        }
+function get_user(id, cb) {
+    setTimeout(function () {
+        console.log("Returning user from slow database.");
+        cb(null, {id: id, name: 'Bob'});
+    }, 100);
+}
 
-        var user_id = 123;
-        var key = 'user_' + user_id; 
+var user_id = 123;
+var key = 'user_' + user_id; 
 
-        memory_cache.wrap(key, function (cb) {
-            get_user(user_id, cb);
-        }, function (err, user) {
-            console.log(user);
+memory_cache.wrap(key, function (cb) {
+    get_user(user_id, cb);
+}, function (err, user) {
+    console.log(user);
 
-            // Second time fetches user from memory_cache
-            memory_cache.wrap(key, function (cb) {
-                get_user(user_id, cb);
-            }, function (err, user) {
-                console.log(user);
-            });
-        });
+    // Second time fetches user from memory_cache
+    memory_cache.wrap(key, function (cb) {
+        get_user(user_id, cb);
+    }, function (err, user) {
+        console.log(user);
+    });
+});
 
-        // Outputs:
-        // Returning user from slow database.
-        // { id: 123, name: 'Bob' }
-        // { id: 123, name: 'Bob' }
+// Outputs:
+// Returning user from slow database.
+// { id: 123, name: 'Bob' }
+// { id: 123, name: 'Bob' }
+```
 
+Here's a very basic example of how you could use this in an Express app:
+
+```javascript
+function respond(res, err, data) {
+    if (err) { 
+        res.json(500, err);
+    } else {
+        res.json(200, data);
+    }
+}
+
+app.get('/foo/bar', function(req, res) {
+    var cache_key = 'foo-bar:' + JSON.stringify(req.query);
+    memory_cache.wrap(cache_key, function(cache_cb) {
+        DB.find(req.query, cache_cb);
+    }, function(err, result) {
+        respond(res, err, result);
+    });
+});
 ```
 
 #### Custom Stores
@@ -107,47 +165,47 @@ in an instance of it, or pass in the path to the module.
 E.g.,
 
 ```javascript
-    var my_store = require('your-homemade-store');
-    var cache = cache_manager.caching({store: my_store});
-    // or
-    var cache = cache_manager.caching({store: '/path/to/your/store'});
+var my_store = require('your-homemade-store');
+var cache = cache_manager.caching({store: my_store});
+// or
+var cache = cache_manager.caching({store: '/path/to/your/store'});
 ```
 
 ### Multi-Store
 
 ```javascript
-        var multi_cache = cache_manager.multi_caching([memory_cache, some_other_cache]);
-        user_id2 = 456;
-        key2 = 'user_' + user_id; 
+var multi_cache = cache_manager.multi_caching([memory_cache, some_other_cache]);
+user_id2 = 456;
+key2 = 'user_' + user_id; 
 
-        // Sets in all caches.
-        multi_cache.set('foo2', 'bar2', function(err) {
-            if (err) { throw err; }
+// Sets in all caches.
+multi_cache.set('foo2', 'bar2', function(err) {
+    if (err) { throw err; }
 
-            // Fetches from highest priority cache that has the key.
-            multi_cache.get('foo2', function(err, result) {
-                console.log(result);
-                // >> 'bar2'
+    // Fetches from highest priority cache that has the key.
+    multi_cache.get('foo2', function(err, result) {
+        console.log(result);
+        // >> 'bar2'
 
-                // Delete from all caches
-                multi_cache.del('foo2');
-            });
-        });
+        // Delete from all caches
+        multi_cache.del('foo2');
+    });
+});
 
-        multi_cache.wrap(key2, function (cb) {
-            get_user(user_id2, cb);
-        }, function (err, user) {
-            console.log(user);
+multi_cache.wrap(key2, function (cb) {
+    get_user(user_id2, cb);
+}, function (err, user) {
+    console.log(user);
 
-            // Second time fetches user from memory_cache, since it's highest priority.
-            // If the data expires in the memory cache, the next fetch would pull it from
-            // the 'some_other_cache', and set the data in memory again.
-            multi_cache.wrap(key2, function (cb) {
-                get_user(user_id2, cb);
-            }, function (err, user) {
-                console.log(user);
-            });
-        });
+    // Second time fetches user from memory_cache, since it's highest priority.
+    // If the data expires in the memory cache, the next fetch would pull it from
+    // the 'some_other_cache', and set the data in memory again.
+    multi_cache.wrap(key2, function (cb) {
+        get_user(user_id2, cb);
+    }, function (err, user) {
+        console.log(user);
+    });
+});
 ```
 
 ## Tests
