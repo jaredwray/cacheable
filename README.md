@@ -27,7 +27,7 @@ priority cache(s) first.
 
 First, it includes a `wrap` function that lets you wrap any function in cache.
 (Note, this was inspired by [node-caching](https://github.com/mape/node-caching).)
-This is probably the feature you're looking for.  As an example, where you might have to do this
+This is probably the feature you're looking for.  As an example, where you might have to do this:
 
 ```javascript
 function get_cached_user(id, cb) {
@@ -54,16 +54,6 @@ function get_cached_user(id, cb) {
         get_user(id, cache_callback);
     }, cb);
 }
-
-get_cached_user(user_id, function (err, user) {
-    // First time fetches the user from the (fake) database:
-    console.log(user);
-
-    get_cached_user(user_id, function (err, user) {
-        // Second time fetches from cache.
-        console.log(user);
-    });
-});
 ```
 
 Second, node-cache-manager features a built-in memory cache (using [node-lru-cache](https://github.com/isaacs/node-lru-cache)),
