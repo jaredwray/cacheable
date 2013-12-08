@@ -1,3 +1,7 @@
+- 0.3.0 2013-12-08
+  Bound the get, set and del functions to their original “this” context when assigning a store.
+  (Thanks to Boyan Rabchev)
+
 - 0.2.0 2013-10-31
   Better examples, version bump.
 
