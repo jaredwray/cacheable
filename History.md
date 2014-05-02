@@ -1,3 +1,7 @@
+- 0.4.0 2014-05-02
+  New arg to ignore cache errors. if set cache errors will be ignored
+  and the cache_manager will go to the backing store. (Thanks londonjamo).
+
 - 0.3.0 2013-12-08
   Bound the get, set and del functions to their original “this” context when assigning a store.
   (Thanks to Boyan Rabchev)
