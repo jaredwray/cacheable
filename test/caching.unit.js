@@ -1,3 +1,5 @@
+// TODO: These are really a mix of unit and integration tests.
+
 var assert = require('assert');
 var sinon = require('sinon');
 var support = require('./support');
@@ -93,6 +95,55 @@ describe("caching", function () {
                     });
                 });
             });
+        });
+    });
+
+    describe("reset()", function () {
+        var key2;
+        var value2;
+
+        beforeEach(function (done) {
+            cache = caching({store: 'memory'});
+            key = support.random.string(20);
+            value = support.random.string();
+
+            cache.set(key, value, function (err) {
+                check_err(err);
+
+                key2 = support.random.string(20);
+                value2 = support.random.string();
+
+                cache.set(key, value, done);
+            });
+        });
+
+        it("clears the cache", function (done) {
+            cache.reset(function (err) {
+                check_err(err);
+
+                cache.get(key, function (err, result) {
+                    assert.ok(!result);
+
+                    cache.get(key2, function (err, result) {
+                        assert.ok(!result);
+                        done();
+                    });
+                });
+            });
+        });
+
+        it("lets us clear the cache without a callback", function (done) {
+            cache.reset();
+            setTimeout(function () {
+                cache.get(key, function (err, result) {
+                    assert.ok(!result);
+
+                    cache.get(key2, function (err, result) {
+                        assert.ok(!result);
+                        done();
+                    });
+                });
+            }, 10);
         });
     });
 
@@ -282,7 +333,6 @@ describe("caching", function () {
                     });
                 });
             });
-
         });
     });
 
