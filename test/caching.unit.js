@@ -106,7 +106,7 @@ describe("caching", function () {
 
                 sinon.stub(memory_store, 'create').returns(memory_store_stub);
 
-                cache = caching({store: 'memory', ttl: ttl});
+                cache = caching({store: 'memory', ttl: ttl, ignoreCacheErrors: false});
                 key = support.random.string(20);
                 name = support.random.string();
             });
@@ -187,37 +187,80 @@ describe("caching", function () {
             });
 
             context("when store.get() calls back with an error", function () {
-                it("bubbles up that error", function (done) {
-                    var fake_error = new Error(support.random.string());
+                context("and ignoreCacheErrors is not set (default is false)", function () {
+                    it("bubbles up that error", function (done) {
+                        var fake_error = new Error(support.random.string());
 
-                    sinon.stub(memory_store_stub, 'get', function (key, cb) {
-                        cb(fake_error);
+                        sinon.stub(memory_store_stub, 'get', function (key, cb) {
+                            cb(fake_error);
+                        });
+
+                        cache.wrap(key, function (cb) {
+                            methods.get_widget(name, cb);
+                        }, function (err) {
+                            assert.equal(err, fake_error);
+                            memory_store_stub.get.restore();
+                            done();
+                        });
                     });
+                });
 
-                    cache.wrap(key, function (cb) {
-                        methods.get_widget(name, cb);
-                    }, function (err) {
-                        assert.equal(err, fake_error);
-                        memory_store_stub.get.restore();
-                        done();
+                context("and ignoreCacheErrors is set to true", function () {
+                    it("does not bubble up that error", function (done) {
+                        cache = caching({store: 'memory', ttl: ttl, ignoreCacheErrors: true});
+
+                        var fake_error = new Error(support.random.string());
+
+                        sinon.stub(memory_store_stub, 'get', function (key, cb) {
+                            cb(fake_error);
+                        });
+
+                        cache.wrap(key, function (cb) {
+                            methods.get_widget(name, cb);
+                        }, function (err) {
+                            assert.equal(err, null);
+                            memory_store_stub.get.restore();
+                            done();
+                        });
                     });
                 });
             });
 
             context("when store.set() calls back with an error", function () {
-                it("bubbles up that error", function (done) {
-                    var fake_error = new Error(support.random.string());
+                context("and ignoreCacheErrors is not set", function () {
+                    it("bubbles up that error", function (done) {
+                        var fake_error = new Error(support.random.string());
 
-                    sinon.stub(memory_store_stub, 'set', function (key, val, cb) {
-                        cb(fake_error);
+                        sinon.stub(memory_store_stub, 'set', function (key, val, cb) {
+                            cb(fake_error);
+                        });
+
+                        cache.wrap(key, function (cb) {
+                            methods.get_widget(name, cb);
+                        }, function (err) {
+                            assert.equal(err, fake_error);
+                            memory_store_stub.set.restore();
+                            done();
+                        });
                     });
+                });
 
-                    cache.wrap(key, function (cb) {
-                        methods.get_widget(name, cb);
-                    }, function (err) {
-                        assert.equal(err, fake_error);
-                        memory_store_stub.set.restore();
-                        done();
+                context("and ignoreCacheErrors is set to true", function () {
+                    it("does not bubbles up that error", function (done) {
+                        cache = caching({store: 'memory', ttl: ttl, ignoreCacheErrors: true});
+                        var fake_error = new Error(support.random.string());
+
+                        sinon.stub(memory_store_stub, 'set', function (key, val, cb) {
+                            cb(fake_error);
+                        });
+
+                        cache.wrap(key, function (cb) {
+                            methods.get_widget(name, cb);
+                        }, function (err) {
+                            assert.equal(err, null);
+                            memory_store_stub.set.restore();
+                            done();
+                        });
                     });
                 });
             });
