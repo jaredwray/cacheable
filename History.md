@@ -1,3 +1,6 @@
+- 0.7.1 2014-06-15
+  Adding link to Express.js cache-manager example app
+
 - 0.7.0 2014-06-15
   Bumping package versions, mostly devDependencies
 
