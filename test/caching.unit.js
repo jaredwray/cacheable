@@ -40,13 +40,12 @@ describe("caching", function () {
                     });
                 });
 
-                it("lets us set data without a callback", function (done) {
+                it("lets us set and get data without a callback", function (done) {
                     cache.set(key, value);
                     setTimeout(function () {
-                        cache.get(key, function (err, result) {
-                            assert.equal(result, value);
-                            done();
-                        });
+                        var result = cache.get(key);
+                        assert.equal(result, value);
+                        done();
                     }, 20);
                 });
             });
