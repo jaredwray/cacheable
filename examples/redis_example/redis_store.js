@@ -75,13 +75,27 @@ function redis_store(args) {
         });
     };
 
+    self.keys = function (pattern, cb) {
+        if (typeof pattern === 'function') {
+            cb = pattern;
+            pattern = '*';
+        }
+
+        connect(function (err, conn) {
+            if (err) { return cb(err); }
+
+            conn.keys(pattern, function (err, result) {
+                pool.release(conn);
+                cb(err, result);
+            });
+        });
+    };
+
     return self;
 }
 
-var methods = {
+module.exports = {
     create: function (args) {
         return redis_store(args);
     }
 };
-
-module.exports = methods;
