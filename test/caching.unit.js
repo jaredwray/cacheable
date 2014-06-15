@@ -1,6 +1,7 @@
 // TODO: These are really a mix of unit and integration tests.
 
 var assert = require('assert');
+var async = require('async');
 var sinon = require('sinon');
 var support = require('./support');
 var check_err = support.check_err;
@@ -132,7 +133,7 @@ describe("caching", function () {
             });
         });
 
-        it("lets us clear the cache without a callback", function (done) {
+        it("lets us clear the cache without a callback (memory store only)", function (done) {
             cache.reset();
             setTimeout(function () {
                 cache.get(key, function (err, result) {
@@ -144,6 +145,43 @@ describe("caching", function () {
                     });
                 });
             }, 10);
+        });
+    });
+
+    describe("keys()", function () {
+        var key_count;
+        var saved_keys = [];
+
+        beforeEach(function (done) {
+            key_count = 10;
+            var processed = 0;
+
+            cache = caching({store: 'memory'});
+
+            function is_done() {
+                return processed === key_count;
+            }
+
+            async.until(is_done, function (cb) {
+                processed += 1;
+                key = support.random.string(20);
+                saved_keys.push(key);
+                value = support.random.string();
+                cache.set(key, value, cb);
+            }, done);
+        });
+
+        it("calls back with all keys in cache", function (done) {
+            cache.keys(function (err, keys) {
+                check_err(err);
+                assert.deepEqual(keys.sort, saved_keys.sort);
+                done();
+            });
+        });
+
+        it("lets us get the keys without a callback (memory store only)", function () {
+            var keys = cache.keys();
+            assert.deepEqual(keys.sort, saved_keys.sort);
         });
     });
 
@@ -166,7 +204,7 @@ describe("caching", function () {
                 memory_store.create.restore();
             });
 
-            it("calls back with the result of a function", function (done) {
+            it("calls back with the result of the wrapped function", function (done) {
                 cache.wrap(key, function (cb) {
                     methods.get_widget(name, cb);
                 }, function (err, widget) {
