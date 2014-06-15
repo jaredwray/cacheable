@@ -1,3 +1,8 @@
+- 0.6.0 2014-06-15
+  Adding caching.keys() function (issue #6)
+  Updating examples/redis_example/example.js with cache.keys() usage
+  Allow calling memory store get() without callback
+
 - 0.5.0 2014-05-02
   Adding reset() function to caching.js.  Closes #5.
 
