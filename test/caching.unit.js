@@ -113,7 +113,7 @@ describe("caching", function () {
                 key2 = support.random.string(20);
                 value2 = support.random.string();
 
-                cache.set(key, value, done);
+                cache.set(key2, value2, done);
             });
         });
 
