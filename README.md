@@ -19,6 +19,11 @@ priority cache(s) first.
   [istanbul](https://github.com/yahoo/istanbul), and [sinon](http://sinonjs.org).
 
 
+## Express.js Example
+
+See the [Express.js cache-manager example app](https://github.com/BryanDonovan/node-cache-manager-express-example) to see how to use
+``node-cache-manager`` in your applications.
+
 ## Installation
 
     npm install cache-manager
