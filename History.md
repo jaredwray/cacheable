@@ -1,3 +1,6 @@
+- 0.7.0 2014-06-15
+  Bumping package versions, mostly devDependencies
+
 - 0.6.0 2014-06-15
   Adding caching.keys() function (issue #6)
   Updating examples/redis_example/example.js with cache.keys() usage
