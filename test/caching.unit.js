@@ -147,6 +147,28 @@ describe("caching", function () {
         });
     });
 
+    describe("setex()", function () {
+        var fake_store;
+
+        beforeEach(function () {
+            fake_store = {
+                get: function () {},
+                set: function () {},
+                del: function () {},
+                setex: function () {}
+            };
+
+            sinon.stub(fake_store, 'setex');
+
+            cache = caching({store: fake_store});
+        });
+
+        it("passes the params to the underlying store's setex() method", function () {
+            cache.setex('foo', 'bar', 'blah');
+            assert.ok(fake_store.setex.calledWith('foo', 'bar', 'blah'));
+        });
+    });
+
     describe("keys()", function () {
         var key_count;
         var saved_keys = [];
