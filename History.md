@@ -1,3 +1,6 @@
+- 0.8.0 2014-07-07
+  Adding setex() (Thanks evanlucas)
+
 - 0.7.1 2014-06-15
   Adding link to Express.js cache-manager example app
 
