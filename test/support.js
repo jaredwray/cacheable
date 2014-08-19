@@ -13,6 +13,11 @@ var support = {
                 random_str += chars.substring(rnum, rnum + 1);
             }
             return random_str;
+        },
+
+        number: function (max) {
+            max = max || 1000;
+            return Math.floor((Math.random() * max));
         }
     },
 
