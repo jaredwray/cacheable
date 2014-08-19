@@ -1,3 +1,7 @@
+- 0.9.0 2014-08-19
+  Fixing issue #8 - parallel requests to a wrapped function were calling the
+  function multiple times. (Thanks alex-whitney).
+
 - 0.8.0 2014-07-07
   Adding setex() (Thanks evanlucas)
 
