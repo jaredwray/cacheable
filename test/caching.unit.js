@@ -235,33 +235,47 @@ describe("caching", function () {
                 });
             });
 
-            it("retrieves data from memory when available", function (done) {
-                cache.wrap(key, function (cb) {
-                    methods.get_widget(name, cb);
-                }, function (err, widget) {
-                    check_err(err);
-                    assert.ok(widget);
+            context("when result is already cached", function () {
+                function get_cached_widget(name, cb) {
+                    cache.wrap(key, function (cache_cb) {
+                        methods.get_widget(name, cache_cb);
+                    }, cb);
+                }
 
-                    memory_store_stub.get(key, function (err, result) {
+                beforeEach(function (done) {
+                    get_cached_widget(name, function (err, widget) {
                         check_err(err);
-                        assert.ok(result);
+                        assert.ok(widget);
 
-                        sinon.spy(memory_store_stub, 'get');
-                        var func_called = false;
-
-                        cache.wrap(key, function (cb) {
-                            methods.get_widget(name, function (err, result) {
-                                func_called = true;
-                                cb(err, result);
-                            });
-                        }, function (err, widget) {
+                        memory_store_stub.get(key, function (err, result) {
                             check_err(err);
-                            assert.deepEqual(widget, {name: name});
-                            assert.ok(memory_store_stub.get.calledWith(key));
-                            assert.ok(!func_called);
-                            memory_store_stub.get.restore();
+                            assert.ok(result);
+
+                            sinon.spy(memory_store_stub, 'get');
+
                             done();
                         });
+                    });
+                });
+
+                afterEach(function () {
+                    memory_store_stub.get.restore();
+                });
+
+                it("retrieves data from memory when available", function (done) {
+                    var func_called = false;
+
+                    cache.wrap(key, function (cb) {
+                        methods.get_widget(name, function (err, result) {
+                            func_called = true;
+                            cb(err, result);
+                        });
+                    }, function (err, widget) {
+                        check_err(err);
+                        assert.deepEqual(widget, {name: name});
+                        assert.ok(memory_store_stub.get.calledWith(key));
+                        assert.ok(!func_called);
+                        done();
                     });
                 });
             });
@@ -390,6 +404,43 @@ describe("caching", function () {
                         assert.ok(!widget);
                         done();
                     });
+                });
+            });
+        });
+
+        describe("when called multiple times in parallel with same key", function () {
+            var construct;
+
+            beforeEach(function () {
+                cache = caching({
+                    store: 'memory',
+                    max: 50,
+                    ttl: 5 * 60
+                });
+
+                construct = sinon.spy(function (val, cb) {
+                    var timeout = support.random.number(100);
+                    setTimeout(function () {
+                        console.log("val: " + val);
+                        cb(null, 'value');
+                    }, timeout);
+                });
+            });
+
+            it.only("calls the wrapped function once", function (done) {
+                var values = [];
+                for (var i = 0; i < 20; i++) {
+                    values.push(i);
+                }
+
+                async.each(values, function (val, async_cb) {
+                    cache.wrap('key', function (cb) {
+                        construct(val, cb);
+                    }, async_cb);
+                }, function (err, result) {
+                    assert.equal(result, 'value');
+                    assert.equal(construct.callCount, 1);
+                    done();
                 });
             });
         });
