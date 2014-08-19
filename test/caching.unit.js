@@ -262,7 +262,7 @@ describe("caching", function () {
                     memory_store_stub.get.restore();
                 });
 
-                it("retrieves data from memory when available", function (done) {
+                it("retrieves data from cache", function (done) {
                     var func_called = false;
 
                     cache.wrap(key, function (cb) {
@@ -421,24 +421,26 @@ describe("caching", function () {
                 construct = sinon.spy(function (val, cb) {
                     var timeout = support.random.number(100);
                     setTimeout(function () {
-                        console.log("val: " + val);
                         cb(null, 'value');
                     }, timeout);
                 });
             });
 
-            it.only("calls the wrapped function once", function (done) {
+            it("calls the wrapped function once", function (done) {
                 var values = [];
-                for (var i = 0; i < 20; i++) {
+                for (var i = 0; i < 2; i++) {
                     values.push(i);
                 }
 
                 async.each(values, function (val, async_cb) {
                     cache.wrap('key', function (cb) {
                         construct(val, cb);
-                    }, async_cb);
-                }, function (err, result) {
-                    assert.equal(result, 'value');
+                    }, function (err, result) {
+                        assert.equal(result, 'value');
+                        async_cb(err);
+                    });
+                }, function (err) {
+                    check_err(err);
                     assert.equal(construct.callCount, 1);
                     done();
                 });
