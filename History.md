@@ -1,3 +1,9 @@
+- 0.10.1 2014-09-10
+  Fixed tag/version mismatch
+
+- 0.10.0 2014-09-10
+  Fixing Use call instead of apply for cached results, issue #9 (thanks elliotttf)
+
 - 0.9.0 2014-08-19
   Fixing issue #8 - parallel requests to a wrapped function were calling the
   function multiple times. (Thanks alex-whitney).
