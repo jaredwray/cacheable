@@ -1,3 +1,6 @@
+- 0.11.0 2014-09-18
+  Prevent stalemate by executing callbacks on error. Fixes #10 - elliotttf
+
 - 0.10.1 2014-09-10
   Fixed tag/version mismatch
 
