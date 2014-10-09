@@ -1,3 +1,6 @@
+- 0.12.0 2014-10-09
+  Checking for existence of del() method before binding to it. Fixes #11.
+
 - 0.11.0 2014-09-18
   Prevent stalemate by executing callbacks on error. Fixes #10 - elliotttf
 
