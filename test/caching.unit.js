@@ -145,6 +145,23 @@ describe("caching", function () {
                 });
             }, 10);
         });
+
+        context("when store has no del() method", function () {
+            var fake_store;
+
+            beforeEach(function () {
+                fake_store = {
+                    get: function () {},
+                    set: function () {},
+                };
+            });
+
+            it("it doesn't throw an error", function () {
+                assert.doesNotThrow(function () {
+                    caching({store: fake_store});
+                });
+            });
+        });
     });
 
     describe("setex()", function () {
