@@ -1,4 +1,5 @@
 var assert = require('assert');
+var async = require('async');
 var sinon = require('sinon');
 var support = require('./support');
 var check_err = support.check_err;
@@ -435,6 +436,41 @@ describe("multi_caching", function () {
                         memory_store_stub.set.restore();
                         done();
                     });
+                });
+            });
+        });
+
+        describe("when called multiple times in parallel with same key", function () {
+            var construct;
+
+            beforeEach(function () {
+                multi_cache = multi_caching([memory_cache, memory_cache3]);
+
+                construct = sinon.spy(function (val, cb) {
+                    var timeout = support.random.number(100);
+                    setTimeout(function () {
+                        cb(null, 'value');
+                    }, timeout);
+                });
+            });
+
+            it("calls the wrapped function once", function (done) {
+                var values = [];
+                for (var i = 0; i < 5; i++) {
+                    values.push(i);
+                }
+
+                async.each(values, function (val, async_cb) {
+                    multi_cache.wrap('key', function (cb) {
+                        construct(val, cb);
+                    }, function (err, result) {
+                        assert.equal(result, 'value');
+                        async_cb(err);
+                    });
+                }, function (err) {
+                    check_err(err);
+                    assert.equal(construct.callCount, 1);
+                    done();
                 });
             });
         });
