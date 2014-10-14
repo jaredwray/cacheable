@@ -1,3 +1,6 @@
+- 0.13.0 2014-10-14
+  Applied work function locking for multi_caching (#13). -aletorrado
+
 - 0.12.0 2014-10-09
   Checking for existence of del() method before binding to it. Fixes #11.
 
