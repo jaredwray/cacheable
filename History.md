@@ -1,3 +1,7 @@
+- 0.14.0 2014-10-15
+  Set ttl in wrap #14 - nguyenchr
+  Added JSCS for style checking
+
 - 0.13.0 2014-10-14
   Applied work function locking for multi_caching (#13). -aletorrado
 
