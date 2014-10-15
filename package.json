@@ -26,7 +26,8 @@
   "devDependencies": {
     "coveralls": "^2.3.0",
     "istanbul": "^0.2.11",
-    "jshint": "^2.5.1",
+    "jscs": "^1.7.1",
+    "jshint": "^2.5.4",
     "mocha": "^1.20.1",
     "optimist": "^0.6.1",
     "sinon": "^1.10.2"

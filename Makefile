@@ -21,6 +21,9 @@ test-travis: lint
 	./node_modules/.bin/istanbul cover test/run.js --report lcovonly \
 	  -- -T unit,functional -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage
 lint:
+	./node_modules/.bin/jscs ./lib && \
+	./node_modules/.bin/jscs ./test && \
+	./node_modules/.bin/jscs ./examples && \
 	./node_modules/.bin/jshint ./lib --config $(BASE)/.jshintrc && \
 	./node_modules/.bin/jshint ./test --config $(BASE)/.jshintrc
 	./node_modules/.bin/jshint ./examples --config $(BASE)/.jshintrc

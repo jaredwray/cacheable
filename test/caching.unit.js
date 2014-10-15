@@ -251,7 +251,6 @@ describe("caching", function () {
             });
 
             context("calls back with the result of the wrapped function", function () {
-
                 beforeEach(function () {
                     sinon.spy(memory_store_stub, 'set');
                 });
@@ -260,7 +259,7 @@ describe("caching", function () {
                     memory_store_stub.set.restore();
                 });
 
-                it("when a ttl is passed in", function(done) {
+                it("when a ttl is passed in", function (done) {
                     cache.wrap(key, function (cb) {
                         methods.get_widget(name, cb);
                     }, ttl, function (err, widget) {
@@ -269,10 +268,9 @@ describe("caching", function () {
                         sinon.assert.calledWith(memory_store_stub.set, key, {name: name}, ttl);
                         done();
                     });
-
                 });
 
-                it("when a ttl is not passed in", function(done) {
+                it("when a ttl is not passed in", function (done) {
                     cache.wrap(key, function (cb) {
                         methods.get_widget(name, cb);
                     }, function (err, widget) {
@@ -282,7 +280,6 @@ describe("caching", function () {
                         done();
                     });
                 });
-
             });
 
             context("when result is already cached", function () {

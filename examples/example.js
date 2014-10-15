@@ -1,7 +1,8 @@
 /*jshint unused:false*/
+// Note: ttls are in seconds
 var cache_manager = require('../');
-var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
-var memory_cache2 = cache_manager.caching({store: 'memory', max: 100, ttl: 100/*seconds*/});
+var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10});
+var memory_cache2 = cache_manager.caching({store: 'memory', max: 100, ttl: 100});
 var ttl; //Can't use a different ttl per set() call with memory cache
 
 //
@@ -73,7 +74,6 @@ get_cached_user(user_id, function (err, user) {
 // Returning user from slow database.
 // { id: 123, name: 'Bob' }
 // { id: 123, name: 'Bob' }
-
 
 // Same as above, but written differently:
 memory_cache.wrap(key, function (cb) {
