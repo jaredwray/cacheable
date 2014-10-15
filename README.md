@@ -15,7 +15,7 @@ tiered caches, and a consistent interface.
 * Tiered caches -- data gets stored in each cache and fetched from the highest
 priority cache(s) first.
 * Use any cache you want, as long as it has the same API.
-* 100% test coverage via [mocha](https://github.com/visionmedia/mocha), 
+* 100% test coverage via [mocha](https://github.com/visionmedia/mocha),
   [istanbul](https://github.com/yahoo/istanbul), and [sinon](http://sinonjs.org).
 
 
@@ -57,14 +57,14 @@ function get_cached_user(id, cb) {
 function get_cached_user(id, cb) {
     memory_cache.wrap(id, function (cache_callback) {
         get_user(id, cache_callback);
-    }, cb);
+    }, ttl, cb);
 }
 ```
 
 Second, node-cache-manager features a built-in memory cache (using [node-lru-cache](https://github.com/isaacs/node-lru-cache)),
 with the standard functions you'd expect in most caches:
 
-    set(key, val, cb)
+    set(key, val, ttl, cb)
     get(key, cb)
     del(key, cb)
 
@@ -88,10 +88,10 @@ Redis cache store with connection pooling.
 ```javascript
 var cache_manager = require('cache-manager');
 var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
-
+var ttl = 5;
 // Note: callback is optional in set() and del().
 
-memory_cache.set('foo', 'bar', function(err) {
+memory_cache.set('foo', 'bar', ttl, function(err) {
     if (err) { throw err; }
 
     memory_cache.get('foo', function(err, result) {
@@ -109,11 +109,12 @@ function get_user(id, cb) {
 }
 
 var user_id = 123;
-var key = 'user_' + user_id; 
+var key = 'user_' + user_id;
 
+// Note: ttl is optional in wrap()
 memory_cache.wrap(key, function (cb) {
     get_user(user_id, cb);
-}, function (err, user) {
+}, ttl, function (err, user) {
     console.log(user);
 
     // Second time fetches user from memory_cache
@@ -134,7 +135,7 @@ Here's a very basic example of how you could use this in an Express app:
 
 ```javascript
 function respond(res, err, data) {
-    if (err) { 
+    if (err) {
         res.json(500, err);
     } else {
         res.json(200, data);
@@ -143,9 +144,10 @@ function respond(res, err, data) {
 
 app.get('/foo/bar', function(req, res) {
     var cache_key = 'foo-bar:' + JSON.stringify(req.query);
+    var ttl = 10;
     memory_cache.wrap(cache_key, function(cache_cb) {
         DB.find(req.query, cache_cb);
-    }, function(err, result) {
+    }, ttl, function(err, result) {
         respond(res, err, result);
     });
 });
@@ -171,10 +173,11 @@ var cache = cache_manager.caching({store: '/path/to/your/store'});
 ```javascript
 var multi_cache = cache_manager.multi_caching([memory_cache, some_other_cache]);
 user_id2 = 456;
-key2 = 'user_' + user_id; 
+key2 = 'user_' + user_id;
+ttl = 5;
 
 // Sets in all caches.
-multi_cache.set('foo2', 'bar2', function(err) {
+multi_cache.set('foo2', 'bar2', ttl, function(err) {
     if (err) { throw err; }
 
     // Fetches from highest priority cache that has the key.
@@ -187,9 +190,10 @@ multi_cache.set('foo2', 'bar2', function(err) {
     });
 });
 
+// Note: ttl is optional in wrap()
 multi_cache.wrap(key2, function (cb) {
     get_user(user_id2, cb);
-}, function (err, user) {
+}, ttl, function (err, user) {
     console.log(user);
 
     // Second time fetches user from memory_cache, since it's highest priority.
