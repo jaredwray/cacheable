@@ -8,7 +8,7 @@ var RedisPool = require('sol-redis-pool');
 function redis_store(args) {
     args = args || {};
     var self = {};
-    var ttl = args.ttl;
+    var ttlDefault = args.ttl;
     self.name = 'redis';
     self.client = require('redis').createClient(args.port, args.host, args);
 
@@ -46,12 +46,13 @@ function redis_store(args) {
         });
     };
 
-    self.set = function (key, value, cb) {
+    self.set = function (key, value, ttl, cb) {
+        var ttlToUse = ttl || ttlDefault;
         connect(function (err, conn) {
             if (err) { return cb(err); }
 
-            if (ttl) {
-                conn.setex(key, ttl, JSON.stringify(value), function (err, result) {
+            if (ttlToUse) {
+                conn.setex(key, ttlToUse, JSON.stringify(value), function (err, result) {
                     pool.release(conn);
                     cb(err, result);
                 });
