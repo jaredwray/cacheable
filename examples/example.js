@@ -2,11 +2,12 @@
 var cache_manager = require('../');
 var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
 var memory_cache2 = cache_manager.caching({store: 'memory', max: 100, ttl: 100/*seconds*/});
+var ttl; //Can't use a different ttl per set() call with memory cache
 
 //
 // Basic usage
 //
-memory_cache.set('foo', 'bar', function (err) {
+memory_cache.set('foo', 'bar', ttl, function (err) {
     if (err) { throw err; }
 
     memory_cache.get('foo', function (err, result) {
@@ -31,7 +32,7 @@ var user_id = 123;
 var key = 'user_' + user_id;
 
 //
-// wrap() example 
+// wrap() example
 //
 
 // Instead of manually managing the cache like this:
@@ -94,6 +95,7 @@ memory_cache.wrap(key, function (cb) {
 var multi_cache = cache_manager.multi_caching([memory_cache, memory_cache2]);
 var user_id2 = 456;
 var key2 = 'user_' + user_id;
+var ttl2; //Can't use a different ttl per set() call with memory cache
 
 multi_cache.wrap(key2, function (cb) {
     get_user(user_id2, cb);
@@ -110,7 +112,7 @@ multi_cache.wrap(key2, function (cb) {
     });
 
     // Sets in all caches.
-    multi_cache.set('foo2', 'bar2', function (err) {
+    multi_cache.set('foo2', 'bar2', ttl2, function (err) {
         if (err) { throw err; }
 
         // Fetches from highest priority cache that has the key.
