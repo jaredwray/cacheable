@@ -5,7 +5,8 @@
 var util = require('util');
 var cache_manager = require('../../');
 var redis_store = require('./redis_store');
-var redis_cache = cache_manager.caching({store: redis_store, db: 0, ttl: 100/*seconds*/});
+// Note: ttl is in seconds
+var redis_cache = cache_manager.caching({store: redis_store, db: 0, ttl: 100});
 var ttl = 60;
 
 console.log("set/get/del example:");

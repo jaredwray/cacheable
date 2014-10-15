@@ -1,0 +1,80 @@
+{
+    "requireCurlyBraces": ["if", "else", "for", "while", "do", "try", "catch"],
+    "requireSpaceAfterKeywords": ["if", "else", "for", "while", "do", "switch", "return", "try", "catch"],
+
+    "requireSpaceBeforeBinaryOperators": ["?", "+", "/", "*", "=", "==", "===", "!=", "!==", ">", ">=", "<", "<="],
+    "requireSpaceAfterBinaryOperators": ["?", "+", "/", "*", "=", "==", "===", "!=", "!==", ">", ">=", "<", "<="],
+    "disallowSpaceAfterBinaryOperators": ["!"],
+    "disallowSpaceBeforeBinaryOperators": [","],
+
+    "disallowMultipleVarDecl": true,
+    "disallowEmptyBlocks": true,
+    "disallowKeywords": ["with"],
+    "disallowKeywordsOnNewLine": ["else"],
+    "disallowSpacesInsideObjectBrackets": true,
+    "disallowSpacesInsideArrayBrackets": true,
+    "disallowSpacesInsideParentheses": true,
+    "disallowSpaceBeforePostfixUnaryOperators": ["++", "--"],
+    "disallowMultipleLineStrings": true,
+    "disallowTrailingWhitespace": true,
+    "disallowPaddingNewlinesInBlocks": true,
+
+    "requireCommaBeforeLineBreak": true,
+
+    "requireParenthesesAroundIIFE": true,
+
+    "requireSpaceBeforeBlockStatements": true,
+
+    "requireSpacesInConditionalExpression": true,
+
+    "requireSpacesInFunctionExpression": {
+      "beforeOpeningCurlyBrace": true
+    },
+
+    "requireSpaceBeforeBinaryOperators": [
+      "+",
+      "-",
+      "/",
+      "*",
+      "=",
+      "==",
+      "===",
+      "!=",
+      "!=="
+    ],
+
+    "requireOperatorBeforeLineBreak": [
+      "?",
+      "+",
+      "-",
+      "/",
+      "*",
+      "=",
+      "==",
+      "===",
+      "!=",
+      "!==",
+      ">",
+      ">=",
+      "<",
+      "<="
+    ],
+
+    "safeContextKeyword": "self",
+
+    "validateIndentation": 4,
+    "validateParameterSeparator": ", ",
+
+    "excludeFiles": [
+        "test/data/**",
+        "test/support/fakes/**"
+    ],
+    "validateJSDoc": {
+        "checkParamNames": true,
+        "requireParamTypes": true
+    },
+
+    "disallowMultipleLineBreaks": true,
+    "validateLineBreaks": "LF",
+    "disallowYodaConditions": true
+}

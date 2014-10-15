@@ -185,7 +185,6 @@ describe("multi_caching", function () {
             });
 
             context("calls back with the result of a function", function () {
-
                 beforeEach(function () {
                     sinon.spy(memory_cache3.store, 'set');
                 });
@@ -215,7 +214,6 @@ describe("multi_caching", function () {
                         done();
                     });
                 });
-
             });
 
             context("when wrapped function calls back with an error", function () {
