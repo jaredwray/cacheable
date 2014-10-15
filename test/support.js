@@ -90,8 +90,9 @@ var support = {
     test_set_get_del: function (cache, cb) {
         var key = 'TEST' + support.random.string();
         var val = support.random.string();
+        var ttl;
 
-        cache.set(key, val, function (err) {
+        cache.set(key, val, ttl, function (err) {
             if (err) { return cb(err); }
 
             cache.get(key, function (err, result) {

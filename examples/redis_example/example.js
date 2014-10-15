@@ -6,9 +6,10 @@ var util = require('util');
 var cache_manager = require('../../');
 var redis_store = require('./redis_store');
 var redis_cache = cache_manager.caching({store: redis_store, db: 0, ttl: 100/*seconds*/});
+var ttl = 60;
 
 console.log("set/get/del example:");
-redis_cache.set('foo', 'bar', function (err) {
+redis_cache.set('foo', 'bar', ttl, function (err) {
     if (err) { throw err; }
 
     redis_cache.get('foo', function (err, result) {
@@ -38,7 +39,7 @@ function get_user_from_cache(id, cb) {
     var key = create_key(id);
     redis_cache.wrap(key, function (cache_cb) {
         get_user(user_id, cache_cb);
-    }, cb);
+    }, ttl, cb);
 }
 
 get_user_from_cache(user_id, function (err, user) {
