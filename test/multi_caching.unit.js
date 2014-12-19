@@ -449,6 +449,23 @@ describe("multi_caching", function () {
                 memory_store.create.restore();
             });
 
+            context("when an error is thrown in the work function", function () {
+                var fake_error;
+
+                beforeEach(function() {
+                    fake_error = new Error(support.random.string());
+                });
+
+                it("bubbles up that error", function (done) {
+                    multi_cache.wrap(key, function () {
+                        throw fake_error;
+                    }, ttl, function (err) {
+                        assert.equal(err, fake_error);
+                        done();
+                    });
+                });
+            });
+
             context("when store.get() calls back with an error", function () {
                 it("bubbles up that error", function (done) {
                     var fake_error = new Error(support.random.string());

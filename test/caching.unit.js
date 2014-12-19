@@ -357,6 +357,23 @@ describe("caching", function () {
                 });
             });
 
+            context("when an error is thrown in the work function", function () {
+                var fake_error;
+
+                beforeEach(function() {
+                    fake_error = new Error(support.random.string());
+                });
+
+                it("bubbles up that error", function (done) {
+                    cache.wrap(key, function () {
+                        throw fake_error;
+                    }, ttl, function (err) {
+                        assert.equal(err, fake_error);
+                        done();
+                    });
+                });
+            });
+
             context("when store.get() calls back with an error", function () {
                 context("and ignoreCacheErrors is not set (default is false)", function () {
                     it("bubbles up that error", function (done) {
