@@ -1,3 +1,7 @@
+- 0.15.0 2014-12-18
+  Moved cache queue before the store get function (up to 2x performance boost). (#18) - aletorrado
+  Added domain support to make sure the wrap callback function is always called - aletorrado
+
 - 0.14.0 2014-10-15
   Set ttl in wrap #14 - nguyenchr
   Added JSCS for style checking
