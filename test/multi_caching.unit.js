@@ -178,6 +178,58 @@ describe("multi_caching", function () {
         });
     });
 
+    describe("get_and_pass_up()", function () {
+        var value;
+        var key;
+
+        describe("using a single cache store", function () {
+            beforeEach(function () {
+                multi_cache = multi_caching([memory_cache3]);
+                key = support.random.string(20);
+                value = support.random.string();
+            });
+
+            it("gets data from first cache that has it", function (done) {
+                memory_cache3.set(key, value, ttl, function (err) {
+                    check_err(err);
+
+                    multi_cache.get_and_pass_up(key, function (err, result) {
+                        check_err(err);
+                        assert.equal(result, value);
+                        done();
+                    });
+                });
+            });
+        });
+
+        describe("using multi cache store", function () {
+            beforeEach(function () {
+                multi_cache = multi_caching([memory_cache,memory_cache2,memory_cache3]);
+                key = support.random.string(20);
+                value = support.random.string();
+            });
+
+            it("checks to see if higher levels have item", function (done) {
+                memory_cache3.set(key, value, ttl, function (err) {
+                    check_err(err);
+
+                    multi_cache.get_and_pass_up(key, function (err, result) {
+                        check_err(err);
+                        assert.equal(result, value);
+
+                        process.nextTick(function() {
+                            memory_cache.get(key, function (err, result) {
+                                assert.equal(result, value);
+                                check_err(err);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+
     describe("wrap()", function () {
         describe("using a single cache store", function () {
             beforeEach(function () {
