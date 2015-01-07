@@ -1,3 +1,7 @@
+- 0.16.0 2015-01-07
+  Get and pass up feature to update higher caches. (#19) - raadad
+  Minor style tweaks/jscs update.
+
 - 0.15.0 2014-12-18
   Moved cache queue before the store get function (up to 2x performance boost). (#18) - aletorrado
   Added domain support to make sure the wrap callback function is always called - aletorrado

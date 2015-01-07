@@ -10,14 +10,14 @@ var redis_cache = cache_manager.caching({store: redis_store, db: 0, ttl: 100});
 var ttl = 60;
 
 console.log("set/get/del example:");
-redis_cache.set('foo', 'bar', ttl, function (err) {
+redis_cache.set('foo', 'bar', ttl, function(err) {
     if (err) { throw err; }
 
-    redis_cache.get('foo', function (err, result) {
+    redis_cache.get('foo', function(err, result) {
         if (err) { throw err; }
         console.log("result fetched from cache: " + result);
         // >> 'bar'
-        redis_cache.del('foo', function (err) {
+        redis_cache.del('foo', function(err) {
             if (err) { throw err; }
         });
     });
@@ -30,7 +30,7 @@ function create_key(id) {
 }
 
 function get_user(id, cb) {
-    setTimeout(function () {
+    setTimeout(function() {
         console.log("\n\nReturning user from slow database.");
         cb(null, {id: id, name: 'Bob'});
     }, 100);
@@ -38,24 +38,24 @@ function get_user(id, cb) {
 
 function get_user_from_cache(id, cb) {
     var key = create_key(id);
-    redis_cache.wrap(key, function (cache_cb) {
+    redis_cache.wrap(key, function(cache_cb) {
         get_user(user_id, cache_cb);
     }, ttl, cb);
 }
 
-get_user_from_cache(user_id, function (err, user) {
+get_user_from_cache(user_id, function(err, user) {
     console.log(user);
 
     // Second time fetches user from redis_cache
-    get_user_from_cache(user_id, function (err, user) {
+    get_user_from_cache(user_id, function(err, user) {
         console.log("user from second cache request:");
         console.log(user);
 
-        redis_cache.keys(function (err, keys) {
+        redis_cache.keys(function(err, keys) {
             console.log("keys: " + util.inspect(keys));
 
             var key = create_key(user_id);
-            redis_cache.del(key, function (err) {
+            redis_cache.del(key, function(err) {
                 if (err) { throw err; }
                 process.exit();
             });
