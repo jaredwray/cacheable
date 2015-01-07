@@ -178,6 +178,94 @@ describe("multi_caching", function () {
         });
     });
 
+    describe("get_and_pass_up()", function () {
+        var value;
+        var key;
+
+        describe("using a single cache store", function () {
+            beforeEach(function () {
+                multi_cache = multi_caching([memory_cache3]);
+                key = support.random.string(20);
+                value = support.random.string();
+            });
+
+            it("gets data from first cache that has it", function (done) {
+                memory_cache3.set(key, value, ttl, function (err) {
+                    check_err(err);
+
+                    multi_cache.get_and_pass_up(key, function (err, result) {
+                        check_err(err);
+                        assert.equal(result, value);
+                        done();
+                    });
+                });
+            });
+        });
+
+        describe("when value is not found in any cache", function() {
+            var response;
+
+            beforeEach(function(done) {
+                key = support.random.string(10);
+                sinon.spy(memory_cache, 'set');
+                sinon.spy(memory_cache2, 'set');
+                sinon.spy(memory_cache3, 'set');
+
+                multi_cache.get_and_pass_up(key, function (err, result) {
+                    check_err(err);
+                    response = result;
+                    done();
+                });
+            });
+
+            afterEach(function() {
+                memory_cache.set.restore();
+                memory_cache2.set.restore();
+                memory_cache3.set.restore();
+            });
+
+            it("calls back with undefined", function() {
+                assert.strictEqual(response, undefined);
+            });
+
+            it("does not set anything in caches", function(done) {
+                process.nextTick(function () {
+                    assert.ok(memory_cache.set.notCalled);
+                    assert.ok(memory_cache2.set.notCalled);
+                    assert.ok(memory_cache3.set.notCalled);
+                    done();
+                });
+            });
+        });
+
+        describe("using multi cache store", function () {
+            beforeEach(function () {
+                multi_cache = multi_caching([memory_cache,memory_cache2,memory_cache3]);
+                key = support.random.string(20);
+                value = support.random.string();
+            });
+
+            it("checks to see if higher levels have item", function (done) {
+                memory_cache3.set(key, value, ttl, function (err) {
+                    check_err(err);
+
+                    multi_cache.get_and_pass_up(key, function (err, result) {
+                        check_err(err);
+                        assert.equal(result, value);
+
+                        process.nextTick(function() {
+                            memory_cache.get(key, function (err, result) {
+                                assert.equal(result, value);
+                                check_err(err);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+
     describe("wrap()", function () {
         describe("using a single cache store", function () {
             beforeEach(function () {
