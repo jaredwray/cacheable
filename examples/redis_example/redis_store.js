@@ -20,7 +20,7 @@ function redis_store(args) {
     var pool = new RedisPool(redis_options);
 
     function connect(cb) {
-        pool.acquire(function (err, conn) {
+        pool.acquire(function(err, conn) {
             if (err) {
                 pool.release(conn);
                 return cb(err);
@@ -34,11 +34,11 @@ function redis_store(args) {
         });
     }
 
-    self.get = function (key, cb) {
-        connect(function (err, conn) {
+    self.get = function(key, cb) {
+        connect(function(err, conn) {
             if (err) { return cb(err); }
 
-            conn.get(key, function (err, result) {
+            conn.get(key, function(err, result) {
                 pool.release(conn);
                 if (err) { return cb(err); }
                 cb(null, JSON.parse(result));
@@ -46,18 +46,18 @@ function redis_store(args) {
         });
     };
 
-    self.set = function (key, value, ttl, cb) {
+    self.set = function(key, value, ttl, cb) {
         var ttlToUse = ttl || ttlDefault;
-        connect(function (err, conn) {
+        connect(function(err, conn) {
             if (err) { return cb(err); }
 
             if (ttlToUse) {
-                conn.setex(key, ttlToUse, JSON.stringify(value), function (err, result) {
+                conn.setex(key, ttlToUse, JSON.stringify(value), function(err, result) {
                     pool.release(conn);
                     cb(err, result);
                 });
             } else {
-                conn.set(key, JSON.stringify(value), function (err, result) {
+                conn.set(key, JSON.stringify(value), function(err, result) {
                     pool.release(conn);
                     cb(err, result);
                 });
@@ -65,27 +65,27 @@ function redis_store(args) {
         });
     };
 
-    self.del = function (key, cb) {
-        connect(function (err, conn) {
+    self.del = function(key, cb) {
+        connect(function(err, conn) {
             if (err) { return cb(err); }
 
-            conn.del(key, function (err, result) {
+            conn.del(key, function(err, result) {
                 pool.release(conn);
                 cb(err, result);
             });
         });
     };
 
-    self.keys = function (pattern, cb) {
+    self.keys = function(pattern, cb) {
         if (typeof pattern === 'function') {
             cb = pattern;
             pattern = '*';
         }
 
-        connect(function (err, conn) {
+        connect(function(err, conn) {
             if (err) { return cb(err); }
 
-            conn.keys(pattern, function (err, result) {
+            conn.keys(pattern, function(err, result) {
                 pool.release(conn);
                 cb(err, result);
             });
@@ -96,7 +96,7 @@ function redis_store(args) {
 }
 
 module.exports = {
-    create: function (args) {
+    create: function(args) {
         return redis_store(args);
     }
 };

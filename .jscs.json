@@ -24,11 +24,24 @@
     "requireParenthesesAroundIIFE": true,
 
     "requireSpaceBeforeBlockStatements": true,
+    "disallowNewlineBeforeBlockStatements": true,
 
     "requireSpacesInConditionalExpression": true,
 
     "requireSpacesInFunctionExpression": {
       "beforeOpeningCurlyBrace": true
+    },
+
+    "disallowSpacesInAnonymousFunctionExpression": {
+        "beforeOpeningRoundBrace": true
+    },
+
+    "disallowSpacesInFunctionDeclaration": {
+        "beforeOpeningRoundBrace": true
+    },
+
+    "disallowSpacesInFunctionExpression": {
+        "beforeOpeningRoundBrace": true
     },
 
     "requireSpaceBeforeBinaryOperators": [
@@ -61,6 +74,12 @@
     ],
 
     "safeContextKeyword": "self",
+
+    "maximumLineLength": {
+        "value": 120,
+        "allowUrlComments": true,
+        "allowRegex": true
+    },
 
     "validateIndentation": 4,
     "validateParameterSeparator": ", ",

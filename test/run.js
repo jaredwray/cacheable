@@ -25,7 +25,7 @@ var valid_test_types = ['unit', 'functional', 'acceptance', 'integration'];
 var requested_types = argv.types.split(',');
 var types_to_use = [];
 
-valid_test_types.forEach(function (valid_test_type) {
+valid_test_types.forEach(function(valid_test_type) {
     if (requested_types.indexOf(valid_test_type) !== -1) {
         types_to_use.push(valid_test_type);
     }
@@ -36,7 +36,7 @@ if (argv.help || types_to_use.length === 0) {
     process.exit();
 }
 
-var is_valid_file = function (file) {
+var is_valid_file = function(file) {
     if (file.match(/buster/)) {
         return false;
     }
@@ -54,10 +54,10 @@ var is_valid_file = function (file) {
 };
 
 function run(cb) {
-    walk_dir('test', is_valid_file, function (err, files) {
+    walk_dir('test', is_valid_file, function(err, files) {
         if (err) { return cb(err); }
 
-        files.forEach(function (file) {
+        files.forEach(function(file) {
             mocha.addFile(file);
         });
 
@@ -65,9 +65,9 @@ function run(cb) {
     });
 }
 
-run(function (err) {
+run(function(err) {
     if (err) { throw err; }
-    mocha.run(function (failures) {
+    mocha.run(function(failures) {
         process.exit(failures);
     });
 });

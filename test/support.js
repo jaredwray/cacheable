@@ -4,7 +4,7 @@ var assert = require('assert');
 
 var support = {
     random: {
-        string: function (str_len) {
+        string: function(str_len) {
             str_len = str_len || 8;
             var chars = "abcdefghiklmnopqrstuvwxyz";
             var random_str = '';
@@ -15,13 +15,13 @@ var support = {
             return random_str;
         },
 
-        number: function (max) {
+        number: function(max) {
             max = max || 1000;
             return Math.floor((Math.random() * max));
         }
     },
 
-    check_err: function (err) {
+    check_err: function(err) {
         if (err) {
             var msg;
 
@@ -38,36 +38,36 @@ var support = {
         }
     },
 
-    assert_between: function (actual, lower, upper) {
+    assert_between: function(actual, lower, upper) {
         assert.ok(actual >= lower, "Expected " + actual + " to be >= " + lower);
         assert.ok(actual <= upper, "Expected " + actual + " to be <= " + upper);
     },
 
-    assert_within: function (actual, expected, delta) {
+    assert_within: function(actual, expected, delta) {
         var lower = expected - delta;
         var upper = expected + delta;
         this.assert_between(actual, lower, upper);
     },
 
-    walk_dir: function (dir, validation_function, cb) {
+    walk_dir: function(dir, validation_function, cb) {
         if (arguments.length === 2) {
             cb = validation_function;
             validation_function = null;
         }
 
         var results = [];
-        fs.readdir(dir, function (err, list) {
+        fs.readdir(dir, function(err, list) {
             if (err) { return cb(err); }
 
             var pending = list.length;
 
             if (!pending) { return cb(null, results); }
 
-            list.forEach(function (file) {
+            list.forEach(function(file) {
                 file = dir + '/' + file;
-                fs.stat(file, function (err, stat) {
+                fs.stat(file, function(err, stat) {
                     if (stat && stat.isDirectory()) {
-                        support.walk_dir(file, validation_function, function (err, res) {
+                        support.walk_dir(file, validation_function, function(err, res) {
                             results = results.concat(res);
                             if (!--pending) { cb(null, results); }
                         });
@@ -87,22 +87,22 @@ var support = {
         });
     },
 
-    test_set_get_del: function (cache, cb) {
+    test_set_get_del: function(cache, cb) {
         var key = 'TEST' + support.random.string();
         var val = support.random.string();
         var ttl;
 
-        cache.set(key, val, ttl, function (err) {
+        cache.set(key, val, ttl, function(err) {
             if (err) { return cb(err); }
 
-            cache.get(key, function (err, result) {
+            cache.get(key, function(err, result) {
                 if (err) { return cb(err); }
                 assert.equal(result, val);
 
-                cache.del(key, function (err) {
+                cache.del(key, function(err) {
                     if (err) { return cb(err); }
 
-                    cache.get(key, function (err, result) {
+                    cache.get(key, function(err, result) {
                         if (err) { return cb(err); }
                         assert.ok(!result);
                         cb();
