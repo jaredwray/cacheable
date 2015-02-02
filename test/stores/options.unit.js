@@ -1,3 +1,5 @@
+/*jshint -W072 */
+
 var caching = require("../../index");
 var assert = require("assert");
 var support = require('../support');
