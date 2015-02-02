@@ -172,8 +172,8 @@ describe("multi_caching", function() {
                                 });
                             });
                         });
-                    });
-                }, 10);
+                    }, 10);
+                });
             });
         });
     });
