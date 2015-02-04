@@ -11,7 +11,7 @@ var testStore = function(args) {
     var self = {};
     self.name = "options";
 
-    self.get = function(key, cb, options) {
+    self.get = function(key, options, cb) {
         if (options && options.value) {
             return cb(null, options.value + "ValueOption");
         } else if (options && options.fn) {
@@ -21,7 +21,7 @@ var testStore = function(args) {
         return cb("Error No Options");
     };
 
-    self.set = function(key, value, ttl, cb, options) {
+    self.set = function(key, value, options, cb) {
         if (options && options.value) {
             memoryFlag = options.value + "ValueOption";
             return cb();
@@ -32,7 +32,7 @@ var testStore = function(args) {
         return cb("Error No Options");
     };
 
-    self.del = function(key, cb, options) {
+    self.del = function(key, options, cb) {
         if (options && options.value) {
             memoryFlag = options.value + "ValueOption";
             return cb();
@@ -64,10 +64,10 @@ describe("Methods with options", function() {
 
         it("lets us pass options by value", function(done) {
             var options = {value: value};
-            testCache.get(key, function(err, response) {
+            testCache.get(key, options, function(err, response) {
                 assert.equal(response, value + "ValueOption");
                 done();
-            }, options);
+            });
         });
 
         it("lets us pass options by function", function(done) {
@@ -77,9 +77,9 @@ describe("Methods with options", function() {
                     done();
                 }
             };
-            testCache.get(key, function(err, response) {
+            testCache.get(key , options, function(err, response) {
                 assert.equal(response, "GetFunctionOption");
-            }, options);
+            });
         });
     });
     describe("set with options", function() {
@@ -91,21 +91,22 @@ describe("Methods with options", function() {
         });
 
         it("lets us pass options by value", function(done) {
-            var options = {value: value};
-            testCache.set(key, value, ttl, function() {
-                assert.equal(memoryFlag,value + "ValueOption");
+            var options = {ttl: ttl, value: value};
+            testCache.set(key, value, options, function() {
+                assert.equal(memoryFlag, value + "ValueOption");
                 done();
-            }, options);
+            });
         });
 
         it("lets us pass options by function", function(done) {
             var options = {
+                ttl: ttl,
                 fn: function(response) {
                     assert.equal(response, "SetFunctionOption");
                     done();
                 }
             };
-            testCache.set(key, value, ttl, function() {}, options);
+            testCache.set(key, value, options, function() {}, options);
         });
     });
     describe("delete with options", function() {
@@ -117,10 +118,10 @@ describe("Methods with options", function() {
 
         it("lets us pass options by value", function(done) {
             var options = {value: value};
-            testCache.del(key, function() {
+            testCache.del(key, options, function() {
                 assert.equal(memoryFlag,value + "ValueOption");
                 done();
-            }, options);
+            });
         });
 
         it("lets us pass options by function", function(done) {
@@ -130,7 +131,7 @@ describe("Methods with options", function() {
                     done();
                 }
             };
-            testCache.del(key, function() {}, options);
+            testCache.del(key, options, function() {}, options);
         });
     });
 });
