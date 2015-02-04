@@ -1,5 +1,3 @@
-/*jshint -W072 */
-
 var caching = require("../../index");
 var assert = require("assert");
 var support = require('../support');
@@ -77,7 +75,7 @@ describe("Methods with options", function() {
                     done();
                 }
             };
-            testCache.get(key , options, function(err, response) {
+            testCache.get(key, options, function(err, response) {
                 assert.equal(response, "GetFunctionOption");
             });
         });
