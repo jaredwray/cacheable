@@ -519,6 +519,30 @@ describe("multi_caching", function() {
                     });
                 });
             });
+
+            it("lets us make nested calls", function(done) {
+                function get_cached_widget(name, cb) {
+                    multi_cache.wrap(key, function(cache_cb) {
+                        methods.get_widget(name, cache_cb);
+                    }, cb);
+                }
+
+                get_cached_widget(name, function(err, widget) {
+                    check_err(err);
+                    assert.equal(widget.name, name);
+
+                    get_cached_widget(name, function(err, widget) {
+                        check_err(err);
+                        assert.equal(widget.name, name);
+
+                        get_cached_widget(name, function(err, widget) {
+                            check_err(err);
+                            assert.equal(widget.name, name);
+                            done();
+                        });
+                    });
+                });
+            });
         });
 
         context("error handling", function() {

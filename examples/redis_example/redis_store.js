@@ -34,7 +34,11 @@ function redis_store(args) {
         });
     }
 
-    self.get = function(key, cb) {
+    self.get = function(key, options, cb) {
+        if (typeof options === 'function') {
+            cb = options;
+        }
+
         connect(function(err, conn) {
             if (err) { return cb(err); }
 
@@ -46,13 +50,20 @@ function redis_store(args) {
         });
     };
 
-    self.set = function(key, value, ttl, cb) {
-        var ttlToUse = ttl || ttlDefault;
+    self.set = function(key, value, options, cb) {
+        if (typeof options === 'function') {
+            cb = options;
+            options = {};
+        }
+        options = options || {};
+
+        var ttl = (options.ttl || options.ttl === 0) ? options.ttl : ttlDefault;
+
         connect(function(err, conn) {
             if (err) { return cb(err); }
 
-            if (ttlToUse) {
-                conn.setex(key, ttlToUse, JSON.stringify(value), function(err, result) {
+            if (ttl) {
+                conn.setex(key, ttl, JSON.stringify(value), function(err, result) {
                     pool.release(conn);
                     cb(err, result);
                 });

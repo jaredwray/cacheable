@@ -85,17 +85,16 @@ var testStore = function(args) {
 };
 
 describe("Methods with options", function() {
+    var testInstance = caching.caching({store: testStore()});
+    var testCache;
+
     before(function() {
         key = support.random.string(20);
         value = support.random.string(20);
+        testCache = caching.multi_caching([testInstance]);
     });
-    describe("get with options", function() {
-        var testInstance = caching.caching({store: testStore()});
-        var testCache;
-        before(function() {
-            testCache = caching.multi_caching([testInstance]);
-        });
 
+    describe("get with options", function() {
         it("lets us pass options by value", function(done) {
             var options = {value: value};
             testCache.get(key, options, function(err, response) {
@@ -116,13 +115,9 @@ describe("Methods with options", function() {
             });
         });
     });
+
     describe("set with options", function() {
-        var testInstance = caching.caching({store: testStore()});
-        var testCache;
         var ttl = 60;
-        before(function() {
-            testCache = caching.multi_caching([testInstance]);
-        });
 
         it("lets us pass options by value", function(done) {
             var options = {ttl: ttl, value: value};
@@ -143,13 +138,8 @@ describe("Methods with options", function() {
             testCache.set(key, value, options, function() {}, options);
         });
     });
-    describe("delete with options", function() {
-        var testInstance = caching.caching({store: testStore()});
-        var testCache;
-        before(function() {
-            testCache = caching.multi_caching([testInstance]);
-        });
 
+    describe("delete with options", function() {
         it("lets us pass options by value", function(done) {
             var options = {value: value};
             testCache.del(key, options, function() {
@@ -169,12 +159,14 @@ describe("Methods with options", function() {
         });
     });
 });
+
 describe("Multiple stores with options", function() {
     var testInstance = caching.caching({store: testStore()});
     var memInstance = caching.caching({store: "memory"});
     var testCache;
     var options = {runNormal: true};
     var ttl = 1;
+
     before(function() {
         key = support.random.string(20);
         value = support.random.string(20);
@@ -197,6 +189,7 @@ describe("Multiple stores with options", function() {
             });
         });
     });
+
     it("lets us not pass options which only one store uses", function() {
         testCache.set(key, value, ttl, function(err) {
             check_err(err);

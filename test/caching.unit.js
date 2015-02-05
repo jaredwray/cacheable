@@ -327,6 +327,30 @@ describe("caching", function() {
                 });
             });
 
+            it("lets us make nested calls", function(done) {
+                function get_cached_widget(name, cb) {
+                    cache.wrap(key, function(cache_cb) {
+                        methods.get_widget(name, cache_cb);
+                    }, cb);
+                }
+
+                get_cached_widget(name, function(err, widget) {
+                    check_err(err);
+                    assert.equal(widget.name, name);
+
+                    get_cached_widget(name, function(err, widget) {
+                        check_err(err);
+                        assert.equal(widget.name, name);
+
+                        get_cached_widget(name, function(err, widget) {
+                            check_err(err);
+                            assert.equal(widget.name, name);
+                            done();
+                        });
+                    });
+                });
+            });
+
             it("expires cached result after ttl seconds", function(done) {
                 cache.wrap(key, function(cb) {
                     methods.get_widget(name, cb);

@@ -10,7 +10,8 @@ var redis_cache = cache_manager.caching({store: redis_store, db: 0, ttl: 100});
 var ttl = 60;
 
 console.log("set/get/del example:");
-redis_cache.set('foo', 'bar', ttl, function(err) {
+
+redis_cache.set('foo', 'bar', {ttl: ttl}, function(err) {
     if (err) { throw err; }
 
     redis_cache.get('foo', function(err, result) {
@@ -18,6 +19,34 @@ redis_cache.set('foo', 'bar', ttl, function(err) {
         console.log("result fetched from cache: " + result);
         // >> 'bar'
         redis_cache.del('foo', function(err) {
+            if (err) { throw err; }
+        });
+    });
+});
+
+// TTL defaults to what we passed into the caching function (100)
+redis_cache.set('foo-no-ttl', 'bar-no-ttl', function(err) {
+    if (err) { throw err; }
+
+    redis_cache.get('foo-no-ttl', function(err, result) {
+        if (err) { throw err; }
+        console.log("result fetched from cache: " + result);
+        // >> 'bar'
+        redis_cache.del('foo-no-ttl', function(err) {
+            if (err) { throw err; }
+        });
+    });
+});
+
+// Calls Redis 'set' instead of 'setex'
+redis_cache.set('foo-zero-ttl', 'bar-zero-ttl', {ttl: 0}, function(err) {
+    if (err) { throw err; }
+
+    redis_cache.get('foo-zero-ttl', function(err, result) {
+        if (err) { throw err; }
+        console.log("result fetched from cache: " + result);
+        // >> 'bar'
+        redis_cache.del('foo-zero-ttl', function(err) {
             if (err) { throw err; }
         });
     });
@@ -40,7 +69,7 @@ function get_user_from_cache(id, cb) {
     var key = create_key(id);
     redis_cache.wrap(key, function(cache_cb) {
         get_user(user_id, cache_cb);
-    }, ttl, cb);
+    }, {ttl: ttl}, cb);
 }
 
 get_user_from_cache(user_id, function(err, user) {
