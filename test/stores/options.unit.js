@@ -1,6 +1,7 @@
 var caching = require("../../index");
 var assert = require("assert");
-var support = require('../support');
+var support = require("../support");
+var check_err = support.check_err;
 var memoryFlag = "";
 var key;
 var value;
@@ -8,34 +9,69 @@ var testStore = function(args) {
     args = args || {};
     var self = {};
     self.name = "options";
+    self.store = {};
 
     self.get = function(key, options, cb) {
+        var optionsMapped = false;
+        if (typeof options === "function") {
+            cb = options;
+            options = false;
+            optionsMapped = true;
+        }
         if (options && options.value) {
             return cb(null, options.value + "ValueOption");
         } else if (options && options.fn) {
             options.fn("GetFunctionOption");
             return cb(null, "GetFunctionOption");
+        } else if (options && options.runNormal) {
+            return cb(null, self.store[key]);
+        } else if (optionsMapped) {
+            return cb();
         }
         return cb("Error No Options");
     };
 
     self.set = function(key, value, options, cb) {
+        var optionsMapped = false;
+        if (typeof options === "function") {
+            cb = options;
+            options = false;
+            optionsMapped = true;
+        } else if (typeof options !== 'object') {
+            options = {ttl: options, runNormal: true};
+        }
         if (options && options.value) {
             memoryFlag = options.value + "ValueOption";
             return cb();
         } else if (options && options.fn) {
             options.fn("SetFunctionOption");
             return cb();
+        } else if (options && options.runNormal) {
+            self.store[key] = value;
+            return cb(null, self.store[key]);
+        } else if (optionsMapped) {
+            return cb();
         }
         return cb("Error No Options");
     };
 
     self.del = function(key, options, cb) {
+        var optionsMapped = false;
+        if (typeof options === "function") {
+            cb = options;
+            options = false;
+            optionsMapped = true;
+        }
         if (options && options.value) {
             memoryFlag = options.value + "ValueOption";
             return cb();
         } else if (options && options.fn) {
             options.fn("DeleteFunctionOption");
+            return cb();
+        } else if (options && options.runNormal) {
+            delete self.store[key];
+            return cb(null, "");
+        } else if (optionsMapped) {
             return cb();
         }
         return cb("Error No Options");
@@ -130,6 +166,51 @@ describe("Methods with options", function() {
                 }
             };
             testCache.del(key, options, function() {}, options);
+        });
+    });
+});
+describe("Multiple stores with options", function() {
+    var testInstance = caching.caching({store: testStore()});
+    var memInstance = caching.caching({store: "memory"});
+    var testCache;
+    var options = {runNormal: true};
+    var ttl = 1;
+    before(function() {
+        key = support.random.string(20);
+        value = support.random.string(20);
+        testCache = caching.multi_caching([testInstance, memInstance]);
+    });
+
+    it("lets us pass options which only one store uses", function() {
+        testCache.set(key, value, options, function(err) {
+            check_err(err);
+            testCache.get(key, options, function(err, response) {
+                check_err(err);
+                assert.equal(response, value);
+                testCache.del(key, options, function(err) {
+                    check_err(err);
+                    testCache.get(key, options, function(err, response) {
+                        check_err(err);
+                        assert.equal(response, undefined);
+                    });
+                });
+            });
+        });
+    });
+    it("lets us not pass options which only one store uses", function() {
+        testCache.set(key, value, ttl, function(err) {
+            check_err(err);
+            testCache.get(key, function(err, response) {
+                check_err(err);
+                assert.equal(response, value);
+                testCache.del(key, function(err) {
+                    check_err(err);
+                    testCache.get(key, function(err, response) {
+                        check_err(err);
+                        assert.equal(response, undefined);
+                    });
+                });
+            });
         });
     });
 });
