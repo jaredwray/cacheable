@@ -403,7 +403,7 @@ describe("caching", function() {
                     it("bubbles up that error", function(done) {
                         var fake_error = new Error(support.random.string());
 
-                        sinon.stub(memory_store_stub, 'get', function(key, cb) {
+                        sinon.stub(memory_store_stub, 'get', function(key, options, cb) {
                             cb(fake_error);
                         });
 
@@ -423,7 +423,7 @@ describe("caching", function() {
 
                         var fake_error = new Error(support.random.string());
 
-                        sinon.stub(memory_store_stub, 'get', function(key, cb) {
+                        sinon.stub(memory_store_stub, 'get', function(key, options, cb) {
                             cb(fake_error);
                         });
 
