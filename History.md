@@ -1,3 +1,7 @@
+- 0.17.0 2015-02-05
+  Add Additional Options Parameter (#20) - @seanzx85
+  Fixing bug with nested calls to wrap() (#21)
+
 - 0.16.0 2015-01-07
   Get and pass up feature to update higher caches. (#19) - raadad
   Minor style tweaks/jscs update.
