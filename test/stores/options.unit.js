@@ -37,7 +37,7 @@ var testStore = function(args) {
             cb = options;
             options = false;
             optionsMapped = true;
-        } else if (typeof options !== 'object') {
+        } else if (typeof options !== "object") {
             options = {ttl: options, runNormal: true};
         }
         if (options && options.value) {
