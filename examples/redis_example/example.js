@@ -1,5 +1,5 @@
 // Setup:
-// npm install redis@0.6.7 sol-redis-pool@0.1.0
+// npm install redis@0.12.1 sol-redis-pool@0.2.0
 // node examples/redis_example/example.js
 
 var util = require('util');

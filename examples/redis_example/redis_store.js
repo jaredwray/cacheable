@@ -10,16 +10,13 @@ function redisStore(args) {
     var self = {};
     var ttlDefault = args.ttl;
     self.name = 'redis';
-    self.client = require('redis').createClient(args.port, args.host, args);
 
-    //jscs:disable requireCamelCaseOrUpperCaseIdentifiers
     var redisOptions = {
-        redis_host: args.host || '127.0.0.1',
-        redis_port: args.port || 6379
+        host: args.host || '127.0.0.1',
+        port: args.port || 6379
     };
-    //jscs:enable requireCamelCaseOrUpperCaseIdentifiers
 
-    var pool = new RedisPool(redisOptions);
+    var pool = new RedisPool(redisOptions, {});
 
     function connect(cb) {
         pool.acquire(function(err, conn) {
