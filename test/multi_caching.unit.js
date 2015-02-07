@@ -47,7 +47,9 @@ describe("multiCaching", function() {
             it("lets us set data in all caches", function(done) {
                 multiCache.set(key, value, ttl, function(err) {
                     checkErr(err);
+
                     memoryCache.get(key, function(err, result) {
+                        checkErr(err);
                         assert.equal(result, value);
 
                         memoryCache2.get(key, function(err, result) {
@@ -68,8 +70,11 @@ describe("multiCaching", function() {
                 multiCache.set(key, value, ttl);
                 setTimeout(function() {
                     multiCache.get(key, function(err, result) {
+                        checkErr(err);
                         assert.equal(result, value);
+
                         memoryCache.get(key, function(err, result) {
+                            checkErr(err);
                             assert.equal(result, value);
 
                             memoryCache2.get(key, function(err, result) {
@@ -91,8 +96,11 @@ describe("multiCaching", function() {
                 multiCache.set(key, value);
                 setTimeout(function() {
                     multiCache.get(key, function(err, result) {
+                        checkErr(err);
                         assert.equal(result, value);
+
                         memoryCache.get(key, function(err, result) {
+                            checkErr(err);
                             assert.equal(result, value);
 
                             memoryCache2.get(key, function(err, result) {
@@ -159,6 +167,7 @@ describe("multiCaching", function() {
 
                     setTimeout(function() {
                         memoryCache.get(key, function(err, result) {
+                            checkErr(err);
                             assert.ok(!result);
 
                             memoryCache2.get(key, function(err, result) {
@@ -263,6 +272,32 @@ describe("multiCaching", function() {
                     });
                 });
             });
+
+            context("when a cache store calls back with an error", function() {
+                var fakeError;
+                var memoryStoreStub;
+
+                beforeEach(function() {
+                    memoryStoreStub = memoryStore.create({ttl: ttl});
+                    sinon.stub(memoryStore, 'create').returns(memoryStoreStub);
+                    memoryCache = caching({store: 'memory', ttl: ttl});
+                    multiCache = multiCaching([memoryCache]);
+                    fakeError = new Error(support.random.string());
+                    sinon.stub(memoryStoreStub, 'get').yields(fakeError);
+                });
+
+                afterEach(function() {
+                    memoryStore.create.restore();
+                });
+
+                it("bubbles up errors from caches", function(done) {
+                    multiCache.getAndPassUp(key, function(err) {
+                        assert.ok(memoryStoreStub.get.called);
+                        assert.equal(err, fakeError);
+                        done();
+                    });
+                });
+            });
         });
     });
 
@@ -281,13 +316,24 @@ describe("multiCaching", function() {
                     memoryCache3.store.set.restore();
                 });
 
-                it('when a ttl is passed in', function(done) {
+                it('when a ttl number is passed in', function(done) {
                     multiCache.wrap(key, function(cb) {
                         methods.getWidget(name, cb);
                     }, ttl, function(err, widget) {
                         checkErr(err);
                         assert.deepEqual(widget, {name: name});
                         sinon.assert.calledWith(memoryCache3.store.set, key, {name: name}, ttl);
+                        done();
+                    });
+                });
+
+                it('when a ttl option is passed in', function(done) {
+                    multiCache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
+                    }, {ttl: ttl}, function(err, widget) {
+                        checkErr(err);
+                        assert.deepEqual(widget, {name: name});
+                        sinon.assert.calledWith(memoryCache3.store.set, key, {name: name}, {ttl: ttl});
                         done();
                     });
                 });
