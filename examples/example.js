@@ -103,8 +103,8 @@ multiCache.wrap(key2, function(cb) {
     console.log(user);
 
     // Second time fetches user from memoryCache, since it's highest priority.
-    // If the data expires in the memory cache, the next fetch would pull it from
-    // the Redis cache, and set the data in memory again.
+    // If the data expires in memoryCache, the next fetch would pull it from
+    // the memoryCache2, and set the data in memoryCache.
     multiCache.wrap(key2, function(cb) {
         getUser(userId2, cb);
     }, function(err, user) {

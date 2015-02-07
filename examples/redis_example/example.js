@@ -86,7 +86,6 @@ getUserFromCache(userId, function(err, user) {
             var key = createKey(userId);
             redisCache.del(key, function(err) {
                 if (err) { throw err; }
-                process.exit();
             });
         });
     });
@@ -97,3 +96,33 @@ getUserFromCache(userId, function(err, user) {
 // user from second cache request:
 // { id: 123, name: 'Bob' }
 // keys: [ 'user_123' ]
+
+var redisCache2 = cacheManager.caching({store: redisStore, db: 1, ttl: 100});
+var multiCache = cacheManager.multiCaching([redisCache, redisCache2]);
+var userId2 = 456;
+var key2 = 'user_' + userId;
+var ttl2 = 50;
+
+multiCache.wrap(key2, function(cb) {
+    getUser(userId2, cb);
+}, {ttl: ttl2}, function(err, user) {
+    console.log("user: ", user);
+
+    // Second time fetches user from redisCache, since it's highest priority.
+    // If the data expires in the redisCache, the next fetch would pull it from
+    // redisCache2, and set the data in redisCache again.
+    multiCache.wrap(key2, function(cb) {
+        getUser(userId2, cb);
+    }, function(err, user) {
+        console.log("user, second fetch:", user);
+    });
+
+    multiCache.getAndPassUp(key2, function(err, result) {
+        console.log("\ngetAndPassUp result: ", result);
+
+        multiCache.del(key2, function(err) {
+            if (err) { throw err; }
+            process.exit();
+        });
+    });
+});
