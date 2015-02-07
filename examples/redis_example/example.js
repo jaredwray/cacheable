@@ -3,6 +3,7 @@
 // node examples/redis_example/example.js
 
 var util = require('util');
+var assert = require('assert');
 var cacheManager = require('../../');
 var redisStore = require('./redis_store');
 // Note: ttl is in seconds
@@ -18,8 +19,14 @@ redisCache.set('foo', 'bar', {ttl: ttl}, function(err) {
         if (err) { throw err; }
         console.log("result fetched from cache: " + result);
         // >> 'bar'
-        redisCache.del('foo', function(err) {
+
+        redisCache.ttl('foo', function(err, result) {
             if (err) { throw err; }
+            assert.ok(result > 59 && result < 61);
+
+            redisCache.del('foo', function(err) {
+                if (err) { throw err; }
+            });
         });
     });
 });
@@ -32,8 +39,14 @@ redisCache.set('foo-no-ttl', 'bar-no-ttl', function(err) {
         if (err) { throw err; }
         console.log("result fetched from cache: " + result);
         // >> 'bar'
-        redisCache.del('foo-no-ttl', function(err) {
+
+        redisCache.ttl('foo-no-ttl', function(err, result) {
             if (err) { throw err; }
+            assert.ok(result > 99 && result < 101);
+
+            redisCache.del('foo-no-ttl', function(err) {
+                if (err) { throw err; }
+            });
         });
     });
 });
@@ -46,8 +59,14 @@ redisCache.set('foo-zero-ttl', 'bar-zero-ttl', {ttl: 0}, function(err) {
         if (err) { throw err; }
         console.log("result fetched from cache: " + result);
         // >> 'bar'
-        redisCache.del('foo-zero-ttl', function(err) {
+
+        redisCache.ttl('foo-zero-ttl', function(err, result) {
             if (err) { throw err; }
+            assert.ok(result < 0);
+
+            redisCache.del('foo-zero-ttl', function(err) {
+                if (err) { throw err; }
+            });
         });
     });
 });

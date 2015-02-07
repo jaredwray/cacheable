@@ -194,6 +194,28 @@ describe("caching", function() {
         });
     });
 
+    describe("ttl()", function() {
+        var fakeStore;
+
+        beforeEach(function() {
+            fakeStore = {
+                get: function() {},
+                set: function() {},
+                del: function() {},
+                ttl: function() {}
+            };
+
+            sinon.stub(fakeStore, 'ttl');
+
+            cache = caching({store: fakeStore});
+        });
+
+        it("passes the params to the underlying store's ttl() method", function() {
+            cache.ttl('foo');
+            assert.ok(fakeStore.ttl.calledWith('foo'));
+        });
+    });
+
     describe("keys()", function() {
         var keyCount;
         var savedKeys = [];
