@@ -5,19 +5,21 @@
 
 var RedisPool = require('sol-redis-pool');
 
-function redis_store(args) {
+function redisStore(args) {
     args = args || {};
     var self = {};
     var ttlDefault = args.ttl;
     self.name = 'redis';
     self.client = require('redis').createClient(args.port, args.host, args);
 
-    var redis_options = {
+    //jscs:disable requireCamelCaseOrUpperCaseIdentifiers
+    var redisOptions = {
         redis_host: args.host || '127.0.0.1',
         redis_port: args.port || 6379
     };
+    //jscs:enable requireCamelCaseOrUpperCaseIdentifiers
 
-    var pool = new RedisPool(redis_options);
+    var pool = new RedisPool(redisOptions);
 
     function connect(cb) {
         pool.acquire(function(err, conn) {
@@ -108,6 +110,6 @@ function redis_store(args) {
 
 module.exports = {
     create: function(args) {
-        return redis_store(args);
+        return redisStore(args);
     }
 };

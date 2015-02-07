@@ -12,6 +12,7 @@
     "requireSpaceAfterBinaryOperators": ["?", "+", "/", "*", "=", "==", "===", "!=", "!==", ">", ">=", "<", "<="],
     "disallowSpaceAfterBinaryOperators": ["!"],
     "disallowSpaceBeforeBinaryOperators": [","],
+    "requireCamelCaseOrUpperCaseIdentifiers": true,
 
     "disallowMultipleVarDecl": true,
     "disallowEmptyBlocks": true,

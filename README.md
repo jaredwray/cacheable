@@ -35,17 +35,17 @@ First, it includes a `wrap` function that lets you wrap any function in cache.
 This is probably the feature you're looking for.  As an example, where you might have to do this:
 
 ```javascript
-function get_cached_user(id, cb) {
-    memory_cache.get(id, function (err, result) {
+function getCachedUser(id, cb) {
+    memoryCache.get(id, function (err, result) {
         if (err) { return cb(err); }
 
         if (result) {
             return cb(null, result);
         }
 
-        get_user(id, function (err, result) {
+        getUser(id, function (err, result) {
             if (err) { return cb(err); }
-            memory_cache.set(id, result);
+            memoryCache.set(id, result);
             cb(null, result);
         });
     });
@@ -54,9 +54,9 @@ function get_cached_user(id, cb) {
 ... you can instead use the `wrap` function:
 
 ```javascript
-function get_cached_user(id, cb) {
-    memory_cache.wrap(id, function (cache_callback) {
-        get_user(id, cache_callback);
+function getCachedUser(id, cb) {
+    memoryCache.wrap(id, function (cacheCallback) {
+        getUser(id, cacheCallback);
     }, ttl, cb);
 }
 ```
@@ -86,40 +86,40 @@ Redis cache store with connection pooling.
 ### Single Store
 
 ```javascript
-var cache_manager = require('cache-manager');
-var memory_cache = cache_manager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
+var cacheManager = require('cache-manager');
+var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
 var ttl = 5;
 // Note: callback is optional in set() and del().
 
-memory_cache.set('foo', 'bar', ttl, function(err) {
+memoryCache.set('foo', 'bar', ttl, function(err) {
     if (err) { throw err; }
 
-    memory_cache.get('foo', function(err, result) {
+    memoryCache.get('foo', function(err, result) {
         console.log(result);
         // >> 'bar'
-        memory_cache.del('foo', function(err) {});
+        memoryCache.del('foo', function(err) {});
     });
 });
 
-function get_user(id, cb) {
+function getUser(id, cb) {
     setTimeout(function () {
         console.log("Returning user from slow database.");
         cb(null, {id: id, name: 'Bob'});
     }, 100);
 }
 
-var user_id = 123;
-var key = 'user_' + user_id;
+var userId = 123;
+var key = 'user_' + userId;
 
 // Note: ttl is optional in wrap()
-memory_cache.wrap(key, function (cb) {
-    get_user(user_id, cb);
+memoryCache.wrap(key, function (cb) {
+    getUser(userId, cb);
 }, ttl, function (err, user) {
     console.log(user);
 
-    // Second time fetches user from memory_cache
-    memory_cache.wrap(key, function (cb) {
-        get_user(user_id, cb);
+    // Second time fetches user from memoryCache
+    memoryCache.wrap(key, function (cb) {
+        getUser(userId, cb);
     }, function (err, user) {
         console.log(user);
     });
@@ -143,10 +143,10 @@ function respond(res, err, data) {
 }
 
 app.get('/foo/bar', function(req, res) {
-    var cache_key = 'foo-bar:' + JSON.stringify(req.query);
+    var cacheKey = 'foo-bar:' + JSON.stringify(req.query);
     var ttl = 10;
-    memory_cache.wrap(cache_key, function(cache_cb) {
-        DB.find(req.query, cache_cb);
+    memoryCache.wrap(cacheKey, function(cacheCallback) {
+        DB.find(req.query, cacheCallback);
     }, ttl, function(err, result) {
         respond(res, err, result);
     });
@@ -162,45 +162,45 @@ in an instance of it, or pass in the path to the module.
 E.g.,
 
 ```javascript
-var my_store = require('your-homemade-store');
-var cache = cache_manager.caching({store: my_store});
+var myStore = require('your-homemade-store');
+var cache = cacheManager.caching({store: myStore});
 // or
-var cache = cache_manager.caching({store: '/path/to/your/store'});
+var cache = cacheManager.caching({store: '/path/to/your/store'});
 ```
 
 ### Multi-Store
 
 ```javascript
-var multi_cache = cache_manager.multi_caching([memory_cache, some_other_cache]);
-user_id2 = 456;
-key2 = 'user_' + user_id;
+var multiCache = cacheManager.multiCaching([memoryCache, someOtherCache]);
+userId2 = 456;
+key2 = 'user_' + userId;
 ttl = 5;
 
 // Sets in all caches.
-multi_cache.set('foo2', 'bar2', ttl, function(err) {
+multiCache.set('foo2', 'bar2', ttl, function(err) {
     if (err) { throw err; }
 
     // Fetches from highest priority cache that has the key.
-    multi_cache.get('foo2', function(err, result) {
+    multiCache.get('foo2', function(err, result) {
         console.log(result);
         // >> 'bar2'
 
         // Delete from all caches
-        multi_cache.del('foo2');
+        multiCache.del('foo2');
     });
 });
 
 // Note: ttl is optional in wrap()
-multi_cache.wrap(key2, function (cb) {
-    get_user(user_id2, cb);
+multiCache.wrap(key2, function (cb) {
+    getUser(userId2, cb);
 }, ttl, function (err, user) {
     console.log(user);
 
-    // Second time fetches user from memory_cache, since it's highest priority.
+    // Second time fetches user from memoryCache, since it's highest priority.
     // If the data expires in the memory cache, the next fetch would pull it from
-    // the 'some_other_cache', and set the data in memory again.
-    multi_cache.wrap(key2, function (cb) {
-        get_user(user_id2, cb);
+    // the 'someOtherCache', and set the data in memory again.
+    multiCache.wrap(key2, function (cb) {
+        getUser(userId2, cb);
     }, function (err, user) {
         console.log(user);
     });

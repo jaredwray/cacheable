@@ -4,7 +4,7 @@ require('../index');
 
 var Mocha = require('mocha');
 var optimist = require('optimist');
-var walk_dir = require('./support').walk_dir;
+var walkDir = require('./support').walkDir;
 
 var argv = optimist
 .usage("Usage: $0 -t [types] --reporter [reporter] --timeout [timeout]")['default'](
@@ -21,29 +21,29 @@ var argv = optimist
 
 var mocha = new Mocha({timeout: argv.timeout, reporter: argv.reporter, ui: 'bdd'});
 
-var valid_test_types = ['unit', 'functional', 'acceptance', 'integration'];
-var requested_types = argv.types.split(',');
-var types_to_use = [];
+var validTestTypes = ['unit', 'functional', 'acceptance', 'integration'];
+var requestedTypes = argv.types.split(',');
+var typesToUse = [];
 
-valid_test_types.forEach(function(valid_test_type) {
-    if (requested_types.indexOf(valid_test_type) !== -1) {
-        types_to_use.push(valid_test_type);
+validTestTypes.forEach(function(validTestType) {
+    if (requestedTypes.indexOf(validTestType) !== -1) {
+        typesToUse.push(validTestType);
     }
 });
 
-if (argv.help || types_to_use.length === 0) {
+if (argv.help || typesToUse.length === 0) {
     console.log('\n' + optimist.help());
     process.exit();
 }
 
-var is_valid_file = function(file) {
+var isValidFile = function(file) {
     if (file.match(/buster/)) {
         return false;
     }
 
-    for (var i = 0; i < types_to_use.length; i++) {
-        var test_type = types_to_use[i];
-        var ext = test_type + ".js";
+    for (var i = 0; i < typesToUse.length; i++) {
+        var testType = typesToUse[i];
+        var ext = testType + ".js";
 
         if (file.indexOf(ext) !== -1) {
             return true;
@@ -54,7 +54,7 @@ var is_valid_file = function(file) {
 };
 
 function run(cb) {
-    walk_dir('test', is_valid_file, function(err, files) {
+    walkDir('test', isValidFile, function(err, files) {
         if (err) { return cb(err); }
 
         files.forEach(function(file) {

@@ -4,12 +4,12 @@ var assert = require('assert');
 var async = require('async');
 var sinon = require('sinon');
 var support = require('./support');
-var check_err = support.check_err;
+var checkErr = support.checkErr;
 var caching = require('../index').caching;
-var memory_store = require('../lib/stores/memory');
+var memoryStore = require('../lib/stores/memory');
 
 var methods = {
-    get_widget: function(name, cb) {
+    getWidget: function(name, cb) {
         cb(null, {name: name});
     }
 };
@@ -32,7 +32,7 @@ describe("caching", function() {
 
                 it("lets us set and get data in cache", function(done) {
                     cache.set(key, value, ttl, function(err) {
-                        check_err(err);
+                        checkErr(err);
                         cache.get(key, function(err, result) {
                             assert.equal(result, value);
                             done();
@@ -69,7 +69,7 @@ describe("caching", function() {
                     key = support.random.string(20);
                     value = support.random.string();
                     cache.set(key, value, ttl, function(err) {
-                        check_err(err);
+                        checkErr(err);
                         done();
                     });
                 });
@@ -79,7 +79,7 @@ describe("caching", function() {
                         assert.equal(result, value);
 
                         cache.del(key, function(err) {
-                            check_err(err);
+                            checkErr(err);
 
                             cache.get(key, function(err, result) {
                                 assert.ok(!result);
@@ -116,7 +116,7 @@ describe("caching", function() {
             key = support.random.string(20);
             value = support.random.string();
             cache.set(key, value, ttl, function(err) {
-                check_err(err);
+                checkErr(err);
 
                 key2 = support.random.string(20);
                 value2 = support.random.string();
@@ -127,7 +127,7 @@ describe("caching", function() {
 
         it("clears the cache", function(done) {
             cache.reset(function(err) {
-                check_err(err);
+                checkErr(err);
 
                 cache.get(key, function(err, result) {
                     assert.ok(!result);
@@ -155,10 +155,10 @@ describe("caching", function() {
         });
 
         context("when store has no del() method", function() {
-            var fake_store;
+            var fakeStore;
 
             beforeEach(function() {
-                fake_store = {
+                fakeStore = {
                     get: function() {},
                     set: function() {},
                 };
@@ -166,52 +166,52 @@ describe("caching", function() {
 
             it("it doesn't throw an error", function() {
                 assert.doesNotThrow(function() {
-                    caching({store: fake_store});
+                    caching({store: fakeStore});
                 });
             });
         });
     });
 
     describe("setex()", function() {
-        var fake_store;
+        var fakeStore;
 
         beforeEach(function() {
-            fake_store = {
+            fakeStore = {
                 get: function() {},
                 set: function() {},
                 del: function() {},
                 setex: function() {}
             };
 
-            sinon.stub(fake_store, 'setex');
+            sinon.stub(fakeStore, 'setex');
 
-            cache = caching({store: fake_store});
+            cache = caching({store: fakeStore});
         });
 
         it("passes the params to the underlying store's setex() method", function() {
             cache.setex('foo', 'bar', 'blah');
-            assert.ok(fake_store.setex.calledWith('foo', 'bar', 'blah'));
+            assert.ok(fakeStore.setex.calledWith('foo', 'bar', 'blah'));
         });
     });
 
     describe("keys()", function() {
-        var key_count;
-        var saved_keys = [];
+        var keyCount;
+        var savedKeys = [];
 
         beforeEach(function(done) {
-            key_count = 10;
+            keyCount = 10;
             var processed = 0;
 
             cache = caching({store: 'memory'});
 
-            function is_done() {
-                return processed === key_count;
+            function isDone() {
+                return processed === keyCount;
             }
 
-            async.until(is_done, function(cb) {
+            async.until(isDone, function(cb) {
                 processed += 1;
                 key = support.random.string(20);
-                saved_keys.push(key);
+                savedKeys.push(key);
                 value = support.random.string();
                 cache.set(key, value, ttl, cb);
             }, done);
@@ -219,27 +219,27 @@ describe("caching", function() {
 
         it("calls back with all keys in cache", function(done) {
             cache.keys(function(err, keys) {
-                check_err(err);
-                assert.deepEqual(keys.sort, saved_keys.sort);
+                checkErr(err);
+                assert.deepEqual(keys.sort, savedKeys.sort);
                 done();
             });
         });
 
         it("lets us get the keys without a callback (memory store only)", function() {
             var keys = cache.keys();
-            assert.deepEqual(keys.sort, saved_keys.sort);
+            assert.deepEqual(keys.sort, savedKeys.sort);
         });
     });
 
     describe("wrap()", function() {
         describe("using memory (lru-cache) store", function() {
-            var memory_store_stub;
+            var memoryStoreStub;
 
             beforeEach(function() {
                 ttl = 0.1;
-                memory_store_stub = memory_store.create({ttl: ttl});
+                memoryStoreStub = memoryStore.create({ttl: ttl});
 
-                sinon.stub(memory_store, 'create').returns(memory_store_stub);
+                sinon.stub(memoryStore, 'create').returns(memoryStoreStub);
 
                 cache = caching({store: 'memory', ttl: ttl, ignoreCacheErrors: false});
                 key = support.random.string(20);
@@ -247,58 +247,58 @@ describe("caching", function() {
             });
 
             afterEach(function() {
-                memory_store.create.restore();
+                memoryStore.create.restore();
             });
 
             context("calls back with the result of the wrapped function", function() {
                 beforeEach(function() {
-                    sinon.spy(memory_store_stub, 'set');
+                    sinon.spy(memoryStoreStub, 'set');
                 });
 
                 afterEach(function() {
-                    memory_store_stub.set.restore();
+                    memoryStoreStub.set.restore();
                 });
 
                 it("when a ttl is passed in", function(done) {
                     cache.wrap(key, function(cb) {
-                        methods.get_widget(name, cb);
+                        methods.getWidget(name, cb);
                     }, ttl, function(err, widget) {
-                        check_err(err);
+                        checkErr(err);
                         assert.deepEqual(widget, {name: name});
-                        sinon.assert.calledWith(memory_store_stub.set, key, {name: name}, ttl);
+                        sinon.assert.calledWith(memoryStoreStub.set, key, {name: name}, ttl);
                         done();
                     });
                 });
 
                 it("when a ttl is not passed in", function(done) {
                     cache.wrap(key, function(cb) {
-                        methods.get_widget(name, cb);
+                        methods.getWidget(name, cb);
                     }, function(err, widget) {
-                        check_err(err);
+                        checkErr(err);
                         assert.deepEqual(widget, {name: name});
-                        sinon.assert.calledWith(memory_store_stub.set, key, {name: name}, undefined);
+                        sinon.assert.calledWith(memoryStoreStub.set, key, {name: name}, undefined);
                         done();
                     });
                 });
             });
 
             context("when result is already cached", function() {
-                function get_cached_widget(name, cb) {
-                    cache.wrap(key, function(cache_cb) {
-                        methods.get_widget(name, cache_cb);
+                function getCachedWidget(name, cb) {
+                    cache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
                     }, ttl, cb);
                 }
 
                 beforeEach(function(done) {
-                    get_cached_widget(name, function(err, widget) {
-                        check_err(err);
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
                         assert.ok(widget);
 
-                        memory_store_stub.get(key, function(err, result) {
-                            check_err(err);
+                        memoryStoreStub.get(key, function(err, result) {
+                            checkErr(err);
                             assert.ok(result);
 
-                            sinon.spy(memory_store_stub, 'get');
+                            sinon.spy(memoryStoreStub, 'get');
 
                             done();
                         });
@@ -306,44 +306,44 @@ describe("caching", function() {
                 });
 
                 afterEach(function() {
-                    memory_store_stub.get.restore();
+                    memoryStoreStub.get.restore();
                 });
 
                 it("retrieves data from cache", function(done) {
-                    var func_called = false;
+                    var funcCalled = false;
 
                     cache.wrap(key, function(cb) {
-                        methods.get_widget(name, function(err, result) {
-                            func_called = true;
+                        methods.getWidget(name, function(err, result) {
+                            funcCalled = true;
                             cb(err, result);
                         });
                     }, ttl, function(err, widget) {
-                        check_err(err);
+                        checkErr(err);
                         assert.deepEqual(widget, {name: name});
-                        assert.ok(memory_store_stub.get.calledWith(key));
-                        assert.ok(!func_called);
+                        assert.ok(memoryStoreStub.get.calledWith(key));
+                        assert.ok(!funcCalled);
                         done();
                     });
                 });
             });
 
             it("lets us make nested calls", function(done) {
-                function get_cached_widget(name, cb) {
-                    cache.wrap(key, function(cache_cb) {
-                        methods.get_widget(name, cache_cb);
+                function getCachedWidget(name, cb) {
+                    cache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
                     }, cb);
                 }
 
-                get_cached_widget(name, function(err, widget) {
-                    check_err(err);
+                getCachedWidget(name, function(err, widget) {
+                    checkErr(err);
                     assert.equal(widget.name, name);
 
-                    get_cached_widget(name, function(err, widget) {
-                        check_err(err);
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
                         assert.equal(widget.name, name);
 
-                        get_cached_widget(name, function(err, widget) {
-                            check_err(err);
+                        getCachedWidget(name, function(err, widget) {
+                            checkErr(err);
                             assert.equal(widget.name, name);
                             done();
                         });
@@ -353,26 +353,26 @@ describe("caching", function() {
 
             it("expires cached result after ttl seconds", function(done) {
                 cache.wrap(key, function(cb) {
-                    methods.get_widget(name, cb);
+                    methods.getWidget(name, cb);
                 }, ttl, function(err, widget) {
-                    check_err(err);
+                    checkErr(err);
                     assert.deepEqual(widget, {name: name});
 
-                    memory_store_stub.get(key, function(err, result) {
-                        check_err(err);
+                    memoryStoreStub.get(key, function(err, result) {
+                        checkErr(err);
                         assert.ok(result);
 
-                        var func_called = false;
+                        var funcCalled = false;
 
                         setTimeout(function() {
                             cache.wrap(key, function(cb) {
-                                methods.get_widget(name, function(err, result) {
-                                    func_called = true;
+                                methods.getWidget(name, function(err, result) {
+                                    funcCalled = true;
                                     cb(err, result);
                                 });
                             }, function(err, widget) {
-                                check_err(err);
-                                assert.ok(func_called);
+                                checkErr(err);
+                                assert.ok(funcCalled);
                                 assert.deepEqual(widget, {name: name});
                                 done();
                             });
@@ -382,17 +382,17 @@ describe("caching", function() {
             });
 
             context("when an error is thrown in the work function", function() {
-                var fake_error;
+                var fakeError;
 
                 beforeEach(function() {
-                    fake_error = new Error(support.random.string());
+                    fakeError = new Error(support.random.string());
                 });
 
                 it("bubbles up that error", function(done) {
                     cache.wrap(key, function() {
-                        throw fake_error;
+                        throw fakeError;
                     }, ttl, function(err) {
-                        assert.equal(err, fake_error);
+                        assert.equal(err, fakeError);
                         done();
                     });
                 });
@@ -401,17 +401,17 @@ describe("caching", function() {
             context("when store.get() calls back with an error", function() {
                 context("and ignoreCacheErrors is not set (default is false)", function() {
                     it("bubbles up that error", function(done) {
-                        var fake_error = new Error(support.random.string());
+                        var fakeError = new Error(support.random.string());
 
-                        sinon.stub(memory_store_stub, 'get', function(key, options, cb) {
-                            cb(fake_error);
+                        sinon.stub(memoryStoreStub, 'get', function(key, options, cb) {
+                            cb(fakeError);
                         });
 
                         cache.wrap(key, function(cb) {
-                            methods.get_widget(name, cb);
+                            methods.getWidget(name, cb);
                         }, ttl, function(err) {
-                            assert.equal(err, fake_error);
-                            memory_store_stub.get.restore();
+                            assert.equal(err, fakeError);
+                            memoryStoreStub.get.restore();
                             done();
                         });
                     });
@@ -421,17 +421,17 @@ describe("caching", function() {
                     it("does not bubble up that error", function(done) {
                         cache = caching({store: 'memory', ttl: ttl, ignoreCacheErrors: true});
 
-                        var fake_error = new Error(support.random.string());
+                        var fakeError = new Error(support.random.string());
 
-                        sinon.stub(memory_store_stub, 'get', function(key, options, cb) {
-                            cb(fake_error);
+                        sinon.stub(memoryStoreStub, 'get', function(key, options, cb) {
+                            cb(fakeError);
                         });
 
                         cache.wrap(key, function(cb) {
-                            methods.get_widget(name, cb);
+                            methods.getWidget(name, cb);
                         }, ttl, function(err) {
                             assert.equal(err, null);
-                            memory_store_stub.get.restore();
+                            memoryStoreStub.get.restore();
                             done();
                         });
                     });
@@ -441,17 +441,17 @@ describe("caching", function() {
             context("when store.set() calls back with an error", function() {
                 context("and ignoreCacheErrors is not set", function() {
                     it("bubbles up that error", function(done) {
-                        var fake_error = new Error(support.random.string());
+                        var fakeError = new Error(support.random.string());
 
-                        sinon.stub(memory_store_stub, 'set', function(key, val, ttl, cb) {
-                            cb(fake_error);
+                        sinon.stub(memoryStoreStub, 'set', function(key, val, ttl, cb) {
+                            cb(fakeError);
                         });
 
                         cache.wrap(key, function(cb) {
-                            methods.get_widget(name, cb);
+                            methods.getWidget(name, cb);
                         }, ttl, function(err) {
-                            assert.equal(err, fake_error);
-                            memory_store_stub.set.restore();
+                            assert.equal(err, fakeError);
+                            memoryStoreStub.set.restore();
                             done();
                         });
                     });
@@ -460,17 +460,17 @@ describe("caching", function() {
                 context("and ignoreCacheErrors is set to true", function() {
                     it("does not bubbles up that error", function(done) {
                         cache = caching({store: 'memory', ttl: ttl, ignoreCacheErrors: true});
-                        var fake_error = new Error(support.random.string());
+                        var fakeError = new Error(support.random.string());
 
-                        sinon.stub(memory_store_stub, 'set', function(key, val, ttl, cb) {
-                            cb(fake_error);
+                        sinon.stub(memoryStoreStub, 'set', function(key, val, ttl, cb) {
+                            cb(fakeError);
                         });
 
                         cache.wrap(key, function(cb) {
-                            methods.get_widget(name, cb);
+                            methods.getWidget(name, cb);
                         }, ttl, function(err) {
                             assert.equal(err, null);
-                            memory_store_stub.set.restore();
+                            memoryStoreStub.set.restore();
                             done();
                         });
                     });
@@ -479,16 +479,16 @@ describe("caching", function() {
 
             context("when wrapped function calls back with an error", function() {
                 it("calls back with that error", function(done) {
-                    var fake_error = new Error(support.random.string());
-                    sinon.stub(methods, 'get_widget', function(name, cb) {
-                        cb(fake_error, {name: name});
+                    var fakeError = new Error(support.random.string());
+                    sinon.stub(methods, 'getWidget', function(name, cb) {
+                        cb(fakeError, {name: name});
                     });
 
                     cache.wrap(key, function(cb) {
-                        methods.get_widget(name, cb);
+                        methods.getWidget(name, cb);
                     }, ttl, function(err, widget) {
-                        methods.get_widget.restore();
-                        assert.equal(err, fake_error);
+                        methods.getWidget.restore();
+                        assert.equal(err, fakeError);
                         assert.ok(!widget);
                         done();
                     });
@@ -520,15 +520,15 @@ describe("caching", function() {
                     values.push(i);
                 }
 
-                async.each(values, function(val, async_cb) {
+                async.each(values, function(val, next) {
                     cache.wrap('key', function(cb) {
                         construct(val, cb);
                     }, ttl, function(err, result) {
                         assert.equal(result, 'value');
-                        async_cb(err);
+                        next(err);
                     });
                 }, function(err) {
-                    check_err(err);
+                    checkErr(err);
                     assert.equal(construct.callCount, 1);
                     done();
                 });
@@ -545,10 +545,10 @@ describe("caching", function() {
 
     describe("instantiating with custom store", function() {
         it("allows us to pass in our own store object", function(done) {
-            var store = memory_store.create({ttl: ttl});
+            var store = memoryStore.create({ttl: ttl});
             cache = caching({store: store});
             cache.set(key, value, ttl, function(err) {
-                check_err(err);
+                checkErr(err);
                 cache.get(key, function(err, result) {
                     assert.equal(result, value);
                     done();
@@ -557,10 +557,10 @@ describe("caching", function() {
         });
 
         it("allows us to pass in a path to our own store", function(done) {
-            var store_path = '../lib/stores/memory';
-            cache = caching({store: store_path});
+            var storePath = '../lib/stores/memory';
+            cache = caching({store: storePath});
             cache.set(key, value, ttl, function(err) {
-                check_err(err);
+                checkErr(err);
                 cache.get(key, function(err, result) {
                     assert.equal(result, value);
                     done();
@@ -569,10 +569,10 @@ describe("caching", function() {
         });
 
         it("allows us to pass in a module (uninstantiated)", function(done) {
-            var store = memory_store;
+            var store = memoryStore;
             cache = caching({store: store});
             cache.set(key, value, ttl, function(err) {
-                check_err(err);
+                checkErr(err);
                 cache.get(key, function(err, result) {
                     assert.equal(result, value);
                     done();
