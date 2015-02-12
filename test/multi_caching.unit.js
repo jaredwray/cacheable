@@ -2,33 +2,33 @@ var assert = require('assert');
 var async = require('async');
 var sinon = require('sinon');
 var support = require('./support');
-var check_err = support.check_err;
+var checkErr = support.checkErr;
 var caching = require('../index').caching;
-var multi_caching = require('../index').multi_caching;
-var memory_store = require('../lib/stores/memory');
+var multiCaching = require('../index').multiCaching;
+var memoryStore = require('../lib/stores/memory');
 
 var methods = {
-    get_widget: function(name, cb) {
+    getWidget: function(name, cb) {
         cb(null, {name: name});
     }
 };
 
-describe("multi_caching", function() {
-    var memory_cache;
-    var memory_cache2;
-    var memory_cache3;
-    var multi_cache;
+describe("multiCaching", function() {
+    var memoryCache;
+    var memoryCache2;
+    var memoryCache3;
+    var multiCache;
     var key;
-    var memory_ttl;
+    var memoryTtl;
     var name;
     var ttl = 5;
 
     beforeEach(function() {
-        memory_ttl = 0.1;
+        memoryTtl = 0.1;
 
-        memory_cache = caching({store: 'memory', ttl: memory_ttl});
-        memory_cache2 = caching({store: 'memory', ttl: memory_ttl});
-        memory_cache3 = caching({store: 'memory', ttl: memory_ttl});
+        memoryCache = caching({store: 'memory', ttl: memoryTtl});
+        memoryCache2 = caching({store: 'memory', ttl: memoryTtl});
+        memoryCache3 = caching({store: 'memory', ttl: memoryTtl});
 
         key = support.random.string(20);
         name = support.random.string();
@@ -38,24 +38,26 @@ describe("multi_caching", function() {
         var value;
 
         beforeEach(function() {
-            multi_cache = multi_caching([memory_cache, memory_cache2, memory_cache3]);
+            multiCache = multiCaching([memoryCache, memoryCache2, memoryCache3]);
             key = support.random.string(20);
             value = support.random.string();
         });
 
         describe("set()", function() {
             it("lets us set data in all caches", function(done) {
-                multi_cache.set(key, value, ttl, function(err) {
-                    check_err(err);
-                    memory_cache.get(key, function(err, result) {
+                multiCache.set(key, value, ttl, function(err) {
+                    checkErr(err);
+
+                    memoryCache.get(key, function(err, result) {
+                        checkErr(err);
                         assert.equal(result, value);
 
-                        memory_cache2.get(key, function(err, result) {
-                            check_err(err);
+                        memoryCache2.get(key, function(err, result) {
+                            checkErr(err);
                             assert.equal(result, value);
 
-                            memory_cache3.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache3.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.equal(result, value);
                                 done();
                             });
@@ -65,19 +67,22 @@ describe("multi_caching", function() {
             });
 
             it("lets us set data without a callback", function(done) {
-                multi_cache.set(key, value, ttl);
+                multiCache.set(key, value, ttl);
                 setTimeout(function() {
-                    multi_cache.get(key, function(err, result) {
+                    multiCache.get(key, function(err, result) {
+                        checkErr(err);
                         assert.equal(result, value);
-                        memory_cache.get(key, function(err, result) {
+
+                        memoryCache.get(key, function(err, result) {
+                            checkErr(err);
                             assert.equal(result, value);
 
-                            memory_cache2.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache2.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.equal(result, value);
 
-                                memory_cache3.get(key, function(err, result) {
-                                    check_err(err);
+                                memoryCache3.get(key, function(err, result) {
+                                    checkErr(err);
                                     assert.equal(result, value);
                                     done();
                                 });
@@ -88,19 +93,22 @@ describe("multi_caching", function() {
             });
 
             it("lets us set data without a ttl or callback", function(done) {
-                multi_cache.set(key, value);
+                multiCache.set(key, value);
                 setTimeout(function() {
-                    multi_cache.get(key, function(err, result) {
+                    multiCache.get(key, function(err, result) {
+                        checkErr(err);
                         assert.equal(result, value);
-                        memory_cache.get(key, function(err, result) {
+
+                        memoryCache.get(key, function(err, result) {
+                            checkErr(err);
                             assert.equal(result, value);
 
-                            memory_cache2.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache2.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.equal(result, value);
 
-                                memory_cache3.get(key, function(err, result) {
-                                    check_err(err);
+                                memoryCache3.get(key, function(err, result) {
+                                    checkErr(err);
                                     assert.equal(result, value);
                                     done();
                                 });
@@ -113,11 +121,11 @@ describe("multi_caching", function() {
 
         describe("get()", function() {
             it("gets data from first cache that has it", function(done) {
-                memory_cache3.set(key, value, ttl, function(err) {
-                    check_err(err);
+                memoryCache3.set(key, value, ttl, function(err) {
+                    checkErr(err);
 
-                    multi_cache.get(key, function(err, result) {
-                        check_err(err);
+                    multiCache.get(key, function(err, result) {
+                        checkErr(err);
                         assert.equal(result, value);
                         done();
                     });
@@ -127,21 +135,21 @@ describe("multi_caching", function() {
 
         describe("del()", function() {
             it("lets us delete data in all caches", function(done) {
-                multi_cache.set(key, value, ttl, function(err) {
-                    check_err(err);
+                multiCache.set(key, value, ttl, function(err) {
+                    checkErr(err);
 
-                    multi_cache.del(key, function(err) {
-                        check_err(err);
+                    multiCache.del(key, function(err) {
+                        checkErr(err);
 
-                        memory_cache.get(key, function(err, result) {
+                        memoryCache.get(key, function(err, result) {
                             assert.ok(!result);
 
-                            memory_cache2.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache2.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.ok(!result);
 
-                                memory_cache3.get(key, function(err, result) {
-                                    check_err(err);
+                                memoryCache3.get(key, function(err, result) {
+                                    checkErr(err);
                                     assert.ok(!result);
                                     done();
                                 });
@@ -152,21 +160,22 @@ describe("multi_caching", function() {
             });
 
             it("lets us delete data without a callback", function(done) {
-                multi_cache.set(key, value, ttl, function(err) {
-                    check_err(err);
+                multiCache.set(key, value, ttl, function(err) {
+                    checkErr(err);
 
-                    multi_cache.del(key);
+                    multiCache.del(key);
 
                     setTimeout(function() {
-                        memory_cache.get(key, function(err, result) {
+                        memoryCache.get(key, function(err, result) {
+                            checkErr(err);
                             assert.ok(!result);
 
-                            memory_cache2.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache2.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.ok(!result);
 
-                                memory_cache3.get(key, function(err, result) {
-                                    check_err(err);
+                                memoryCache3.get(key, function(err, result) {
+                                    checkErr(err);
                                     assert.ok(!result);
                                     done();
                                 });
@@ -178,23 +187,23 @@ describe("multi_caching", function() {
         });
     });
 
-    describe("get_and_pass_up()", function() {
+    describe("getAndPassUp()", function() {
         var value;
         var key;
 
         describe("using a single cache store", function() {
             beforeEach(function() {
-                multi_cache = multi_caching([memory_cache3]);
+                multiCache = multiCaching([memoryCache3]);
                 key = support.random.string(20);
                 value = support.random.string();
             });
 
             it("gets data from first cache that has it", function(done) {
-                memory_cache3.set(key, value, ttl, function(err) {
-                    check_err(err);
+                memoryCache3.set(key, value, ttl, function(err) {
+                    checkErr(err);
 
-                    multi_cache.get_and_pass_up(key, function(err, result) {
-                        check_err(err);
+                    multiCache.getAndPassUp(key, function(err, result) {
+                        checkErr(err);
                         assert.equal(result, value);
                         done();
                     });
@@ -207,21 +216,21 @@ describe("multi_caching", function() {
 
             beforeEach(function(done) {
                 key = support.random.string(10);
-                sinon.spy(memory_cache, 'set');
-                sinon.spy(memory_cache2, 'set');
-                sinon.spy(memory_cache3, 'set');
+                sinon.spy(memoryCache, 'set');
+                sinon.spy(memoryCache2, 'set');
+                sinon.spy(memoryCache3, 'set');
 
-                multi_cache.get_and_pass_up(key, function(err, result) {
-                    check_err(err);
+                multiCache.getAndPassUp(key, function(err, result) {
+                    checkErr(err);
                     response = result;
                     done();
                 });
             });
 
             afterEach(function() {
-                memory_cache.set.restore();
-                memory_cache2.set.restore();
-                memory_cache3.set.restore();
+                memoryCache.set.restore();
+                memoryCache2.set.restore();
+                memoryCache3.set.restore();
             });
 
             it("calls back with undefined", function() {
@@ -230,9 +239,9 @@ describe("multi_caching", function() {
 
             it("does not set anything in caches", function(done) {
                 process.nextTick(function() {
-                    assert.ok(memory_cache.set.notCalled);
-                    assert.ok(memory_cache2.set.notCalled);
-                    assert.ok(memory_cache3.set.notCalled);
+                    assert.ok(memoryCache.set.notCalled);
+                    assert.ok(memoryCache2.set.notCalled);
+                    assert.ok(memoryCache3.set.notCalled);
                     done();
                 });
             });
@@ -240,26 +249,52 @@ describe("multi_caching", function() {
 
         describe("using multi cache store", function() {
             beforeEach(function() {
-                multi_cache = multi_caching([memory_cache, memory_cache2, memory_cache3]);
+                multiCache = multiCaching([memoryCache, memoryCache2, memoryCache3]);
                 key = support.random.string(20);
                 value = support.random.string();
             });
 
             it("checks to see if higher levels have item", function(done) {
-                memory_cache3.set(key, value, ttl, function(err) {
-                    check_err(err);
+                memoryCache3.set(key, value, ttl, function(err) {
+                    checkErr(err);
 
-                    multi_cache.get_and_pass_up(key, function(err, result) {
-                        check_err(err);
+                    multiCache.getAndPassUp(key, function(err, result) {
+                        checkErr(err);
                         assert.equal(result, value);
 
                         process.nextTick(function() {
-                            memory_cache.get(key, function(err, result) {
+                            memoryCache.get(key, function(err, result) {
                                 assert.equal(result, value);
-                                check_err(err);
+                                checkErr(err);
                                 done();
                             });
                         });
+                    });
+                });
+            });
+
+            context("when a cache store calls back with an error", function() {
+                var fakeError;
+                var memoryStoreStub;
+
+                beforeEach(function() {
+                    memoryStoreStub = memoryStore.create({ttl: ttl});
+                    sinon.stub(memoryStore, 'create').returns(memoryStoreStub);
+                    memoryCache = caching({store: 'memory', ttl: ttl});
+                    multiCache = multiCaching([memoryCache]);
+                    fakeError = new Error(support.random.string());
+                    sinon.stub(memoryStoreStub, 'get').yields(fakeError);
+                });
+
+                afterEach(function() {
+                    memoryStore.create.restore();
+                });
+
+                it("bubbles up errors from caches", function(done) {
+                    multiCache.getAndPassUp(key, function(err) {
+                        assert.ok(memoryStoreStub.get.called);
+                        assert.equal(err, fakeError);
+                        done();
                     });
                 });
             });
@@ -269,36 +304,47 @@ describe("multi_caching", function() {
     describe("wrap()", function() {
         describe("using a single cache store", function() {
             beforeEach(function() {
-                multi_cache = multi_caching([memory_cache3]);
+                multiCache = multiCaching([memoryCache3]);
             });
 
             context("calls back with the result of a function", function() {
                 beforeEach(function() {
-                    sinon.spy(memory_cache3.store, 'set');
+                    sinon.spy(memoryCache3.store, 'set');
                 });
 
                 afterEach(function() {
-                    memory_cache3.store.set.restore();
+                    memoryCache3.store.set.restore();
                 });
 
-                it('when a ttl is passed in', function(done) {
-                    multi_cache.wrap(key, function(cb) {
-                        methods.get_widget(name, cb);
+                it('when a ttl number is passed in', function(done) {
+                    multiCache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
                     }, ttl, function(err, widget) {
-                        check_err(err);
+                        checkErr(err);
                         assert.deepEqual(widget, {name: name});
-                        sinon.assert.calledWith(memory_cache3.store.set, key, {name: name}, ttl);
+                        sinon.assert.calledWith(memoryCache3.store.set, key, {name: name}, ttl);
+                        done();
+                    });
+                });
+
+                it('when a ttl option is passed in', function(done) {
+                    multiCache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
+                    }, {ttl: ttl}, function(err, widget) {
+                        checkErr(err);
+                        assert.deepEqual(widget, {name: name});
+                        sinon.assert.calledWith(memoryCache3.store.set, key, {name: name}, {ttl: ttl});
                         done();
                     });
                 });
 
                 it('when a ttl is not passed in', function(done) {
-                    multi_cache.wrap(key, function(cb) {
-                        methods.get_widget(name, cb);
+                    multiCache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
                     }, function(err, widget) {
-                        check_err(err);
+                        checkErr(err);
                         assert.deepEqual(widget, {name: name});
-                        sinon.assert.calledWith(memory_cache3.store.set, key, {name: name});
+                        sinon.assert.calledWith(memoryCache3.store.set, key, {name: name});
                         done();
                     });
                 });
@@ -306,16 +352,16 @@ describe("multi_caching", function() {
 
             context("when wrapped function calls back with an error", function() {
                 it("calls back with that error", function(done) {
-                    var fake_error = new Error(support.random.string());
-                    sinon.stub(methods, 'get_widget', function(name, cb) {
-                        cb(fake_error, {name: name});
+                    var fakeError = new Error(support.random.string());
+                    sinon.stub(methods, 'getWidget', function(name, cb) {
+                        cb(fakeError, {name: name});
                     });
 
-                    multi_cache.wrap(key, function(cb) {
-                        methods.get_widget(name, cb);
+                    multiCache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
                     }, function(err, widget) {
-                        methods.get_widget.restore();
-                        assert.equal(err, fake_error);
+                        methods.getWidget.restore();
+                        assert.equal(err, fakeError);
                         assert.ok(!widget);
                         done();
                     });
@@ -325,32 +371,32 @@ describe("multi_caching", function() {
 
         describe("using two cache stores", function() {
             beforeEach(function() {
-                multi_cache = multi_caching([memory_cache, memory_cache3]);
+                multiCache = multiCaching([memoryCache, memoryCache3]);
             });
 
             it("calls back with the result of a function", function(done) {
-                multi_cache.wrap(key, function(cb) {
-                    methods.get_widget(name, cb);
+                multiCache.wrap(key, function(cb) {
+                    methods.getWidget(name, cb);
                 }, function(err, widget) {
-                    check_err(err);
+                    checkErr(err);
                     assert.deepEqual(widget, {name: name});
                     done();
                 });
             });
 
             it("sets value in all caches", function(done) {
-                multi_cache.wrap(key, function(cb) {
-                    methods.get_widget(name, cb);
+                multiCache.wrap(key, function(cb) {
+                    methods.getWidget(name, cb);
                 }, function(err, widget) {
-                    check_err(err);
+                    checkErr(err);
                     assert.deepEqual(widget, {name: name});
 
-                    memory_cache.get(key, function(err, result) {
-                        check_err(err);
+                    memoryCache.get(key, function(err, result) {
+                        checkErr(err);
                         assert.deepEqual(result, {name: name});
 
-                        memory_cache3.get(key, function(err, result) {
-                            check_err(err);
+                        memoryCache3.get(key, function(err, result) {
+                            checkErr(err);
                             assert.deepEqual(result, {name: name});
                             done();
                         });
@@ -360,17 +406,17 @@ describe("multi_caching", function() {
 
             context("when value exists in first store but not second", function() {
                 it("returns value from first store, does not set it in second", function(done) {
-                    memory_cache.set(key, {name: name}, ttl, function(err) {
-                        check_err(err);
+                    memoryCache.set(key, {name: name}, ttl, function(err) {
+                        checkErr(err);
 
-                        multi_cache.wrap(key, function(cb) {
-                            methods.get_widget(name, cb);
+                        multiCache.wrap(key, function(cb) {
+                            methods.getWidget(name, cb);
                         }, function(err, widget) {
-                            check_err(err);
+                            checkErr(err);
                             assert.deepEqual(widget, {name: name});
 
-                            memory_cache3.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache3.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.equal(result, null);
                                 done();
                             });
@@ -381,17 +427,17 @@ describe("multi_caching", function() {
 
             context("when value exists in second store but not first", function() {
                 it("returns value from second store, sets it in first store", function(done) {
-                    memory_cache3.set(key, {name: name}, ttl, function(err) {
-                        check_err(err);
+                    memoryCache3.set(key, {name: name}, ttl, function(err) {
+                        checkErr(err);
 
-                        multi_cache.wrap(key, function(cb) {
-                            methods.get_widget(name, cb);
+                        multiCache.wrap(key, function(cb) {
+                            methods.getWidget(name, cb);
                         }, function(err, widget) {
-                            check_err(err);
+                            checkErr(err);
                             assert.deepEqual(widget, {name: name});
 
-                            memory_cache.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.deepEqual(result, {name: name});
                                 done();
                             });
@@ -403,36 +449,36 @@ describe("multi_caching", function() {
 
         describe("using three cache stores", function() {
             beforeEach(function() {
-                multi_cache = multi_caching([memory_cache, memory_cache3, memory_cache2]);
+                multiCache = multiCaching([memoryCache, memoryCache3, memoryCache2]);
             });
 
             it("calls back with the result of a function", function(done) {
-                multi_cache.wrap(key, function(cb) {
-                    methods.get_widget(name, cb);
+                multiCache.wrap(key, function(cb) {
+                    methods.getWidget(name, cb);
                 }, function(err, widget) {
-                    check_err(err);
+                    checkErr(err);
                     assert.deepEqual(widget, {name: name});
                     done();
                 });
             });
 
             it("sets value in all caches", function(done) {
-                multi_cache.wrap(key, function(cb) {
-                    methods.get_widget(name, cb);
+                multiCache.wrap(key, function(cb) {
+                    methods.getWidget(name, cb);
                 }, function(err, widget) {
-                    check_err(err);
+                    checkErr(err);
                     assert.deepEqual(widget, {name: name});
 
-                    memory_cache.get(key, function(err, result) {
-                        check_err(err);
+                    memoryCache.get(key, function(err, result) {
+                        checkErr(err);
                         assert.deepEqual(result, {name: name});
 
-                        memory_cache2.get(key, function(err, result) {
-                            check_err(err);
+                        memoryCache2.get(key, function(err, result) {
+                            checkErr(err);
                             assert.deepEqual(result, {name: name});
 
-                            memory_cache3.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache3.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.deepEqual(result, {name: name});
                                 done();
                             });
@@ -443,21 +489,21 @@ describe("multi_caching", function() {
 
             context("when value exists in first store only", function() {
                 it("returns value from first store, does not set it in second or third", function(done) {
-                    memory_cache.set(key, {name: name}, ttl, function(err) {
-                        check_err(err);
+                    memoryCache.set(key, {name: name}, ttl, function(err) {
+                        checkErr(err);
 
-                        multi_cache.wrap(key, function(cb) {
-                            methods.get_widget(name, cb);
+                        multiCache.wrap(key, function(cb) {
+                            methods.getWidget(name, cb);
                         }, function(err, widget) {
-                            check_err(err);
+                            checkErr(err);
                             assert.deepEqual(widget, {name: name});
 
-                            memory_cache2.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache2.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.equal(result, null);
 
-                                memory_cache3.get(key, function(err, result) {
-                                    check_err(err);
+                                memoryCache3.get(key, function(err, result) {
+                                    checkErr(err);
                                     assert.equal(result, null);
                                     done();
                                 });
@@ -469,21 +515,21 @@ describe("multi_caching", function() {
 
             context("when value exists in second store only", function() {
                 it("returns value from second store, sets it in first store, does not set third store", function(done) {
-                    memory_cache3.set(key, {name: name}, ttl, function(err) {
-                        check_err(err);
+                    memoryCache3.set(key, {name: name}, ttl, function(err) {
+                        checkErr(err);
 
-                        multi_cache.wrap(key, function(cb) {
-                            methods.get_widget(name, cb);
+                        multiCache.wrap(key, function(cb) {
+                            methods.getWidget(name, cb);
                         }, function(err, widget) {
-                            check_err(err);
+                            checkErr(err);
                             assert.deepEqual(widget, {name: name});
 
-                            memory_cache.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.deepEqual(result, {name: name});
 
-                                memory_cache2.get(key, function(err, result) {
-                                    check_err(err);
+                                memoryCache2.get(key, function(err, result) {
+                                    checkErr(err);
                                     assert.equal(result, null);
                                     done();
                                 });
@@ -495,21 +541,21 @@ describe("multi_caching", function() {
 
             context("when value exists in third store only", function() {
                 it("returns value from third store, sets it in first and second stores", function(done) {
-                    memory_cache2.set(key, {name: name}, ttl, function(err) {
-                        check_err(err);
+                    memoryCache2.set(key, {name: name}, ttl, function(err) {
+                        checkErr(err);
 
-                        multi_cache.wrap(key, function(cb) {
-                            methods.get_widget(name, cb);
+                        multiCache.wrap(key, function(cb) {
+                            methods.getWidget(name, cb);
                         }, function(err, widget) {
-                            check_err(err);
+                            checkErr(err);
                             assert.deepEqual(widget, {name: name});
 
-                            memory_cache3.get(key, function(err, result) {
-                                check_err(err);
+                            memoryCache3.get(key, function(err, result) {
+                                checkErr(err);
                                 assert.deepEqual(result, {name: name});
 
-                                memory_cache.get(key, function(err, result) {
-                                    check_err(err);
+                                memoryCache.get(key, function(err, result) {
+                                    checkErr(err);
                                     assert.deepEqual(result, {name: name});
 
                                     done();
@@ -521,22 +567,22 @@ describe("multi_caching", function() {
             });
 
             it("lets us make nested calls", function(done) {
-                function get_cached_widget(name, cb) {
-                    multi_cache.wrap(key, function(cache_cb) {
-                        methods.get_widget(name, cache_cb);
+                function getCachedWidget(name, cb) {
+                    multiCache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
                     }, cb);
                 }
 
-                get_cached_widget(name, function(err, widget) {
-                    check_err(err);
+                getCachedWidget(name, function(err, widget) {
+                    checkErr(err);
                     assert.equal(widget.name, name);
 
-                    get_cached_widget(name, function(err, widget) {
-                        check_err(err);
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
                         assert.equal(widget.name, name);
 
-                        get_cached_widget(name, function(err, widget) {
-                            check_err(err);
+                        getCachedWidget(name, function(err, widget) {
+                            checkErr(err);
                             assert.equal(widget.name, name);
                             done();
                         });
@@ -546,33 +592,33 @@ describe("multi_caching", function() {
         });
 
         context("error handling", function() {
-            var memory_store_stub;
+            var memoryStoreStub;
             var ttl;
 
             beforeEach(function() {
                 ttl = 0.1;
-                memory_store_stub = memory_store.create({ttl: ttl});
-                sinon.stub(memory_store, 'create').returns(memory_store_stub);
-                memory_cache = caching({store: 'memory', ttl: ttl});
-                multi_cache = multi_caching([memory_cache]);
+                memoryStoreStub = memoryStore.create({ttl: ttl});
+                sinon.stub(memoryStore, 'create').returns(memoryStoreStub);
+                memoryCache = caching({store: 'memory', ttl: ttl});
+                multiCache = multiCaching([memoryCache]);
             });
 
             afterEach(function() {
-                memory_store.create.restore();
+                memoryStore.create.restore();
             });
 
             context("when an error is thrown in the work function", function() {
-                var fake_error;
+                var fakeError;
 
                 beforeEach(function() {
-                    fake_error = new Error(support.random.string());
+                    fakeError = new Error(support.random.string());
                 });
 
                 it("bubbles up that error", function(done) {
-                    multi_cache.wrap(key, function() {
-                        throw fake_error;
+                    multiCache.wrap(key, function() {
+                        throw fakeError;
                     }, ttl, function(err) {
-                        assert.equal(err, fake_error);
+                        assert.equal(err, fakeError);
                         done();
                     });
                 });
@@ -580,17 +626,17 @@ describe("multi_caching", function() {
 
             context("when store.get() calls back with an error", function() {
                 it("bubbles up that error", function(done) {
-                    var fake_error = new Error(support.random.string());
+                    var fakeError = new Error(support.random.string());
 
-                    sinon.stub(memory_store_stub, 'get', function(key, cb) {
-                        cb(fake_error);
+                    sinon.stub(memoryStoreStub, 'get', function(key, cb) {
+                        cb(fakeError);
                     });
 
-                    multi_cache.wrap(key, function(cb) {
-                        methods.get_widget(name, cb);
+                    multiCache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
                     }, function(err) {
-                        assert.equal(err, fake_error);
-                        memory_store_stub.get.restore();
+                        assert.equal(err, fakeError);
+                        memoryStoreStub.get.restore();
                         done();
                     });
                 });
@@ -598,17 +644,17 @@ describe("multi_caching", function() {
 
             context("when store.set() calls back with an error", function() {
                 it("bubbles up that error", function(done) {
-                    var fake_error = new Error(support.random.string());
+                    var fakeError = new Error(support.random.string());
 
-                    sinon.stub(memory_store_stub, 'set', function(key, val, ttl, cb) {
-                        cb(fake_error);
+                    sinon.stub(memoryStoreStub, 'set', function(key, val, ttl, cb) {
+                        cb(fakeError);
                     });
 
-                    multi_cache.wrap(key, function(cb) {
-                        methods.get_widget(name, cb);
+                    multiCache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
                     }, function(err) {
-                        assert.equal(err, fake_error);
-                        memory_store_stub.set.restore();
+                        assert.equal(err, fakeError);
+                        memoryStoreStub.set.restore();
                         done();
                     });
                 });
@@ -619,7 +665,7 @@ describe("multi_caching", function() {
             var construct;
 
             beforeEach(function() {
-                multi_cache = multi_caching([memory_cache, memory_cache3]);
+                multiCache = multiCaching([memoryCache, memoryCache3]);
 
                 construct = sinon.spy(function(val, cb) {
                     var timeout = support.random.number(100);
@@ -635,15 +681,15 @@ describe("multi_caching", function() {
                     values.push(i);
                 }
 
-                async.each(values, function(val, async_cb) {
-                    multi_cache.wrap('key', function(cb) {
+                async.each(values, function(val, next) {
+                    multiCache.wrap('key', function(cb) {
                         construct(val, cb);
                     }, function(err, result) {
                         assert.equal(result, 'value');
-                        async_cb(err);
+                        next(err);
                     });
                 }, function(err) {
-                    check_err(err);
+                    checkErr(err);
                     assert.equal(construct.callCount, 1);
                     done();
                 });
@@ -654,8 +700,8 @@ describe("multi_caching", function() {
     context("when instantiated with a non-Array 'caches' arg", function() {
         it("throws an error", function() {
             assert.throws(function() {
-                multi_caching({foo: 'bar'});
-            }, /multi_caching requires an array/);
+                multiCaching({foo: 'bar'});
+            }, /multiCaching requires an array/);
         });
     });
 });

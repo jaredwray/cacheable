@@ -1,7 +1,7 @@
 var caching = require("../../index");
 var assert = require("assert");
 var support = require("../support");
-var check_err = support.check_err;
+var checkErr = support.checkErr;
 var memoryFlag = "";
 var key;
 var value;
@@ -91,7 +91,7 @@ describe("Methods with options", function() {
     before(function() {
         key = support.random.string(20);
         value = support.random.string(20);
-        testCache = caching.multi_caching([testInstance]);
+        testCache = caching.multiCaching([testInstance]);
     });
 
     describe("get with options", function() {
@@ -170,19 +170,19 @@ describe("Multiple stores with options", function() {
     before(function() {
         key = support.random.string(20);
         value = support.random.string(20);
-        testCache = caching.multi_caching([testInstance, memInstance]);
+        testCache = caching.multiCaching([testInstance, memInstance]);
     });
 
     it("lets us pass options which only one store uses", function() {
         testCache.set(key, value, options, function(err) {
-            check_err(err);
+            checkErr(err);
             testCache.get(key, options, function(err, response) {
-                check_err(err);
+                checkErr(err);
                 assert.equal(response, value);
                 testCache.del(key, options, function(err) {
-                    check_err(err);
+                    checkErr(err);
                     testCache.get(key, options, function(err, response) {
-                        check_err(err);
+                        checkErr(err);
                         assert.equal(response, undefined);
                     });
                 });
@@ -192,14 +192,14 @@ describe("Multiple stores with options", function() {
 
     it("lets us not pass options which only one store uses", function() {
         testCache.set(key, value, ttl, function(err) {
-            check_err(err);
+            checkErr(err);
             testCache.get(key, function(err, response) {
-                check_err(err);
+                checkErr(err);
                 assert.equal(response, value);
                 testCache.del(key, function(err) {
-                    check_err(err);
+                    checkErr(err);
                     testCache.get(key, function(err, response) {
-                        check_err(err);
+                        checkErr(err);
                         assert.equal(response, undefined);
                     });
                 });

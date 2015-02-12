@@ -5,19 +5,18 @@
 
 var RedisPool = require('sol-redis-pool');
 
-function redis_store(args) {
+function redisStore(args) {
     args = args || {};
     var self = {};
     var ttlDefault = args.ttl;
     self.name = 'redis';
-    self.client = require('redis').createClient(args.port, args.host, args);
 
-    var redis_options = {
-        redis_host: args.host || '127.0.0.1',
-        redis_port: args.port || 6379
+    var redisOptions = {
+        host: args.host || '127.0.0.1',
+        port: args.port || 6379
     };
 
-    var pool = new RedisPool(redis_options);
+    var pool = new RedisPool(redisOptions, {});
 
     function connect(cb) {
         pool.acquire(function(err, conn) {
@@ -34,6 +33,22 @@ function redis_store(args) {
         });
     }
 
+    function handleResponse(conn, cb, opts) {
+        opts = opts || {};
+
+        return function(err, result) {
+            pool.release(conn);
+
+            if (err) { return cb(err); }
+
+            if (opts.parse) {
+                result = JSON.parse(result);
+            }
+
+            cb(null, result);
+        };
+    }
+
     self.get = function(key, options, cb) {
         if (typeof options === 'function') {
             cb = options;
@@ -41,12 +56,7 @@ function redis_store(args) {
 
         connect(function(err, conn) {
             if (err) { return cb(err); }
-
-            conn.get(key, function(err, result) {
-                pool.release(conn);
-                if (err) { return cb(err); }
-                cb(null, JSON.parse(result));
-            });
+            conn.get(key, handleResponse(conn, cb, {parse: true}));
         });
     };
 
@@ -61,17 +71,12 @@ function redis_store(args) {
 
         connect(function(err, conn) {
             if (err) { return cb(err); }
+            var val = JSON.stringify(value);
 
             if (ttl) {
-                conn.setex(key, ttl, JSON.stringify(value), function(err, result) {
-                    pool.release(conn);
-                    cb(err, result);
-                });
+                conn.setex(key, ttl, val, handleResponse(conn, cb));
             } else {
-                conn.set(key, JSON.stringify(value), function(err, result) {
-                    pool.release(conn);
-                    cb(err, result);
-                });
+                conn.set(key, val, handleResponse(conn, cb));
             }
         });
     };
@@ -79,11 +84,14 @@ function redis_store(args) {
     self.del = function(key, cb) {
         connect(function(err, conn) {
             if (err) { return cb(err); }
+            conn.del(key, handleResponse(conn, cb));
+        });
+    };
 
-            conn.del(key, function(err, result) {
-                pool.release(conn);
-                cb(err, result);
-            });
+    self.ttl = function(key, cb) {
+        connect(function(err, conn) {
+            if (err) { return cb(err); }
+            conn.ttl(key, handleResponse(conn, cb));
         });
     };
 
@@ -95,11 +103,7 @@ function redis_store(args) {
 
         connect(function(err, conn) {
             if (err) { return cb(err); }
-
-            conn.keys(pattern, function(err, result) {
-                pool.release(conn);
-                cb(err, result);
-            });
+            conn.keys(pattern, handleResponse(conn, cb));
         });
     };
 
@@ -108,6 +112,6 @@ function redis_store(args) {
 
 module.exports = {
     create: function(args) {
-        return redis_store(args);
+        return redisStore(args);
     }
 };
