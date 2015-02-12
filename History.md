@@ -1,3 +1,12 @@
+- 0.18.0 2015-02-12
+  - Minor changes and refactorings including:
+    - converting to camelcase
+    - hiding queues inside CallbackFiller
+    - general example updates
+    - updated redis example to use latest redis npm
+    - not trying to pass ttl into cache.set() in getAndPassUp() (this didn't
+      work anyway)
+
 - 0.17.0 2015-02-05
   - Add Additional Options Parameter (#20) - @seanzx85
   - Fixing bug with nested calls to wrap() (#21)
