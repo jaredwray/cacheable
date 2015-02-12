@@ -85,7 +85,7 @@
 
 - 0.0.2 2013-04-08
   - Added ability to pass in a store module that isn't already instantiated. E.g.,
-  
+
   ```javascript
   var store = require('/path/to/my_memory_store');
   cache = caching({store: store});
