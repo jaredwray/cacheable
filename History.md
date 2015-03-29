@@ -1,3 +1,6 @@
+- 0.19.0 2015-03-29
+  - Pass dispose, length & stale options to lru-cache (#22). - @gmaclennan
+
 - 0.18.0 2015-02-12
   - Minor changes and refactorings including:
     - converting to camelcase
