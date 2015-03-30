@@ -668,9 +668,20 @@ describe("multiCaching", function() {
 
             beforeEach(function() {
                 multiCache = multiCaching([memoryCache, memoryCache3]);
+                var firstTimeout = 110;
+                var firstTimeoutUsed = false;
+
+                function getTimeout() {
+                    if (firstTimeoutUsed) {
+                        support.random.number(100);
+                    } else {
+                        firstTimeoutUsed = true;
+                        return firstTimeout;
+                    }
+                }
 
                 construct = sinon.spy(function(val, cb) {
-                    var timeout = support.random.number(100);
+                    var timeout = getTimeout();
                     setTimeout(function() {
                         cb(null, 'value');
                     }, timeout);
