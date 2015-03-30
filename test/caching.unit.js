@@ -10,7 +10,9 @@ var memoryStore = require('../lib/stores/memory');
 
 var methods = {
     getWidget: function(name, cb) {
-        cb(null, {name: name});
+        process.nextTick(function() {
+            cb(null, {name: name});
+        });
     }
 };
 
