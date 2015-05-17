@@ -35,7 +35,9 @@ describe("caching", function() {
                 it("lets us set and get data in cache", function(done) {
                     cache.set(key, value, ttl, function(err) {
                         checkErr(err);
+
                         cache.get(key, function(err, result) {
+                            checkErr(err);
                             assert.equal(result, value);
                             done();
                         });
@@ -44,6 +46,7 @@ describe("caching", function() {
 
                 it("lets us set and get data without a callback", function(done) {
                     cache.set(key, value, ttl);
+
                     setTimeout(function() {
                         var result = cache.get(key);
                         assert.equal(result, value);
@@ -53,6 +56,7 @@ describe("caching", function() {
 
                 it("lets us set and get data without a ttl or callback", function(done) {
                     cache.set(key, value);
+
                     setTimeout(function() {
                         var result = cache.get(key);
                         assert.equal(result, value);
@@ -346,6 +350,116 @@ describe("caching", function() {
                         assert.deepEqual(widget, {name: name});
                         assert.ok(memoryStoreStub.get.calledWith(key));
                         assert.ok(!funcCalled);
+                        done();
+                    });
+                });
+            });
+
+            var falseyValues = [false, null, 0];
+
+            falseyValues.forEach(function(falseyValue) {
+                context("when cached value is `" + falseyValue + "`", function() {
+                    function getFalseyValue(cb) {
+                        process.nextTick(function() {
+                            cb(null, falseyValue);
+                        });
+                    }
+
+                    function getCachedFalseyValue(cb) {
+                        cache.wrap(key, function(cacheCb) {
+                            getFalseyValue(cacheCb);
+                        }, ttl, cb);
+                    }
+
+                    beforeEach(function(done) {
+                        getCachedFalseyValue(function(err, result) {
+                            checkErr(err);
+                            assert.strictEqual(result, falseyValue);
+
+                            memoryStoreStub.get(key, function(err, result) {
+                                checkErr(err);
+                                assert.strictEqual(result, falseyValue);
+
+                                sinon.spy(memoryStoreStub, 'get');
+
+                                done();
+                            });
+                        });
+                    });
+
+                    afterEach(function() {
+                        memoryStoreStub.get.restore();
+                    });
+
+                    it("retrieves data from cache", function(done) {
+                        getCachedFalseyValue(function(err, value) {
+                            checkErr(err);
+                            assert.strictEqual(value, falseyValue);
+                            assert.ok(memoryStoreStub.get.calledWith(key));
+                            done();
+                        });
+                    });
+                });
+            });
+
+            context("when we pass in an isCacheableValue function to the caching constructor", function() {
+                var testCallbacks = {
+                    isCacheableValue: function(value) {
+                        return value !== 'do_not_store_this' && value !== undefined;
+                    }
+                };
+
+                function getValue(name, cb) {
+                    process.nextTick(function() {
+                        if (name === 'foo') {
+                            cb(null, 'store_this');
+                        } else {
+                            cb(null, 'do_not_store_this');
+                        }
+                    });
+                }
+
+                function getCachedValue(name, cb) {
+                    cache.wrap(key, function(cacheCb) {
+                        getValue(name, function(err, result) {
+                            cacheCb(err, result);
+                        });
+                    }, ttl, cb);
+                }
+
+                beforeEach(function() {
+                    sinon.spy(testCallbacks, 'isCacheableValue');
+                    cache = caching({store: 'memory', isCacheableValue: testCallbacks.isCacheableValue});
+                    sinon.spy(memoryStoreStub, 'set');
+                });
+
+                afterEach(function() {
+                    memoryStoreStub.set.restore();
+                    testCallbacks.isCacheableValue.restore();
+                });
+
+                it("stores allowed values", function(done) {
+                    var name = 'foo';
+
+                    getCachedValue(name, function(err) {
+                        checkErr(err);
+                        assert.ok(memoryStoreStub.set.called);
+                        assert.ok(testCallbacks.isCacheableValue.called);
+
+                        getCachedValue(name, function(err) {
+                            checkErr(err);
+                            done();
+                        });
+                    });
+                });
+
+                it("does not store non-allowed values", function(done) {
+                    var name = 'bar';
+
+                    getCachedValue(name, function(err) {
+                        checkErr(err);
+                        assert.ok(memoryStoreStub.set.notCalled);
+                        assert.ok(testCallbacks.isCacheableValue.called);
                         done();
                     });
                 });

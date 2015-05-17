@@ -207,6 +207,42 @@ multiCache.wrap(key2, function (cb) {
 });
 ```
 
+### Specifying What to Cache
+
+Both the `caching` and `multicaching` modules allow you to pass in a callback function called
+`isCacheableValue` which is called with every value returned from cache or from a wrapped function.
+This lets you specify which values should and should not be cached. If the function returns true, it will be
+stored in cache. By default the caches cache everything except `undefined`.
+
+For example, if you don't want to cache `false` and `null`, you can pass in a function like this:
+
+```javascript
+
+var isCacheableValue = function(value) {
+    return value !== null && value !== false && value !== undefined;
+};
+
+```
+
+Then pass it to `caching` like this:
+
+```javascript
+
+var memoryCache = cacheManager.caching({store: 'memory', isCacheableValue: isCacheableValue};
+
+```
+
+And pass it to `multicaching` like this:
+
+```javascript
+
+var multiCache = cacheManager.multiCaching([memoryCache, someOtherCache], {
+    isCacheableValue: isCacheableValue
+});
+
+```
+
+
 ## Tests
 
 To run tests, first run:

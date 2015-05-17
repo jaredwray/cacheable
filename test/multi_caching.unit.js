@@ -369,6 +369,121 @@ describe("multiCaching", function() {
                     });
                 });
             });
+
+            var falseyValues = [false, null, 0];
+
+            falseyValues.forEach(function(falseyValue) {
+                context("when cached value is `" + falseyValue + "`", function() {
+                    function getFalseyValue(cb) {
+                        process.nextTick(function() {
+                            cb(null, falseyValue);
+                        });
+                    }
+
+                    function getCachedFalseyValue(cb) {
+                        multiCache.wrap(key, function(cacheCb) {
+                            getFalseyValue(cacheCb);
+                        }, ttl, cb);
+                    }
+
+                    beforeEach(function(done) {
+                        multiCache = multiCaching([memoryCache3]);
+                        sinon.spy(memoryCache3.store, 'set');
+
+                        getCachedFalseyValue(function(err, result) {
+                            checkErr(err);
+                            assert.strictEqual(result, falseyValue);
+
+                            memoryCache3.get(key, function(err, result) {
+                                checkErr(err);
+                                assert.strictEqual(result, falseyValue);
+
+                                sinon.spy(memoryCache3.store, 'get');
+
+                                done();
+                            });
+                        });
+                    });
+
+                    afterEach(function() {
+                        memoryCache3.store.set.restore();
+                        memoryCache3.store.get.restore();
+                    });
+
+                    it("sets data in and retrieves data from cache", function(done) {
+                        getCachedFalseyValue(function(err, value) {
+                            checkErr(err);
+                            assert.strictEqual(value, falseyValue);
+                            assert.ok(memoryCache3.store.set.calledWith(key));
+                            assert.ok(memoryCache3.store.get.calledWith(key));
+                            done();
+                        });
+                    });
+                });
+            });
+
+            context("when we pass in an isCacheableValue function to the caching constructor", function() {
+                var testCallbacks = {
+                    isCacheableValue: function(value) {
+                        return value !== 'do_not_store_this' && value !== undefined;
+                    }
+                };
+
+                function getValue(name, cb) {
+                    process.nextTick(function() {
+                        if (name === 'foo') {
+                            cb(null, 'store_this');
+                        } else {
+                            cb(null, 'do_not_store_this');
+                        }
+                    });
+                }
+
+                function getCachedValue(name, cb) {
+                    multiCache.wrap(key, function(cacheCb) {
+                        getValue(name, function(err, result) {
+                            cacheCb(err, result);
+                        });
+                    }, ttl, cb);
+                }
+
+                beforeEach(function() {
+                    sinon.spy(testCallbacks, 'isCacheableValue');
+                    multiCache = multiCaching([memoryCache3], {isCacheableValue: testCallbacks.isCacheableValue});
+                    sinon.spy(memoryCache3.store, 'set');
+                });
+
+                afterEach(function() {
+                    memoryCache3.store.set.restore();
+                    testCallbacks.isCacheableValue.restore();
+                });
+
+                it("stores allowed values", function(done) {
+                    var name = 'foo';
+
+                    getCachedValue(name, function(err) {
+                        checkErr(err);
+                        assert.ok(memoryCache3.store.set.called);
+
+                        assert.ok(testCallbacks.isCacheableValue.called);
+
+                        getCachedValue(name, function(err) {
+                            checkErr(err);
+                            done();
+                        });
+                    });
+                });
+
+                it("does not store non-allowed values", function(done) {
+                    var name = 'bar';
+
+                    getCachedValue(name, function(err) {
+                        checkErr(err);
+                        assert.ok(memoryCache3.store.set.notCalled);
+                        done();
+                    });
+                });
+            });
         });
 
         describe("using two cache stores", function() {

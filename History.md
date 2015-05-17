@@ -1,3 +1,7 @@
+- {next release} 2015-05-17
+  - By default, cache falsey values like `false`, `0`, and `null`, but not `undefined` (#25).
+  - Allow users to pass in callback function `isCacheableValue` to specify what to cache.
+
 - 0.19.0 2015-03-29
   - Pass dispose, length & stale options to lru-cache (#22). - @gmaclennan
 
