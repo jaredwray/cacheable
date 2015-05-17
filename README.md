@@ -236,7 +236,9 @@ And pass it to `multicaching` like this:
 
 ```javascript
 
-var multiCache = cacheManager.multiCaching([memoryCache, someOtherCache], {isCacheableValue: isCacheableValue});
+var multiCache = cacheManager.multiCaching([memoryCache, someOtherCache], {
+    isCacheableValue: isCacheableValue
+});
 
 ```
 
