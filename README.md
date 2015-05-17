@@ -242,6 +242,11 @@ var multiCache = cacheManager.multiCaching([memoryCache, someOtherCache], {
 
 ```
 
+## Docs 
+
+To generate JSDOC 3 documentation:
+
+    make docs
 
 ## Tests
 

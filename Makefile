@@ -3,7 +3,7 @@ BASE = .
 ISTANBUL = ./node_modules/.bin/istanbul
 COVERAGE_OPTS = --lines 99 --statements 95 --branches 90 --functions 95
 
-main: lint test
+main: lint test docs
 
 cover:
 	$(ISTANBUL) cover test/run.js
@@ -28,5 +28,8 @@ lint:
 	./node_modules/.bin/jshint ./test --config $(BASE)/.jshintrc
 	./node_modules/.bin/jshint ./examples --config $(BASE)/.jshintrc
 
+docs:
+	./node_modules/.bin/jsdoc lib --recurse --readme README.md --package package.json
+	echo docs available in ./out/index.html
 
 .PHONY: test
