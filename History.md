@@ -8,6 +8,7 @@
        `function set(key, val, options, cb) { }`
   - (Breaking change) caching/multicaching methods no longer accept a `ttl` param. You must instead pass
      in an options object which will be passed to the cache store's `set` method.
+  - (Breaking change) caching.js no longer accepts a path to cache store. Pass in an object or 'memory' instead.
 
 - 0.19.0 2015-03-29
   - Pass dispose, length & stale options to lru-cache (#22). - @gmaclennan

@@ -695,18 +695,6 @@ describe("caching", function() {
             });
         });
 
-        it("allows us to pass in a path to our own store", function(done) {
-            var storePath = '../lib/stores/memory';
-            cache = caching({store: storePath});
-            cache.set(key, value, {ttl: defaultTtl}, function(err) {
-                checkErr(err);
-                cache.get(key, function(err, result) {
-                    assert.equal(result, value);
-                    done();
-                });
-            });
-        });
-
         it("allows us to pass in a module (uninstantiated)", function(done) {
             var store = memoryStore;
             cache = caching({store: store});
