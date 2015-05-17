@@ -57,7 +57,7 @@ function getCachedUser(id, cb) {
 function getCachedUser(id, cb) {
     memoryCache.wrap(id, function (cacheCallback) {
         getUser(id, cacheCallback);
-    }, ttl, cb);
+    }, {ttl: ttl}, cb);
 }
 ```
 
@@ -147,7 +147,7 @@ app.get('/foo/bar', function(req, res) {
     var ttl = 10;
     memoryCache.wrap(cacheKey, function(cacheCallback) {
         DB.find(req.query, cacheCallback);
-    }, ttl, function(err, result) {
+    }, {ttl: ttl}, function(err, result) {
         respond(res, err, result);
     });
 });
@@ -177,7 +177,7 @@ key2 = 'user_' + userId;
 ttl = 5;
 
 // Sets in all caches.
-multiCache.set('foo2', 'bar2', ttl, function(err) {
+multiCache.set('foo2', 'bar2', {ttl: ttl}, function(err) {
     if (err) { throw err; }
 
     // Fetches from highest priority cache that has the key.
@@ -190,10 +190,10 @@ multiCache.set('foo2', 'bar2', ttl, function(err) {
     });
 });
 
-// Note: ttl is optional in wrap()
+// Note: options with ttl are optional in wrap()
 multiCache.wrap(key2, function (cb) {
     getUser(userId2, cb);
-}, ttl, function (err, user) {
+}, {ttl: ttl}, function (err, user) {
     console.log(user);
 
     // Second time fetches user from memoryCache, since it's highest priority.
