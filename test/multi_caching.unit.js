@@ -355,9 +355,7 @@ describe("multiCaching", function() {
             context("when wrapped function calls back with an error", function() {
                 it("calls back with that error", function(done) {
                     var fakeError = new Error(support.random.string());
-                    sinon.stub(methods, 'getWidget', function(name, cb) {
-                        cb(fakeError, {name: name});
-                    });
+                    sinon.stub(methods, 'getWidget').yields(fakeError, {name: name});
 
                     multiCache.wrap(key, function(cb) {
                         methods.getWidget(name, cb);
@@ -745,9 +743,7 @@ describe("multiCaching", function() {
                 it("bubbles up that error", function(done) {
                     var fakeError = new Error(support.random.string());
 
-                    sinon.stub(memoryStoreStub, 'get', function(key, cb) {
-                        cb(fakeError);
-                    });
+                    sinon.stub(memoryStoreStub, 'get').yields(fakeError);
 
                     multiCache.wrap(key, function(cb) {
                         methods.getWidget(name, cb);
@@ -763,9 +759,7 @@ describe("multiCaching", function() {
                 it("bubbles up that error", function(done) {
                     var fakeError = new Error(support.random.string());
 
-                    sinon.stub(memoryStoreStub, 'set', function(key, val, ttl, cb) {
-                        cb(fakeError);
-                    });
+                    sinon.stub(memoryStoreStub, 'set').yields(fakeError);
 
                     multiCache.wrap(key, function(cb) {
                         methods.getWidget(name, cb);
