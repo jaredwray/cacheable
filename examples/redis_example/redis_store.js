@@ -67,9 +67,9 @@ function redisStore(args) {
         }
         options = options || {};
 
-        if( options >= 0 ) {
+        if (options >= 0) {
             var ttl = options;
-        }else{
+        } else {
             var ttl = (options.ttl || options.ttl === 0) ? options.ttl : ttlDefault;
         }
 
