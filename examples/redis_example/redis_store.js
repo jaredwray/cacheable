@@ -67,7 +67,11 @@ function redisStore(args) {
         }
         options = options || {};
 
-        var ttl = (options.ttl || options.ttl === 0) ? options.ttl : ttlDefault;
+        if( options >= 0 ) {
+            var ttl = options;
+        }else{
+            var ttl = (options.ttl || options.ttl === 0) ? options.ttl : ttlDefault;
+        }
 
         connect(function(err, conn) {
             if (err) { return cb(err); }
