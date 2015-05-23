@@ -1,6 +1,14 @@
-- {next release} 2015-05-17
-  - By default, cache falsey values like `false`, `0`, and `null`, but not `undefined` (#25).
+- 1.0.0 2015-05-XX
+  - Added JSDOC generation (`make docs`)
+  - (Breaking change) By default, cache falsey values like `false`, `0`, and `null`, but not `undefined` (#25).
   - Allow users to pass in callback function `isCacheableValue` to specify what to cache.
+  - (Breaking change) Removed deprecated lower-case `multi_caching` export (use `multiCaching` instead).
+  - (Breaking change) Removed `multiCaching#get_and_pass_up` (use `getAndPassUp` instead).
+  - (Breaking change) Cache store methods must accept an `options` param (which can be ignored). Eg.,
+       `function set(key, val, options, cb) { }`
+  - (Breaking change) caching/multicaching methods no longer accept a `ttl` param. You must instead pass
+     in an options object which will be passed to the cache store's `set` method.
+  - (Breaking change) caching.js no longer accepts a path to cache store. Pass in an object or 'memory' instead.
 
 - 0.19.0 2015-03-29
   - Pass dispose, length & stale options to lru-cache (#22). - @gmaclennan
