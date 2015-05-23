@@ -8,7 +8,7 @@ var ttl; //Can't use a different ttl per set() call with memory cache
 //
 // Basic usage
 //
-memoryCache.set('foo', 'bar', ttl, function(err) {
+memoryCache.set('foo', 'bar', function(err) {
     if (err) { throw err; }
 
     memoryCache.get('foo', function(err, result) {
@@ -112,7 +112,7 @@ multiCache.wrap(key2, function(cb) {
     });
 
     // Sets in all caches.
-    multiCache.set('foo2', 'bar2', ttl2, function(err) {
+    multiCache.set('foo2', 'bar2', {ttl: ttl2}, function(err) {
         if (err) { throw err; }
 
         // Fetches from highest priority cache that has the key.
