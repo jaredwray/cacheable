@@ -91,7 +91,7 @@ var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10/*seco
 var ttl = 5;
 // Note: callback is optional in set() and del().
 
-memoryCache.set('foo', 'bar', ttl, function(err) {
+memoryCache.set('foo', 'bar', {ttl: ttl}, function(err) {
     if (err) { throw err; }
 
     memoryCache.get('foo', function(err, result) {
@@ -114,7 +114,7 @@ var key = 'user_' + userId;
 // Note: ttl is optional in wrap()
 memoryCache.wrap(key, function (cb) {
     getUser(userId, cb);
-}, ttl, function (err, user) {
+}, {ttl: ttl}, function (err, user) {
     console.log(user);
 
     // Second time fetches user from memoryCache
@@ -242,7 +242,7 @@ var multiCache = cacheManager.multiCaching([memoryCache, someOtherCache], {
 
 ```
 
-## Docs 
+## Docs
 
 To generate JSDOC 3 documentation:
 
