@@ -164,8 +164,6 @@ E.g.,
 ```javascript
 var myStore = require('your-homemade-store');
 var cache = cacheManager.caching({store: myStore});
-// or
-var cache = cacheManager.caching({store: '/path/to/your/store'});
 ```
 
 ### Multi-Store
@@ -209,7 +207,7 @@ multiCache.wrap(key2, function (cb) {
 
 ### Specifying What to Cache
 
-Both the `caching` and `multicaching` modules allow you to pass in a callback function called
+Both the `caching` and `multicaching` modules allow you to pass in a callback function named
 `isCacheableValue` which is called with every value returned from cache or from a wrapped function.
 This lets you specify which values should and should not be cached. If the function returns true, it will be
 stored in cache. By default the caches cache everything except `undefined`.
@@ -262,7 +260,7 @@ Run the tests and JShint:
 ## Contribute
 
 If you would like to contribute to the project, please fork it and send us a pull request.  Please add tests
-for any new features or bug fixes.  Also run ``make`` before submitting the pull request.
+for any new features or bug fixes.  Also run `make` before submitting the pull request.
 
 
 ## License
