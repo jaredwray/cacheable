@@ -707,4 +707,25 @@ describe("caching", function() {
             });
         });
     });
+
+    describe("overloading with custom store", function() {
+        it("allows us to override isCacheableValue", function(done) {
+            var store = memoryStore.create({ttl: defaultTtl});
+            var onlyOne = true;
+            store.isCacheableValue = function(result) {
+                if (onlyOne) {
+                    onlyOne = false;
+                    done();
+                }
+                return result !== undefined;
+            };
+            cache = caching({store: store});
+            cache.wrap(key, function(cb) {
+                methods.getWidget(name, cb);
+            }, function(err, widget) {
+                checkErr(err);
+                assert.deepEqual(widget, {name: name});
+            });
+        });
+    });
 });
