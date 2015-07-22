@@ -1,3 +1,7 @@
+- 1.1.0 2015-07-22
+  - Allow stores to override isCacheableValue. - @PuKoren
+  - Allow overriding ttl in memory cache's set function. - @zhudan
+
 - 1.0.0 2015-05-23
   - Added JSDOC generation (`make docs`)
   - (Breaking change) By default, cache falsey values like `false`, `0`, and `null`, but not `undefined` (#25).
