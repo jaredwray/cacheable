@@ -28,6 +28,10 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 
     npm install cache-manager
 
+## Store Engine
+[Redis Store ](https://github.com/dial-once/node-cache-manager-redis)
+[MongoDB Store](https://github.com/v4l3r10/node-cache-manager-mongodb)
+
 ## Overview
 
 First, it includes a `wrap` function that lets you wrap any function in cache.
