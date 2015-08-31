@@ -28,7 +28,7 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 
     npm install cache-manager
 
-## Store Engine
+## Store Engines
 * [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis)
 
 * [node-cache-manager-mongodb](https://github.com/v4l3r10/node-cache-manager-mongodb)
