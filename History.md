@@ -1,3 +1,6 @@
+- 1.2.0 2015-10-07
+  - using `isCacheableValue` in `getFromHighestPriorityCache` and `getAndPassUp` (#32).
+
 - 1.1.0 2015-07-22
   - Allow stores to override isCacheableValue. - @PuKoren
   - Allow overriding ttl in memory cache's set function. - @zhudan
