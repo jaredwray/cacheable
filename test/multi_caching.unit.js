@@ -569,7 +569,11 @@ describe("multiCaching", function() {
                         store: 'memory',
                         ttl: memoryTtl
                     });
+
+                    // This simulates how node-cache-manager-redis sets its
+                    // isCacheableValue function:
                     memoryCache4.store.isCacheableValue = testCallbacks.isCacheableValue;
+
                     multiCache = multiCaching([memoryCache4]);
                     sinon.spy(memoryCache4.store, 'set');
                 });
