@@ -534,6 +534,77 @@ describe("multiCaching", function() {
                     });
                 });
             });
+
+            context("when an underlying store has its own isCacheableValue function", function() {
+                var memoryCache4;
+
+                var testCallbacks = {
+                    isCacheableValue: function(value) {
+                        var x = value !== 'do_not_store_this' && value !== undefined;
+                        return x;
+                    }
+                };
+
+                function getValue(name, cb) {
+                    process.nextTick(function() {
+                        if (name === 'foo') {
+                            cb(null, 'store_this');
+                        } else {
+                            cb(null, 'do_not_store_this');
+                        }
+                    });
+                }
+
+                function getCachedValue(name, cb) {
+                    multiCache.wrap(key, function(cacheCb) {
+                        getValue(name, function(err, result) {
+                            cacheCb(err, result);
+                        });
+                    }, cb);
+                }
+
+                beforeEach(function() {
+                    sinon.spy(testCallbacks, 'isCacheableValue');
+                    memoryCache4 = caching({
+                        store: 'memory',
+                        ttl: memoryTtl
+                    });
+                    memoryCache4.store.isCacheableValue = testCallbacks.isCacheableValue;
+                    multiCache = multiCaching([memoryCache4]);
+                    sinon.spy(memoryCache4.store, 'set');
+                });
+
+                afterEach(function() {
+                    memoryCache4.store.set.restore();
+                    testCallbacks.isCacheableValue.restore();
+                });
+
+                it("stores allowed values", function(done) {
+                    var name = 'foo';
+
+                    getCachedValue(name, function(err) {
+                        checkErr(err);
+                        assert.ok(memoryCache4.store.set.called);
+
+                        assert.ok(testCallbacks.isCacheableValue.called);
+
+                        getCachedValue(name, function(err) {
+                            checkErr(err);
+                            done();
+                        });
+                    });
+                });
+
+                it("does not store non-allowed values", function(done) {
+                    var name = 'bar';
+
+                    getCachedValue(name, function(err) {
+                        checkErr(err);
+                        assert.ok(memoryCache4.store.set.notCalled);
+                        done();
+                    });
+                });
+            });
         });
 
         describe("using two cache stores", function() {
