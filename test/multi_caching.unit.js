@@ -388,6 +388,7 @@ describe("multiCaching", function() {
                         checkErr(err);
                         assert.deepEqual(widget, {name: name});
                         sinon.assert.calledWith(memoryCache3.store.set, key, {name: name}, {ttl: defaultTtl});
+
                         done();
                     });
                 });
@@ -861,6 +862,31 @@ describe("multiCaching", function() {
                         throw fakeError;
                     }, ttl, function(err) {
                         assert.equal(err, fakeError);
+                        done();
+                    });
+                });
+            });
+
+            context("when an error is thrown in the work function's callback", function() {
+                var fakeError;
+
+                beforeEach(function() {
+                    fakeError = new Error(support.random.string());
+                });
+
+                it("bubbles up that error", function(done) {
+                    multiCache.wrap(key, function(next) {
+                        next();
+                    }, ttl, function() {
+                        // This test as-is doesn't prove a fix for #28 (https://github.com/BryanDonovan/node-cache-manager/issues/28)
+                        // but if you remove the try/catch, it shows that the undefined `waiting` array issue
+                        // is no longer present (the domain doesn't try to process the error in the callbackFiller).
+                        try {
+                            throw new Error('foo');
+                        } catch (e) {
+                            assert.equal(e.message, 'foo');
+                        }
+
                         done();
                     });
                 });
