@@ -1,3 +1,6 @@
+- 1.2.2 2015-10-19
+  - Bugfix: Fixing domain error issues when error is thrown inside 'work' function (#28).
+
 - 1.2.1 2015-10-17
   - Bugfix: multi-caching: using underlying store's isCacheableValue function when it exists (#34).
 
