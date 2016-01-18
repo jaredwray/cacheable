@@ -183,13 +183,30 @@ describe("multiCaching", function() {
             });
 
             describe('using promises', function() {
-                it('should return a promise and resolve it', function(done) {
+                it('gets data from first cache that has it', function(done) {
                     memoryCache3.set(key, value)
                     .then(function() {
                         return multiCache.get(key);
                     })
                     .then(function(result) {
                         assert.equal(result, value);
+                    })
+                    .then(done);
+                });
+
+                it("passes any options to underlying caches", function(done) {
+                    var opts = {foo: 'bar'};
+
+                    multiCache.set(key, value)
+                    .then(function() {
+                        sinon.spy(memoryCache.store, 'get');
+                        return multiCache.get(key, opts);
+                    })
+                    .then(function(result) {
+                        assert.equal(result, value);
+                        assert.ok(memoryCache.store.get.calledWith(key, opts));
+
+                        memoryCache.store.get.restore();
                     })
                     .then(done);
                 });
@@ -355,6 +372,15 @@ describe("multiCaching", function() {
 
                 it("bubbles up errors from caches", function(done) {
                     multiCache.getAndPassUp(key, function(err) {
+                        assert.ok(memoryStoreStub.get.called);
+                        assert.equal(err, fakeError);
+                        done();
+                    });
+                });
+
+                it("bubbles up errors from caches and reject promise", function(done) {
+                    multiCache.getAndPassUp(key)
+                    .catch(function(err) {
                         assert.ok(memoryStoreStub.get.called);
                         assert.equal(err, fakeError);
                         done();
