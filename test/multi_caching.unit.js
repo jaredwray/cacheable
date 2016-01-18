@@ -181,6 +181,19 @@ describe("multiCaching", function() {
                     });
                 });
             });
+
+            describe('using promises', function() {
+                it('should return a promise and resolve it', function(done) {
+                    memoryCache3.set(key, value)
+                    .then(function() {
+                        return multiCache.get(key);
+                    })
+                    .then(function(result) {
+                        assert.equal(result, value);
+                    })
+                    .then(done);
+                });
+            });
         });
 
         describe("del()", function() {
