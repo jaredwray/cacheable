@@ -970,6 +970,70 @@ describe("multiCaching", function() {
                 });
             });
         });
+
+        describe("using native promises", function() {
+            beforeEach(function() {
+                multiCache = multiCaching([memoryCache, memoryCache3]);
+            });
+
+            it("should be able to chain with simple promise", function(done) {
+                multiCache.wrap('key', function() {
+                    return 'OK';
+                })
+                .then(function(res) {
+                    assert.equal(res, 'OK');
+                    done();
+                });
+            });
+
+            it("should be able to chain with cache function as a promise", function(done) {
+                multiCache.wrap('key', function() {
+                    return new Promise(function(resolve) {
+                        resolve('OK');
+                    });
+                })
+                .then(function(res) {
+                    assert.equal(res, 'OK');
+                    done();
+                });
+            });
+
+            it("should be able to catch errors in cache function as a promise", function(done) {
+                multiCache.wrap('key', function() {
+                    return new Promise(function(resolve, reject) {
+                        reject('NOK');
+                    });
+                })
+                .then(function() {
+                    done(new Error('It should not call then since there is an error in the cache function!'));
+                })
+                .catch(function() {
+                    done();
+                });
+            });
+
+            it("should be able to catch a throw in cache function as a promise", function(done) {
+                multiCache.wrap('key', function() {
+                    throw 'NOK';
+                })
+                .then(function() {
+                    done(new Error('It should not call then since there is an error in the cache function!'));
+                })
+                .catch(function() {
+                    done();
+                });
+            });
+
+            it("should be able to chain with non-cacheable value", function(done) {
+                multiCache.wrap('key', function() {
+                    return;
+                })
+                .then(function(res) {
+                    assert.equal(res, undefined);
+                    done();
+                });
+            });
+        });
     });
 
     context("when instantiated with a non-Array 'caches' arg", function() {
