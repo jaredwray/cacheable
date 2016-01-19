@@ -289,6 +289,17 @@ describe("multiCaching", function() {
                     });
                 });
             });
+
+            it("gets data from first cache that has it using promises", function(done) {
+                memoryCache3.set(key, value)
+                .then(function() {
+                    return multiCache.getAndPassUp(key);
+                })
+                .then(function(result) {
+                    assert.equal(result, value);
+                    done();
+                });
+            });
         });
 
         describe("when value is not found in any cache", function() {
@@ -351,6 +362,22 @@ describe("multiCaching", function() {
                         });
                     });
                 });
+            });
+
+            it("checks to see if higher levels have item using promises", function(done) {
+                memoryCache3.set(key, value)
+                .then(function() {
+                    return multiCache.getAndPassUp(key);
+                })
+                .then(function(result) {
+                    assert.equal(result, value);
+                })
+                .then(function() {
+                    process.nextTick(function() {
+                        assert.equal(memoryCache.get(key), value);
+                    });
+                })
+                .then(done);
             });
 
             context("when a cache store calls back with an error", function() {
