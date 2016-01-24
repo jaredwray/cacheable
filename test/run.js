@@ -6,6 +6,10 @@ var Mocha = require('mocha');
 var optimist = require('optimist');
 var walkDir = require('./support').walkDir;
 
+if (typeof Promise === "undefined") {
+    global.Promise = require('es6-promise').Promise;
+}
+
 var argv = optimist
 .usage("Usage: $0 -t [types] --reporter [reporter] --timeout [timeout]")['default'](
     {types: 'unit,functional', reporter: 'spec', timeout: 6000})
