@@ -138,6 +138,17 @@ memoryCache.wrap(key, function (cb) {
 // { id: 123, name: 'Bob' }
 ```
 
+#### Example Using Promises
+
+```javascript
+memoryCache.wrap(key, function() {
+    return getUserPromise(userId);
+});
+then(function(user) {
+    console.log('User:', user);
+});
+```
+
 Here's a very basic example of how you could use this in an Express app:
 
 ```javascript
