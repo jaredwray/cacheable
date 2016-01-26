@@ -149,8 +149,8 @@ memoryCache.wrap(key, function (cb) {
 ```javascript
 memoryCache.wrap(key, function() {
     return getUserPromise(userId);
-});
-then(function(user) {
+})
+.then(function(user) {
     console.log('User:', user);
 });
 ```
