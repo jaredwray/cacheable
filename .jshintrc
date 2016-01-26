@@ -20,6 +20,7 @@
 
     "predef"        : [  // Extra globals.
         "__dirname",
+        "Promise",
         "Buffer",
         "event",
         "exports",
@@ -58,7 +59,7 @@
     "expr"          : false,  // Tolerate `ExpressionStatement` as Programs.
     "forin"         : false,  // Tolerate `for in` loops without `hasOwnProperty`.
     "immed"         : true,   // Require immediate invocations to be wrapped in parens e.g. `( function(){}() );`
-    "latedef"       : true,   // Prohibit variable use before definition.
+    "latedef"       : "nofunc",   // Prohibit variable use before definition.
     "loopfunc"      : true,   // Allow functions to be defined within loops.
     "maxparams"     : 4,
     "maxdepth"      : 5,

@@ -181,6 +181,36 @@ describe("multiCaching", function() {
                     });
                 });
             });
+
+            describe('using promises', function() {
+                it('gets data from first cache that has it', function(done) {
+                    memoryCache3.set(key, value)
+                    .then(function() {
+                        return multiCache.get(key);
+                    })
+                    .then(function(result) {
+                        assert.equal(result, value);
+                    })
+                    .then(done);
+                });
+
+                it("passes any options to underlying caches", function(done) {
+                    var opts = {foo: 'bar'};
+
+                    multiCache.set(key, value)
+                    .then(function() {
+                        sinon.spy(memoryCache.store, 'get');
+                        return multiCache.get(key, opts);
+                    })
+                    .then(function(result) {
+                        assert.equal(result, value);
+                        assert.ok(memoryCache.store.get.calledWith(key, opts));
+
+                        memoryCache.store.get.restore();
+                    })
+                    .then(done);
+                });
+            });
         });
 
         describe("del()", function() {
@@ -259,6 +289,17 @@ describe("multiCaching", function() {
                     });
                 });
             });
+
+            it("gets data from first cache that has it using promises", function(done) {
+                memoryCache3.set(key, value)
+                .then(function() {
+                    return multiCache.getAndPassUp(key);
+                })
+                .then(function(result) {
+                    assert.equal(result, value);
+                    done();
+                });
+            });
         });
 
         describe("when value is not found in any cache", function() {
@@ -323,6 +364,22 @@ describe("multiCaching", function() {
                 });
             });
 
+            it("checks to see if higher levels have item using promises", function(done) {
+                memoryCache3.set(key, value)
+                .then(function() {
+                    return multiCache.getAndPassUp(key);
+                })
+                .then(function(result) {
+                    assert.equal(result, value);
+                })
+                .then(function() {
+                    process.nextTick(function() {
+                        assert.equal(memoryCache.get(key), value);
+                    });
+                })
+                .then(done);
+            });
+
             context("when a cache store calls back with an error", function() {
                 var fakeError;
                 var memoryStoreStub;
@@ -342,6 +399,15 @@ describe("multiCaching", function() {
 
                 it("bubbles up errors from caches", function(done) {
                     multiCache.getAndPassUp(key, function(err) {
+                        assert.ok(memoryStoreStub.get.called);
+                        assert.equal(err, fakeError);
+                        done();
+                    });
+                });
+
+                it("bubbles up errors from caches and reject promise", function(done) {
+                    multiCache.getAndPassUp(key)
+                    .catch(function(err) {
                         assert.ok(memoryStoreStub.get.called);
                         assert.equal(err, fakeError);
                         done();
@@ -966,6 +1032,70 @@ describe("multiCaching", function() {
                 }, function(err) {
                     checkErr(err);
                     assert.equal(construct.callCount, 1);
+                    done();
+                });
+            });
+        });
+
+        describe("using native promises", function() {
+            beforeEach(function() {
+                multiCache = multiCaching([memoryCache, memoryCache3]);
+            });
+
+            it("should be able to chain with simple promise", function(done) {
+                multiCache.wrap('key', function() {
+                    return 'OK';
+                })
+                .then(function(res) {
+                    assert.equal(res, 'OK');
+                    done();
+                });
+            });
+
+            it("should be able to chain with cache function as a promise", function(done) {
+                multiCache.wrap('key', function() {
+                    return new Promise(function(resolve) {
+                        resolve('OK');
+                    });
+                })
+                .then(function(res) {
+                    assert.equal(res, 'OK');
+                    done();
+                });
+            });
+
+            it("should be able to catch errors in cache function as a promise", function(done) {
+                multiCache.wrap('key', function() {
+                    return new Promise(function(resolve, reject) {
+                        reject('NOK');
+                    });
+                })
+                .then(function() {
+                    done(new Error('It should not call then since there is an error in the cache function!'));
+                })
+                .catch(function() {
+                    done();
+                });
+            });
+
+            it("should be able to catch a throw in cache function as a promise", function(done) {
+                multiCache.wrap('key', function() {
+                    throw 'NOK';
+                })
+                .then(function() {
+                    done(new Error('It should not call then since there is an error in the cache function!'));
+                })
+                .catch(function() {
+                    done();
+                });
+            });
+
+            it("should be able to chain with non-cacheable value", function(done) {
+                multiCache.wrap('key', function() {
+                    return;
+                })
+                .then(function(res) {
+                    assert.equal(res, undefined);
                     done();
                 });
             });
