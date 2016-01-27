@@ -807,9 +807,9 @@ describe("multiCaching", function() {
 
                     getCachedValue(name, function(err) {
                         checkErr(err);
-                        assert.ok(memoryCache4.store.get.called);
+                        assert.ok(memoryCache4.store.get.calledOnce);
 
-                        assert.ok(testCallbacks.isReturnableValue.calledOnce);
+                        assert.ok(testCallbacks.isReturnableValue.called);
 
                         getCachedValue(name, function(err, value) {
                             console.log('got cached value ' + value);
