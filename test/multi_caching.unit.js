@@ -807,7 +807,7 @@ describe("multiCaching", function() {
 
                     getCachedValue(name, function(err) {
                         checkErr(err);
-                        assert.ok(memoryCache3.store.get.called);
+                        assert.ok(memoryCache4.store.get.called);
 
                         assert.ok(testCallbacks.isReturnableValue.calledOnce);
 
@@ -827,7 +827,7 @@ describe("multiCaching", function() {
                     getCachedValue(name, function(err, value) {
                         checkErr(err);
 
-                        assert.ok(memoryCache3.store.get.calledOnce);
+                        assert.ok(memoryCache4.store.get.calledOnce);
 
                         assert.equal('do_not_return_this', value);
 
