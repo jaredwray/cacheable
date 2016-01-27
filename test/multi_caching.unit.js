@@ -812,7 +812,9 @@ describe("multiCaching", function() {
                         assert.ok(testCallbacks.isReturnableValue.calledOnce);
 
                         getCachedValue(name, function(err, value) {
+                            console.log('got cached value ' + value);
                             checkErr(err);
+                            console.log('after checkErr');
 
                             assert.equal('return_this', value);
 
@@ -825,11 +827,15 @@ describe("multiCaching", function() {
                     var name = 'bar';
 
                     getCachedValue(name, function(err, value) {
+                        console.log('got cached value ' + value);
                         checkErr(err);
+                        console.log('after checkErr');
 
                         assert.ok(memoryCache4.store.get.calledOnce);
+                        console.log('after checkErr');
 
                         assert.equal('do_not_return_this', value);
+                        console.log('after checkErr');
 
                         getCachedValue(name, function(err, value) {
                             checkErr(err);
