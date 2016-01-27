@@ -720,23 +720,36 @@ describe("multiCaching", function() {
                         checkErr(err);
                         assert.ok(memoryCache3.store.get.called);
 
-                        assert.ok(testCallbacks.isReturnableValue.called);
+                        assert.ok(testCallbacks.isReturnableValue.calledOnce);
 
-                        getCachedValue(name, function(err) {
+                        getCachedValue(name, function(err, value) {
                             checkErr(err);
+
+                            assert.equal('return_this', value);
+
                             done();
                         });
                     });
                 });
 
-                it("does not return non-allowed values", function(done) {
+                it("returns non-allowed values because it's the only store", function(done) {
                     var name = 'bar';
 
                     getCachedValue(name, function(err, value) {
                         checkErr(err);
-                        assert.ok(memoryCache3.store.set.notCalled);
-                        assert.undefined(value);
-                        done();
+
+                        assert.ok(memoryCache3.store.get.calledOnce);
+
+                        assert.equal('do_not_return_this', value);
+
+                        getCachedValue(name, function(err, value) {
+                            checkErr(err);
+
+                            assert.equal('do_not_return_this', value);
+
+                            done();
+                        });
+
                     });
                 });
             });
