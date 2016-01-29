@@ -824,7 +824,6 @@ describe("multiCaching", function() {
                     var name = 'bar';
 
                     getCachedValue(name, function(err, value) {
-
                         checkErr(err);
 
                         assert.ok(memoryCache5.store.get.calledOnce);
@@ -922,14 +921,14 @@ describe("multiCaching", function() {
 
             context("when we pass in an isReturnableValue function to the multicaching constructor", function() {
                 var testCallbacks = {
-                    isReturnableValue: function (value) {
+                    isReturnableValue: function(value) {
                         var x = value !== 'do_not_return_this' && value !== undefined;
                         return x;
                     }
                 };
 
                 function getValue(name, cb) {
-                    process.nextTick(function () {
+                    process.nextTick(function() {
                         if (name === 'foo') {
                             cb(null, 'return_this');
                         } else {
@@ -939,31 +938,32 @@ describe("multiCaching", function() {
                 }
 
                 function getCachedValue(name, cb) {
-                    multiCache.wrap(key, function (cacheCb) {
-                        getValue(name, function (err, result) {
+                    multiCache.wrap(key, function(cacheCb) {
+                        getValue(name, function(err, result) {
                             cacheCb(err, result);
                         });
                     }, cb);
                 }
 
-                beforeEach(function () {
+                beforeEach(function() {
                     sinon.spy(testCallbacks, 'isReturnableValue');
                     sinon.spy(memoryCache.store, 'get');
                     sinon.spy(memoryCache3.store, 'get');
 
-                    multiCache = multiCaching([memoryCache, memoryCache3], {isReturnableValue: testCallbacks.isReturnableValue});
+                    multiCache = multiCaching([memoryCache, memoryCache3],
+                        {isReturnableValue: testCallbacks.isReturnableValue});
                 });
 
-                afterEach(function () {
+                afterEach(function() {
                     memoryCache.store.get.restore();
                     memoryCache3.store.get.restore();
                     testCallbacks.isReturnableValue.restore();
                 });
 
-                it("doesn't continue to query for the value once it's found", function (done) {
+                it("doesn't continue to query for the value once it's found", function(done) {
                     var name = 'foo';
 
-                    getCachedValue(name, function (err) {
+                    getCachedValue(name, function(err) {
                         checkErr(err);
                         //prime the cache
                         assert.ok(memoryCache.store.get.calledOnce);
@@ -972,7 +972,7 @@ describe("multiCaching", function() {
 
                         assert.ok(testCallbacks.isReturnableValue.calledTwice);
 
-                        getCachedValue(name, function (err, value) {
+                        getCachedValue(name, function(err, value) {
                             checkErr(err);
                             //it should only get called once more now that it's in the first cache.
                             assert.ok(memoryCache.store.get.calledTwice);
