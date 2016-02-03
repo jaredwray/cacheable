@@ -1,3 +1,6 @@
+- 1.4.0 2016-02-03
+  - Passing ttl of 0 to lruCache, upgrading to lru-cache 4.0.0
+
 - 1.3.0 2016-01-26
   - Promise support (#39, #24) - @PuKoren
 
