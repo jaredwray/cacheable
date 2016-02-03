@@ -155,7 +155,9 @@ memoryCache.wrap(key, function() {
 });
 ```
 
-Here's a very basic example of how you could use this in an Express app:
+#### Example Express App Usage
+
+(Also see the [Express.js cache-manager example app](https://github.com/BryanDonovan/node-cache-manager-express-example)).
 
 ```javascript
 function respond(res, err, data) {
