@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Cache module for Node.js",
   "main": "index.js",
   "scripts": {
@@ -21,7 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "async": "^0.9.0",
-    "lru-cache": "2.6.5"
+    "lru-cache": "4.0.0"
   },
   "devDependencies": {
     "coveralls": "^2.3.0",
