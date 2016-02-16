@@ -923,12 +923,20 @@ describe("multiCaching", function() {
                     fakeError = new Error(support.random.string());
                 });
 
-                it("bubbles up that error", function(done) {
+                it("does not catch the error", function(done) {
+                    var originalExceptionHandler = process.listeners('uncaughtException').pop();
+                    process.removeListener('uncaughtException', originalExceptionHandler);
+
+                    process.once('uncaughtException', function(err) {
+                        process.on('uncaughtException', originalExceptionHandler);
+                        assert.ok(err);
+                        done();
+                    });
+
                     multiCache.wrap(key, function() {
                         throw fakeError;
-                    }, ttl, function(err) {
-                        assert.equal(err, fakeError);
-                        done();
+                    }, function() {
+                        done(new Error('Should not have caught error'));
                     });
                 });
             });
