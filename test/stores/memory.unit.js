@@ -17,7 +17,8 @@ describe("memory store", function() {
             memoryCache = memoryStore.create({noPromises: true});
         });
 
-        it("does not require a callback", function(done) {
+        // This test should pass in node v0.10.x:
+        it("does not require a callback or use of Promises", function(done) {
             memoryCache.set('foo', 'bar');
 
             setTimeout(function() {

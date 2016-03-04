@@ -237,10 +237,11 @@ describe("caching", function() {
 
     describe("keys()", function() {
         var keyCount;
-        var savedKeys = [];
+        var savedKeys;
 
         beforeEach(function(done) {
             keyCount = 10;
+            savedKeys = [];
             var processed = 0;
 
             cache = caching({store: 'memory'});
@@ -261,15 +262,47 @@ describe("caching", function() {
         it("calls back with all keys in cache", function(done) {
             cache.keys(function(err, keys) {
                 checkErr(err);
-                assert.deepEqual(keys.sort, savedKeys.sort);
+                assert.deepEqual(keys.sort(), savedKeys.sort());
                 done();
             });
         });
 
-        it("lets us get the keys without a callback (memory store only)", function() {
-            cache = caching({store: memoryStore.create({noPromises: true})});
-            var keys = cache.keys();
-            assert.deepEqual(keys.sort, savedKeys.sort);
+        it("lets us set and get data without a callback, returning a promise", function(done) {
+            cache.keys()
+            .then(function(keys) {
+                assert.deepEqual(keys.sort(), savedKeys.sort());
+                done();
+            })
+            .catch(function(err) {
+                done(err);
+            });
+        });
+
+        context("when not using promises", function() {
+            beforeEach(function(done) {
+                savedKeys = [];
+                keyCount = 10;
+                var processed = 0;
+
+                cache = caching({store: memoryStore.create({noPromises: true})});
+
+                function isDone() {
+                    return processed === keyCount;
+                }
+
+                async.until(isDone, function(cb) {
+                    processed += 1;
+                    key = support.random.string(20);
+                    savedKeys.push(key);
+                    value = support.random.string();
+                    cache.set(key, value, cb);
+                }, done);
+            });
+
+            it("lets us get the keys without a callback (memory store only)", function() {
+                var keys = cache.keys();
+                assert.deepEqual(keys.sort(), savedKeys.sort());
+            });
         });
     });
 
