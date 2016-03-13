@@ -12,9 +12,16 @@ describe("memory store", function() {
 
     describe("set()", function() {
         var memoryCache;
+        var origPromise;
 
         beforeEach(function() {
+            origPromise = global.Promise;
+            delete global.Promise;
             memoryCache = memoryStore.create({noPromises: true});
+        });
+
+        afterEach(function() {
+            global.Promise = origPromise;
         });
 
         // This test should pass in node v0.10.x:
