@@ -374,7 +374,10 @@ describe("multiCaching", function() {
                 })
                 .then(function() {
                     process.nextTick(function() {
-                        assert.equal(memoryCache.get(key), value);
+                        memoryCache.get(key)
+                        .then(function(fetchedValue) {
+                            assert.equal(fetchedValue, value);
+                        });
                     });
                 })
                 .then(done);
