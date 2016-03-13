@@ -25,7 +25,6 @@
   },
   "devDependencies": {
     "coveralls": "^2.3.0",
-    "es6-promise": "^3.0.2",
     "istanbul": "^0.2.11",
     "jscs": "^1.9.0",
     "jsdoc": "^3.3.0",
