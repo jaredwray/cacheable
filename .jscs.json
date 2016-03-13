@@ -95,7 +95,7 @@
         "test/data/**",
         "test/support/fakes/**"
     ],
-    "validateJSDoc": {
+    "jsDoc": {
         "checkParamNames": true,
         "requireParamTypes": true
     },

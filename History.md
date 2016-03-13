@@ -1,3 +1,9 @@
+- 1.5.0 2015-03-13
+  -npm bumps, making sure global.Promise is not defined in node 0.10 memory store test.
+
+- 1.4.1 2016-03-13
+  - Fixing backward-compatibility Promise issue with node 0.10.x in memory store.
+
 - 1.4.0 2016-02-03
   - Passing ttl of 0 to lruCache, upgrading to lru-cache 4.0.0
 
