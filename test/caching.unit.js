@@ -688,6 +688,27 @@ describe("caching", function() {
                     });
                 });
             });
+
+            context("when wrapped function returns a non cacheable value once", function() {
+                it("second call to 'wrap' triggers the callback", function(done) {
+                    var key = support.random.string();
+
+                    // 1.
+                    cache.wrap(key, function(cb) {
+                        cb(null, undefined);
+                    }, function(err, result) {
+                        assert.equal(result, undefined);
+                    });
+
+                    // 2.
+                    cache.wrap(key, function(cb) {
+                        cb(null, undefined);
+                    }, function(err, result) {
+                        assert.equal(result, undefined);
+                        done();
+                    });
+                });
+            });
         });
 
         describe("when called multiple times in parallel with same key", function() {

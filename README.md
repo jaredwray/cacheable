@@ -182,8 +182,8 @@ app.get('/foo/bar', function(req, res) {
 #### Custom Stores
 
 You can use your own custom store by creating one with the same API as the
-build-in memory stores (such as a redis or memcached store).  To use your own store, you can either pass
-in an instance of it, or pass in the path to the module.
+built-in memory stores (such as a redis or memcached store).  To use your own store just pass
+in an instance of it.
 
 E.g.,
 
