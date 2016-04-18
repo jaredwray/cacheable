@@ -1,7 +1,10 @@
-- 2.0.0 2015-03-13
+- 2.0.1 2016-04-18
+  - Fixed triggering callback in wrap after it was queued (#48) - @theorm
+
+- 2.0.0 2016-03-13
   - Removing domain integration (#38), no longer actively supporting node 0.10.x.
 
-- 1.5.0 2015-03-13
+- 1.5.0 2016-03-13
   - npm bumps, making sure global.Promise is not defined in node 0.10 memory store test.
 
 - 1.4.1 2016-03-13
