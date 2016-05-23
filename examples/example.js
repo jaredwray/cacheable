@@ -1,4 +1,8 @@
 /*jshint unused:false*/
+if (!global.Promise) {
+    require('es6-promise').polyfill();
+}
+
 // Note: ttls are in seconds
 var cacheManager = require('../');
 var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10});
@@ -130,3 +134,27 @@ multiCache.wrap(key2, function(cb) {
         });
     });
 });
+
+// Promise example:
+function getUserPromise(id) {
+    return new Promise(function(resolve, reject) {
+        getUser(id, function(err, result) {
+            if (err) {
+                return reject(err);
+            }
+
+            return resolve(result);
+        });
+    });
+}
+
+function getCachedUserPromise(id) {
+    memoryCache.wrap(key, function() {
+        return getUserPromise(userId);
+    })
+    .then(function(user) {
+        console.log('User fetched via Promise:', user);
+    });
+}
+
+getCachedUserPromise('123');
