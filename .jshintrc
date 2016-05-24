@@ -20,7 +20,6 @@
 
     "predef"        : [  // Extra globals.
         "__dirname",
-        "Promise",
         "Buffer",
         "event",
         "exports",
