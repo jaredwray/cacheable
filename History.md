@@ -1,3 +1,6 @@
+- 2.1.0 2016-05-24
+  - Allow passing in a promise dependency (#55). -@siddharthkchatterjee
+
 - 2.0.1 2016-04-18
   - Fixed triggering callback in wrap after it was queued (#48) - @theorm
 
