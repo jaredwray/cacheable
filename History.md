@@ -1,3 +1,6 @@
+- 2.1.1 2016-05-24
+  - Fixing version number in package.json.
+
 - 2.1.0 2016-05-24
   - Allow passing in a promise dependency (#55). -@siddharthkchatterjee
 
