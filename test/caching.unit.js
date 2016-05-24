@@ -8,6 +8,8 @@ var checkErr = support.checkErr;
 var caching = require('../index').caching;
 var memoryStore = require('../lib/stores/memory');
 
+var Promise = require('es6-promise').Promise;
+
 var methods = {
     getWidget: function(name, cb) {
         process.nextTick(function() {
@@ -27,7 +29,7 @@ describe("caching", function() {
         ['memory'].forEach(function(store) {
             context("using " + store + " store", function() {
                 beforeEach(function() {
-                    cache = caching({store: store});
+                    cache = caching({store: store, promiseDependency: Promise});
                     key = support.random.string(20);
                     value = support.random.string();
                 });

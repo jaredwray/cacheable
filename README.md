@@ -157,6 +157,17 @@ memoryCache.wrap(key, function() {
 });
 ```
 
+If you are using a Node version that does not include native promises, you can
+specify your promise dependency in the options passed to the cache module.
+E.g.,
+
+```javascript
+
+var Promise = require('es6-promise').Promise;
+cache = caching({store: store, promiseDependency: Promise});
+
+```
+
 #### Example Express App Usage
 
 (Also see the [Express.js cache-manager example app](https://github.com/BryanDonovan/node-cache-manager-express-example)).
