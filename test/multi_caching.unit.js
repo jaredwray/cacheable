@@ -7,6 +7,8 @@ var caching = require('../index').caching;
 var multiCaching = require('../index').multiCaching;
 var memoryStore = require('../lib/stores/memory');
 
+var Promise = require('es6-promise').Promise;
+
 var methods = {
     getWidget: function(name, cb) {
         process.nextTick(function() {
@@ -29,9 +31,9 @@ describe("multiCaching", function() {
         memoryTtl = 0.1;
         defaultTtl = 5;
 
-        memoryCache = caching({store: 'memory', ttl: memoryTtl});
-        memoryCache2 = caching({store: 'memory', ttl: memoryTtl});
-        memoryCache3 = caching({store: 'memory', ttl: memoryTtl});
+        memoryCache = caching({store: 'memory', ttl: memoryTtl, promiseDependency: Promise});
+        memoryCache2 = caching({store: 'memory', ttl: memoryTtl, promiseDependency: Promise});
+        memoryCache3 = caching({store: 'memory', ttl: memoryTtl, promiseDependency: Promise});
 
         key = support.random.string(20);
         name = support.random.string();
