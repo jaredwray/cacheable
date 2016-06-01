@@ -37,6 +37,8 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 
 * [node-cache-manager-fs](https://github.com/hotelde/node-cache-manager-fs)
 
+* [node-cache-manager-fs-binary](https://github.com/sheershoff/node-cache-manager-fs-binary)
+
 ## Overview
 
 First, it includes a `wrap` function that lets you wrap any function in cache.
