@@ -515,6 +515,19 @@ describe("caching", function() {
                 });
             });
 
+            context("when callback called twice by client", function() {
+                it("it does not throw an error", function(done) {
+                    cache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
+                        methods.getWidget(name, cb);
+                    }, opts, function(err, widget) {
+                        checkErr(err);
+                        assert.deepEqual(widget, {name: name});
+                        setTimeout(done, 10);
+                    });
+                });
+            });
+
             it("lets us make nested calls", function(done) {
                 function getCachedWidget(name, cb) {
                     cache.wrap(key, function(cacheCb) {
