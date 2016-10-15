@@ -39,7 +39,7 @@ describe("multiCaching", function() {
         name = support.random.string();
     });
 
-    describe("get(), set(), del()", function() {
+    describe("get(), set(), del(), reset()", function() {
         var value;
 
         beforeEach(function() {
@@ -264,6 +264,32 @@ describe("multiCaching", function() {
                             });
                         });
                     }, 10);
+                });
+            });
+        });
+
+        describe("reset()", function() {
+            it("resets all caches", function(done) {
+                multiCache.set(key, value, function(err) {
+                    checkErr(err);
+
+                    multiCache.reset(function() {
+                        memoryCache.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.ok(!result);
+
+                            memoryCache2.get(key, function(err, result) {
+                                checkErr(err);
+                                assert.ok(!result);
+
+                                memoryCache3.get(key, function(err, result) {
+                                    checkErr(err);
+                                    assert.ok(!result);
+                                    done();
+                                });
+                            });
+                        });
+                    });
                 });
             });
         });
