@@ -1,3 +1,6 @@
+- 2.2.0 2016-10-19
+  - Adding multi_caching.reset() (#63) - @disjunction
+
 - 2.1.2 2016-06-08
   - Checking that callback array exists before iterating over it (#57).
 
@@ -5,7 +8,7 @@
   - Fixing version number in package.json.
 
 - 2.1.0 2016-05-24
-  - Allow passing in a promise dependency (#55). -@siddharthkchatterjee
+  - Allow passing in a promise dependency (#55). - @siddharthkchatterjee
 
 - 2.0.1 2016-04-18
   - Fixed triggering callback in wrap after it was queued (#48) - @theorm
