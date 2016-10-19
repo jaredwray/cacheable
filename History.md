@@ -1,5 +1,5 @@
 - 2.1.2 2016-06-08
-  - Checking that callback array exists before iterating over it (#69).
+  - Checking that callback array exists before iterating over it (#57).
 
 - 2.1.1 2016-05-24
   - Fixing version number in package.json.

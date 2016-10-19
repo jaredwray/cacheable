@@ -41,6 +41,8 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 
 * [node-cache-manager-hazelcast](https://github.com/marudor/node-cache-manager-hazelcast)
 
+* [node-cache-manager-memcached-store](https://github.com/theogravity/node-cache-manager-memcached-store)
+
 ## Overview
 
 First, it includes a `wrap` function that lets you wrap any function in cache.
