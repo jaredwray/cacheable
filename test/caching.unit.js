@@ -369,9 +369,9 @@ describe("caching", function() {
                     memoryStoreStub.set.restore();
                 });
 
-                it("when a computeTTL function is passed in", function(done) {
+                it("when a computeTtl function is passed in", function(done) {
                     opts = {
-                        computeTTL: function(widget) {
+                        computeTtl: function(widget) {
                             assert.deepEqual(widget, {name: name});
                             return 0.2;
                         }
