@@ -360,7 +360,7 @@ describe("caching", function() {
                 });
             });
 
-            context("compute ttl", function() {
+            context("ttl function", function() {
                 beforeEach(function() {
                     sinon.spy(memoryStoreStub, 'set');
                 });
@@ -369,9 +369,9 @@ describe("caching", function() {
                     memoryStoreStub.set.restore();
                 });
 
-                it("when a computeTtl function is passed in", function(done) {
+                it("when a ttl function is passed in", function(done) {
                     opts = {
-                        computeTtl: function(widget) {
+                        ttl: function(widget) {
                             assert.deepEqual(widget, {name: name});
                             return 0.2;
                         }
