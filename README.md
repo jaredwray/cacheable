@@ -1,5 +1,5 @@
-[![build status](https://secure.travis-ci.org/BryanDonovan/node-cache-manager.png)](http://travis-ci.org/BryanDonovan/node-cache-manager)
-[![Coverage Status](https://coveralls.io/repos/BryanDonovan/node-cache-manager/badge.png?branch=master)](https://coveralls.io/r/BryanDonovan/node-cache-manager?branch=master)
+[![build status](https://secure.travis-ci.org/BryanDonovan/node-cache-manager.svg)](http://travis-ci.org/BryanDonovan/node-cache-manager)
+[![Coverage Status](https://coveralls.io/repos/BryanDonovan/node-cache-manager/badge.svg?branch=master)](https://coveralls.io/r/BryanDonovan/node-cache-manager?branch=master)
 
 node-cache-manager
 ======================
