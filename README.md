@@ -271,7 +271,7 @@ Then pass it to `caching` like this:
 
 ```javascript
 
-var memoryCache = cacheManager.caching({store: 'memory', isCacheableValue: isCacheableValue};
+var memoryCache = cacheManager.caching({store: 'memory', isCacheableValue: isCacheableValue});
 
 ```
 
