@@ -250,12 +250,14 @@ multiCache.wrap(key2, function (cb) {
 });
 ```
 
-### Specifying What to Cache
+### Specifying What to Cache in `wrap` Function
 
 Both the `caching` and `multicaching` modules allow you to pass in a callback function named
-`isCacheableValue` which is called with every value returned from cache or from a wrapped function.
-This lets you specify which values should and should not be cached. If the function returns true, it will be
+`isCacheableValue` which is called by the `wrap` function with every value returned from cache or from the wrapped function.
+This lets you specify which values should and should not be cached by `wrap`. If the function returns true, it will be
 stored in cache. By default the caches cache everything except `undefined`.
+
+NOTE: The `set` functions in `caching` and `multicaching` do *not* use `isCacheableValue`.
 
 For example, if you don't want to cache `false` and `null`, you can pass in a function like this:
 
