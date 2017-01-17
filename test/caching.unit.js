@@ -360,6 +360,33 @@ describe("caching", function() {
                 });
             });
 
+            context("ttl function", function() {
+                beforeEach(function() {
+                    sinon.spy(memoryStoreStub, 'set');
+                });
+
+                afterEach(function() {
+                    memoryStoreStub.set.restore();
+                });
+
+                it("when a ttl function is passed in", function(done) {
+                    opts = {
+                        ttl: function(widget) {
+                            assert.deepEqual(widget, {name: name});
+                            return 0.2;
+                        }
+                    };
+                    cache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
+                    }, opts, function(err, widget) {
+                        checkErr(err);
+                        assert.deepEqual(widget, {name: name});
+                        sinon.assert.calledWith(memoryStoreStub.set, key, {name: name}, {ttl: 0.2});
+                        done();
+                    });
+                });
+            });
+
             context("when result is already cached", function() {
                 function getCachedWidget(name, cb) {
                     cache.wrap(key, function(cacheCb) {
