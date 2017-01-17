@@ -152,6 +152,26 @@ memoryCache.wrap(key, function (cb) {
 // { id: 123, name: 'Bob' }
 ```
 
+The `ttl` can also be computed dynamicall by passing in a function. E.g.,
+
+```javascript
+var opts = {
+    ttl: function(user) {
+        if (user.id === 1) {
+            return 0.1;
+        } else {
+            return 0.5;
+        }
+    }
+};
+
+memoryCache.wrap(key, function(cb) {
+    getUser(userId, cb);
+}, opts, function(err, user) {
+    console.log(user);
+}
+```
+
 #### Example Using Promises
 
 ```javascript
