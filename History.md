@@ -1,3 +1,6 @@
+- 2.4.0 2017-01-17
+  - Added ability to use a dynamic cache ttl (#65) - @philippeauriach
+
 - 2.3.0 2016-12-22
   - Updating isCacheableValue description in README; README syntax error fix (#70, #71) - @lukechilds
   - Calling back with null as first argument in memory store to keep style consistent (#72) - @defcc
