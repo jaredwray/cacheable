@@ -124,6 +124,25 @@ describe("caching", function() {
                         }, 20);
                     });
                 });
+
+                it("lets us delete data using promises", function(done) {
+                    key = support.random.string();
+                    cache.set(key, value)
+                    .then(function() {
+                        return cache.get(key);
+                    }).then(function(val) {
+                        assert.equal(val, value);
+                    }).then(function() {
+                        return cache.del(key);
+                    }).then(function() {
+                        return cache.get(key);
+                    }).then(function(val) {
+                        assert.strictEqual(val, undefined);
+                    }).then(done)
+                    .catch(function(err) {
+                        done(err);
+                    });
+                });
             });
         });
     });
