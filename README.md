@@ -29,7 +29,9 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
     npm install cache-manager
 
 ## Store Engines
-* [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis)
+* [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis) (uses [sol-redis-pool](https://github.com/joshuah/sol-redis-pool))
+
+* [node-cache-manager-redis-store](https://github.com/dabroek/node-cache-manager-redis-store) (uses [node_redis](https://github.com/NodeRedis/node_redis))
 
 * [node-cache-manager-mongodb](https://github.com/v4l3r10/node-cache-manager-mongodb)
 
