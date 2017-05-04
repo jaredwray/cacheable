@@ -33,6 +33,8 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 
 * [node-cache-manager-redis-store](https://github.com/dabroek/node-cache-manager-redis-store) (uses [node_redis](https://github.com/NodeRedis/node_redis))
 
+* [node-cache-manager-ioredis](https://github.com/dabroek/node-cache-manager-ioredis) (uses [ioredis](https://github.com/luin/ioredis))
+
 * [node-cache-manager-mongodb](https://github.com/v4l3r10/node-cache-manager-mongodb)
 
 * [node-cache-manager-mongoose](https://github.com/disjunction/node-cache-manager-mongoose)
