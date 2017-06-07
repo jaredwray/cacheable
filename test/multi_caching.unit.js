@@ -7,6 +7,8 @@ var caching = require('../index').caching;
 var multiCaching = require('../index').multiCaching;
 var memoryStore = require('../lib/stores/memory');
 
+var Promise = require('es6-promise').Promise;
+
 var methods = {
     getWidget: function(name, cb) {
         process.nextTick(function() {
@@ -29,15 +31,15 @@ describe("multiCaching", function() {
         memoryTtl = 0.1;
         defaultTtl = 5;
 
-        memoryCache = caching({store: 'memory', ttl: memoryTtl});
-        memoryCache2 = caching({store: 'memory', ttl: memoryTtl});
-        memoryCache3 = caching({store: 'memory', ttl: memoryTtl});
+        memoryCache = caching({store: 'memory', ttl: memoryTtl, promiseDependency: Promise});
+        memoryCache2 = caching({store: 'memory', ttl: memoryTtl, promiseDependency: Promise});
+        memoryCache3 = caching({store: 'memory', ttl: memoryTtl, promiseDependency: Promise});
 
         key = support.random.string(20);
         name = support.random.string();
     });
 
-    describe("get(), set(), del()", function() {
+    describe("get(), set(), del(), reset()", function() {
         var value;
 
         beforeEach(function() {
@@ -265,6 +267,32 @@ describe("multiCaching", function() {
                 });
             });
         });
+
+        describe("reset()", function() {
+            it("resets all caches", function(done) {
+                multiCache.set(key, value, function(err) {
+                    checkErr(err);
+
+                    multiCache.reset(function() {
+                        memoryCache.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.ok(!result);
+
+                            memoryCache2.get(key, function(err, result) {
+                                checkErr(err);
+                                assert.ok(!result);
+
+                                memoryCache3.get(key, function(err, result) {
+                                    checkErr(err);
+                                    assert.ok(!result);
+                                    done();
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
     });
 
     describe("getAndPassUp()", function() {
@@ -374,7 +402,10 @@ describe("multiCaching", function() {
                 })
                 .then(function() {
                     process.nextTick(function() {
-                        assert.equal(memoryCache.get(key), value);
+                        memoryCache.get(key)
+                        .then(function(fetchedValue) {
+                            assert.equal(fetchedValue, value);
+                        });
                     });
                 })
                 .then(done);
@@ -1156,12 +1187,20 @@ describe("multiCaching", function() {
                     fakeError = new Error(support.random.string());
                 });
 
-                it("bubbles up that error", function(done) {
+                it("does not catch the error", function(done) {
+                    var originalExceptionHandler = process.listeners('uncaughtException').pop();
+                    process.removeListener('uncaughtException', originalExceptionHandler);
+
+                    process.once('uncaughtException', function(err) {
+                        process.on('uncaughtException', originalExceptionHandler);
+                        assert.ok(err);
+                        done();
+                    });
+
                     multiCache.wrap(key, function() {
                         throw fakeError;
-                    }, ttl, function(err) {
-                        assert.equal(err, fakeError);
-                        done();
+                    }, function() {
+                        done(new Error('Should not have caught error'));
                     });
                 });
             });

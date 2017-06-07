@@ -1,3 +1,37 @@
+- 2.4.0 2017-01-17
+  - Added ability to use a dynamic cache ttl (#65) - @philippeauriach
+
+- 2.3.0 2016-12-22
+  - Updating isCacheableValue description in README; README syntax error fix (#70, #71) - @lukechilds
+  - Calling back with null as first argument in memory store to keep style consistent (#72) - @defcc
+
+- 2.2.0 2016-10-19
+  - Adding multi_caching.reset() (#63) - @disjunction
+
+- 2.1.2 2016-06-08
+  - Checking that callback array exists before iterating over it (#57).
+
+- 2.1.1 2016-05-24
+  - Fixing version number in package.json.
+
+- 2.1.0 2016-05-24
+  - Allow passing in a promise dependency (#55). - @siddharthkchatterjee
+
+- 2.0.1 2016-04-18
+  - Fixed triggering callback in wrap after it was queued (#48) - @theorm
+
+- 2.0.0 2016-03-13
+  - Removing domain integration (#38), no longer actively supporting node 0.10.x.
+
+- 1.5.0 2016-03-13
+  - npm bumps, making sure global.Promise is not defined in node 0.10 memory store test.
+
+- 1.4.1 2016-03-13
+  - Fixing backward-compatibility Promise issue with node 0.10.x in memory store.
+
+- 1.4.0 2016-02-03
+  - Passing ttl of 0 to lruCache, upgrading to lru-cache 4.0.0
+
 - 1.3.0 2016-01-26
   - Promise support (#39, #24) - @PuKoren
 

@@ -8,6 +8,8 @@ var checkErr = support.checkErr;
 var caching = require('../index').caching;
 var memoryStore = require('../lib/stores/memory');
 
+var Promise = require('es6-promise').Promise;
+
 var methods = {
     getWidget: function(name, cb) {
         process.nextTick(function() {
@@ -27,7 +29,7 @@ describe("caching", function() {
         ['memory'].forEach(function(store) {
             context("using " + store + " store", function() {
                 beforeEach(function() {
-                    cache = caching({store: store});
+                    cache = caching({store: store, promiseDependency: Promise});
                     key = support.random.string(20);
                     value = support.random.string();
                 });
@@ -45,6 +47,7 @@ describe("caching", function() {
                 });
 
                 it("lets us set and get data without a callback", function(done) {
+                    cache = caching({store: memoryStore.create({noPromises: true})});
                     cache.set(key, value, {ttl: defaultTtl});
 
                     setTimeout(function() {
@@ -54,7 +57,19 @@ describe("caching", function() {
                     }, 20);
                 });
 
+                it("lets us set and get data without a callback, returning a promise", function(done) {
+                    cache.set(key, value, {ttl: defaultTtl});
+                    setTimeout(function() {
+                        cache.get(key)
+                        .then(function(result) {
+                            assert.equal(result, value);
+                            done();
+                        });
+                    }, 20);
+                });
+
                 it("lets us set and get data without options object or callback", function(done) {
+                    cache = caching({store: memoryStore.create({noPromises: true})});
                     cache.set(key, value);
 
                     setTimeout(function() {
@@ -107,6 +122,25 @@ describe("caching", function() {
                                 done();
                             });
                         }, 20);
+                    });
+                });
+
+                it("lets us delete data using promises", function(done) {
+                    key = support.random.string();
+                    cache.set(key, value)
+                    .then(function() {
+                        return cache.get(key);
+                    }).then(function(val) {
+                        assert.equal(val, value);
+                    }).then(function() {
+                        return cache.del(key);
+                    }).then(function() {
+                        return cache.get(key);
+                    }).then(function(val) {
+                        assert.strictEqual(val, undefined);
+                    }).then(done)
+                    .catch(function(err) {
+                        done(err);
                     });
                 });
             });
@@ -224,10 +258,11 @@ describe("caching", function() {
 
     describe("keys()", function() {
         var keyCount;
-        var savedKeys = [];
+        var savedKeys;
 
         beforeEach(function(done) {
             keyCount = 10;
+            savedKeys = [];
             var processed = 0;
 
             cache = caching({store: 'memory'});
@@ -248,14 +283,47 @@ describe("caching", function() {
         it("calls back with all keys in cache", function(done) {
             cache.keys(function(err, keys) {
                 checkErr(err);
-                assert.deepEqual(keys.sort, savedKeys.sort);
+                assert.deepEqual(keys.sort(), savedKeys.sort());
                 done();
             });
         });
 
-        it("lets us get the keys without a callback (memory store only)", function() {
-            var keys = cache.keys();
-            assert.deepEqual(keys.sort, savedKeys.sort);
+        it("lets us set and get data without a callback, returning a promise", function(done) {
+            cache.keys()
+            .then(function(keys) {
+                assert.deepEqual(keys.sort(), savedKeys.sort());
+                done();
+            })
+            .catch(function(err) {
+                done(err);
+            });
+        });
+
+        context("when not using promises", function() {
+            beforeEach(function(done) {
+                savedKeys = [];
+                keyCount = 10;
+                var processed = 0;
+
+                cache = caching({store: memoryStore.create({noPromises: true})});
+
+                function isDone() {
+                    return processed === keyCount;
+                }
+
+                async.until(isDone, function(cb) {
+                    processed += 1;
+                    key = support.random.string(20);
+                    savedKeys.push(key);
+                    value = support.random.string();
+                    cache.set(key, value, cb);
+                }, done);
+            });
+
+            it("lets us get the keys without a callback (memory store only)", function() {
+                var keys = cache.keys();
+                assert.deepEqual(keys.sort(), savedKeys.sort());
+            });
         });
     });
 
@@ -306,6 +374,33 @@ describe("caching", function() {
                         checkErr(err);
                         assert.deepEqual(widget, {name: name});
                         sinon.assert.calledWith(memoryStoreStub.set, key, {name: name}, {});
+                        done();
+                    });
+                });
+            });
+
+            context("ttl function", function() {
+                beforeEach(function() {
+                    sinon.spy(memoryStoreStub, 'set');
+                });
+
+                afterEach(function() {
+                    memoryStoreStub.set.restore();
+                });
+
+                it("when a ttl function is passed in", function(done) {
+                    opts = {
+                        ttl: function(widget) {
+                            assert.deepEqual(widget, {name: name});
+                            return 0.2;
+                        }
+                    };
+                    cache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
+                    }, opts, function(err, widget) {
+                        checkErr(err);
+                        assert.deepEqual(widget, {name: name});
+                        sinon.assert.calledWith(memoryStoreStub.set, key, {name: name}, {ttl: 0.2});
                         done();
                     });
                 });
@@ -466,6 +561,19 @@ describe("caching", function() {
                 });
             });
 
+            context("when callback called twice by client", function() {
+                it("it does not throw an error", function(done) {
+                    cache.wrap(key, function(cb) {
+                        methods.getWidget(name, cb);
+                        methods.getWidget(name, cb);
+                    }, opts, function(err, widget) {
+                        checkErr(err);
+                        assert.deepEqual(widget, {name: name});
+                        setTimeout(done, 10);
+                    });
+                });
+            });
+
             it("lets us make nested calls", function(done) {
                 function getCachedWidget(name, cb) {
                     cache.wrap(key, function(cacheCb) {
@@ -529,12 +637,20 @@ describe("caching", function() {
                     fakeError = new Error(support.random.string());
                 });
 
-                it("bubbles up that error", function(done) {
+                it("does not catch the error", function(done) {
+                    var originalExceptionHandler = process.listeners('uncaughtException').pop();
+                    process.removeListener('uncaughtException', originalExceptionHandler);
+
+                    process.once('uncaughtException', function(err) {
+                        process.on('uncaughtException', originalExceptionHandler);
+                        assert.ok(err);
+                        done();
+                    });
+
                     cache.wrap(key, function() {
                         throw fakeError;
-                    }, function(err) {
-                        assert.equal(err, fakeError);
-                        done();
+                    }, function() {
+                        done(new Error('Should not have caught error'));
                     });
                 });
             });
@@ -629,6 +745,27 @@ describe("caching", function() {
                         methods.getWidget.restore();
                         assert.equal(err, fakeError);
                         assert.ok(!widget);
+                        done();
+                    });
+                });
+            });
+
+            context("when wrapped function returns a non cacheable value once", function() {
+                it("second call to 'wrap' triggers the callback", function(done) {
+                    var key = support.random.string();
+
+                    // 1.
+                    cache.wrap(key, function(cb) {
+                        cb(null, undefined);
+                    }, function(err, result) {
+                        assert.equal(result, undefined);
+                    });
+
+                    // 2.
+                    cache.wrap(key, function(cb) {
+                        cb(null, undefined);
+                    }, function(err, result) {
+                        assert.equal(result, undefined);
                         done();
                     });
                 });

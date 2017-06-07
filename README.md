@@ -1,5 +1,5 @@
-[![build status](https://secure.travis-ci.org/BryanDonovan/node-cache-manager.png)](http://travis-ci.org/BryanDonovan/node-cache-manager)
-[![Coverage Status](https://coveralls.io/repos/BryanDonovan/node-cache-manager/badge.png?branch=master)](https://coveralls.io/r/BryanDonovan/node-cache-manager?branch=master)
+[![build status](https://secure.travis-ci.org/BryanDonovan/node-cache-manager.svg)](http://travis-ci.org/BryanDonovan/node-cache-manager)
+[![Coverage Status](https://coveralls.io/repos/BryanDonovan/node-cache-manager/badge.svg?branch=master)](https://coveralls.io/r/BryanDonovan/node-cache-manager?branch=master)
 
 node-cache-manager
 ======================
@@ -29,11 +29,25 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
     npm install cache-manager
 
 ## Store Engines
-* [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis)
+* [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis) (uses [sol-redis-pool](https://github.com/joshuah/sol-redis-pool))
+
+* [node-cache-manager-redis-store](https://github.com/dabroek/node-cache-manager-redis-store) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+
+* [node-cache-manager-ioredis](https://github.com/dabroek/node-cache-manager-ioredis) (uses [ioredis](https://github.com/luin/ioredis))
 
 * [node-cache-manager-mongodb](https://github.com/v4l3r10/node-cache-manager-mongodb)
 
+* [node-cache-manager-mongoose](https://github.com/disjunction/node-cache-manager-mongoose)
+
 * [node-cache-manager-fs](https://github.com/hotelde/node-cache-manager-fs)
+
+* [node-cache-manager-fs-binary](https://github.com/sheershoff/node-cache-manager-fs-binary)
+
+* [node-cache-manager-hazelcast](https://github.com/marudor/node-cache-manager-hazelcast)
+
+* [node-cache-manager-memcached-store](https://github.com/theogravity/node-cache-manager-memcached-store)
+
+* [node-cache-manager-memory-store](https://github.com/theogravity/node-cache-manager-memory-store)
 
 ## Overview
 
@@ -144,6 +158,26 @@ memoryCache.wrap(key, function (cb) {
 // { id: 123, name: 'Bob' }
 ```
 
+The `ttl` can also be computed dynamicall by passing in a function. E.g.,
+
+```javascript
+var opts = {
+    ttl: function(user) {
+        if (user.id === 1) {
+            return 0.1;
+        } else {
+            return 0.5;
+        }
+    }
+};
+
+memoryCache.wrap(key, function(cb) {
+    getUser(userId, cb);
+}, opts, function(err, user) {
+    console.log(user);
+}
+```
+
 #### Example Using Promises
 
 ```javascript
@@ -155,7 +189,20 @@ memoryCache.wrap(key, function() {
 });
 ```
 
-Here's a very basic example of how you could use this in an Express app:
+If you are using a Node version that does not include native promises, you can
+specify your promise dependency in the options passed to the cache module.
+E.g.,
+
+```javascript
+
+var Promise = require('es6-promise').Promise;
+cache = caching({store: store, promiseDependency: Promise});
+
+```
+
+#### Example Express App Usage
+
+(Also see the [Express.js cache-manager example app](https://github.com/BryanDonovan/node-cache-manager-express-example)).
 
 ```javascript
 function respond(res, err, data) {
@@ -180,8 +227,8 @@ app.get('/foo/bar', function(req, res) {
 #### Custom Stores
 
 You can use your own custom store by creating one with the same API as the
-build-in memory stores (such as a redis or memcached store).  To use your own store, you can either pass
-in an instance of it, or pass in the path to the module.
+built-in memory stores (such as a redis or memcached store).  To use your own store just pass
+in an instance of it.
 
 E.g.,
 
@@ -229,12 +276,14 @@ multiCache.wrap(key2, function (cb) {
 });
 ```
 
-### Specifying What to Cache
+### Specifying What to Cache in `wrap` Function
 
 Both the `caching` and `multicaching` modules allow you to pass in a callback function named
-`isCacheableValue` which is called with every value returned from cache or from a wrapped function.
-This lets you specify which values should and should not be cached. If the function returns true, it will be
+`isCacheableValue` which is called by the `wrap` function with every value returned from cache or from the wrapped function.
+This lets you specify which values should and should not be cached by `wrap`. If the function returns true, it will be
 stored in cache. By default the caches cache everything except `undefined`.
+
+NOTE: The `set` functions in `caching` and `multicaching` do *not* use `isCacheableValue`.
 
 For example, if you don't want to cache `false` and `null`, you can pass in a function like this:
 
@@ -250,7 +299,7 @@ Then pass it to `caching` like this:
 
 ```javascript
 
-var memoryCache = cacheManager.caching({store: 'memory', isCacheableValue: isCacheableValue};
+var memoryCache = cacheManager.caching({store: 'memory', isCacheableValue: isCacheableValue});
 
 ```
 
