@@ -33,7 +33,7 @@
   },
   "homepage": "https://github.com/lukechilds/cacheable-request",
   "dependencies": {
-    "clone-response": "^0.2.2",
+    "clone-response": "^1.0.1",
     "get-stream": "^3.0.0",
     "http-cache-semantics": "^3.7.3",
     "lowercase-keys": "^1.0.0",
