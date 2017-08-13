@@ -36,7 +36,7 @@
     "clone-response": "^1.0.1",
     "get-stream": "^3.0.0",
     "http-cache-semantics": "^3.7.3",
-    "keyv": "^1.0.4",
+    "keyv": "^2.0.1",
     "lowercase-keys": "^1.0.0",
     "normalize-url": "^1.9.1",
     "responselike": "^1.0.0"
