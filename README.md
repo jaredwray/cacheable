@@ -158,7 +158,7 @@ memoryCache.wrap(key, function (cb) {
 // { id: 123, name: 'Bob' }
 ```
 
-The `ttl` can also be computed dynamicall by passing in a function. E.g.,
+The `ttl` can also be computed dynamically by passing in a function. E.g.,
 
 ```javascript
 var opts = {
