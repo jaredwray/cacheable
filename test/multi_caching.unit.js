@@ -710,7 +710,7 @@ describe("multiCaching", function() {
                 it("allows repeated calls for uncacheable value", function(done) {
                     function getUndefined(name, cb) {
                         multiCache.wrap(key, function(cacheCb) {
-                            process.nextTick(function () {
+                            process.nextTick(function() {
                                 cacheCb(null, undefined);
                             });
                         }, cb);
