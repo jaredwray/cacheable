@@ -728,6 +728,36 @@ describe("multiCaching", function() {
                         });
                     });
                 });
+
+                it("allows simultaneous calls for uncacheable value", function (done) {
+                    var results = [true, undefined];
+
+                    function getUndefined(name, cb) {
+                        multiCache.wrap(key, function(cacheCb) {
+                            process.nextTick(function() {
+                                cacheCb(null, results.pop());
+                            });
+                        }, cb);
+                    }
+
+                    var name = 'oof';
+
+                    getUndefined(name, function(err, val) {
+                        checkErr(err);
+                        assert.ok(val === undefined);
+                    });
+                    getUndefined(name, function(err, val) {
+                        checkErr(err);
+                        assert.ok(val === undefined);
+
+                        // ensure we didn't cache "undefined"
+                        getUndefined(name, function (err, val) {
+                            checkErr(err);
+                            assert.ok(val === true);
+                            done();
+                        });
+                    });
+                });
             });
         });
 
