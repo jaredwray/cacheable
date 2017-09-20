@@ -706,6 +706,28 @@ describe("multiCaching", function() {
                         done();
                     });
                 });
+
+                it("allows repeated calls for uncacheable value", function(done) {
+                    function getUndefined(name, cb) {
+                        multiCache.wrap(key, function(cacheCb) {
+                            process.nextTick(function () {
+                                cacheCb(null, undefined);
+                            });
+                        }, cb);
+                    }
+
+                    var name = 'oof';
+
+                    getUndefined(name, function(err, val) {
+                        checkErr(err);
+                        assert.ok(val === undefined);
+                        getUndefined(name, function(err, val) {
+                            checkErr(err);
+                            assert.ok(val === undefined);
+                            done();
+                        });
+                    });
+                });
             });
         });
 
