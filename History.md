@@ -1,3 +1,6 @@
+- 2.5.0 2017-10-09
+  - Add explicit return in wrapPromise (#109) - @jeff-kilbride
+
 - 2.4.0 2017-01-17
   - Added ability to use a dynamic cache ttl (#65) - @philippeauriach
 
