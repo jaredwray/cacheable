@@ -35,7 +35,7 @@
   "dependencies": {
     "clone-response": "1.0.1",
     "get-stream": "3.0.0",
-    "http-cache-semantics": "3.7.3",
+    "http-cache-semantics": "3.8.0",
     "keyv": "3.0.0  ",
     "lowercase-keys": "1.0.0",
     "normalize-url": "1.9.1",
