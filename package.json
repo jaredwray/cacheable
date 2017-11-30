@@ -21,7 +21,8 @@
   "license": "MIT",
   "dependencies": {
     "async": "1.5.2",
-    "lru-cache": "4.0.0"
+    "lru-cache": "4.0.0",
+    "ms": "^2.0.0"
   },
   "devDependencies": {
     "coveralls": "^2.3.0",
