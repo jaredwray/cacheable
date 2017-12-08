@@ -1,3 +1,6 @@
+- 2.6.0 2017-12-08
+  - fix multicaching when result is not cacheable (#106) - @gswalden
+
 - 2.5.0 2017-10-09
   - Add explicit return in wrapPromise (#109) - @jeff-kilbride
 
