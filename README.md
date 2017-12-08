@@ -29,7 +29,11 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
     npm install cache-manager
 
 ## Store Engines
-* [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis)
+* [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis) (uses [sol-redis-pool](https://github.com/joshuah/sol-redis-pool))
+
+* [node-cache-manager-redis-store](https://github.com/dabroek/node-cache-manager-redis-store) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+
+* [node-cache-manager-ioredis](https://github.com/dabroek/node-cache-manager-ioredis) (uses [ioredis](https://github.com/luin/ioredis))
 
 * [node-cache-manager-mongodb](https://github.com/v4l3r10/node-cache-manager-mongodb)
 
@@ -42,6 +46,8 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 * [node-cache-manager-hazelcast](https://github.com/marudor/node-cache-manager-hazelcast)
 
 * [node-cache-manager-memcached-store](https://github.com/theogravity/node-cache-manager-memcached-store)
+
+* [node-cache-manager-memory-store](https://github.com/theogravity/node-cache-manager-memory-store)
 
 ## Overview
 
@@ -152,7 +158,7 @@ memoryCache.wrap(key, function (cb) {
 // { id: 123, name: 'Bob' }
 ```
 
-The `ttl` can also be computed dynamicall by passing in a function. E.g.,
+The `ttl` can also be computed dynamically by passing in a function. E.g.,
 
 ```javascript
 var opts = {
