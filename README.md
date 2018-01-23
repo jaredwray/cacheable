@@ -200,6 +200,22 @@ cache = caching({store: store, promiseDependency: Promise});
 
 ```
 
+#### Example Using async/await
+
+```javascript
+
+try {
+  let user = await memoryCache.wrap(key, function() {
+    return getUserPromise(userId);
+  });
+} catch (err) {
+  // error handling
+}
+```
+
+Hint: should wrap `await` call with `try` - `catch` to handle `promise` error.
+
+
 #### Example Express App Usage
 
 (Also see the [Express.js cache-manager example app](https://github.com/BryanDonovan/node-cache-manager-express-example)).
