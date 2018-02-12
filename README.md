@@ -301,6 +301,7 @@ key2 = 'user_' + userId;
 ttl = 5;
 
 // Sets in all caches.
+// The "ttl" option can also be a function (see example below)
 multiCache.set('foo2', 'bar2', {ttl: ttl}, function(err) {
     if (err) { throw err; }
 
@@ -314,9 +315,17 @@ multiCache.set('foo2', 'bar2', {ttl: ttl}, function(err) {
     });
 });
 
+// Set the ttl value by context depending on the store.
+function getTTL(data, store) {
+    if (store === 'redis') {
+        return 6000;
+    }
+    return 3000;
+}
+
 // Sets multiple keys in all caches.
 // You can pass as many key,value pair as you want
-multiCache.mset('key', 'value', 'key2', 'value2', {ttl: ttl}, function(err) {
+multiCache.mset('key', 'value', 'key2', 'value2', {ttl: getTTL}, function(err) {
     if (err) { throw err; }
 
     // mget() fetches from highest priority cache.

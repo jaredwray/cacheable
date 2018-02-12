@@ -20,6 +20,12 @@ var methods = {
             cb(null, names.map(function(name) { return {name: name}; }));
         });
     },
+    getTTL: function(data, store) {
+        if (store === 'memory') {
+            return 444;
+        }
+        return 777;
+    },
 };
 
 describe("multiCaching", function() {
@@ -1106,6 +1112,30 @@ describe("multiCaching", function() {
                             done();
                         });
                     });
+                });
+            });
+
+            it('sets the ttl value by context (store) with a function', function(done) {
+                memoryCache3.store.name = 'redis';
+                sinon.spy(memoryCache.store, 'set');
+                sinon.spy(memoryCache3.store, 'set');
+                sinon.spy(methods, 'getTTL');
+
+                multiCache.wrap(key, function(cb) {
+                    methods.getWidget(name, cb);
+                }, {ttl: methods.getTTL}, function(err) {
+                    checkErr(err);
+                    sinon.assert.calledTwice(methods.getTTL);
+                    sinon.assert.calledWith(methods.getTTL, [key, {name: name}], 'memory');
+                    sinon.assert.calledWith(methods.getTTL, [key, {name: name}], 'redis');
+                    sinon.assert.calledWith(memoryCache.store.set, key, {name: name}, {ttl: 444});
+                    sinon.assert.calledWith(memoryCache3.store.set, key, {name: name}, {ttl: 777});
+
+                    methods.getTTL.restore();
+                    memoryCache.store.set.restore();
+                    memoryCache3.store.set.restore();
+                    memoryCache3.store.name = 'memory';
+                    done();
                 });
             });
 
