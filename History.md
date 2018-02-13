@@ -1,3 +1,7 @@
+- 2.7.0 2018-02-13
+  - allow setting, getting and deleting multiple keys (#114) - @sebelga
+  - allow passing in a function to determine TTL based on store - @sebelga
+
 - 2.6.0 2017-12-08
   - fix multicaching when result is not cacheable (#106) - @gswalden
 
