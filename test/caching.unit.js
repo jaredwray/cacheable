@@ -15,7 +15,12 @@ var methods = {
         process.nextTick(function() {
             cb(null, {name: name});
         });
-    }
+    },
+    getMultiWidget: function(names, cb) {
+        process.nextTick(function() {
+            cb(null, names.map(function(name) { return {name: name}; }));
+        });
+    },
 };
 
 describe("caching", function() {
@@ -82,6 +87,82 @@ describe("caching", function() {
         });
     });
 
+    describe("mget() and mset()", function() {
+        var key2;
+        var value2;
+        var store = 'memory';
+
+        beforeEach(function() {
+            key = support.random.string(20);
+            value = support.random.string();
+            key2 = support.random.string(20);
+            value2 = support.random.string();
+
+            cache = caching({store: store, ttl: defaultTtl, ignoreCacheErrors: false});
+        });
+
+        it("lets us set and get several keys and data in cache", function(done) {
+            cache.mset(key, value, key2, value2, {ttl: defaultTtl}, function(err) {
+                checkErr(err);
+
+                cache.mget(key, key2, function(err, result) {
+                    checkErr(err);
+                    assert.equal(result[0], value);
+                    assert.equal(result[1], value2);
+                    done();
+                });
+            });
+        });
+
+        it("lets us set and get data without a callback", function(done) {
+            cache = caching({store: memoryStore.create({noPromises: true})});
+            cache.mset(key, value, key2, value2, {ttl: defaultTtl});
+
+            setTimeout(function() {
+                var result = cache.mget(key, key2);
+                assert.equal(result[0], value);
+                assert.equal(result[1], value2);
+                done();
+            }, 20);
+        });
+
+        it("lets us set and get data without a callback, returning a promise", function(done) {
+            cache.mset(key, value, key2, value2, {ttl: defaultTtl});
+            setTimeout(function() {
+                cache.mget(key, key2)
+                .then(function(result) {
+                    assert.equal(result[0], value);
+                    assert.equal(result[1], value2);
+                    done();
+                });
+            }, 20);
+        });
+
+        it("lets us set and get data without options object or callback", function(done) {
+            cache = caching({store: memoryStore.create({noPromises: true})});
+            cache.mset(key, value, key2, value2);
+
+            setTimeout(function() {
+                var result = cache.mget(key, key2);
+                assert.equal(result[0], value);
+                assert.equal(result[1], value2);
+                done();
+            }, 20);
+        });
+
+        it("lets us pass an 'options' object", function(done) {
+            cache = caching({store: memoryStore.create({noPromises: true})});
+            cache.mset(key, value, key2, value2);
+
+            setTimeout(function() {
+                var result = cache.mget(key, key2, {someConfig: true});
+                assert.equal(result[0], value);
+                assert.equal(result[1], value2);
+                done();
+            }, 20);
+        });
+    });
+
     describe("del()", function() {
         ['memory'].forEach(function(store) {
             context("using " + store + " store", function() {
@@ -143,6 +224,55 @@ describe("caching", function() {
                         done(err);
                     });
                 });
+
+                describe('with multiple keys', function() {
+                    var key2;
+                    var value2;
+
+                    beforeEach(function(done) {
+                        cache = caching({store: store});
+                        key2 = support.random.string(20);
+                        value2 = support.random.string();
+                        cache.mset(key, value, key2, value2, {ttl: defaultTtl}, function(err) {
+                            checkErr(err);
+                            done();
+                        });
+                    });
+
+                    it('deletes an unlimited number of key arguments', function(done) {
+                        cache.mget(key, key2, function(err, result) {
+                            assert.equal(result[0], value);
+                            assert.equal(result[1], value2);
+
+                            cache.del(key, key2, function(err) {
+                                checkErr(err);
+
+                                cache.mget(key, key2, function(err, result) {
+                                    assert.ok(!result[0]);
+                                    assert.ok(!result[1]);
+                                    done();
+                                });
+                            });
+                        });
+                    });
+
+                    it('deletes an array of keys', function(done) {
+                        cache.mget(key, key2, function(err, result) {
+                            assert.equal(result[0], value);
+                            assert.equal(result[1], value2);
+
+                            cache.del([key, key2], function(err) {
+                                checkErr(err);
+
+                                cache.mget(key, key2, function(err, result) {
+                                    assert.ok(!result[0]);
+                                    assert.ok(!result[1]);
+                                    done();
+                                });
+                            });
+                        });
+                    });
+                });
             });
         });
     });
@@ -194,7 +324,7 @@ describe("caching", function() {
             }, 10);
         });
 
-        context("when store has no del() method", function() {
+        context("when store has no del(), mget() or mset() method", function() {
             var fakeStore;
 
             beforeEach(function() {
@@ -770,10 +900,165 @@ describe("caching", function() {
                     });
                 });
             });
+
+            context("when passing multiple keys", function() {
+                var key2;
+                var name2;
+
+                beforeEach(function() {
+                    key2 = support.random.string(20);
+                    name2 = support.random.string();
+                    sinon.spy(memoryStoreStub, 'mset');
+                });
+
+                afterEach(function() {
+                    memoryStoreStub.mset.restore();
+                });
+
+                context("when result is already cached", function() {
+                    it("retrieves data from cache", function(done) {
+                        var funcCalled = false;
+                        sinon.stub(memoryStoreStub, 'mget', function() {
+                            var args = Array.prototype.slice.apply(arguments);
+                            var cb = args.pop();
+                            cb(null, [{name: name}, {name: name2}]);
+                        });
+
+                        cache.wrap(key, key2, function(cb) {
+                            funcCalled = true;
+                            cb();
+                        }, function(err, widgets) {
+                            checkErr(err);
+                            assert.deepEqual(widgets[0], {name: name});
+                            assert.deepEqual(widgets[1], {name: name2});
+                            assert.ok(memoryStoreStub.mget.calledWith(key, key2));
+                            assert.ok(!funcCalled);
+                            memoryStoreStub.mget.restore();
+                            done();
+                        });
+                    });
+                });
+
+                it("when a ttl is passed in", function(done) {
+                    cache.wrap(key, key2, function(cb) {
+                        methods.getMultiWidget([name, name2], cb);
+                    }, opts, function(err, widgets) {
+                        checkErr(err);
+                        assert.deepEqual(widgets[0], {name: name});
+                        assert.deepEqual(widgets[1], {name: name2});
+                        sinon.assert.calledWith(memoryStoreStub.mset, key, {name: name}, key2, {name: name2}, opts);
+                        done();
+                    });
+                });
+
+                it("when a ttl is passed in (function)", function(done) {
+                    var ttlFunc = function() { return 1234; };
+                    opts = {ttl: ttlFunc};
+
+                    cache.wrap(key, key2, function(cb) {
+                        methods.getMultiWidget([name, name2], cb);
+                    }, opts, function(err) {
+                        checkErr(err);
+                        sinon.assert.calledWith(
+                            memoryStoreStub.mset, key, {name: name}, key2, {name: name2}, {ttl: 1234}
+                        );
+                        done();
+                    });
+                });
+
+                it("when a ttl is not passed in", function(done) {
+                    cache.wrap(key, key2, function(cb) {
+                        methods.getMultiWidget([name, name2], cb);
+                    }, function(err, widgets) {
+                        checkErr(err);
+                        assert.deepEqual(widgets[0], {name: name});
+                        assert.deepEqual(widgets[1], {name: name2});
+                        sinon.assert.calledWith(memoryStoreStub.mset, key, {name: name}, key2, {name: name2}, {});
+                        done();
+                    });
+                });
+
+                it("does not store non-allowed values", function(done) {
+                    var name = 'bar';
+
+                    cache = caching({store: 'memory', isCacheableValue: function() { return false; }});
+                    cache.wrap(key, key2, function(cb) {
+                        methods.getMultiWidget([name, name2], cb);
+                    }, function(err) {
+                        checkErr(err);
+                        assert.ok(memoryStoreStub.mset.notCalled);
+                        done();
+                    });
+                });
+
+                context("when store.mget() calls back with an error", function() {
+                    context("and ignoreCacheErrors is not set (default is false)", function() {
+                        it("bubbles up that error", function(done) {
+                            var fakeError = new Error(support.random.string());
+
+                            sinon.stub(memoryStoreStub, 'mget', function() {
+                                var args = Array.prototype.slice.apply(arguments);
+                                var cb = args.pop();
+                                cb(fakeError);
+                            });
+
+                            cache.wrap(key, key2, function(cb) {
+                                methods.getMultiWidget([name, name2], cb);
+                            }, function(err) {
+                                assert.equal(err, fakeError);
+                                memoryStoreStub.mget.restore();
+                                done();
+                            });
+                        });
+                    });
+
+                    context("and ignoreCacheErrors is set to true", function() {
+                        it("does not bubble up that error", function(done) {
+                            cache = caching({store: 'memory', ttl: defaultTtl, ignoreCacheErrors: true});
+
+                            var fakeError = new Error(support.random.string());
+
+                            sinon.stub(memoryStoreStub, 'mget', function() {
+                                var args = Array.prototype.slice.apply(arguments);
+                                var cb = args.pop();
+                                cb(fakeError);
+                            });
+
+                            cache.wrap(key, key2, function(cb) {
+                                methods.getMultiWidget([name, name2], cb);
+                            }, function(err) {
+                                assert.equal(err, null);
+                                memoryStoreStub.mget.restore();
+                                done();
+                            });
+                        });
+                    });
+                });
+
+                context("when an error is thrown in the work function", function() {
+                    var fakeError;
+
+                    beforeEach(function() {
+                        fakeError = new Error(support.random.string());
+                    });
+
+                    it("does catch the error ", function(done) {
+                        cache = caching({store: 'memory', ttl: defaultTtl, ignoreCacheErrors: false});
+
+                        cache.wrap(key, key2, function(cb) {
+                            return cb(fakeError);
+                        }, function(err) {
+                            assert.equal(err, fakeError);
+                            done();
+                        });
+                    });
+                });
+            });
         });
 
         describe("when called multiple times in parallel with same key", function() {
             var construct;
+            var constructMultiple;
 
             beforeEach(function() {
                 cache = caching({
@@ -786,6 +1071,13 @@ describe("caching", function() {
                     var timeout = support.random.number(100);
                     setTimeout(function() {
                         cb(null, 'value');
+                    }, timeout);
+                });
+
+                constructMultiple = sinon.spy(function(val, cb) {
+                    var timeout = support.random.number(100);
+                    setTimeout(function() {
+                        cb(null, ['value', 'value2']);
                     }, timeout);
                 });
             });
@@ -806,6 +1098,27 @@ describe("caching", function() {
                 }, function(err) {
                     checkErr(err);
                     assert.equal(construct.callCount, 1);
+                    done();
+                });
+            });
+
+            it("calls the multiWrapped function once", function(done) {
+                var values = [];
+                for (var i = 0; i < 2; i++) {
+                    values.push(i);
+                }
+
+                async.each(values, function(val, next) {
+                    cache.wrap('key', 'key2', function(cb) {
+                        constructMultiple(val, cb);
+                    }, function(err, results) {
+                        assert.equal(results[0], 'value');
+                        assert.equal(results[1], 'value2');
+                        next(err);
+                    });
+                }, function(err) {
+                    checkErr(err);
+                    assert.equal(constructMultiple.callCount, 1);
                     done();
                 });
             });
