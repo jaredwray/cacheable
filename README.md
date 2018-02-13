@@ -51,7 +51,7 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 
 ## Overview
 
-First, it includes a `wrap` function that lets you wrap any function in cache.
+**First**, it includes a `wrap` function that lets you wrap any function in cache.
 (Note, this was inspired by [node-caching](https://github.com/mape/node-caching).)
 This is probably the feature you're looking for.  As an example, where you might have to do this:
 
@@ -82,12 +82,14 @@ function getCachedUser(id, cb) {
 }
 ```
 
-Second, node-cache-manager features a built-in memory cache (using [node-lru-cache](https://github.com/isaacs/node-lru-cache)),
+**Second**, node-cache-manager features a built-in memory cache (using [node-lru-cache](https://github.com/isaacs/node-lru-cache)),
 with the standard functions you'd expect in most caches:
 
     set(key, val, {ttl: ttl}, cb) // * see note below
     get(key, cb)
     del(key, cb)
+    mset(key1, val1, key2, val2, {ttl: ttl}, cb) // set several keys at once
+    mget(key1, key2, key3, cb) // get several keys at once
 
     // * Note that depending on the underlying store, you may be able to pass the
     // ttl as the third param, like this:
@@ -95,7 +97,7 @@ with the standard functions you'd expect in most caches:
     // ... or pass no ttl at all:
     set(key, val, cb)
 
-Third, node-cache-manager lets you set up a tiered cache strategy.  This may be of
+**Third**, node-cache-manager lets you set up a tiered cache strategy.  This may be of
 limited use in most cases, but imagine a scenario where you expect tons of
 traffic, and don't want to hit your primary cache (like Redis) for every request.
 You decide to store the most commonly-requested data in an in-memory cache,
@@ -104,6 +106,8 @@ still want to store the data in Redis for backup, and for the requests that
 aren't as common as the ones you want to store in memory. This is something
 node-cache-manager handles easily and transparently.
 
+
+**Fourth**, it allows you to get and set multiple keys at once for caching store that support it. This means that when getting muliple keys it will go through the different caches starting from the highest priority one (see multi store below) and merge the values it finds at each level.
 
 ## Usage Examples
 
@@ -176,6 +180,41 @@ memoryCache.wrap(key, function(cb) {
 }, opts, function(err, user) {
     console.log(user);
 }
+```
+
+You can get several keys at once. E.g.
+
+```js
+
+var key1 = 'user_1';
+var key2 = 'user_1';
+
+memoryCache.wrap(key1, key2, function (cb) {
+    getManyUser([key1, key2], cb);
+}, function (err, users) {
+    console.log(users[0]);
+    console.log(users[1]);
+});
+```
+
+#### Example setting/getting several keys with mset() and mget()
+
+```js
+memoryCache.mset('foo', 'bar', 'foo2', 'bar2' {ttl: ttl}, function(err) {
+    if (err) { throw err; }
+
+    memoryCache.mget('foo', 'foo2', function(err, result) {
+        console.log(result);
+        // >> ['bar', 'bar2']
+
+        // Delete keys with del() passing arguments...
+        memoryCache.del('foo', 'foo2', function(err) {});
+
+        // ...passing an Array of keys
+        memoryCache.del(['foo', 'foo2'], function(err) {});
+    });
+});
+
 ```
 
 #### Example Using Promises
@@ -262,6 +301,7 @@ key2 = 'user_' + userId;
 ttl = 5;
 
 // Sets in all caches.
+// The "ttl" option can also be a function (see example below)
 multiCache.set('foo2', 'bar2', {ttl: ttl}, function(err) {
     if (err) { throw err; }
 
@@ -272,6 +312,38 @@ multiCache.set('foo2', 'bar2', {ttl: ttl}, function(err) {
 
         // Delete from all caches
         multiCache.del('foo2');
+    });
+});
+
+// Set the ttl value by context depending on the store.
+function getTTL(data, store) {
+    if (store === 'redis') {
+        return 6000;
+    }
+    return 3000;
+}
+
+// Sets multiple keys in all caches.
+// You can pass as many key,value pair as you want
+multiCache.mset('key', 'value', 'key2', 'value2', {ttl: getTTL}, function(err) {
+    if (err) { throw err; }
+
+    // mget() fetches from highest priority cache.
+    // If the first cache does not return all the keys,
+    // the next cache is fetched with the keys that were not found.
+    // This is done recursively until either:
+    // - all have been found
+    // - all caches has been fetched
+    multiCache.mget('key', 'key2', function(err, result) {
+        console.log(result[0]);
+        console.log(result[1]);
+        // >> 'bar2'
+        // >> 'bar3'
+
+        // Delete from all caches
+        multiCache.del('key', 'key2');
+        // ...or with an Array
+        multiCache.del(['key', 'key2']);
     });
 });
 
@@ -289,6 +361,14 @@ multiCache.wrap(key2, function (cb) {
     }, function (err, user) {
         console.log(user);
     });
+});
+
+// Multiple keys
+multiCache.wrap('key1', 'key2', function (cb) {
+    getManyUser(['key1', 'key2'], cb);
+}, {ttl: ttl}, function (err, users) {
+    console.log(users[0]);
+    console.log(users[1]);
 });
 ```
 
