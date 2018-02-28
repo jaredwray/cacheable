@@ -89,6 +89,29 @@ describe("multiCaching", function() {
                 });
             });
 
+            it("lets us set data ('Object' type) in all caches", function(done) {
+                value = {name: support.random.string()};
+                multiCache.set(key, value, function(err) {
+                    checkErr(err);
+
+                    memoryCache.get(key, function(err, result) {
+                        checkErr(err);
+                        assert.equal(result, value);
+
+                        memoryCache2.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.equal(result, value);
+
+                            memoryCache3.get(key, function(err, result) {
+                                checkErr(err);
+                                assert.equal(result, value);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+
             it("lets us set data without a callback", function(done) {
                 multiCache.set(key, value, {ttl: defaultTtl});
                 setTimeout(function() {
@@ -172,6 +195,32 @@ describe("multiCaching", function() {
         describe("mset()", function() {
             it("lets us set data in all caches", function(done) {
                 multiCache.mset(key, value, key2, value2, {ttl: defaultTtl}, function(err) {
+                    checkErr(err);
+
+                    memoryCache.mget(key, key2, function(err, result) {
+                        checkErr(err);
+                        assert.equal(result[0], value);
+                        assert.equal(result[1], value2);
+
+                        memoryCache2.mget(key, key2, function(err, result) {
+                            checkErr(err);
+                            assert.equal(result[0], value);
+                            assert.equal(result[1], value2);
+
+                            memoryCache3.mget(key, key2, function(err, result) {
+                                checkErr(err);
+                                assert.equal(result[0], value);
+                                assert.equal(result[1], value2);
+                                done();
+                            });
+                        });
+                    });
+                });
+            });
+
+            it("lets us set data ('Object' type) in all caches", function(done) {
+                value2 = {name: support.random.string()};
+                multiCache.mset(key, value, key2, value2, function(err) {
                     checkErr(err);
 
                     memoryCache.mget(key, key2, function(err, result) {
