@@ -1,3 +1,8 @@
+- 2.8.0 2018-02-28
+  - Added link to node-cache-manager-fs-hash - @rolandstarke
+  - Bugfix for options object in multiCache.set (#115) - @sebelga
+  - Bugfix for keysToFetch in getFromHighestProrityCache (#117) - @sebelga
+
 - 2.7.0 2018-02-13
   - allow setting, getting and deleting multiple keys (#114) - @sebelga
   - allow passing in a function to determine TTL based on store - @sebelga
