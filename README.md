@@ -43,6 +43,8 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 
 * [node-cache-manager-fs-binary](https://github.com/sheershoff/node-cache-manager-fs-binary)
 
+* [node-cache-manager-fs-hash](https://github.com/rolandstarke/node-cache-manager-fs-hash)
+
 * [node-cache-manager-hazelcast](https://github.com/marudor/node-cache-manager-hazelcast)
 
 * [node-cache-manager-memcached-store](https://github.com/theogravity/node-cache-manager-memcached-store)
