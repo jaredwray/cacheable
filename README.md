@@ -1,11 +1,13 @@
-# cacheable-request
+# cacheable-request-adaptable
+
+**A fork from [cacheable-request](https://github.com/lukechilds/cacheable-request) with refined interface to expose internal members, such as Cache, cachePolicy.**
 
 > Wrap native HTTP requests with RFC compliant cache support
 
-[![Build Status](https://travis-ci.org/lukechilds/cacheable-request.svg?branch=master)](https://travis-ci.org/lukechilds/cacheable-request)
-[![Coverage Status](https://coveralls.io/repos/github/lukechilds/cacheable-request/badge.svg?branch=master)](https://coveralls.io/github/lukechilds/cacheable-request?branch=master)
-[![npm](https://img.shields.io/npm/dm/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request)
-[![npm](https://img.shields.io/npm/v/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request)
+[![Build Status](https://travis-ci.org/roneyrao/cacheable-request-adaptable.svg?branch=master)](https://travis-ci.org/roneyrao/cacheable-request-adaptable)
+[![codecov](https://codecov.io/gh/roneyrao/cacheable-request-adaptable/branch/master/graph/badge.svg)](https://codecov.io/gh/roneyrao/cacheable-request-adaptable)
+[![npm](https://img.shields.io/npm/dm/cacheable-request-adaptable.svg)](https://www.npmjs.com/package/cacheable-request-adaptable)
+[![npm](https://img.shields.io/npm/v/cacheable-request-adaptable.svg)](https://www.npmjs.com/package/cacheable-request-adaptable)
 
 [RFC 7234](http://httpwg.org/specs/rfc7234.html) compliant HTTP caching for native Node.js HTTP/HTTPS requests. Caching works out of the box in memory or is easily pluggable with a wide range of storage adapters.
 
@@ -29,14 +31,14 @@
 ## Install
 
 ```shell
-npm install --save cacheable-request
+npm install --save cacheable-request-adaptable
 ```
 
 ## Usage
 
 ```js
 const http = require('http');
-const CacheableRequest = require('cacheable-request');
+const CacheableRequest = require('cacheable-request-adaptable');
 
 // Then instead of
 const req = http.request('http://example.com', cb);
@@ -44,7 +46,9 @@ req.end();
 
 // You can do
 const cacheableRequest = new CacheableRequest(http.request);
-const cacheReq = cacheableRequest('http://example.com', cb);
+// its members such as store, CachePolicy, namespace can be adjusted here.
+const request = cacheableRequest.createRequest();
+const cacheReq = request('http://example.com', cb);
 cacheReq.on('request', req => req.end());
 // Future requests to 'example.com' will be returned from cache if still valid
 
@@ -55,7 +59,7 @@ const cacheableRequest = new CacheableRequest(electron.net);
 
 ## Storage Adapters
 
-`cacheable-request` uses [Keyv](https://github.com/lukechilds/keyv) to support a wide range of storage adapters.
+`cacheable-request-adaptable` uses [Keyv](https://github.com/lukechilds/keyv) to support a wide range of storage adapters.
 
 For example, to use Redis as a cache backend, you just need to install the official Redis Keyv storage adapter:
 
@@ -169,7 +173,7 @@ Errors emitted here will be an instance of `CacheableRequest.RequestError` or `C
 To properly handle all error scenarios you should use the following pattern:
 
 ```js
-cacheableRequest('example.com', cb)
+cacheableRequest.createRequest()('example.com', cb)
   .on('error', err => {
     if (err instanceof CacheableRequest.CacheError) {
       handleCacheError(err); // Cache error
@@ -183,7 +187,7 @@ cacheableRequest('example.com', cb)
   });
 ```
 
-**Note:** Database connection errors are emitted here, however `cacheable-request` will attempt to re-request the resource and bypass the cache on a connection error. Therefore a database connection error doesn't necessarily mean the request won't be fulfilled.
+**Note:** Database connection errors are emitted here, however `cacheable-request-adaptable` will attempt to re-request the resource and bypass the cache on a connection error. Therefore a database connection error doesn't necessarily mean the request won't be fulfilled.
 
 ## License
 

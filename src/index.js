@@ -1,3 +1,4 @@
+
 'use strict';
 
 const EventEmitter = require('events');
@@ -11,7 +12,7 @@ const cloneResponse = require('clone-response');
 const Keyv = require('keyv');
 
 class CacheableRequest {
-	constructor(request, cacheAdapter) {
+	constructor(request, cacheAdapter, policyConstructor) {
 		if (typeof request !== 'function') {
 			throw new TypeError('Parameter `request` must be a function');
 		}
@@ -22,10 +23,11 @@ class CacheableRequest {
 			namespace: 'cacheable-request'
 		});
 
-		return this.createCacheableRequest(request);
+		this.CachePolicy = policyConstructor || CachePolicy;
+		this.request = request;
 	}
 
-	createCacheableRequest(request) {
+	createRequest() {
 		return (opts, cb) => {
 			if (typeof opts === 'string') {
 				opts = urlLib.parse(opts);
@@ -49,7 +51,7 @@ class CacheableRequest {
 				madeRequest = true;
 				const handler = response => {
 					if (revalidate) {
-						const revalidatedPolicy = CachePolicy.fromObject(revalidate.cachePolicy).revalidatedPolicy(opts, response);
+						const revalidatedPolicy = this.CachePolicy.fromObject(revalidate.cachePolicy).revalidatedPolicy(opts, response);
 						if (!revalidatedPolicy.modified) {
 							const headers = revalidatedPolicy.policy.responseHeaders();
 							response = new Response(response.statusCode, headers, revalidate.body, revalidate.url);
@@ -59,7 +61,7 @@ class CacheableRequest {
 					}
 
 					if (!response.fromCache) {
-						response.cachePolicy = new CachePolicy(opts, response);
+						response.cachePolicy = new this.CachePolicy(opts, response);
 						response.fromCache = false;
 					}
 
@@ -77,7 +79,9 @@ class CacheableRequest {
 								const ttl = opts.strictTtl ? response.cachePolicy.timeToLive() : undefined;
 								return this.cache.set(key, value, ttl);
 							})
-							.catch(err => ee.emit('error', new CacheableRequest.CacheError(err)));
+							.catch(err => {
+								ee.emit('error', new CacheableRequest.CacheError(err));
+							});
 					} else if (opts.cache && revalidate) {
 						this.cache.delete(key)
 							.catch(err => ee.emit('error', new CacheableRequest.CacheError(err)));
@@ -90,7 +94,7 @@ class CacheableRequest {
 				};
 
 				try {
-					const req = request(opts, handler);
+					const req = (0, this.request)(opts, handler);
 					ee.emit('request', req);
 				} catch (err) {
 					ee.emit('error', new CacheableRequest.RequestError(err));
@@ -104,7 +108,7 @@ class CacheableRequest {
 						return makeRequest(opts);
 					}
 
-					const policy = CachePolicy.fromObject(cacheEntry.cachePolicy);
+					const policy = this.CachePolicy.fromObject(cacheEntry.cachePolicy);
 					if (policy.satisfiesWithoutRevalidation(opts)) {
 						const headers = policy.responseHeaders();
 						const response = new Response(cacheEntry.statusCode, headers, cacheEntry.body, cacheEntry.url);
