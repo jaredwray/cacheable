@@ -1234,4 +1234,22 @@ describe("caching", function() {
             });
         });
     });
+
+    describe("when using store's isCacheableValue method", function() {
+        it("should not break its' context", function() {
+            var store = {
+                isCacheableValue: function() {
+                    if (this !== store) {
+                        throw new Error("Broken store context");
+                    }
+                },
+                get: function() {},
+                set: function() {},
+            };
+
+            cache = caching({store: store});
+
+            assert.doesNotThrow(cache._isCacheableValue);
+        });
+    });
 });
