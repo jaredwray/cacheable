@@ -1,3 +1,6 @@
+- 2.9.0 2018-03-26
+  - Fix store's this context for isCacheableValue method (#119). -@alexandrusavin
+
 - 2.8.0 2018-02-28
   - Added link to node-cache-manager-fs-hash - @rolandstarke
   - Bugfix for options object in multiCache.set (#115) - @sebelga
