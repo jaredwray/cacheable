@@ -66,8 +66,11 @@ class CacheableRequest {
 					let clonedResponse;
 					if (opts.cache && response.cachePolicy.storable()) {
 						clonedResponse = cloneResponse(response);
-						getStream.buffer(response)
-							.then(body => {
+
+						(async () => {
+							try {
+								const body = await getStream.buffer(response);
+
 								const value = {
 									cachePolicy: response.cachePolicy.toObject(),
 									url: response.url,
@@ -75,12 +78,19 @@ class CacheableRequest {
 									body
 								};
 								const ttl = opts.strictTtl ? response.cachePolicy.timeToLive() : undefined;
-								return this.cache.set(key, value, ttl);
-							})
-							.catch(err => ee.emit('error', new CacheableRequest.CacheError(err)));
+								await this.cache.set(key, value, ttl);
+							} catch (err) {
+								ee.emit('error', new CacheableRequest.CacheError(err));
+							}
+						})();
 					} else if (opts.cache && revalidate) {
-						this.cache.delete(key)
-							.catch(err => ee.emit('error', new CacheableRequest.CacheError(err)));
+						(async () => {
+							try {
+								await this.cache.delete(key);
+							} catch (err) {
+								ee.emit('error', new CacheableRequest.CacheError(err));
+							}
+						})();
 					}
 
 					ee.emit('response', clonedResponse || response);
@@ -97,9 +107,11 @@ class CacheableRequest {
 				}
 			};
 
-			const get = opts => Promise.resolve()
-				.then(() => opts.cache ? this.cache.get(key) : undefined)
-				.then(cacheEntry => {
+			(async () => {
+				const get = async opts => {
+					await Promise.resolve();
+
+					const cacheEntry = opts.cache ? await this.cache.get(key) : undefined;
 					if (typeof cacheEntry === 'undefined') {
 						return makeRequest(opts);
 					}
@@ -120,16 +132,19 @@ class CacheableRequest {
 						opts.headers = policy.revalidationHeaders(opts);
 						makeRequest(opts);
 					}
-				});
+				};
 
-			this.cache.on('error', err => ee.emit('error', new CacheableRequest.CacheError(err)));
+				this.cache.on('error', err => ee.emit('error', new CacheableRequest.CacheError(err)));
 
-			get(opts).catch(err => {
-				if (opts.automaticFailover && !madeRequest) {
-					makeRequest(opts);
+				try {
+					await get(opts);
+				} catch (err) {
+					if (opts.automaticFailover && !madeRequest) {
+						makeRequest(opts);
+					}
+					ee.emit('error', new CacheableRequest.CacheError(err));
 				}
-				ee.emit('error', new CacheableRequest.CacheError(err));
-			});
+			})();
 
 			return ee;
 		};

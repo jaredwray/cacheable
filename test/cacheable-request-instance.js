@@ -26,21 +26,19 @@ test.cb('cacheableRequest returns an event emitter', t => {
 
 test.cb('cacheableRequest passes requests through if no cache option is set', t => {
 	const cacheableRequest = new CacheableRequest(request);
-	cacheableRequest(url.parse(s.url), response => {
-		getStream(response).then(body => {
-			t.is(body, 'hi');
-			t.end();
-		});
+	cacheableRequest(url.parse(s.url), async response => {
+		const body = await getStream(response);
+		t.is(body, 'hi');
+		t.end();
 	}).on('request', req => req.end());
 });
 
 test.cb('cacheableRequest accepts url as string', t => {
 	const cacheableRequest = new CacheableRequest(request);
-	cacheableRequest(s.url, response => {
-		getStream(response).then(body => {
-			t.is(body, 'hi');
-			t.end();
-		});
+	cacheableRequest(s.url, async response => {
+		const body = await getStream(response);
+		t.is(body, 'hi');
+		t.end();
 	}).on('request', req => req.end());
 });
 
@@ -198,6 +196,7 @@ test.cb('cacheableRequest makes request even if initial DB connection fails (whe
 });
 
 test.cb('cacheableRequest makes request even if current DB connection fails (when opts.automaticFailover is enabled)', t => {
+	/* eslint-disable unicorn/error-message */
 	const cache = {
 		get: () => {
 			throw new Error();
@@ -209,6 +208,8 @@ test.cb('cacheableRequest makes request even if current DB connection fails (whe
 			throw new Error();
 		}
 	};
+	/* eslint-enable unicorn/error-message */
+
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const opts = url.parse(s.url);
 	opts.automaticFailover = true;

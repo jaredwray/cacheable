@@ -29,7 +29,7 @@
 ## Install
 
 ```shell
-npm install --save cacheable-request
+npm install cacheable-request
 ```
 
 ## Usage
@@ -60,7 +60,7 @@ const cacheableRequest = new CacheableRequest(electron.net);
 For example, to use Redis as a cache backend, you just need to install the official Redis Keyv storage adapter:
 
 ```
-npm install --save @keyv/redis
+npm install @keyv/redis
 ```
 
 And then you can pass `CacheableRequest` your connection string:

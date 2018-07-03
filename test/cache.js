@@ -12,11 +12,10 @@ let s;
 
 // Promisify cacheableRequest
 const promisify = cacheableRequest => opts => new Promise(resolve => {
-	cacheableRequest(opts, response => {
-		getStream(response).then(body => {
-			response.body = body;
-			resolve(response);
-		});
+	cacheableRequest(opts, async response => {
+		const body = await getStream(response);
+		response.body = body;
+		resolve(response);
 	}).on('request', req => req.end());
 });
 
@@ -295,18 +294,16 @@ test('Revalidated responses that are modified are passed through', async t => {
 	t.is(secondResponse.body, 'new-body');
 });
 
-test.cb('Undefined callback parameter inside cache logic is handled', t => {
+test('Undefined callback parameter inside cache logic is handled', async t => {
 	const endpoint = '/cache';
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest);
 
-	cacheableRequestHelper(s.url + endpoint).then(() => {
-		cacheableRequest(s.url + endpoint);
-		setTimeout(() => {
-			t.end();
-		}, 500);
-	});
+	await cacheableRequestHelper(s.url + endpoint);
+	cacheableRequest(s.url + endpoint);
+	await delay(500);
+	t.pass();
 });
 
 test('Keyv cache adapters load via connection uri', async t => {
