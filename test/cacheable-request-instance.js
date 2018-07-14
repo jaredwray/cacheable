@@ -42,6 +42,15 @@ test.cb('cacheableRequest accepts url as string', t => {
 	}).on('request', req => req.end());
 });
 
+test.cb('cacheableRequest accepts url as URL', t => {
+	const cacheableRequest = new CacheableRequest(request);
+	cacheableRequest(new url.URL(s.url), async response => {
+		const body = await getStream(response);
+		t.is(body, 'hi');
+		t.end();
+	}).on('request', req => req.end());
+});
+
 test.cb('cacheableRequest handles no callback parameter', t => {
 	const cacheableRequest = new CacheableRequest(request);
 	cacheableRequest(url.parse(s.url)).on('request', req => {

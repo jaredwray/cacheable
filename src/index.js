@@ -27,21 +27,30 @@ class CacheableRequest {
 
 	createCacheableRequest(request) {
 		return (opts, cb) => {
+			let url;
 			if (typeof opts === 'string') {
-				opts = urlLib.parse(opts);
+				url = normalizeUrlObject(urlLib.parse(opts));
+				opts = {};
+			} else if (opts instanceof urlLib.URL) {
+				url = normalizeUrlObject(urlLib.parse(opts.toString()));
+				opts = {};
+			} else {
+				const [pathname, ...search] = (opts.path || '').split('?');
+				url = normalizeUrlObject({ ...opts, pathname, search: search.join('?') });
 			}
-			opts = Object.assign({
+			opts = {
 				headers: {},
 				method: 'GET',
 				cache: true,
 				strictTtl: false,
-				automaticFailover: false
-			}, opts);
+				automaticFailover: false,
+				...opts,
+				...urlObjectToRequestOptions(url)
+			};
 			opts.headers = lowercaseKeys(opts.headers);
 
 			const ee = new EventEmitter();
-			const url = normalizeUrl(urlLib.format(opts));
-			const key = `${opts.method}:${url}`;
+			const key = `${opts.method}:${normalizeUrl(urlLib.format(url))}`;
 			let revalidate = false;
 			let madeRequest = false;
 
@@ -149,6 +158,32 @@ class CacheableRequest {
 			return ee;
 		};
 	}
+}
+
+function urlObjectToRequestOptions(url) {
+	const options = { ...url };
+	options.path = `${url.pathname || '/'}${url.search || ''}`;
+	delete options.pathname;
+	delete options.search;
+	return options;
+}
+
+function normalizeUrlObject(url) {
+	// If url was parsed by url.parse or new URL:
+	// - hostname will be set
+	// - host will be hostname[:port]
+	// - port will be set if it was explicit in the parsed string
+	// Otherwise, url was from request options:
+	// - hostname or host may be set
+	// - host shall not have port encoded
+	return {
+		protocol: url.protocol,
+		auth: url.auth,
+		hostname: url.hostname || url.host || 'localhost',
+		port: url.port,
+		pathname: url.pathname,
+		search: url.search
+	};
 }
 
 CacheableRequest.RequestError = class extends Error {
