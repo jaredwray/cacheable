@@ -50,7 +50,14 @@ class CacheableRequest {
 			opts.headers = lowercaseKeys(opts.headers);
 
 			const ee = new EventEmitter();
-			const key = `${opts.method}:${normalizeUrl(urlLib.format(url))}`;
+			const normalizedUrlString = normalizeUrl(
+				urlLib.format(url),
+				{
+					stripWWW: false,
+					removeTrailingSlash: false
+				}
+			);
+			const key = `${opts.method}:${normalizedUrlString}`;
 			let revalidate = false;
 			let madeRequest = false;
 

@@ -1,5 +1,6 @@
 import { request } from 'http';
 import url from 'url';
+import util from 'util';
 import test from 'ava';
 import getStream from 'get-stream';
 import createTestServer from 'create-test-server';
@@ -11,12 +12,14 @@ import CacheableRequest from 'this';
 let s;
 
 // Promisify cacheableRequest
-const promisify = cacheableRequest => opts => new Promise(resolve => {
+const promisify = cacheableRequest => opts => new Promise((resolve, reject) => {
 	cacheableRequest(opts, async response => {
 		const body = await getStream(response);
 		response.body = body;
 		resolve(response);
-	}).on('request', req => req.end());
+	})
+		.on('request', req => req.end())
+		.once('error', reject);
 });
 
 test.before('setup', async () => {
@@ -137,6 +140,143 @@ test('Cacheable responses have unique cache key', async t => {
 	t.is(cache.size, 2);
 	t.not(firstResponse.body, secondResponse.body);
 });
+
+async function testCacheKey(t, input, expected) {
+	const expectKey = `cacheable-request:${expected}`;
+	const okMessage = `OK ${expectKey}`;
+	const cache = {
+		get(key) {
+			t.is(key, expectKey);
+			throw new Error(okMessage);
+		}
+	};
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest);
+	await t.throws(
+		cacheableRequestHelper(input),
+		CacheableRequest.CacheError,
+		okMessage
+	);
+}
+testCacheKey.title = (providedTitle, input) => util.format(
+	'Cache key is http.request compatible for arg %s(%j)%s',
+	input.constructor.name,
+	input,
+	providedTitle ? ` (${providedTitle})` : ''
+);
+test(
+	testCacheKey,
+	'http://www.example.com',
+	'GET:http://www.example.com'
+);
+test(
+	'strips default path',
+	testCacheKey,
+	'http://www.example.com/',
+	'GET:http://www.example.com'
+);
+test(
+	'keeps trailing /',
+	testCacheKey,
+	'http://www.example.com/test/',
+	'GET:http://www.example.com/test/'
+);
+test(
+	testCacheKey,
+	new url.URL('http://www.example.com'),
+	'GET:http://www.example.com'
+);
+test(
+	'no requried properties',
+	testCacheKey,
+	{},
+	'GET:http://localhost'
+);
+test(
+	testCacheKey,
+	{
+		protocol: 'http:',
+		host: 'www.example.com',
+		port: 80,
+		path: '/'
+	},
+	'GET:http://www.example.com'
+);
+test(
+	testCacheKey,
+	{
+		hostname: 'www.example.com',
+		port: 80,
+		path: '/'
+	},
+	'GET:http://www.example.com'
+);
+test(
+	testCacheKey,
+	{
+		hostname: 'www.example.com',
+		port: 8080,
+		path: '/'
+	},
+	'GET:http://www.example.com:8080'
+);
+test(
+	testCacheKey,
+	{ host: 'www.example.com' },
+	'GET:http://www.example.com'
+);
+test(
+	'hostname over host',
+	testCacheKey,
+	{
+		host: 'www.example.com',
+		hostname: 'xyz.example.com'
+	},
+	'GET:http://xyz.example.com'
+);
+test(
+	'hostname defaults to localhost',
+	testCacheKey,
+	{ path: '/' },
+	'GET:http://localhost'
+);
+test(
+	'ignores pathname',
+	testCacheKey,
+	{
+		path: '/foo',
+		pathname: '/bar'
+	},
+	'GET:http://localhost/foo'
+);
+test(
+	'ignores search',
+	testCacheKey,
+	{
+		path: '/?foo=bar',
+		search: '?bar=baz'
+	},
+	'GET:http://localhost/?foo=bar'
+);
+test(
+	'ignores query',
+	testCacheKey,
+	{
+		path: '/?foo=bar',
+		query: { bar: 'baz' }
+	},
+	'GET:http://localhost/?foo=bar'
+);
+test(
+	testCacheKey,
+	{ auth: 'user:pass' },
+	'GET:http://user:pass@localhost'
+);
+test(
+	testCacheKey,
+	{ method: 'POST' },
+	'POST:http://localhost'
+);
 
 test('Setting opts.cache to false bypasses cache for a single request', async t => {
 	const endpoint = '/cache';
