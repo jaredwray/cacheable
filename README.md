@@ -142,6 +142,13 @@ Default: `false`
 
 When set to `true`, if the DB connection fails we will automatically fallback to a network request. DB errors will still be emitted to notify you of the problem even though the request callback may succeed.
 
+###### opts.forceRefresh
+
+Type: `boolean`<br>
+Default: `false`
+
+Forces refreshing the cache. If the response could be retrieved from cache, it'll perform a new request and override the cache instead.
+
 ##### cb
 
 Type: `function`

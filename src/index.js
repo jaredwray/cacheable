@@ -67,9 +67,9 @@ class CacheableRequest {
 			const makeRequest = opts => {
 				madeRequest = true;
 				const handler = response => {
-					if (revalidate) {
+					if (revalidate && !opts.forceRefresh) {
 						const revalidatedPolicy = CachePolicy.fromObject(revalidate.cachePolicy).revalidatedPolicy(opts, response);
-						if (!revalidatedPolicy.modified) {
+						if (!revalidatedPolicy.modified && response.statusCode === revalidate.statusCode) {
 							const headers = revalidatedPolicy.policy.responseHeaders();
 							response = new Response(response.statusCode, headers, revalidate.body, revalidate.url);
 							response.cachePolicy = revalidatedPolicy.policy;
@@ -136,7 +136,7 @@ class CacheableRequest {
 					}
 
 					const policy = CachePolicy.fromObject(cacheEntry.cachePolicy);
-					if (policy.satisfiesWithoutRevalidation(opts)) {
+					if (policy.satisfiesWithoutRevalidation(opts) && !opts.forceRefresh) {
 						const headers = policy.responseHeaders();
 						const response = new Response(cacheEntry.statusCode, headers, cacheEntry.body, cacheEntry.url);
 						response.cachePolicy = policy;
