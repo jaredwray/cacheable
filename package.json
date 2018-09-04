@@ -38,7 +38,7 @@
 		"responselike": "^1.0.2"
 	},
 	"devDependencies": {
-		"@keyv/sqlite": "^1.2.6",
+		"@keyv/sqlite": "^2.0.0",
 		"ava": "^0.25.0",
 		"coveralls": "^3.0.0",
 		"create-test-server": "2.1.1",
