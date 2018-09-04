@@ -10,7 +10,10 @@ let s;
 
 test.before('setup', async () => {
 	s = await createTestServer();
-	s.get('/', (req, res) => res.end('hi'));
+	s.get('/', (req, res) => {
+		res.setHeader('cache-control', 'max-age=60');
+		res.end('hi');
+	});
 });
 
 test('cacheableRequest is a function', t => {
