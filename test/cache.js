@@ -52,6 +52,18 @@ test.before('setup', async () => {
 		res.end(responseBody);
 	});
 
+	let calledFirstError = false;
+	s.get('/first-error', (req, res) => {
+		if (calledFirstError) {
+			res.end('ok');
+			return;
+		}
+
+		calledFirstError = true;
+		res.statusCode = 502;
+		res.end('received 502');
+	});
+
 	s.get('/etag', (req, res) => {
 		res.setHeader('Cache-Control', 'public, max-age=0');
 		res.setHeader('ETag', '33a64df551425fcc55e4d42a148795d9f25f89d4');
@@ -499,6 +511,33 @@ test('Keyv cache adapters load via connection uri', async t => {
 	t.is(cacheResult.length, 1);
 
 	await query(`DELETE FROM keyv`);
+});
+
+test('ability to force refresh', async t => {
+	const endpoint = '/cache';
+	const cache = new Map();
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest);
+	const opts = url.parse(s.url + endpoint);
+
+	const firstResponse = await cacheableRequestHelper(opts);
+	const secondResponse = await cacheableRequestHelper({ ...opts, forceRefresh: true });
+	const thirdResponse = await cacheableRequestHelper(opts);
+	t.not(firstResponse.body, secondResponse.body);
+	t.is(secondResponse.body, thirdResponse.body);
+});
+
+test('checks status codes when comparing cache & response', async t => {
+	const endpoint = '/first-error';
+	const cache = new Map();
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest);
+	const opts = url.parse(s.url + endpoint);
+
+	const firstResponse = await cacheableRequestHelper(opts);
+	const secondResponse = await cacheableRequestHelper(opts);
+	t.is(firstResponse.body, 'received 502');
+	t.is(secondResponse.body, 'ok');
 });
 
 test.after('cleanup', async () => {
