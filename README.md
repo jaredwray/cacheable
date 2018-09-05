@@ -147,7 +147,7 @@ When set to `true`, if the DB connection fails we will automatically fallback to
 Type: `boolean`<br>
 Default: `false`
 
-Forces refreshing the cache. If the response could be retrieved from cache, it'll perform a new request and override the cache instead.
+Forces refreshing the cache. If the response could be retrieved from the cache, it will perform a new request and override the cache instead.
 
 ##### cb
 
