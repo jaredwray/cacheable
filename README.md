@@ -135,6 +135,13 @@ If set to `false`, after a cached resource's TTL expires it is kept in the cache
 
 If set to `true` once a cached resource has expired it is deleted and will have to be re-requested.
 
+###### opts.maxTtl
+
+Type: `number`<br>
+Default: `Infinity`
+
+Limits TTL.
+
 ###### opts.automaticFailover
 
 Type: `boolean`<br>

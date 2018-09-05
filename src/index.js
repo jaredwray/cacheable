@@ -47,6 +47,7 @@ class CacheableRequest {
 				cache: true,
 				strictTtl: false,
 				automaticFailover: false,
+				maxTtl: Infinity,
 				...opts,
 				...urlObjectToRequestOptions(url)
 			};
@@ -98,7 +99,7 @@ class CacheableRequest {
 									body
 								};
 								const ttl = opts.strictTtl ? response.cachePolicy.timeToLive() : undefined;
-								await this.cache.set(key, value, ttl);
+								await this.cache.set(key, value, Math.min(ttl, opts.maxTtl));
 							} catch (err) {
 								ee.emit('error', new CacheableRequest.CacheError(err));
 							}

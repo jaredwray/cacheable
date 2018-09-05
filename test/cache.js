@@ -540,6 +540,23 @@ test('checks status codes when comparing cache & response', async t => {
 	t.is(secondResponse.body, 'ok');
 });
 
+test('ability to limit TTL', async t => {
+	const endpoint = '/cache';
+	const cache = new Map();
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest);
+	const opts = {
+		...url.parse(s.url + endpoint),
+		maxTtl: 1
+	};
+
+	await cacheableRequestHelper(opts);
+	t.is(cache.size, 1);
+
+	await delay(1000);
+	t.is(cache.size, 0);
+});
+
 test.after('cleanup', async () => {
 	await s.close();
 });
