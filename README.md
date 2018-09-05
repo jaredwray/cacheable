@@ -142,6 +142,41 @@ Default: `false`
 
 When set to `true`, if the DB connection fails we will automatically fallback to a network request. DB errors will still be emitted to notify you of the problem even though the request callback may succeed.
 
+###### opts.shared
+
+Type: `boolean`<br>
+Default: `true`
+
+If set to `true`, then the response is evaluated from a perspective of a shared cache (i.e. private is not cacheable and s-maxage is respected). If options.shared is `false`, then the response is evaluated from a perspective of a single-user cache (i.e. private is cacheable and s-maxage is ignored).
+
+###### options.cacheHeuristic
+
+Type: `float`<br>
+Default: `0.1`
+
+It is a fraction of response's age that is used as a fallback cache duration. The default is 0.1 (10%), e.g. if a file hasn't been modified for 100 days, it'll be cached for 100*0.1 = 10 days.
+
+###### options.immutableMinTimeToLive
+
+Type: `integer`<br>
+Default: `86400000`
+
+It is a number of milliseconds to assume as the default time to cache responses with `Cache-Control: immutable`. Note that per RFC these can become stale, so `max-age` still overrides the default.
+
+###### options.ignoreCargoCult
+
+Type: `boolean`<br>
+Default: `false`
+
+If set to `true`, common anti-cache directives will be completely ignored if the non-standard pre-check and post-check directives are present. These two useless directives are most commonly found in bad StackOverflow answers and PHP's "session limiter" defaults.
+
+###### options.trustServerDate
+
+Type: `boolean`<br>
+Default: `true`
+
+If set to `false`, then server's Date header won't be used as the base for `max-age`. This is against the RFC, but it's useful if you want to cache responses with very short `max-age`, but your local clock is not exactly in sync with the server's.
+
 ##### cb
 
 Type: `function`
