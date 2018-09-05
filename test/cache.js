@@ -24,7 +24,7 @@ const promisify = cacheableRequest => opts => new Promise((resolve, reject) => {
 
 test.before('setup', async () => {
 	s = await createTestServer();
-
+	
 	let noStoreIndex = 0;
 	s.get('/no-store', (req, res) => {
 		noStoreIndex++;
@@ -94,6 +94,18 @@ test.before('setup', async () => {
 		res.setHeader('Cache-Control', 'public, max-age=1');
 		res.setHeader('ETag', '33a64df551425fcc55e4d42a148795d9f25f89d4');
 		let responseBody = 'etag-cache-1s';
+
+		if (req.headers['if-none-match'] === '33a64df551425fcc55e4d42a148795d9f25f89d4') {
+			res.statusCode = 304;
+			responseBody = null;
+		}
+
+		res.end(responseBody);
+	});
+
+	s.get('/authorization-header', (req, res) => {
+		res.setHeader('ETag', '33a64df551425fcc55e4d42a148795d9f25f89d4');
+		let responseBody = 'authorization-header';
 
 		if (req.headers['if-none-match'] === '33a64df551425fcc55e4d42a148795d9f25f89d4') {
 			res.statusCode = 304;
@@ -480,6 +492,62 @@ test('Revalidated responses that are modified are passed through', async t => {
 	t.is(secondResponse.statusCode, 200);
 	t.is(firstResponse.body, 'revalidate-modified');
 	t.is(secondResponse.body, 'new-body');
+});
+
+test('Requests with Authorization header are not cached by default', async t => {
+	const endpoint = '/authorization-header';
+	const cache = new Map();
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest);
+
+	const firstResponse = await cacheableRequestHelper({
+		url: s.url + endpoint,
+		headers: {
+			Authorization: 'api_key'
+		}
+	});
+	const secondResponse = await cacheableRequestHelper({
+		url: s.url + endpoint,
+		headers: {
+			Authorization: 'api_key'
+		}
+	});
+
+	t.is(firstResponse.statusCode, 200);
+	t.is(secondResponse.statusCode, 200);
+	t.is(firstResponse.body, 'authorization-header');
+	t.is(secondResponse.body, 'authorization-header');
+	t.false(firstResponse.fromCache);
+	t.false(secondResponse.fromCache);
+});
+
+test('Requests with Authorization header are cached (when opts.shared is enabled)', async t => {
+	const endpoint = '/authorization-header';
+	const cache = new Map();
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest);
+
+	const firstResponse = await cacheableRequestHelper({
+		url: s.url + endpoint,
+		headers: {
+			Authorization: 'api_key'
+		},
+		shared: true
+	});
+	const secondResponse = await cacheableRequestHelper({
+		url: s.url + endpoint,
+		headers: {
+			Authorization: 'api_key'
+		},
+		shared: true
+	});
+
+	t.is(firstResponse.statusCode, 200);
+	t.is(secondResponse.statusCode, 304);
+	t.is(firstResponse.body, 'authorization-header');
+	t.is(firstResponse.body, secondResponse.body);
+	t.false(firstResponse.fromCache);
+	t.true(secondResponse.fromCache);
 });
 
 test('Undefined callback parameter inside cache logic is handled', async t => {

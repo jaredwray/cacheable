@@ -47,11 +47,6 @@ class CacheableRequest {
 				cache: true,
 				strictTtl: false,
 				automaticFailover: false,
-        shared: true,
-        cacheHeuristic: 0.1,
-        immutableMinTimeToLive: 24 * 3600 * 1000, // 24h
-        ignoreCargoCult: false,
-        trustServerDate: true,
 				...opts,
 				...urlObjectToRequestOptions(url)
 			};
@@ -84,13 +79,7 @@ class CacheableRequest {
 					}
 
 					if (!response.fromCache) {
-						response.cachePolicy = new CachePolicy(opts, response, {
-              shared: opts.shared,
-              cacheHeuristic: opts.cacheHeuristic,
-              immutableMinTimeToLive: opts.immutableMinTimeToLive,
-              ignoreCargoCult: opts.ignoreCargoCult,
-              trustServerDate: opts.trustServerDate,
-            });
+						response.cachePolicy = new CachePolicy(opts, response, opts);
 						response.fromCache = false;
 					}
 
