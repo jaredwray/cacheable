@@ -24,7 +24,7 @@ const promisify = cacheableRequest => opts => new Promise((resolve, reject) => {
 
 test.before('setup', async () => {
 	s = await createTestServer();
-	
+
 	let noStoreIndex = 0;
 	s.get('/no-store', (req, res) => {
 		noStoreIndex++;
