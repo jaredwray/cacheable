@@ -149,6 +149,10 @@ Default: `false`
 
 Forces refreshing the cache. If the response could be retrieved from the cache, it will perform a new request and override the cache instead.
 
+###### http-cache-sematics options
+
+Apart from these options, you can also pass options for [http-cache-semantics](https://github.com/kornelski/http-cache-semantics#constructor-options) module as described in their docs. Their default values are also described in their docs.
+
 ##### cb
 
 Type: `function`
