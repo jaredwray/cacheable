@@ -138,9 +138,9 @@ If set to `true` once a cached resource has expired it is deleted and will have 
 ###### opts.maxTtl
 
 Type: `number`<br>
-Default: `Infinity`
+Default: `undefined`
 
-Limits TTL.
+Limits TTL. The `number` represents milliseconds.
 
 ###### opts.automaticFailover
 

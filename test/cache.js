@@ -350,10 +350,10 @@ test('TTL is passed to cache', async t => {
 	const store = new Map();
 	const cache = {
 		get: store.get.bind(store),
-		set: (key, val, ttl) => {
-			t.true(typeof ttl === 'number');
+		set: (key, value, ttl) => {
+			t.is(typeof ttl, 'number');
 			t.true(ttl > 0);
-			return store.set(key, val, ttl);
+			return store.set(key, value, ttl);
 		},
 		delete: store.delete.bind(store)
 	};
@@ -542,19 +542,25 @@ test('checks status codes when comparing cache & response', async t => {
 
 test('ability to limit TTL', async t => {
 	const endpoint = '/cache';
-	const cache = new Map();
+	const store = new Map();
+	const cache = {
+		get: store.get.bind(store),
+		set: (key, value, ttl) => {
+			t.is(typeof ttl, 'number');
+			t.is(ttl, 1000);
+			return store.set(key, value, ttl);
+		},
+		delete: store.delete.bind(store)
+	};
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest);
 	const opts = {
 		...url.parse(s.url + endpoint),
-		maxTtl: 1
+		maxTtl: 1000
 	};
 
 	await cacheableRequestHelper(opts);
-	t.is(cache.size, 1);
-
-	await delay(1000);
-	t.is(cache.size, 0);
+	t.is(store.size, 1);
 });
 
 test.after('cleanup', async () => {
