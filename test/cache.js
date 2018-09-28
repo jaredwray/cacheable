@@ -386,6 +386,29 @@ test('TTL is not passed to cache if strictTtl is false', async t => {
 	await cacheableRequestHelper(opts);
 });
 
+test('ability to limit TTL', async t => {
+	const endpoint = '/cache';
+	const store = new Map();
+	const cache = {
+		get: store.get.bind(store),
+		set: (key, value, ttl) => {
+			t.is(typeof ttl, 'number');
+			t.is(ttl, 1000);
+			return store.set(key, value, ttl);
+		},
+		delete: store.delete.bind(store)
+	};
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest);
+	const opts = {
+		...url.parse(s.url + endpoint),
+		maxTtl: 1000
+	};
+
+	await cacheableRequestHelper(opts);
+	t.is(store.size, 1);
+});
+
 test('Stale cache entries with Last-Modified headers are revalidated', async t => {
 	const endpoint = '/last-modified';
 	const cache = new Map();
@@ -538,29 +561,6 @@ test('checks status codes when comparing cache & response', async t => {
 	const secondResponse = await cacheableRequestHelper(opts);
 	t.is(firstResponse.body, 'received 502');
 	t.is(secondResponse.body, 'ok');
-});
-
-test('ability to limit TTL', async t => {
-	const endpoint = '/cache';
-	const store = new Map();
-	const cache = {
-		get: store.get.bind(store),
-		set: (key, value, ttl) => {
-			t.is(typeof ttl, 'number');
-			t.is(ttl, 1000);
-			return store.set(key, value, ttl);
-		},
-		delete: store.delete.bind(store)
-	};
-	const cacheableRequest = new CacheableRequest(request, cache);
-	const cacheableRequestHelper = promisify(cacheableRequest);
-	const opts = {
-		...url.parse(s.url + endpoint),
-		maxTtl: 1000
-	};
-
-	await cacheableRequestHelper(opts);
-	t.is(store.size, 1);
 });
 
 test.after('cleanup', async () => {
