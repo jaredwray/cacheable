@@ -97,10 +97,16 @@ class CacheableRequest {
 									statusCode: response.fromCache ? revalidate.statusCode : response.statusCode,
 									body
 								};
-								let ttl = opts.strictTtl ? response.cachePolicy.timeToLive() : undefined;
-								if (opts.maxTtl) {
-									ttl = ttl ? Math.min(ttl, opts.maxTtl) : opts.maxTtl;
+
+								let ttl;
+								if (opts.strictTtl) {
+									ttl = response.cachePolicy.timeToLive();
+
+									if (opts.maxTtl) {
+										ttl = ttl ? Math.min(ttl, opts.maxTtl) : opts.maxTtl;
+									}
 								}
+
 								await this.cache.set(key, value, ttl);
 							} catch (err) {
 								ee.emit('error', new CacheableRequest.CacheError(err));
