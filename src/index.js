@@ -47,7 +47,6 @@ class CacheableRequest {
 				cache: true,
 				strictTtl: false,
 				automaticFailover: false,
-				maxTtl: Infinity,
 				...opts,
 				...urlObjectToRequestOptions(url)
 			};
@@ -98,8 +97,11 @@ class CacheableRequest {
 									statusCode: response.fromCache ? revalidate.statusCode : response.statusCode,
 									body
 								};
-								const ttl = opts.strictTtl ? response.cachePolicy.timeToLive() : undefined;
-								await this.cache.set(key, value, Math.min(ttl, opts.maxTtl));
+								let ttl = opts.strictTtl ? response.cachePolicy.timeToLive() : undefined;
+								if (opts.maxTtl) {
+									ttl = ttl ? Math.min(ttl, opts.maxTtl) : opts.maxTtl;
+								}
+								await this.cache.set(key, value, ttl);
 							} catch (err) {
 								ee.emit('error', new CacheableRequest.CacheError(err));
 							}
