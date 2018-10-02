@@ -350,10 +350,10 @@ test('TTL is passed to cache', async t => {
 	const store = new Map();
 	const cache = {
 		get: store.get.bind(store),
-		set: (key, val, ttl) => {
+		set: (key, value, ttl) => {
 			t.true(typeof ttl === 'number');
 			t.true(ttl > 0);
-			return store.set(key, val, ttl);
+			return store.set(key, value, ttl);
 		},
 		delete: store.delete.bind(store)
 	};
@@ -371,9 +371,9 @@ test('TTL is not passed to cache if strictTtl is false', async t => {
 	const store = new Map();
 	const cache = {
 		get: store.get.bind(store),
-		set: (key, val, ttl) => {
+		set: (key, value, ttl) => {
 			t.true(typeof ttl === 'undefined');
-			return store.set(key, val, ttl);
+			return store.set(key, value, ttl);
 		},
 		delete: store.delete.bind(store)
 	};
