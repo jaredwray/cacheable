@@ -103,7 +103,7 @@ class CacheableRequest {
 									ttl = response.cachePolicy.timeToLive();
 
 									if (opts.maxTtl) {
-										ttl = ttl ? Math.min(ttl, opts.maxTtl) : opts.maxTtl;
+										ttl = Math.min(ttl, opts.maxTtl);
 									}
 								}
 
