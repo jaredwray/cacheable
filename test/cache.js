@@ -405,8 +405,9 @@ test('Setting opts.maxTtl will limit the TTL', async t => {
 		maxTtl: 1000
 	};
 
+	t.plan(2);
+
 	await cacheableRequestHelper(opts);
-	t.is(store.size, 1);
 });
 
 test('Stale cache entries with Last-Modified headers are revalidated', async t => {
