@@ -386,7 +386,7 @@ test('TTL is not passed to cache if strictTtl is false', async t => {
 	await cacheableRequestHelper(opts);
 });
 
-test('ability to limit TTL', async t => {
+test('Setting opts.maxTtl will limit the TTL', async t => {
 	const endpoint = '/cache';
 	const store = new Map();
 	const cache = {
