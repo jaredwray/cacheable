@@ -402,8 +402,7 @@ test('ability to limit TTL', async t => {
 	const cacheableRequestHelper = promisify(cacheableRequest);
 	const opts = {
 		...url.parse(s.url + endpoint),
-		maxTtl: 1000,
-		strictTtl: true
+		maxTtl: 1000
 	};
 
 	await cacheableRequestHelper(opts);
