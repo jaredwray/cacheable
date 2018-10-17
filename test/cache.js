@@ -392,7 +392,6 @@ test('Setting opts.maxTtl will limit the TTL', async t => {
 	const cache = {
 		get: store.get.bind(store),
 		set: (key, value, ttl) => {
-			t.is(typeof ttl, 'number');
 			t.is(ttl, 1000);
 			return store.set(key, value, ttl);
 		},
@@ -405,7 +404,7 @@ test('Setting opts.maxTtl will limit the TTL', async t => {
 		maxTtl: 1000
 	};
 
-	t.plan(2);
+	t.plan(1);
 
 	await cacheableRequestHelper(opts);
 });
