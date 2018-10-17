@@ -409,6 +409,30 @@ test('Setting opts.maxTtl will limit the TTL', async t => {
 	await cacheableRequestHelper(opts);
 });
 
+test('Setting opts.maxTtl when opts.strictTtl is true will use opts.maxTtl if it\'s smaller', async t => {
+	const endpoint = '/cache';
+	const store = new Map();
+	const cache = {
+		get: store.get.bind(store),
+		set: (key, value, ttl) => {
+			t.true(ttl === 1000);
+			return store.set(key, value, ttl);
+		},
+		delete: store.delete.bind(store)
+	};
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest);
+	const opts = {
+		...url.parse(s.url + endpoint),
+		strictTtl: true,
+		maxTtl: 1000
+	};
+
+	t.plan(1);
+
+	await cacheableRequestHelper(opts);
+});
+
 test('Stale cache entries with Last-Modified headers are revalidated', async t => {
 	const endpoint = '/last-modified';
 	const cache = new Map();
