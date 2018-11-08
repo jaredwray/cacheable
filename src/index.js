@@ -79,7 +79,7 @@ class CacheableRequest {
 					}
 
 					if (!response.fromCache) {
-						response.cachePolicy = new CachePolicy(opts, response);
+						response.cachePolicy = new CachePolicy(opts, response, opts);
 						response.fromCache = false;
 					}
 
