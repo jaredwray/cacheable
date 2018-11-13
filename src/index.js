@@ -73,7 +73,7 @@ class CacheableRequest {
 						if (!revalidatedPolicy.modified) {
 							const headers = revalidatedPolicy.policy.responseHeaders();
 							response = new Response(response.statusCode, headers, revalidate.body, revalidate.url);
-							response.cachePolicy = revalidatedPolicy.policy;
+							response.cachePolicy = CachePolicy.fromObject(revalidate.cachePolicy);
 							response.fromCache = true;
 						}
 					}
