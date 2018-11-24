@@ -63,6 +63,14 @@ class CacheableRequest {
 			const key = `${opts.method}:${normalizedUrlString}`;
 			let revalidate = false;
 			let madeRequest = false;
+			let requestErrored = false;
+			let requestErrorCallback;
+			const requestErrorPromise = new Promise(resolve => {
+				requestErrorCallback = () => {
+					requestErrored = true;
+					resolve();
+				};
+			});
 
 			const makeRequest = opts => {
 				madeRequest = true;
@@ -89,7 +97,18 @@ class CacheableRequest {
 
 						(async () => {
 							try {
-								const body = await getStream.buffer(response);
+								const bodyPromise = getStream.buffer(response);
+
+								await Promise.race([
+									requestErrorPromise,
+									new Promise(resolve => response.once('end', resolve))
+								]);
+
+								if (requestErrored) {
+									return;
+								}
+
+								const body = await bodyPromise;
 
 								const value = {
 									cachePolicy: response.cachePolicy.toObject(),
@@ -126,6 +145,8 @@ class CacheableRequest {
 
 				try {
 					const req = request(opts, handler);
+					req.once('error', requestErrorCallback);
+					req.once('abort', requestErrorCallback);
 					ee.emit('request', req);
 				} catch (err) {
 					ee.emit('error', new CacheableRequest.RequestError(err));
