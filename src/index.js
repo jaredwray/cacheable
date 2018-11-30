@@ -63,17 +63,19 @@ class CacheableRequest {
 			const key = `${opts.method}:${normalizedUrlString}`;
 			let revalidate = false;
 			let madeRequest = false;
-			let requestErrored = false;
-			let requestErrorCallback;
-			const requestErrorPromise = new Promise(resolve => {
-				requestErrorCallback = () => {
-					requestErrored = true;
-					resolve();
-				};
-			});
 
 			const makeRequest = opts => {
 				madeRequest = true;
+				let requestErrored = false;
+				let requestErrorCallback;
+
+				const requestErrorPromise = new Promise(resolve => {
+					requestErrorCallback = () => {
+						requestErrored = true;
+						resolve();
+					};
+				});
+
 				const handler = response => {
 					if (revalidate && !opts.forceRefresh) {
 						response.status = response.statusCode;
