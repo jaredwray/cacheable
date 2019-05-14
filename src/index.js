@@ -88,7 +88,7 @@ class CacheableRequest {
 					};
 				});
 
-				const handler = response => {
+				const handler = async response => {
 					if (revalidate && !opts.forceRefresh) {
 						response.status = response.statusCode;
 						const revalidatedPolicy = CachePolicy.fromObject(revalidate.cachePolicy).revalidatedPolicy(opts, response);
@@ -109,46 +109,42 @@ class CacheableRequest {
 					if (opts.cache && response.cachePolicy.storable()) {
 						clonedResponse = cloneResponse(response);
 
-						(async () => {
-							try {
-								const bodyPromise = getStream.buffer(response);
+						try {
+							const bodyPromise = getStream.buffer(response);
 
-								await Promise.race([
-									requestErrorPromise,
-									new Promise(resolve => response.once('end', resolve))
-								]);
+							await Promise.race([
+								requestErrorPromise,
+								new Promise(resolve => response.once('end', resolve))
+							]);
 
-								if (requestErrored) {
-									return;
-								}
-
-								const body = await bodyPromise;
-
-								const value = {
-									cachePolicy: response.cachePolicy.toObject(),
-									url: response.url,
-									statusCode: response.fromCache ? revalidate.statusCode : response.statusCode,
-									body
-								};
-
-								let ttl = opts.strictTtl ? response.cachePolicy.timeToLive() : undefined;
-								if (opts.maxTtl) {
-									ttl = ttl ? Math.min(ttl, opts.maxTtl) : opts.maxTtl;
-								}
-
-								await this.cache.set(key, value, ttl);
-							} catch (error) {
-								ee.emit('error', new CacheableRequest.CacheError(error));
+							if (requestErrored) {
+								return;
 							}
-						})();
+
+							const body = await bodyPromise;
+
+							const value = {
+								cachePolicy: response.cachePolicy.toObject(),
+								url: response.url,
+								statusCode: response.fromCache ? revalidate.statusCode : response.statusCode,
+								body
+							};
+
+							let ttl = opts.strictTtl ? response.cachePolicy.timeToLive() : undefined;
+							if (opts.maxTtl) {
+								ttl = ttl ? Math.min(ttl, opts.maxTtl) : opts.maxTtl;
+							}
+
+							await this.cache.set(key, value, ttl);
+						} catch (error) {
+							ee.emit('error', new CacheableRequest.CacheError(error));
+						}
 					} else if (opts.cache && revalidate) {
-						(async () => {
-							try {
-								await this.cache.delete(key);
-							} catch (error) {
-								ee.emit('error', new CacheableRequest.CacheError(error));
-							}
-						})();
+						try {
+							await this.cache.delete(key);
+						} catch (error) {
+							ee.emit('error', new CacheableRequest.CacheError(error));
+						}
 					}
 
 					ee.emit('response', clonedResponse || response);
