@@ -167,45 +167,40 @@ class CacheableRequest {
 				}
 			};
 
-			(async () => {
-				const get = async opts => {
-					await Promise.resolve();
+			const get = async opts => {
+				await Promise.resolve();
 
-					const cacheEntry = opts.cache ? await this.cache.get(key) : undefined;
-					if (typeof cacheEntry === 'undefined') {
-						return makeRequest(opts);
-					}
-
-					const policy = CachePolicy.fromObject(cacheEntry.cachePolicy);
-					if (policy.satisfiesWithoutRevalidation(opts) && !opts.forceRefresh) {
-						const headers = policy.responseHeaders();
-						const response = new Response(cacheEntry.statusCode, headers, cacheEntry.body, cacheEntry.url);
-						response.cachePolicy = policy;
-						response.fromCache = true;
-
-						ee.emit('response', response);
-						if (typeof cb === 'function') {
-							cb(response);
-						}
-					} else {
-						revalidate = cacheEntry;
-						opts.headers = policy.revalidationHeaders(opts);
-						makeRequest(opts);
-					}
-				};
-
-				this.cache.on('error', error => ee.emit('error', new CacheableRequest.CacheError(error)));
-
-				try {
-					await get(opts);
-				} catch (error) {
-					if (opts.automaticFailover && !madeRequest) {
-						makeRequest(opts);
-					}
-
-					ee.emit('error', new CacheableRequest.CacheError(error));
+				const cacheEntry = opts.cache ? await this.cache.get(key) : undefined;
+				if (typeof cacheEntry === 'undefined') {
+					return makeRequest(opts);
 				}
-			})();
+
+				const policy = CachePolicy.fromObject(cacheEntry.cachePolicy);
+				if (policy.satisfiesWithoutRevalidation(opts) && !opts.forceRefresh) {
+					const headers = policy.responseHeaders();
+					const response = new Response(cacheEntry.statusCode, headers, cacheEntry.body, cacheEntry.url);
+					response.cachePolicy = policy;
+					response.fromCache = true;
+
+					ee.emit('response', response);
+					if (typeof cb === 'function') {
+						cb(response);
+					}
+				} else {
+					revalidate = cacheEntry;
+					opts.headers = policy.revalidationHeaders(opts);
+					makeRequest(opts);
+				}
+			};
+
+			this.cache.on('error', error => ee.emit('error', new CacheableRequest.CacheError(error)));
+
+			get(opts).catch(error => {
+				if (opts.automaticFailover && !madeRequest) {
+					makeRequest(opts);
+				}
+				ee.emit('error', new CacheableRequest.CacheError(error));
+			});
 
 			return ee;
 		};
