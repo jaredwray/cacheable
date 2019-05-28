@@ -1,5 +1,8 @@
+- 2.9.1 2019-05-28
+  - Bind isCacheableValue to its underlying store (#126). - @arash16
+
 - 2.9.0 2018-03-26
-  - Fix store's this context for isCacheableValue method (#119). -@alexandrusavin
+  - Fix store's this context for isCacheableValue method (#119). - @alexandrusavin
 
 - 2.8.0 2018-02-28
   - Added link to node-cache-manager-fs-hash - @rolandstarke
