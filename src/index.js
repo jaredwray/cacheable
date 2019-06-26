@@ -10,6 +10,38 @@ const lowercaseKeys = require('lowercase-keys');
 const cloneResponse = require('clone-response');
 const Keyv = require('keyv');
 
+const prepareOptsAndURL = function (opts) {
+	let url;
+	if (typeof opts === 'string') {
+		url = normalizeUrlObject(urlLib.parse(opts));
+		opts = {};
+	} else if (opts instanceof urlLib.URL) {
+		url = normalizeUrlObject(urlLib.parse(opts.toString()));
+		opts = {};
+	} else {
+		const [pathname, ...searchParts] = (opts.path || '').split('?');
+		const search = searchParts.length > 0 ? `?${searchParts.join('?')}` : '';
+		url = normalizeUrlObject({ ...opts, pathname, search });
+	}
+	opts = {
+		headers: {},
+		method: 'GET',
+		cache: true,
+		strictTtl: false,
+		automaticFailover: false,
+		...opts,
+		...urlObjectToRequestOptions(url)
+	};
+	opts.headers = lowercaseKeys(opts.headers);
+
+	const normalizedUrlString = normalizeUrl(urlLib.format(url), {
+		stripWWW: false,
+		removeTrailingSlash: false,
+		stripAuthentication: false
+	});
+	return [opts, normalizedUrlString];
+};
+
 class CacheableRequest {
 	constructor(request, cacheAdapter) {
 		if (typeof request !== 'function') {
@@ -27,41 +59,11 @@ class CacheableRequest {
 
 	createCacheableRequest(request) {
 		return (opts, cb) => {
-			let url;
-			if (typeof opts === 'string') {
-				url = normalizeUrlObject(urlLib.parse(opts));
-				opts = {};
-			} else if (opts instanceof urlLib.URL) {
-				url = normalizeUrlObject(urlLib.parse(opts.toString()));
-				opts = {};
-			} else {
-				const [pathname, ...searchParts] = (opts.path || '').split('?');
-				const search = searchParts.length > 0 ?
-					`?${searchParts.join('?')}` :
-					'';
-				url = normalizeUrlObject({ ...opts, pathname, search });
-			}
-
-			opts = {
-				headers: {},
-				method: 'GET',
-				cache: true,
-				strictTtl: false,
-				automaticFailover: false,
-				...opts,
-				...urlObjectToRequestOptions(url)
-			};
-			opts.headers = lowercaseKeys(opts.headers);
-
 			const ee = new EventEmitter();
-			const normalizedUrlString = normalizeUrl(
-				urlLib.format(url),
-				{
-					stripWWW: false,
-					removeTrailingSlash: false,
-					stripAuthentication: false
-				}
-			);
+			const optsAndURL = prepareOptsAndURL(opts);
+			opts = optsAndURL[0];
+			const normalizedUrlString = optsAndURL[1];
+
 			const key = `${opts.method}:${normalizedUrlString}`;
 			let revalidate = false;
 			let madeRequest = false;
