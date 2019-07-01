@@ -411,6 +411,9 @@ var multiCache = cacheManager.multiCaching([memoryCache, someOtherCache], {
 
 ```
 
+### Development environment
+You may disable real caching but still get all the callback functionality working by setting `none` store.
+
 ## Docs
 
 To generate JSDOC 3 documentation:
