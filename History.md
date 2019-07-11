@@ -1,3 +1,6 @@
+- 2.10.0 2019-07-11
+  - Add development store "none" (#129). -@ R3VoLuT1OneR
+
 - 2.9.1 2019-05-28
   - Bind isCacheableValue to its underlying store (#126). - @arash16
 
