@@ -35,7 +35,7 @@
 		"keyv": "^3.0.0",
 		"lowercase-keys": "^2.0.0",
 		"normalize-url": "^4.1.0",
-		"responselike": "^1.0.2"
+		"responselike": "^2.0.0"
 	},
 	"devDependencies": {
 		"@keyv/sqlite": "^2.0.0",
