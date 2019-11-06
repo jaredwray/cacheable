@@ -1,5 +1,8 @@
+- 2.10.1 2019-11-06
+  - Add .js to module path to fix compilers (#131). -@imjohnbo
+
 - 2.10.0 2019-07-11
-  - Add development store "none" (#129). -@ R3VoLuT1OneR
+  - Add development store "none" (#129). -@R3VoLuT1OneR
 
 - 2.9.1 2019-05-28
   - Bind isCacheableValue to its underlying store (#126). - @arash16
