@@ -25,7 +25,7 @@ lint:
 	./node_modules/.bin/jscs ./test && \
 	./node_modules/.bin/jscs ./examples && \
 	./node_modules/.bin/jshint ./lib --config $(BASE)/.jshintrc && \
-	./node_modules/.bin/jshint ./test --config $(BASE)/.jshintrc
+	./node_modules/.bin/jshint ./test --config $(BASE)/.jshintrc && \
 	./node_modules/.bin/jshint ./examples --config $(BASE)/.jshintrc
 
 docs:

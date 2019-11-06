@@ -906,13 +906,37 @@ describe("caching", function() {
                 var name2;
 
                 beforeEach(function() {
-                    key2 = support.random.string(20);
-                    name2 = support.random.string();
+                    key2 = '2-' + support.random.string(20);
+                    name2 = '2-' + support.random.string();
                     sinon.spy(memoryStoreStub, 'mset');
                 });
 
                 afterEach(function() {
                     memoryStoreStub.mset.restore();
+                });
+
+                context("when no keys are already cached", function() {
+                    it("retrieves data from data store and caches results via mset", function(done) {
+                        var funcCalled = false;
+                        sinon.stub(memoryStoreStub, 'mget').yields();
+
+                        cache.wrap(key, key2, function(cb) {
+                            funcCalled = true;
+                            cb(null, [{name: name}, {name: name2}]);
+                        }, function(err) {
+                            checkErr(err);
+                            assert.ok(memoryStoreStub.mget.calledWith(key, key2));
+                            assert.ok(funcCalled);
+                            assert.ok(memoryStoreStub.mset.called);
+                            var callArgs = memoryStoreStub.mset.args[0];
+                            assert.equal(callArgs[0], key);
+                            assert.deepEqual(callArgs[1], {name: name});
+                            assert.equal(callArgs[2], key2);
+                            assert.deepEqual(callArgs[3], {name: name2});
+                            memoryStoreStub.mget.restore();
+                            done();
+                        });
+                    });
                 });
 
                 context("when result is already cached", function() {
@@ -931,6 +955,31 @@ describe("caching", function() {
                             checkErr(err);
                             assert.deepEqual(widgets[0], {name: name});
                             assert.deepEqual(widgets[1], {name: name2});
+                            assert.ok(memoryStoreStub.mget.calledWith(key, key2));
+                            assert.ok(!funcCalled);
+                            memoryStoreStub.mget.restore();
+                            done();
+                        });
+                    });
+                });
+
+                context("when some keys are already cached but others are not", function() {
+                    // This means the user must manually call the data store to get any
+                    // values that are not in cache, which is not ideal.
+                    it("responds with only the data that exists in the cache", function(done) {
+                        var key3 = support.random.string();
+                        var name3 = support.random.string();
+                        var funcCalled = false;
+
+                        sinon.stub(memoryStoreStub, 'mget').yields(null, [{name: name}, {name: name3}]);
+
+                        cache.wrap(key, key2, key3, function(cb) {
+                            funcCalled = true;
+                            methods.getMultiWidget([name2], cb);
+                        }, function(err, widgets) {
+                            checkErr(err);
+                            assert.deepEqual(widgets[0], {name: name});
+                            assert.deepEqual(widgets[1], {name: name3});
                             assert.ok(memoryStoreStub.mget.calledWith(key, key2));
                             assert.ok(!funcCalled);
                             memoryStoreStub.mget.restore();
