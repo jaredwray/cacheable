@@ -32,7 +32,7 @@
 		"clone-response": "^1.0.2",
 		"get-stream": "^5.1.0",
 		"http-cache-semantics": "^4.0.0",
-		"keyv": "^3.0.0",
+		"keyv": "^4.0.0",
 		"lowercase-keys": "^2.0.0",
 		"normalize-url": "^4.1.0",
 		"responselike": "^2.0.0"
