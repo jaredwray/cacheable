@@ -1,3 +1,6 @@
+- 2.10.2 2020-01-30
+  - Disallow mutation of values in memory store (#103).
+
 - 2.10.1 2019-11-06
   - Add .js to module path to fix compilers (#131). -@imjohnbo
 

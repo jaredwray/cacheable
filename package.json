@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "2.10.1",
+  "version": "2.10.2",
   "description": "Cache module for Node.js",
   "main": "index.js",
   "scripts": {
@@ -21,6 +21,7 @@
   "license": "MIT",
   "dependencies": {
     "async": "1.5.2",
+    "lodash.clonedeep": "4.5.0",
     "lru-cache": "4.0.0"
   },
   "devDependencies": {

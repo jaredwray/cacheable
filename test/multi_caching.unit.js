@@ -96,15 +96,15 @@ describe("multiCaching", function() {
 
                     memoryCache.get(key, function(err, result) {
                         checkErr(err);
-                        assert.equal(result, value);
+                        assert.deepEqual(result, value);
 
                         memoryCache2.get(key, function(err, result) {
                             checkErr(err);
-                            assert.equal(result, value);
+                            assert.deepEqual(result, value);
 
                             memoryCache3.get(key, function(err, result) {
                                 checkErr(err);
-                                assert.equal(result, value);
+                                assert.deepEqual(result, value);
                                 done();
                             });
                         });
