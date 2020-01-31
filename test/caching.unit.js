@@ -20,7 +20,7 @@ var methods = {
         process.nextTick(function() {
             cb(null, names.map(function(name) { return {name: name}; }));
         });
-    },
+    }
 };
 
 describe("caching", function() {
@@ -66,10 +66,10 @@ describe("caching", function() {
                     cache.set(key, value, {ttl: defaultTtl});
                     setTimeout(function() {
                         cache.get(key)
-                        .then(function(result) {
-                            assert.equal(result, value);
-                            done();
-                        });
+                            .then(function(result) {
+                                assert.equal(result, value);
+                                done();
+                            });
                     }, 20);
                 });
 
@@ -130,11 +130,11 @@ describe("caching", function() {
             cache.mset(key, value, key2, value2, {ttl: defaultTtl});
             setTimeout(function() {
                 cache.mget(key, key2)
-                .then(function(result) {
-                    assert.equal(result[0], value);
-                    assert.equal(result[1], value2);
-                    done();
-                });
+                    .then(function(result) {
+                        assert.equal(result[0], value);
+                        assert.equal(result[1], value2);
+                        done();
+                    });
             }, 20);
         });
 
@@ -209,20 +209,20 @@ describe("caching", function() {
                 it("lets us delete data using promises", function(done) {
                     key = support.random.string();
                     cache.set(key, value)
-                    .then(function() {
-                        return cache.get(key);
-                    }).then(function(val) {
-                        assert.equal(val, value);
-                    }).then(function() {
-                        return cache.del(key);
-                    }).then(function() {
-                        return cache.get(key);
-                    }).then(function(val) {
-                        assert.strictEqual(val, undefined);
-                    }).then(done)
-                    .catch(function(err) {
-                        done(err);
-                    });
+                        .then(function() {
+                            return cache.get(key);
+                        }).then(function(val) {
+                            assert.equal(val, value);
+                        }).then(function() {
+                            return cache.del(key);
+                        }).then(function() {
+                            return cache.get(key);
+                        }).then(function(val) {
+                            assert.strictEqual(val, undefined);
+                        }).then(done)
+                        .catch(function(err) {
+                            done(err);
+                        });
                 });
 
                 describe('with multiple keys', function() {
@@ -330,7 +330,7 @@ describe("caching", function() {
             beforeEach(function() {
                 fakeStore = {
                     get: function() {},
-                    set: function() {},
+                    set: function() {}
                 };
             });
 
@@ -420,13 +420,13 @@ describe("caching", function() {
 
         it("lets us set and get data without a callback, returning a promise", function(done) {
             cache.keys()
-            .then(function(keys) {
-                assert.deepEqual(keys.sort(), savedKeys.sort());
-                done();
-            })
-            .catch(function(err) {
-                done(err);
-            });
+                .then(function(keys) {
+                    assert.deepEqual(keys.sort(), savedKeys.sort());
+                    done();
+                })
+                .catch(function(err) {
+                    done(err);
+                });
         });
 
         context("when not using promises", function() {
@@ -1186,10 +1186,10 @@ describe("caching", function() {
                 cache.wrap('key', function() {
                     return 'OK';
                 })
-                .then(function(res) {
-                    assert.equal(res, 'OK');
-                    done();
-                });
+                    .then(function(res) {
+                        assert.equal(res, 'OK');
+                        done();
+                    });
             });
 
             it("should be able to chain with cache function as a promise", function(done) {
@@ -1198,10 +1198,10 @@ describe("caching", function() {
                         resolve('OK');
                     });
                 })
-                .then(function(res) {
-                    assert.equal(res, 'OK');
-                    done();
-                });
+                    .then(function(res) {
+                        assert.equal(res, 'OK');
+                        done();
+                    });
             });
 
             it("should be able to catch errors in cache function as a promise", function(done) {
@@ -1210,22 +1210,22 @@ describe("caching", function() {
                         reject('NOK');
                     });
                 })
-                .then(function() {
-                    done(new Error('It should not call then since there is an error in the cache function!'));
-                })
-                .catch(function() {
-                    done();
-                });
+                    .then(function() {
+                        done(new Error('It should not call then since there is an error in the cache function!'));
+                    })
+                    .catch(function() {
+                        done();
+                    });
             });
 
             it("should be able to chain with non-cacheable value", function(done) {
                 cache.wrap('key', function() {
                     return;
                 })
-                .then(function(res) {
-                    assert.equal(res, undefined);
-                    done();
-                });
+                    .then(function(res) {
+                        assert.equal(res, undefined);
+                        done();
+                    });
             });
         });
     });
@@ -1293,7 +1293,7 @@ describe("caching", function() {
                     }
                 },
                 get: function() {},
-                set: function() {},
+                set: function() {}
             };
 
             cache = caching({store: store});
