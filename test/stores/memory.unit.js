@@ -99,6 +99,7 @@ describe("memory store", function() {
             it("does not allow mutation of arrays", function(done) {
                 getCachedArray('foo', function(err, result) {
                     checkErr(err);
+                    assert.ok(result);
                     result = ['a', 'b', 'c'];
 
                     getCachedArray('foo', function(err, result) {
@@ -112,6 +113,7 @@ describe("memory store", function() {
             it("does not allow mutation of strings", function(done) {
                 getCachedString('foo', function(err, result) {
                     checkErr(err);
+                    assert.ok(result);
                     result = 'buzz';
 
                     getCachedString('foo', function(err, result) {
@@ -125,6 +127,7 @@ describe("memory store", function() {
             it("does not allow mutation of numbers", function(done) {
                 getCachedNumber('foo', function(err, result) {
                     checkErr(err);
+                    assert.ok(result);
                     result = 12;
 
                     getCachedNumber('foo', function(err, result) {
