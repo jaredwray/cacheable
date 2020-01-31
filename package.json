@@ -25,7 +25,7 @@
     "lru-cache": "4.0.0"
   },
   "devDependencies": {
-    "coveralls": "^2.3.0",
+    "coveralls": "3.0.9",
     "es6-promise": "^3.0.2",
     "eslint": "5.16.0",
     "jsdoc": "3.5.5",
