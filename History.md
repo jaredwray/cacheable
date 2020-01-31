@@ -1,4 +1,7 @@
-- 2.10.3 2020-01-30
+- 2.11.0 2020-01-31
+  - Use eslint instead of jshint/jscs; use nyc instead of istanbul; mocha/coveralls upgrades.
+
+- 2.10.3 2020-01-31
   - Preserve functions in memory store when cloning objects (#132).
 
 - 2.10.2 2020-01-30

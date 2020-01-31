@@ -6,4 +6,5 @@ node_js:
 script: 'make test-travis'
 branches:
   only:
+    - feature/fix-npm-vulnerabilities
     - master
