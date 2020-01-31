@@ -71,8 +71,16 @@ describe("memory store", function() {
                 }, opts, cb);
             }
 
+            function getCachedFunction(name, cb) {
+                cache.wrap(key, function(cacheCb) {
+                    cacheCb(null, function() {
+                        return 'foo';
+                    });
+                }, opts, cb);
+            }
+
             beforeEach(function() {
-                cache = caching({store: 'memory', safeClone: true, ttl: opts.ttl, ignoreCacheErrors: false});
+                cache = caching({store: 'memory', ttl: opts.ttl, ignoreCacheErrors: false});
             });
 
             it("does not allow mutation of objects", function(done) {
@@ -122,6 +130,19 @@ describe("memory store", function() {
                     getCachedNumber('foo', function(err, result) {
                         checkErr(err);
                         assert.equal(result, 34);
+                        done();
+                    });
+                });
+            });
+
+            it("preserves functions", function(done) {
+                getCachedFunction('foo', function(err, result) {
+                    checkErr(err);
+                    assert.equal(typeof result, 'function');
+
+                    getCachedFunction('foo', function(err, result) {
+                        checkErr(err);
+                        assert.equal(typeof result, 'function');
                         done();
                     });
                 });

@@ -1,3 +1,6 @@
+- 2.10.3 2020-01-30
+  - Preserve functions in memory store when cloning objects (#132).
+
 - 2.10.2 2020-01-30
   - Disallow mutation of values in memory store (#103).
 
