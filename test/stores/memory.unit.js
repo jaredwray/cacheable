@@ -79,6 +79,23 @@ describe("memory store", function() {
                 }, opts, cb);
             }
 
+            function getCachedObjectWithPrototype(name, cb) {
+                function Thing() {}
+                Thing.prototype.f = function() {
+                    return 'foo';
+                };
+                cache.wrap(key, function(cacheCb) {
+                    cacheCb(null, new Thing());
+                }, opts, cb);
+            }
+
+            function assertCachedObjectWithPrototype(result) {
+                assert.equal(typeof result, 'object');
+                var prototype = Object.getPrototypeOf(result);
+                assert.equal(typeof prototype.f, 'function', 'prototype does not have function f');
+                assert.equal(result.f(), 'foo', 'prototype function f does not return expected value');
+            }
+
             beforeEach(function() {
                 cache = caching({store: 'memory', ttl: opts.ttl, ignoreCacheErrors: false});
             });
@@ -146,6 +163,19 @@ describe("memory store", function() {
                     getCachedFunction('foo', function(err, result) {
                         checkErr(err);
                         assert.equal(typeof result, 'function');
+                        done();
+                    });
+                });
+            });
+
+            it("preserves object prototype", function(done) {
+                getCachedObjectWithPrototype('foo', function(err, result) {
+                    checkErr(err);
+                    assertCachedObjectWithPrototype(result);
+
+                    getCachedObjectWithPrototype('foo', function(err, result) {
+                        checkErr(err);
+                        assertCachedObjectWithPrototype(result);
                         done();
                     });
                 });
