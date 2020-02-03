@@ -1,3 +1,6 @@
+- 2.11.1 2020-02-03
+  - Bugfix: Preserve function prototypes in memory store (#133). -@ryanbecker
+
 - 2.11.0 2020-01-31
   - Use eslint instead of jshint/jscs; use nyc instead of istanbul; mocha/coveralls upgrades.
 
