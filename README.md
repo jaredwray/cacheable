@@ -123,6 +123,8 @@ var cacheManager = require('cache-manager');
 var memoryCache = cacheManager.caching({store: 'memory', max: 100, ttl: 10/*seconds*/});
 var ttl = 5;
 // Note: callback is optional in set() and del().
+// Note: memory cache clones values before setting them unless
+// shouldCloneBeforeSet is set to false
 
 memoryCache.set('foo', 'bar', {ttl: ttl}, function(err) {
     if (err) { throw err; }
