@@ -96,87 +96,177 @@ describe("memory store", function() {
                 assert.equal(result.f(), 'foo', 'prototype function f does not return expected value');
             }
 
-            beforeEach(function() {
-                cache = caching({store: 'memory', ttl: opts.ttl, ignoreCacheErrors: false});
-            });
+            // By default, memory store clones values before setting in the set method.
+            context("when shouldCloneBeforeSet option is not passed in", () => {
+                beforeEach(function() {
+                    cache = caching({store: 'memory', ttl: opts.ttl, ignoreCacheErrors: false});
+                });
 
-            it("does not allow mutation of objects", function(done) {
-                getCachedObject('foo', function(err, result) {
-                    checkErr(err);
-                    result.foo = 'buzz';
-
+                it("does not allow mutation of objects", function(done) {
                     getCachedObject('foo', function(err, result) {
                         checkErr(err);
-                        assert.equal(result.foo, 'bar');
-                        done();
+                        result.foo = 'buzz';
+
+                        getCachedObject('foo', function(err, result) {
+                            checkErr(err);
+                            assert.equal(result.foo, 'bar');
+                            done();
+                        });
                     });
                 });
-            });
 
-            it("does not allow mutation of arrays", function(done) {
-                getCachedArray('foo', function(err, result) {
-                    checkErr(err);
-                    assert.ok(result);
-                    result = ['a', 'b', 'c'];
-
+                it("does not allow mutation of arrays", function(done) {
                     getCachedArray('foo', function(err, result) {
                         checkErr(err);
-                        assert.deepEqual(result, [1, 2, 3]);
-                        done();
+                        assert.ok(result);
+                        result = ['a', 'b', 'c'];
+
+                        getCachedArray('foo', function(err, result) {
+                            checkErr(err);
+                            assert.deepEqual(result, [1, 2, 3]);
+                            done();
+                        });
                     });
                 });
-            });
 
-            it("does not allow mutation of strings", function(done) {
-                getCachedString('foo', function(err, result) {
-                    checkErr(err);
-                    assert.ok(result);
-                    result = 'buzz';
-
+                it("does not allow mutation of strings", function(done) {
                     getCachedString('foo', function(err, result) {
                         checkErr(err);
-                        assert.equal(result, 'bar');
-                        done();
+                        assert.ok(result);
+                        result = 'buzz';
+
+                        getCachedString('foo', function(err, result) {
+                            checkErr(err);
+                            assert.equal(result, 'bar');
+                            done();
+                        });
                     });
                 });
-            });
 
-            it("does not allow mutation of numbers", function(done) {
-                getCachedNumber('foo', function(err, result) {
-                    checkErr(err);
-                    assert.ok(result);
-                    result = 12;
-
+                it("does not allow mutation of numbers", function(done) {
                     getCachedNumber('foo', function(err, result) {
                         checkErr(err);
-                        assert.equal(result, 34);
-                        done();
+                        assert.ok(result);
+                        result = 12;
+
+                        getCachedNumber('foo', function(err, result) {
+                            checkErr(err);
+                            assert.equal(result, 34);
+                            done();
+                        });
                     });
                 });
-            });
 
-            it("preserves functions", function(done) {
-                getCachedFunction('foo', function(err, result) {
-                    checkErr(err);
-                    assert.equal(typeof result, 'function');
-
+                it("preserves functions", function(done) {
                     getCachedFunction('foo', function(err, result) {
                         checkErr(err);
                         assert.equal(typeof result, 'function');
-                        done();
+
+                        getCachedFunction('foo', function(err, result) {
+                            checkErr(err);
+                            assert.equal(typeof result, 'function');
+                            done();
+                        });
+                    });
+                });
+
+                it("preserves object prototype", function(done) {
+                    getCachedObjectWithPrototype('foo', function(err, result) {
+                        checkErr(err);
+                        assertCachedObjectWithPrototype(result);
+
+                        getCachedObjectWithPrototype('foo', function(err, result) {
+                            checkErr(err);
+                            assertCachedObjectWithPrototype(result);
+                            done();
+                        });
                     });
                 });
             });
 
-            it("preserves object prototype", function(done) {
-                getCachedObjectWithPrototype('foo', function(err, result) {
-                    checkErr(err);
-                    assertCachedObjectWithPrototype(result);
+            context("when shouldCloneBeforeSet=false option is passed in", () => {
+                beforeEach(function() {
+                    cache = caching({store: 'memory', ttl: opts.ttl, shouldCloneBeforeSet: false, ignoreCacheErrors: false});
+                });
 
+                it("*does* allow mutation of objects", function(done) {
+                    getCachedObject('foo', function(err, result) {
+                        checkErr(err);
+                        result.foo = 'buzz';
+
+                        getCachedObject('foo', function(err, result) {
+                            checkErr(err);
+                            assert.equal(result.foo, 'buzz');
+                            done();
+                        });
+                    });
+                });
+
+                it("does not allow mutation of arrays", function(done) {
+                    getCachedArray('foo', function(err, result) {
+                        checkErr(err);
+                        assert.ok(result);
+                        result = ['a', 'b', 'c'];
+
+                        getCachedArray('foo', function(err, result) {
+                            checkErr(err);
+                            assert.deepEqual(result, [1, 2, 3]);
+                            done();
+                        });
+                    });
+                });
+
+                it("does not allow mutation of strings", function(done) {
+                    getCachedString('foo', function(err, result) {
+                        checkErr(err);
+                        assert.ok(result);
+                        result = 'buzz';
+
+                        getCachedString('foo', function(err, result) {
+                            checkErr(err);
+                            assert.equal(result, 'bar');
+                            done();
+                        });
+                    });
+                });
+
+                it("does not allow mutation of numbers", function(done) {
+                    getCachedNumber('foo', function(err, result) {
+                        checkErr(err);
+                        assert.ok(result);
+                        result = 12;
+
+                        getCachedNumber('foo', function(err, result) {
+                            checkErr(err);
+                            assert.equal(result, 34);
+                            done();
+                        });
+                    });
+                });
+
+                it("preserves functions", function(done) {
+                    getCachedFunction('foo', function(err, result) {
+                        checkErr(err);
+                        assert.equal(typeof result, 'function');
+
+                        getCachedFunction('foo', function(err, result) {
+                            checkErr(err);
+                            assert.equal(typeof result, 'function');
+                            done();
+                        });
+                    });
+                });
+
+                it("preserves object prototype", function(done) {
                     getCachedObjectWithPrototype('foo', function(err, result) {
                         checkErr(err);
                         assertCachedObjectWithPrototype(result);
-                        done();
+
+                        getCachedObjectWithPrototype('foo', function(err, result) {
+                            checkErr(err);
+                            assertCachedObjectWithPrototype(result);
+                            done();
+                        });
                     });
                 });
             });
