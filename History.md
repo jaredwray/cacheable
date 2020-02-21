@@ -1,3 +1,6 @@
+- 3.0.0 2020-02-21
+  -Added way to disable cloning of values in memory store (#135).
+
 - 2.11.1 2020-02-03
   - Bugfix: Preserve function prototypes in memory store (#133). -@ryanbecker
 
