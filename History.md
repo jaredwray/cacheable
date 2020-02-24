@@ -1,8 +1,11 @@
+- 3.1.0 2020-02-24
+  - Pass updateAgeOnGet to lru-cache in memory-store (#136). - @BastianKubaile
+
 - 3.0.0 2020-02-21
-  -Added way to disable cloning of values in memory store (#135).
+  - Added way to disable cloning of values in memory store (#135).
 
 - 2.11.1 2020-02-03
-  - Bugfix: Preserve function prototypes in memory store (#133). -@ryanbecker
+  - Bugfix: Preserve function prototypes in memory store (#133). - @ryanbecker
 
 - 2.11.0 2020-01-31
   - Use eslint instead of jshint/jscs; use nyc instead of istanbul; mocha/coveralls upgrades.
@@ -14,7 +17,7 @@
   - Disallow mutation of values in memory store (#103).
 
 - 2.10.1 2019-11-06
-  - Add .js to module path to fix compilers (#131). -@imjohnbo
+  - Add .js to module path to fix compilers (#131). - @imjohnbo
 
 - 2.10.0 2019-07-11
   - Add development store "none" (#129). -@R3VoLuT1OneR
