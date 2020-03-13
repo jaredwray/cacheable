@@ -426,6 +426,33 @@ var multiCache = cacheManager.multiCaching([memoryCache, someOtherCache], {
 
 ```
 
+### Refresh cache keys in background
+
+Both the `caching` and `multicaching` modules support a mechanism to refresh expiring cache keys in background when using `wrap` function.
+This is done by adding a `refreshThreshold` attribute while creating the caching store.
+
+If `refreshThreshold` is set and if the `ttl` method is available for the used store, after retrieving a value from cache TTL will be checked.
+If the remaining TTL is less than `refreshThreshold`, the system will spawn a background worker to update the value, following same rules as standard fetching. In the meantime, the system will return the old value until expiration.
+
+In case of multicaching, the store that will be used for refresh is the one where the key will be found first (highest priority). The value will then be set in all the stores.
+
+NOTES:
+
+* In case of multicaching, the store that will be checked for refresh is the one where the key will be found first (highest priority).
+* If the threshold is low and the worker function is slow, the key may expire and you may encounter a racing condition with updating values.
+* The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
+* The caching store needs to provide the `ttl` method.
+
+For example, pass the refreshThreshold to `caching` like this:
+
+```javascript
+var redisStore = require('cache-manager-ioredis');
+
+var redisCache = cacheManager.caching({store: redisStore, refreshThreshold: 3, isCacheableValue: isCacheableValue});
+```
+
+When a value will be retrieved from Redis with a remaining TTL < 3sec, the value will be updated in background.
+
 ### Development environment
 You may disable real caching but still get all the callback functionality working by setting `none` store.
 
