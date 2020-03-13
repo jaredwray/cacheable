@@ -448,10 +448,10 @@ For example, pass the refreshThreshold to `caching` like this:
 ```javascript
 var redisStore = require('cache-manager-ioredis');
 
-var memoryCache = cacheManager.caching({store: redisStore, refreshThreshold: 3, isCacheableValue: isCacheableValue});
+var redisCache = cacheManager.caching({store: redisStore, refreshThreshold: 3, isCacheableValue: isCacheableValue});
 ```
 
-When a value will be retrieved from Redis with a TTL minor than 3sec, the value will be updated in background.
+When a value will be retrieved from Redis with a remaining TTL < 3sec, the value will be updated in background.
 
 ### Development environment
 You may disable real caching but still get all the callback functionality working by setting `none` store.
