@@ -1,3 +1,6 @@
+- 3.2.0 2020-03-13
+  - Background refresh of expiring entries (#138). - @marcoreni
+
 - 3.1.0 2020-02-24
   - Pass updateAgeOnGet to lru-cache in memory-store (#136). - @BastianKubaile
 
