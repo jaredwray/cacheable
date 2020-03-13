@@ -1129,6 +1129,363 @@ describe("multiCaching", function() {
             });
         });
 
+        describe("using a single cache store with refresh handling", function() {
+            var memoryCache4 = caching({store: 'memory', ttl: 10, refreshThreshold: 2, promiseDependency: Promise});
+
+            context("when the result is valid", function() {
+                beforeEach(function(done) {
+                    multiCache = multiCaching([memoryCache4]);
+
+                    memoryCache4.store.ttl = function(key, cb) {
+                        return cb(null, 5);
+                    };
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
+                        assert.ok(widget);
+
+                        multiCache.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.ok(result);
+
+                            sinon.spy(memoryCache4.store, 'set');
+                            sinon.spy(memoryCache4.store, 'ttl');
+                            sinon.spy(memoryCache4.store, 'get');
+
+                            done();
+                        });
+                    });
+                });
+
+                afterEach(function(done) {
+                    memoryCache4.store.get.restore();
+                    memoryCache4.store.set.restore();
+                    memoryCache4.store.ttl.restore();
+                    memoryCache4.store.ttl = undefined;
+                    done();
+                });
+
+                function getCachedWidget(name, cb) {
+                    multiCache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
+                    }, cb);
+                }
+
+                it('returns the value without refreshing', function(done) {
+                    var funcCalled = false;
+                    multiCache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        methods.getWidget(name, cb);
+                    }, function(err, widget) {
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.ok(memoryCache4.store.get.called);
+                            assert.ok(!memoryCache4.store.set.called);
+                            assert.ok(!funcCalled);
+                            done();
+                        }, 500);
+                    });
+                });
+            });
+            context("when the result is valid but expiring", function() {
+                beforeEach(function(done) {
+                    multiCache = multiCaching([memoryCache4]);
+
+                    memoryCache4.store.ttl = function(key, cb) {
+                        return cb(null, 1);
+                    };
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
+                        assert.ok(widget);
+
+                        multiCache.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.ok(result);
+
+                            sinon.spy(memoryCache4.store, 'set');
+                            sinon.spy(memoryCache4.store, 'ttl');
+                            sinon.spy(memoryCache4.store, 'get');
+
+                            done();
+                        });
+                    });
+                });
+
+                afterEach(function(done) {
+                    memoryCache4.store.get.restore();
+                    memoryCache4.store.set.restore();
+                    memoryCache4.store.ttl.restore();
+                    done();
+                });
+
+                function getCachedWidget(name, cb) {
+                    multiCache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
+                    }, cb);
+                }
+
+                it('returns value and invokes worker in background', function(done) {
+                    var funcCalled = false;
+                    multiCache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        methods.getWidget(name, cb);
+                    }, function(err, widget) {
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.ok(memoryCache4.store.get.called);
+
+                            assert.ok(funcCalled);
+                            assert.ok(memoryCache4.store.set.called);
+                            done();
+                        }, 500);
+                    });
+                });
+
+                it("returns value and invokes worker in background once when called multiple times", function(done) {
+                    var funcCalled = 0;
+                    var values = [];
+                    for (var i = 0; i < 2; i++) {
+                        values.push(i);
+                    }
+
+                    async.each(values, function(val, next) {
+                        multiCache.wrap(key, function(cb) {
+                            funcCalled += 1;
+                            var timeout = support.random.number(100);
+                            setTimeout(function() {
+                                methods.getWidget(name, function(err, result) {
+                                    cb(err, result);
+                                });
+                            }, timeout);
+                        }, function(err, widget) {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            next(err);
+                        });
+                    }, function(err) {
+                        // Wait for just a bit, to be sure that the callback is called.
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.ok(memoryCache4.store.get.calledWith(key));
+                            assert.equal(memoryCache4.store.ttl.callCount, 1);
+                            assert.equal(funcCalled, 1);
+                            assert.equal(memoryCache4.store.set.callCount, 1);
+                            done();
+                        }, 500);
+                    });
+                });
+
+                it("returns value and invokes worker in background discarding result if error", function(done) {
+                    var funcCalled = false;
+                    var fakeError = new Error(support.random.string());
+                    multiCache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        cb(fakeError);
+                    }, function(err, widget) {
+                        // Wait for just a bit, to be sure that the callback is called.
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.ok(memoryCache4.store.get.calledWith(key));
+                            assert.ok(memoryCache4.store.ttl.calledWith(key));
+                            assert.ok(funcCalled);
+
+                            assert.ok(!memoryCache4.store.set.called);
+                            done();
+                        }, 500);
+                    });
+                });
+            });
+        });
+
+        describe("using two cache stores with refresh handling on the latter", function() {
+            var memoryCache4 = caching({store: 'memory', ttl: 10, refreshThreshold: 2, promiseDependency: Promise});
+
+            context("when the result is only in [2]", function() {
+                beforeEach(function(done) {
+                    multiCache = multiCaching([memoryCache3, memoryCache4]);
+
+                    memoryCache4.store.ttl = function(key, cb) {
+                        return cb(null, 5);
+                    };
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
+                        assert.ok(widget);
+
+                        multiCache.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.ok(result);
+
+                            memoryCache3.del(key);
+
+                            sinon.spy(memoryCache3.store, 'set');
+
+                            sinon.spy(memoryCache4.store, 'set');
+                            sinon.spy(memoryCache4.store, 'ttl');
+                            sinon.spy(memoryCache4.store, 'get');
+
+                            done();
+                        });
+                    });
+                });
+
+                afterEach(function(done) {
+                    memoryCache3.store.set.restore();
+
+                    memoryCache4.store.get.restore();
+                    memoryCache4.store.set.restore();
+                    memoryCache4.store.ttl.restore();
+                    memoryCache4.store.ttl = undefined;
+                    done();
+                });
+
+                function getCachedWidget(name, cb) {
+                    multiCache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
+                    }, cb);
+                }
+
+                it('returns the value without refreshing and setting on [1]', function(done) {
+                    var funcCalled = false;
+                    multiCache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        methods.getWidget(name, cb);
+                    }, function(err, widget) {
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.equal(memoryCache3.store.set.callCount, 1);
+                            assert.equal(memoryCache4.store.get.callCount, 1);
+                            assert.equal(memoryCache4.store.set.callCount, 0);
+                            assert.equal(funcCalled, false);
+                            done();
+                        }, 500);
+                    });
+                });
+            });
+            context("when the result is only in [2] but expiring", function() {
+                beforeEach(function(done) {
+                    multiCache = multiCaching([memoryCache3, memoryCache4]);
+
+                    memoryCache4.store.ttl = function(key, cb) {
+                        return cb(null, 1);
+                    };
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
+                        assert.ok(widget);
+
+                        multiCache.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.ok(result);
+
+                            memoryCache3.del(key);
+
+                            sinon.spy(memoryCache3.store, 'set');
+
+                            sinon.spy(memoryCache4.store, 'set');
+                            sinon.spy(memoryCache4.store, 'ttl');
+                            sinon.spy(memoryCache4.store, 'get');
+
+                            done();
+                        });
+                    });
+                });
+
+                afterEach(function(done) {
+                    memoryCache3.store.set.restore();
+
+                    memoryCache4.store.get.restore();
+                    memoryCache4.store.set.restore();
+                    memoryCache4.store.ttl.restore();
+                    done();
+                });
+
+                function getCachedWidget(name, cb) {
+                    multiCache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
+                    }, cb);
+                }
+
+                it('returns value and invokes worker in background, resetting all caches', function(done) {
+                    var funcCalled = false;
+                    multiCache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        methods.getWidget(name, cb);
+                    }, function(err, widget) {
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.equal(memoryCache4.store.get.callCount, 1);
+
+                            assert.equal(funcCalled, true);
+                            assert.equal(memoryCache3.store.set.callCount, 2); // one call for the partial set
+                            assert.equal(memoryCache4.store.set.callCount, 1);
+                            done();
+                        }, 500);
+                    });
+                });
+
+                it("returns value and invokes worker in background once when called multiple times", function(done) {
+                    var funcCalled = 0;
+                    var values = [];
+                    for (var i = 0; i < 2; i++) {
+                        values.push(i);
+                    }
+
+                    async.each(values, function(val, next) {
+                        multiCache.wrap(key, function(cb) {
+                            funcCalled += 1;
+                            var timeout = support.random.number(100);
+                            setTimeout(function() {
+                                methods.getWidget(name, function(err, result) {
+                                    cb(err, result);
+                                });
+                            }, timeout);
+                        }, function(err, widget) {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            next(err);
+                        });
+                    }, function(err) {
+                        // Wait for just a bit, to be sure that the callback is called.
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.equal(memoryCache3.store.set.callCount, 2); // one call for the partial set
+
+                            assert.ok(memoryCache4.store.get.calledWith(key));
+                            assert.equal(memoryCache4.store.ttl.callCount, 1);
+                            assert.equal(funcCalled, 1);
+                            assert.equal(memoryCache4.store.set.callCount, 1);
+                            done();
+                        }, 500);
+                    });
+                });
+
+                it("returns value and invokes worker in background discarding result if error", function(done) {
+                    var funcCalled = false;
+                    var fakeError = new Error(support.random.string());
+                    multiCache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        cb(fakeError);
+                    }, function(err, widget) {
+                        // Wait for just a bit, to be sure that the callback is called.
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.equal(memoryCache3.store.set.callCount, 1);
+
+                            assert.ok(memoryCache4.store.get.calledWith(key));
+                            assert.equal(memoryCache4.store.ttl.callCount, 1);
+                            assert.equal(funcCalled, true);
+
+                            assert.equal(memoryCache4.store.set.callCount, 0);
+                            done();
+                        }, 500);
+                    });
+                });
+            });
+        });
         describe("using two cache stores", function() {
             beforeEach(function() {
                 multiCache = multiCaching([memoryCache, memoryCache3]);
