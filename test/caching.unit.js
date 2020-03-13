@@ -1105,6 +1105,190 @@ describe("caching", function() {
             });
         });
 
+        describe("using tweaked memory (lru-cache) store with a refreshThreshold", function() {
+            var memoryStoreStub;
+            var opts;
+
+            beforeEach(function() {
+                opts = {ttl: 10};
+                memoryStoreStub = memoryStore.create(opts);
+
+                sinon.stub(memoryStore, 'create').returns(memoryStoreStub);
+
+                cache = caching({store: 'memory', ttl: opts.ttl, refreshThreshold: 2, ignoreCacheErrors: false});
+                key = support.random.string(20);
+                name = support.random.string();
+            });
+
+            afterEach(function() {
+                memoryStore.create.restore();
+            });
+
+            context("when result is already cached", function() {
+                function getCachedWidget(name, cb) {
+                    cache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
+                    }, opts, cb);
+                }
+
+                beforeEach(function(done) {
+                    memoryStoreStub.ttl = function(key, cb) {
+                        return cb(null, 5);
+                    };
+                    sinon.spy(memoryStoreStub, 'ttl');
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
+                        assert.ok(widget);
+
+                        memoryStoreStub.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.ok(result);
+
+                            sinon.spy(memoryStoreStub, 'get');
+                            sinon.spy(memoryStoreStub, 'set');
+
+                            done();
+                        });
+                    });
+                });
+
+                afterEach(function() {
+                    memoryStoreStub.get.restore();
+                    memoryStoreStub.set.restore();
+                    memoryStoreStub.ttl.restore();
+                });
+
+                it("retrieves data from cache and checks ttl without refreshing", function(done) {
+                    var funcCalled = false;
+                    cache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        methods.getWidget(name, function(err, result) {
+                            cb(err, result);
+                        });
+                    }, function(err, widget) {
+                        checkErr(err);
+                        assert.deepEqual(widget, {name: name});
+                        assert.ok(memoryStoreStub.get.calledWith(key));
+                        assert.ok(memoryStoreStub.ttl.calledWith(key));
+                        assert.equal(funcCalled, false);
+                        assert.equal(memoryStoreStub.set.callCount, 0);
+                        done();
+                    });
+                });
+            });
+
+            context("when result is already cached but expiring", function() {
+                function getCachedWidget(name, cb) {
+                    cache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
+                    }, opts, cb);
+                }
+
+                beforeEach(function(done) {
+                    memoryStoreStub.ttl = function(key, cb) {
+                        return cb(null, 1);
+                    };
+                    sinon.spy(memoryStoreStub, 'ttl');
+
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
+                        assert.ok(widget);
+
+                        memoryStoreStub.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.ok(result);
+
+                            sinon.spy(memoryStoreStub, 'get');
+                            sinon.spy(memoryStoreStub, 'set');
+
+                            done();
+                        });
+                    });
+                });
+
+                afterEach(function() {
+                    memoryStoreStub.get.restore();
+                    memoryStoreStub.set.restore();
+                    memoryStoreStub.ttl.restore();
+                });
+
+                it("returns value and invokes worker in background", function(done) {
+                    var funcCalled = false;
+                    cache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        methods.getWidget(name, function(err, result) {
+                            cb(err, result);
+                        });
+                    }, function(err, widget) {
+                        // Wait for just a bit, to be sure that the callback is called.
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.ok(memoryStoreStub.get.calledWith(key));
+                            assert.ok(memoryStoreStub.ttl.calledWith(key));
+                            assert.equal(funcCalled, true);
+                            assert.equal(memoryStoreStub.set.callCount, 1);
+                            done();
+                        }, 500);
+                    });
+                });
+
+                it("returns value and invokes worker in background once when called multiple times", function(done) {
+                    var funcCalled = 0;
+                    var values = [];
+                    for (var i = 0; i < 2; i++) {
+                        values.push(i);
+                    }
+
+                    async.each(values, function(val, next) {
+                        cache.wrap(key, function(cb) {
+                            funcCalled += 1;
+                            var timeout = support.random.number(100);
+                            setTimeout(function() {
+                                methods.getWidget(name, function(err, result) {
+                                    cb(err, result);
+                                });
+                            }, timeout);
+                        }, function(err, widget) {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            next(err);
+                        });
+                    }, function(err) {
+                        // Wait for just a bit, to be sure that the callback is called.
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.ok(memoryStoreStub.get.calledWith(key));
+                            assert.equal(memoryStoreStub.ttl.callCount, 1);
+                            assert.equal(funcCalled, 1);
+                            assert.equal(memoryStoreStub.set.callCount, 1);
+                            done();
+                        }, 500);
+                    });
+                });
+
+                it("returns value and invokes worker in background discarding result if error", function(done) {
+                    var funcCalled = false;
+                    var fakeError = new Error(support.random.string());
+                    cache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        cb(fakeError);
+                    }, function(err, widget) {
+                        // Wait for just a bit, to be sure that the callback is called.
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.ok(memoryStoreStub.get.calledWith(key));
+                            assert.ok(memoryStoreStub.ttl.calledWith(key));
+                            assert.equal(funcCalled, true);
+                            assert.equal(memoryStoreStub.set.callCount, 0);
+                            done();
+                        }, 500);
+                    });
+                });
+            });
+        });
+
         describe("when called multiple times in parallel with same key", function() {
             var construct;
             var constructMultiple;
