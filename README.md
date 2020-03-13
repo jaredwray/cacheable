@@ -432,10 +432,14 @@ Both the `caching` and `multicaching` modules support a mechanism to refresh exp
 This is done by adding a `refreshThreshold` attribute while creating the caching store.
 
 If `refreshThreshold` is set and if the `ttl` method is available for the used store, after retrieving a value from cache TTL will be checked.
-If the remaining TTL is less than `refreshThreshold`, the system will spawn a background worker to update the value, following same rules as standard fetching. In case of multicaching, the value will be then updated in all the stores. In the meantime, the system will return the old value until expiration (or update).
+If the remaining TTL is less than `refreshThreshold`, the system will spawn a background worker to update the value, following same rules as standard fetching. In the meantime, the system will return the old value until expiration.
+
+In case of multicaching, the store that will be used for refresh is the one where the key will be found first (highest priority). The value will then be set in all the stores.
 
 NOTES:
 
+* In case of multicaching, the store that will be checked for refresh is the one where the key will be found first (highest priority).
+* If the threshold is low and the worker function is slow, the key may expire and you may encounter a racing condition with updating values.
 * The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
 * The caching store needs to provide the `ttl` method.
 
