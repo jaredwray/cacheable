@@ -1375,6 +1375,30 @@ describe("multiCaching", function() {
                         }, 500);
                     });
                 });
+
+                it('returns value and invokes worker in background using the provided TTL function', function(done) {
+                    var funcCalled = false;
+                    var ttlFuncCalled = false;
+                    var ttlFunc = function() {
+                        ttlFuncCalled = true;
+                        return 4;
+                    };
+                    multiCache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        methods.getWidget(name, cb);
+                    }, {ttl: ttlFunc}, function(err, widget) {
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.ok(memoryCache4.store.get.called);
+
+                            assert.ok(funcCalled);
+                            assert.ok(ttlFuncCalled);
+                            assert.ok(memoryCache4.store.set.called);
+                            done();
+                        }, 500);
+                    });
+                });
             });
         });
 

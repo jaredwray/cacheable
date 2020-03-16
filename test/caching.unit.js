@@ -1298,6 +1298,34 @@ describe("caching", function() {
                     });
                 });
 
+                it("returns value and invokes worker in background using the provided ttl function", function(done) {
+                    var funcCalled = false;
+                    var ttlFuncCalled = false;
+                    var ttlFunc = function() {
+                        ttlFuncCalled = true;
+                        return 4;
+                    };
+
+                    cache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        methods.getWidget(name, function(err, result) {
+                            cb(err, result);
+                        });
+                    }, {ttl: ttlFunc}, function(err, widget) {
+                        // Wait for just a bit, to be sure that the callback is called.
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.ok(memoryStoreStub.get.calledWith(key));
+                            assert.ok(memoryStoreStub.ttl.calledWith(key));
+                            assert.equal(funcCalled, true);
+                            assert.equal(ttlFuncCalled, true);
+                            assert.equal(memoryStoreStub.set.callCount, 1);
+                            done();
+                        }, 500);
+                    });
+                });
+
                 it("returns value and invokes worker in background once when called multiple times", function(done) {
                     var funcCalled = 0;
                     var values = [];
