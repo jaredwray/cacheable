@@ -1132,7 +1132,55 @@ describe("multiCaching", function() {
         describe("using a single cache store with refresh handling", function() {
             var memoryCache4 = caching({store: 'memory', ttl: 10, refreshThreshold: 2, promiseDependency: Promise});
 
-            context("when the result is valid", function() {
+            context("using standard memory store when the result is valid", function() {
+                beforeEach(function(done) {
+                    multiCache = multiCaching([memoryCache4]);
+
+                    getCachedWidget(name, function(err, widget) {
+                        checkErr(err);
+                        assert.ok(widget);
+
+                        multiCache.get(key, function(err, result) {
+                            checkErr(err);
+                            assert.ok(result);
+
+                            sinon.spy(memoryCache4, 'checkRefreshThreshold');
+
+                            done();
+                        });
+                    });
+                });
+
+                afterEach(function(done) {
+                    memoryCache4.checkRefreshThreshold.restore();
+                    done();
+                });
+
+                function getCachedWidget(name, cb) {
+                    multiCache.wrap(key, function(cacheCb) {
+                        methods.getWidget(name, cacheCb);
+                    }, cb);
+                }
+
+                it('returns the value without refreshing if failing during TTL check', function(done) {
+                    // NOTE: ttl function is not defined
+                    var funcCalled = false;
+                    multiCache.wrap(key, function(cb) {
+                        funcCalled = true;
+                        methods.getWidget(name, cb);
+                    }, function(err, widget) {
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            assert.equal(memoryCache4.checkRefreshThreshold.callCount, 1);
+                            assert.ok(!funcCalled);
+                            done();
+                        }, 500);
+                    });
+                });
+            });
+
+            context("using a tweaked memory store when the result is valid", function() {
                 beforeEach(function(done) {
                     multiCache = multiCaching([memoryCache4]);
 
@@ -1186,8 +1234,39 @@ describe("multiCaching", function() {
                         }, 500);
                     });
                 });
+
+                it('returns the value without refreshing but checking twice', function(done) {
+                    var funcCalled = 0;
+                    var values = [];
+
+                    for (var i = 0; i < 2; i++) {
+                        values.push(i);
+                    }
+
+                    async.eachSeries(values, function(val, next) {
+                        multiCache.wrap(key, function(cb) {
+                            funcCalled += 1;
+                            methods.getWidget(name, function(err, result) {
+                                cb(err, result);
+                            });
+                        }, function(err, widget) {
+                            checkErr(err);
+                            assert.deepEqual(widget, {name: name});
+                            next(err);
+                        });
+                    }, function(err) {
+                        setTimeout(function() {
+                            checkErr(err);
+                            assert.equal(memoryCache4.store.get.callCount, 2);
+                            assert.equal(memoryCache4.store.ttl.callCount, 2);
+                            assert.equal(memoryCache4.store.set.callCount, 0);
+                            assert.equal(funcCalled, 0);
+                            done();
+                        }, 500);
+                    });
+                });
             });
-            context("when the result is valid but expiring", function() {
+            context("using a tweaked memory store when the result is valid but expiring", function() {
                 beforeEach(function(done) {
                     multiCache = multiCaching([memoryCache4]);
 
