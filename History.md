@@ -1,3 +1,6 @@
+- 3.2.1 2020-03-20
+  - Background refresh fixes (#139). -@marcoreni
+
 - 3.2.0 2020-03-13
   - Background refresh of expiring entries (#138). - @marcoreni
 
