@@ -1462,11 +1462,10 @@ describe("caching", function() {
             it("should be able to chain with simple promise", function(done) {
                 cache.wrap('key', function() {
                     return 'OK';
-                })
-                    .then(function(res) {
-                        assert.equal(res, 'OK');
-                        done();
-                    });
+                }).then(function(res) {
+                    assert.equal(res, 'OK');
+                    done();
+                });
             });
 
             it("should be able to chain with cache function as a promise", function(done) {
@@ -1474,11 +1473,21 @@ describe("caching", function() {
                     return new Promise(function(resolve) {
                         resolve('OK');
                     });
-                })
-                    .then(function(res) {
-                        assert.equal(res, 'OK');
-                        done();
+                }).then(function(res) {
+                    assert.equal(res, 'OK');
+                    done();
+                });
+            });
+
+            it("should be able use a ttl while chaining cache function as a promise", function(done) {
+                cache.wrap('key', function() {
+                    return new Promise(function(resolve) {
+                        resolve('OK');
                     });
+                }, {ttl: 10}).then(function(res) {
+                    assert.equal(res, 'OK');
+                    done();
+                });
             });
 
             it("should be able to catch errors in cache function as a promise", function(done) {
@@ -1486,23 +1495,20 @@ describe("caching", function() {
                     return new Promise(function(resolve, reject) {
                         reject('NOK');
                     });
-                })
-                    .then(function() {
-                        done(new Error('It should not call then since there is an error in the cache function!'));
-                    })
-                    .catch(function() {
-                        done();
-                    });
+                }).then(function() {
+                    done(new Error('It should not call "then" since there is an error in the cache function!'));
+                }).catch(function() {
+                    done();
+                });
             });
 
             it("should be able to chain with non-cacheable value", function(done) {
                 cache.wrap('key', function() {
                     return;
-                })
-                    .then(function(res) {
-                        assert.equal(res, undefined);
-                        done();
-                    });
+                }).then(function(res) {
+                    assert.equal(res, undefined);
+                    done();
+                });
             });
         });
     });
