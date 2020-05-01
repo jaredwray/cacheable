@@ -20,8 +20,8 @@
   "author": "Bryan Donovan",
   "license": "MIT",
   "dependencies": {
-    "lodash.clonedeep": "4.5.0",
     "async": "1.5.2",
+    "lodash": "^4.17.15",
     "lru-cache": "4.0.0"
   },
   "devDependencies": {
