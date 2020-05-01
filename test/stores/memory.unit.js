@@ -49,7 +49,7 @@ describe("memory store", function() {
         context("when cache misses", function() {
             function getCachedObject(name, cb) {
                 cache.wrap(key, function(cacheCb) {
-                    cacheCb(null, {foo: 'bar'});
+                    cacheCb(null, {foo: 'bar', arr: [1, 2, 3]});
                 }, opts, cb);
             }
 
@@ -110,6 +110,7 @@ describe("memory store", function() {
                         getCachedObject('foo', function(err, result) {
                             checkErr(err);
                             assert.equal(result.foo, 'bar');
+                            assert.deepEqual(result.arr, [1, 2, 3]);
                             done();
                         });
                     });
