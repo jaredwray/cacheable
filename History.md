@@ -1,3 +1,6 @@
+- 3.3.0 2020-04-30
+  - Use full lodash lib instead of lodash.clonedeep npm (#141)
+
 - 3.2.1 2020-03-20
   - Background refresh fixes (#139). -@marcoreni
 
