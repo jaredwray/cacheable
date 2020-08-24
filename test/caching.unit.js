@@ -397,8 +397,8 @@ describe("caching", function() {
 
             cache = caching({store: 'memory'});
 
-            function isDone() {
-                return processed === keyCount;
+            function isDone(cb) {
+                cb(null, processed === keyCount);
             }
 
             async.until(isDone, function(cb) {
@@ -437,8 +437,8 @@ describe("caching", function() {
 
                 cache = caching({store: memoryStore.create({noPromises: true})});
 
-                function isDone() {
-                    return processed === keyCount;
+                function isDone(cb) {
+                    cb(null, processed === keyCount);
                 }
 
                 async.until(isDone, function(cb) {
@@ -790,7 +790,7 @@ describe("caching", function() {
                     it("bubbles up that error", function(done) {
                         var fakeError = new Error(support.random.string());
 
-                        sinon.stub(memoryStoreStub, 'get', function(key, options, cb) {
+                        sinon.stub(memoryStoreStub, 'get').callsFake(function(key, options, cb) {
                             cb(fakeError);
                         });
 
@@ -810,7 +810,7 @@ describe("caching", function() {
 
                         var fakeError = new Error(support.random.string());
 
-                        sinon.stub(memoryStoreStub, 'get', function(key, options, cb) {
+                        sinon.stub(memoryStoreStub, 'get').callsFake(function(key, options, cb) {
                             cb(fakeError);
                         });
 
@@ -830,7 +830,7 @@ describe("caching", function() {
                     it("bubbles up that error", function(done) {
                         var fakeError = new Error(support.random.string());
 
-                        sinon.stub(memoryStoreStub, 'set', function(key, val, ttl, cb) {
+                        sinon.stub(memoryStoreStub, 'set').callsFake(function(key, val, ttl, cb) {
                             cb(fakeError);
                         });
 
@@ -865,7 +865,7 @@ describe("caching", function() {
             context("when wrapped function calls back with an error", function() {
                 it("calls back with that error", function(done) {
                     var fakeError = new Error(support.random.string());
-                    sinon.stub(methods, 'getWidget', function(name, cb) {
+                    sinon.stub(methods, 'getWidget').callsFake(function(name, cb) {
                         cb(fakeError, {name: name});
                     });
 
@@ -942,7 +942,7 @@ describe("caching", function() {
                 context("when result is already cached", function() {
                     it("retrieves data from cache", function(done) {
                         var funcCalled = false;
-                        sinon.stub(memoryStoreStub, 'mget', function() {
+                        sinon.stub(memoryStoreStub, 'mget').callsFake(function() {
                             var args = Array.prototype.slice.apply(arguments);
                             var cb = args.pop();
                             cb(null, [{name: name}, {name: name2}]);
@@ -1045,7 +1045,7 @@ describe("caching", function() {
                         it("bubbles up that error", function(done) {
                             var fakeError = new Error(support.random.string());
 
-                            sinon.stub(memoryStoreStub, 'mget', function() {
+                            sinon.stub(memoryStoreStub, 'mget').callsFake(function() {
                                 var args = Array.prototype.slice.apply(arguments);
                                 var cb = args.pop();
                                 cb(fakeError);
@@ -1067,7 +1067,7 @@ describe("caching", function() {
 
                             var fakeError = new Error(support.random.string());
 
-                            sinon.stub(memoryStoreStub, 'mget', function() {
+                            sinon.stub(memoryStoreStub, 'mget').callsFake(function() {
                                 var args = Array.prototype.slice.apply(arguments);
                                 var cb = args.pop();
                                 cb(fakeError);
