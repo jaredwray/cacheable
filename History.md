@@ -1,3 +1,6 @@
+- 3.4.0 2020-04-30
+  - Update dependencies (#145). - @orgads
+
 - 3.3.0 2020-04-30
   - Use full lodash lib instead of lodash.clonedeep npm (#141)
 
