@@ -3,6 +3,7 @@
   "version": "3.4.0",
   "description": "Cache module for Node.js",
   "main": "index.js",
+  "module": "browser.js",
   "scripts": {
     "test": "make"
   },
