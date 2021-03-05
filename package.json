@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "description": "Cache module for Node.js",
   "main": "index.js",
   "scripts": {
@@ -20,8 +20,8 @@
   "author": "Bryan Donovan",
   "license": "MIT",
   "dependencies": {
-    "async": "^3.2.0",
-    "lodash": "^4.17.20",
+    "async": "3.2.0",
+    "lodash": "^4.17.21",
     "lru-cache": "6.0.0"
   },
   "devDependencies": {

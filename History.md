@@ -1,3 +1,6 @@
+- 3.4.1 2021-03-05
+  - Update lodash to fix vulnerability (#152).
+
 - 3.4.0 2020-04-30
   - Update dependencies (#145). - @orgads
 
