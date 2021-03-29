@@ -1,3 +1,6 @@
+- 3.4.2 2021-03-29
+  - Catch uncaught exception to pass it to callback (#154) - @lchenay
+
 - 3.4.1 2021-03-05
   - Update lodash to fix vulnerability (#152).
 
