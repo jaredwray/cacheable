@@ -1,3 +1,6 @@
+- 3.4.3 2021-03-30
+  - Bump y18n in package-lock.json (vulnerability fix).
+
 - 3.4.2 2021-03-29
   - Catch uncaught exception to pass it to callback (#154) - @lchenay
 
