@@ -215,7 +215,7 @@ memoryCache.wrap(key1, key2, function (cb) {
 #### Example setting/getting several keys with mset() and mget()
 
 ```js
-memoryCache.mset('foo', 'bar', 'foo2', 'bar2' {ttl: ttl}, function(err) {
+memoryCache.mset('foo', 'bar', 'foo2', 'bar2', {ttl: ttl}, function(err) {
     if (err) { throw err; }
 
     memoryCache.mget('foo', 'foo2', function(err, result) {
