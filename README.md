@@ -39,8 +39,6 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 
 * [node-cache-manager-mongoose](https://github.com/disjunction/node-cache-manager-mongoose)
 
-* [node-cache-manager-fs](https://github.com/hotelde/node-cache-manager-fs)
-
 * [node-cache-manager-fs-binary](https://github.com/sheershoff/node-cache-manager-fs-binary)
 
 * [node-cache-manager-fs-hash](https://github.com/rolandstarke/node-cache-manager-fs-hash)
@@ -217,7 +215,7 @@ memoryCache.wrap(key1, key2, function (cb) {
 #### Example setting/getting several keys with mset() and mget()
 
 ```js
-memoryCache.mset('foo', 'bar', 'foo2', 'bar2' {ttl: ttl}, function(err) {
+memoryCache.mset('foo', 'bar', 'foo2', 'bar2', {ttl: ttl}, function(err) {
     if (err) { throw err; }
 
     memoryCache.mget('foo', 'foo2', function(err, result) {
