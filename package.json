@@ -1,12 +1,12 @@
 {
   "name": "cache-manager",
-  "version": "3.4.3",
+  "version": "3.4.4",
   "description": "Cache module for Node.js",
   "main": "index.js",
   "files": [
-      "index.js",
-      "/examples",
-      "/lib"
+    "index.js",
+    "/examples",
+    "/lib"
   ],
   "scripts": {
     "test": "make"
