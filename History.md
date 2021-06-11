@@ -1,3 +1,6 @@
+- 3.4.4 2021-06-11
+  - vulnerability fix in package-lock.json.
+
 - 3.4.3 2021-03-30
   - Bump y18n in package-lock.json (vulnerability fix).
 
