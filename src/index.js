@@ -23,6 +23,7 @@ class CacheableRequest {
 		});
 		
 		if (this.cache.opts.store && this.cache.opts.store.namespace) {
+			this.cache.opts.namespace = this.cache.opts.store.namespace
 			delete this.cache.opts.store.namespace
 		}
 
