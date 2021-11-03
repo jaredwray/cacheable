@@ -21,6 +21,10 @@ class CacheableRequest {
 			store: typeof cacheAdapter !== 'string' && cacheAdapter,
 			namespace: 'cacheable-request'
 		});
+		
+		if (this.cache.opts.store && this.cache.opts.store.namespace) {
+			delete this.cache.opts.store.namespace
+		}
 
 		return this.createCacheableRequest(request);
 	}
