@@ -370,6 +370,5 @@ describe("memory store", function() {
             assert.equal(await memoryCache.get(key1), value1);
             assert.equal(await memoryCache.get(key2), value2);
         });
-
     });
 });
