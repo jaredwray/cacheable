@@ -1,3 +1,6 @@
+- 3.5.0 2021-11-11
+  - Added dump() and load() methods to memory store (#171). - @jeoy
+
 - 3.4.4 2021-06-11
   - vulnerability fix in package-lock.json.
 
