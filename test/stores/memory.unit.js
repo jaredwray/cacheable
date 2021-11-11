@@ -37,6 +37,24 @@ describe("memory store", function() {
         });
     });
 
+    describe("keyCount", function() {
+        var memoryCache;
+
+        it("return total length of objects in cache. Note, stale keys will also taking into account before access", function(done) {
+            memoryCache = memoryStore.create({noPromises: true, ttl: 0.001});
+            memoryCache.set('foo', 'bar');
+            memoryCache.set('bar', 'foo');
+
+            setTimeout(function() {
+                assert.equal(memoryCache.keyCount(), 2);
+                assert.equal(memoryCache.get('foo'), undefined);
+                assert.equal(memoryCache.keyCount(), 1);
+                done();
+            }, 10);
+        });
+
+    });
+
     describe("when used with wrap() function", function() {
         var cache;
         var key;
