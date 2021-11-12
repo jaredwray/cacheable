@@ -1,3 +1,6 @@
+- 3.6.0 2021-11-12
+  - Added keyCount() method to memory store (#173). - @css-master
+
 - 3.5.0 2021-11-11
   - Added dump() and load() methods to memory store (#171). - @jeoy
 
