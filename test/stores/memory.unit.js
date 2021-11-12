@@ -37,6 +37,26 @@ describe("memory store", function() {
         });
     });
 
+    describe("keyCount", function() {
+        var memoryCache;
+
+        /**
+        * Note, stale keys are included in keyCount before those keys are attempted to be accessed", function(done) {
+        */
+        it("return total length of keys in cache", function(done) {
+            memoryCache = memoryStore.create({noPromises: true, ttl: 0.001});
+            memoryCache.set('foo', 'bar');
+            memoryCache.set('bar', 'foo');
+
+            setTimeout(function() {
+                assert.equal(memoryCache.keyCount(), 2);
+                assert.equal(memoryCache.get('foo'), undefined);
+                assert.equal(memoryCache.keyCount(), 1);
+                done();
+            }, 10);
+        });
+    });
+
     describe("when used with wrap() function", function() {
         var cache;
         var key;
