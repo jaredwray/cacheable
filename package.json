@@ -25,7 +25,7 @@
   "author": "Bryan Donovan",
   "license": "MIT",
   "dependencies": {
-    "async": "3.2.0",
+    "async": "3.2.3",
     "lodash": "^4.17.21",
     "lru-cache": "6.0.0"
   },
