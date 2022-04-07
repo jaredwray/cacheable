@@ -1,3 +1,6 @@
+- 3.6.1 2022-04-07
+  - Fix for potential prototype polution exploit in async < 3.2.2 (#186). - @tmbobbins
+
 - 3.6.0 2021-11-12
   - Added keyCount() method to memory store (#173). - @css-master
 
