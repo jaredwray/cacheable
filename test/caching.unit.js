@@ -114,6 +114,19 @@ describe("caching", function() {
             });
         });
 
+        it("lets us set and get several keys and data in cache (using array)", function(done) {
+            cache.mset(key, value, key2, value2, {ttl: defaultTtl}, function(err) {
+                checkErr(err);
+
+                cache.mget([key, key2], function(err, result) {
+                    checkErr(err);
+                    assert.equal(result[0], value);
+                    assert.equal(result[1], value2);
+                    done();
+                });
+            });
+        });
+
         it("lets us set and get data without a callback", function(done) {
             cache = caching({store: memoryStore.create({noPromises: true})});
             cache.mset(key, value, key2, value2, {ttl: defaultTtl});
