@@ -1,3 +1,6 @@
+- 3.6.2 2022-05-19
+  - Use lodash.cloneDeep npm instead of full lodash. (#190). - @ricardomozartlino
+
 - 3.6.1 2022-04-07
   - Fix for potential prototype polution exploit in async < 3.2.2 (#186). - @tmbobbins
 
