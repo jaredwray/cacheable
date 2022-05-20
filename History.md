@@ -1,3 +1,6 @@
+- 3.6.3 2022-05-20
+  - Remove import from the code in order to be able to bundle and minify the module (#191) - @ricardomozartlino
+
 - 3.6.2 2022-05-19
   - Use lodash.cloneDeep npm instead of full lodash. (#190). - @ricardomozartlino
 
