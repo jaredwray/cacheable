@@ -314,10 +314,10 @@ describe("memory store", function() {
             memoryCache.set(key2, value2);
 
             const data = memoryCache.dump();
-            assert.equal(data[0].k, key2);
-            assert.equal(data[0].v, value2);
-            assert.equal(data[1].k, key1);
-            assert.equal(data[1].v, value1);
+            assert.equal(data[0][0], key1);
+            assert.equal(data[0][1].value, value1);
+            assert.equal(data[1][0], key2);
+            assert.equal(data[1][1].value, value2);
         });
 
         it("lets us dump data with callback", function() {
@@ -327,10 +327,10 @@ describe("memory store", function() {
 
             memoryCache.dump((err, data) => {
                 checkErr(err);
-                assert.equal(data[0].k, key2);
-                assert.equal(data[0].v, value2);
-                assert.equal(data[1].k, key1);
-                assert.equal(data[1].v, value1);
+                assert.equal(data[0][0], key1);
+                assert.equal(data[0][1].value, value1);
+                assert.equal(data[1][0], key2);
+                assert.equal(data[1][1].value, value2);
             });
         });
 
@@ -340,10 +340,10 @@ describe("memory store", function() {
             memoryCache.set(key2, value2);
 
             const data = await memoryCache.dump();
-            assert.equal(data[0].k, key2);
-            assert.equal(data[0].v, value2);
-            assert.equal(data[1].k, key1);
-            assert.equal(data[1].v, value1);
+            assert.equal(data[0][0], key1);
+            assert.equal(data[0][1].value, value1);
+            assert.equal(data[1][0], key2);
+            assert.equal(data[1][1].value, value2);
         });
     });
 
@@ -361,14 +361,8 @@ describe("memory store", function() {
             key2 = support.random.string(20);
             value2 = support.random.string();
             data = [
-                {
-                    k: key1,
-                    v: value1
-                },
-                {
-                    k: key2,
-                    v: value2
-                }
+                [key1, {value: value1}],
+                [key2, {value: value2}]
             ];
         });
 
