@@ -1,3 +1,7 @@
+- 4.0.0
+  - Upgrade to lru-cache 7.x (#193). - @orgads
+    - This has a breaking change in memoryCache.dump().
+
 - 3.6.3 2022-05-20
   - Remove import from the code in order to be able to bundle and minify the module (#191) - @ricardomozartlino
 
