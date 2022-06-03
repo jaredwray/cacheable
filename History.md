@@ -1,3 +1,6 @@
+- 4.0.1
+  - Fix TTL option bug for memory cache (#194). - @anchan828
+
 - 4.0.0
   - Upgrade to lru-cache 7.x (#193). - @orgads
     - This has a breaking change in memoryCache.dump().
