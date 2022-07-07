@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "description": "Cache module for Node.js",
   "main": "index.js",
   "files": [
