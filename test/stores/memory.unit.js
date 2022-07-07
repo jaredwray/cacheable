@@ -37,6 +37,32 @@ describe("memory store", function() {
         });
     });
 
+    describe("ttl", function() {
+        var memoryCache;
+
+        beforeEach(function() {
+            memoryCache = memoryStore.create({noPromises: true, ttl: 0.001});
+        });
+
+        it("if options arg is a number in set()", function(done) {
+            memoryCache.set('foo', 'bar', 60);
+
+            setTimeout(function() {
+                assert.equal(memoryCache.get('foo'), 'bar');
+                done();
+            }, 10);
+        });
+
+        it("cache record should be expired", function(done) {
+            memoryCache.set('foo', 'bar', 1);
+
+            setTimeout(function() {
+                assert.equal(memoryCache.get('foo'), undefined);
+                done();
+            }, 1500);
+        });
+    });
+
     describe("keyCount", function() {
         var memoryCache;
 
