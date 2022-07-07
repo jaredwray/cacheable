@@ -52,6 +52,15 @@ describe("memory store", function() {
                 done();
             }, 10);
         });
+
+        it("cache record should be expired", function(done) {
+            memoryCache.set('foo', 'bar', 1);
+
+            setTimeout(function() {
+                assert.equal(memoryCache.get('foo'), undefined);
+                done();
+            }, 1500);
+        });
     });
 
     describe("keyCount", function() {
