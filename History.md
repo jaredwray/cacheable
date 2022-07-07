@@ -1,3 +1,6 @@
+- 4.1.0
+  - Support for TTL as third arg in memory store set function (#196). - @ZirionNeft
+
 - 4.0.1
   - Fix TTL option bug for memory cache (#194). - @anchan828
 
