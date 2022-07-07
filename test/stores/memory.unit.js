@@ -41,7 +41,7 @@ describe("memory store", function() {
         var memoryCache;
 
         beforeEach(function() {
-            memoryCache = memoryStore.create({noPromises: true, ttl: 0.001});
+            memoryCache = memoryStore.create({noPromises: true});
         });
 
         it("if options arg is a number in set()", function(done) {
@@ -54,12 +54,12 @@ describe("memory store", function() {
         });
 
         it("cache record should be expired", function(done) {
-            memoryCache.set('foo', 'bar', 1);
+            memoryCache.set('foo', 'bar', 0.001);
 
             setTimeout(function() {
                 assert.equal(memoryCache.get('foo'), undefined);
                 done();
-            }, 1500);
+            }, 1);
         });
     });
 
