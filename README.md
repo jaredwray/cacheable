@@ -51,6 +51,8 @@ See the [Express.js cache-manager example app](https://github.com/BryanDonovan/n
 
 * [node-cache-manager-couchbase](https://github.com/davidepellegatta/node-cache-manager-couchbase)
 
+* [node-cache-manager-sqlite](https://github.com/maxpert/node-cache-manager-sqlite)
+
 ## Overview
 
 **First**, it includes a `wrap` function that lets you wrap any function in cache.
