@@ -1,0 +1,4 @@
+ignore:
+  - bin.js
+  - commitlint.config.js
+  - .eslintrc.js

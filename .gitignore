@@ -5,3 +5,5 @@ coverage
 *.iml
 out
 .vscode
+.eslintcache
+dist
