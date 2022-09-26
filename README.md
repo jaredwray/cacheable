@@ -56,4 +56,4 @@ for any new features or bug fixes.
 
 ## License
 
-node-cache-manager is licensed under the MIT license.
+node-cache-manager is licensed under the [MIT license](./LICENSE).
