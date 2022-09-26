@@ -1,7 +1,7 @@
 import LRUCache, { Options } from 'lru-cache';
 import cloneDeep from 'lodash.clonedeep';
 
-import { Config, Cache, Store, Ttl } from '../caching';
+import { Config, Cache, Store } from '../caching';
 
 type Lru = LRUCache<string, unknown>;
 
@@ -49,7 +49,7 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
     get: async <T>(key: string) => lruCache.get<T>(key),
     keys: async () => [...lruCache.keys()],
     mget: async (...args) => args.map((x) => lruCache.get(x)),
-    async mset(args: [string, unknown][], ttl?: Ttl) {
+    async mset(args, ttl?) {
       const opt = { ttl: ttl ? ttl : lruOpts.ttl } as const;
       for (const [key, value] of args) {
         if (!isCacheable(value))
@@ -65,9 +65,7 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
     async set(key, value, opt) {
       if (!isCacheable(value))
         throw new Error(`no cacheable value ${JSON.stringify(value)}`);
-      if (shouldCloneBeforeSet) {
-        value = clone(value);
-      }
+      if (shouldCloneBeforeSet) value = clone(value);
 
       const ttl = opt ? opt : lruOpts.ttl;
 

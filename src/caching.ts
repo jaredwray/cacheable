@@ -14,8 +14,7 @@ export interface Store {
   reset(): Promise<void>;
   mset(args: [string, unknown][], ttl?: Ttl): Promise<void>;
   mget(...args: string[]): Promise<unknown[]>;
-  keys(): Promise<string[]>;
-  keys(pattern: string): Promise<string[]>;
+  keys(pattern?: string): Promise<string[]>;
   ttl(key: string): Promise<number>;
 }
 
@@ -59,13 +58,10 @@ export async function caching<S extends Store, T extends object = never>(
   args?: CachingConfig<T>,
 ): Promise<Cache<S | MemoryStore>> {
   let store: Store;
-  if (factory === 'memory') {
-    store = memoryStore(args as MemoryConfig);
-  } else if (typeof factory === 'function') {
+  if (factory === 'memory') store = memoryStore(args as MemoryConfig);
+  else if (typeof factory === 'function')
     store = await factory(args as FactoryConfig<T>);
-  } else {
-    store = factory;
-  }
+  else store = factory;
 
   return {
     /**

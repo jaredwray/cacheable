@@ -1,14 +1,14 @@
-/**
- * Module that lets you specify a hierarchy of caches.
- */
 import { Cache, Ttl } from './caching';
 
 export type MultiCache = Omit<Cache, 'store'>;
 
+/**
+ * Module that lets you specify a hierarchy of caches.
+ */
 export function multiCaching<Caches extends Cache[]>(
   caches: Caches,
 ): MultiCache {
-  const get: Cache['get'] = async <T>(key: string) => {
+  const get = async <T>(key: string) => {
     for (const cache of caches) {
       try {
         const val = await cache.get<T>(key);
@@ -16,11 +16,7 @@ export function multiCaching<Caches extends Cache[]>(
       } catch (e) {}
     }
   };
-  const set: Cache['set'] = async <T>(
-    key: string,
-    data: T,
-    ttl?: Ttl | undefined,
-  ) => {
+  const set = async <T>(key: string, data: T, ttl?: Ttl | undefined) => {
     await Promise.all(caches.map((cache) => cache.set(key, data, ttl)));
   };
   return {
