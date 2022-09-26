@@ -1,3 +1,12 @@
+- 5.0.0
+
+  - Refactor to promise and typescript (#203). - @botika
+    - Remove `ignoreCacheErrors`: not valid in async/await context
+    - Remove `refreshThreshold`: use lower ttl
+    - Remove callbackFiller
+    - Use function as `FactoryStore`
+    - Remove multiple wrap
+
 - 4.1.0
 
   - Support for TTL as third arg in memory store set function (#196). - @ZirionNeft
