@@ -193,4 +193,9 @@ describe('caching', () => {
         cache.store.keys().then((x) => x.sort((a, b) => a.localeCompare(b))),
       ).resolves.toStrictEqual(savedKeys));
   });
+
+  describe('issues', () => {
+    it('#183', () =>
+      expect(cache.wrap('constructor', async () => 0)).resolves.toEqual(0));
+  });
 });
