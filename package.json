@@ -2,14 +2,22 @@
   "name": "cache-manager",
   "version": "4.1.0",
   "description": "Cache module for Node.js",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "index.js",
-    "/examples",
-    "/lib"
+    "dist"
   ],
   "scripts": {
-    "test": "make"
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "test": "vitest",
+    "release": "pnpm check && pnpm test -- --run && pnpm build && dotenv release-it",
+    "fix": "pnpm lint && pnpm fmt",
+    "check": "pnpm lint:check && pnpm fmt:check",
+    "lint": "eslint --cache --max-warnings 0 --fix '**/*.ts'",
+    "fmt": "prettier --write '**/*.{md,json,yml}'",
+    "lint:check": "eslint --cache --max-warnings 0 '**/*.ts'",
+    "fmt:check": "prettier --check '**/*.{md,json,yml}'",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
@@ -25,18 +33,32 @@
   "author": "Bryan Donovan",
   "license": "MIT",
   "dependencies": {
-    "async": "3.2.3",
     "lodash.clonedeep": "^4.5.0",
-    "lru-cache": "^7.10.1"
+    "lru-cache": "^7.14.0"
   },
   "devDependencies": {
-    "coveralls": "3.1.0",
-    "es6-promise": "^4.2.8",
-    "eslint": "7.7.0",
-    "jsdoc": "3.6.5",
-    "mocha": "8.1.1",
-    "nyc": "15.1.0",
-    "optimist": "0.6.1",
-    "sinon": "9.0.3"
+    "@commitlint/cli": "17.1.2",
+    "@commitlint/config-conventional": "17.1.0",
+    "@faker-js/faker": "7.5.0",
+    "@release-it/conventional-changelog": "5.1.0",
+    "@types/lodash.clonedeep": "^4.5.7",
+    "@types/node": "18.7.22",
+    "@typescript-eslint/eslint-plugin": "5.38.1",
+    "@typescript-eslint/parser": "5.38.1",
+    "@vitest/coverage-c8": "0.23.4",
+    "dotenv-cli": "6.0.0",
+    "eslint": "8.24.0",
+    "eslint-config-prettier": "8.5.0",
+    "eslint-plugin-prettier": "4.2.1",
+    "husky": "8.0.1",
+    "lint-staged": "13.0.3",
+    "prettier": "2.7.1",
+    "release-it": "15.4.2",
+    "typescript": "4.8.3",
+    "vitest": "0.23.4"
+  },
+  "lint-staged": {
+    "*.{ts,js}": "eslint --cache --fix",
+    "*.{md,json,yml}": "prettier --write"
   }
 }
