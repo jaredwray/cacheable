@@ -36,7 +36,7 @@ describe('multiCaching', function () {
   });
 
   describe('get(), set(), del(), reset(), mget(), mset()', () => {
-    let value;
+    let value: string;
 
     beforeEach(function () {
       multiCache = multiCaching([memoryCache, memoryCache2, memoryCache3]);

@@ -1,4 +1,4 @@
-import { MemoryCache, MemoryConfig, MemoryStore, memoryStore } from './stores';
+import { MemoryCache, MemoryConfig, memoryStore } from './stores';
 
 export interface Config {
   ttl?: Ttl;
@@ -7,16 +7,17 @@ export interface Config {
 
 export type Ttl = number;
 
-export interface Store {
+export type Store = {
   get<T>(key: string): Promise<T | undefined>;
   set<T>(key: string, data: T, ttl?: Ttl): Promise<void>;
-  del(key: string[] | string): Promise<void>;
+  del(key: string): Promise<void>;
   reset(): Promise<void>;
   mset(args: [string, unknown][], ttl?: Ttl): Promise<void>;
   mget(...args: string[]): Promise<unknown[]>;
+  mdel(...args: string[]): Promise<void>;
   keys(pattern?: string): Promise<string[]>;
   ttl(key: string): Promise<number>;
-}
+};
 
 export type StoreConfig = Config;
 
@@ -31,14 +32,14 @@ type Stores<S extends Store, T extends object> =
   | FactoryStore<S, T>;
 type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
 
-export interface Cache<S extends Store = Store> {
-  set: S['set'];
-  get: S['get'];
-  del: S['del'];
-  reset: S['reset'];
+export type Cache<S extends Store = Store> = {
+  set: (key: string, value: unknown, ttl?: Ttl) => Promise<void>;
+  get: <T>(key: string) => Promise<T | undefined>;
+  del: (key: string) => Promise<void>;
+  reset: () => Promise<void>;
   wrap<T>(key: string, fn: () => Promise<T>): Promise<T>;
   store: S;
-}
+};
 
 export async function caching(
   name: 'memory',
@@ -56,7 +57,7 @@ export async function caching<S extends Store, T extends object = never>(
 export async function caching<S extends Store, T extends object = never>(
   factory: Stores<S, T>,
   args?: CachingConfig<T>,
-): Promise<Cache<S | MemoryStore>> {
+): Promise<Cache<S> | MemoryCache> {
   let store: Store;
   if (factory === 'memory') store = memoryStore(args as MemoryConfig);
   else if (typeof factory === 'function')
@@ -83,7 +84,7 @@ export async function caching<S extends Store, T extends object = never>(
       return value;
     },
     store: store as S,
-    del: (key: string | string[]) => store.del(key),
+    del: (key: string) => store.del(key),
     get: <T>(key: string) => store.get<T>(key),
     set: (key: string, value: unknown, ttl?: Ttl) => store.set(key, value, ttl),
     reset: () => store.reset(),

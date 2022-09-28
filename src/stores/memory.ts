@@ -43,8 +43,7 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
 
   return {
     async del(key) {
-      if (Array.isArray(key)) for (const k of key) lruCache.delete(k);
-      else lruCache.delete(key);
+      lruCache.delete(key);
     },
     get: async <T>(key: string) => lruCache.get<T>(key),
     keys: async () => [...lruCache.keys()],
@@ -57,6 +56,9 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
         if (shouldCloneBeforeSet) lruCache.set(key, clone(value), opt);
         else lruCache.set(key, value, opt);
       }
+    },
+    async mdel(...args) {
+      for (const key of args) lruCache.delete(key);
     },
     async reset() {
       lruCache.clear();

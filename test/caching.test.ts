@@ -137,7 +137,7 @@ describe('caching', () => {
           value,
           value2,
         ]);
-        await cache.del([key, key2]);
+        await cache.store.mdel(key, key2);
         await expect(cache.store.mget(key, key2)).resolves.toStrictEqual([
           undefined,
           undefined,
