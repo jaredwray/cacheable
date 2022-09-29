@@ -7,10 +7,10 @@ A cache module for nodejs that allows easy wrapping of functions in cache, tiere
 ## Features
 
 - Easy way to wrap any function in cache.
-- Tiered caches -- data gets stored in each cache and fetched from the highest
+- Tiered caches -- data gets stored in each cache and fetched from the highest.
   priority cache(s) first.
 - Use any cache you want, as long as it has the same API.
-- 100% test coverage via [vitest](https://github.com/vitest-dev/vitest),
+- 100% test coverage via [vitest](https://github.com/vitest-dev/vitest).
 
 ## Express.js Example
 
