@@ -22,15 +22,15 @@ export type Store = {
 export type StoreConfig = Config;
 
 export type FactoryConfig<T> = T & Config;
-type FactoryStore<S extends Store, T extends object = never> = (
+export type FactoryStore<S extends Store, T extends object = never> = (
   config?: FactoryConfig<T>,
 ) => S | Promise<S>;
 
-type Stores<S extends Store, T extends object> =
+export type Stores<S extends Store, T extends object> =
   | 'memory'
   | Store
   | FactoryStore<S, T>;
-type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
+export type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
 
 export type Cache<S extends Store = Store> = {
   set: (key: string, value: unknown, ttl?: Ttl) => Promise<void>;
