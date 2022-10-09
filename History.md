@@ -1,3 +1,7 @@
+- 5.0.1
+
+  - Fix unexported types - @botika
+
 - 5.0.0
 
   - Refactor to promise and typescript (#203). - @botika
