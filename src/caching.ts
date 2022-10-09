@@ -1,9 +1,9 @@
 import { MemoryCache, MemoryConfig, memoryStore } from './stores';
 
-export interface Config {
+export type Config = {
   ttl?: Ttl;
   isCacheable?: (val: unknown) => boolean;
-}
+};
 
 export type Ttl = number;
 
