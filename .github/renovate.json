@@ -8,5 +8,11 @@
       "automergeType": "pr",
       "platformAutomerge": true
     }
-  ]
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "automergeType": "pr",
+    "platformAutomerge": true
+  }
 }
