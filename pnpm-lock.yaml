@@ -1206,7 +1206,7 @@ packages:
     dev: true
 
   /concat-map/0.0.1:
-    resolution: {integrity: sha1-2Klr13/Wjfd5OnMDajug1UBdR3s=}
+    resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
     dev: true
 
   /concat-stream/2.0.0:
@@ -1530,8 +1530,8 @@ packages:
     resolution: {integrity: sha512-oIPzksmTg4/MriiaYGO+okXDT7ztn/w3Eptv/+gSIdMdKsJo0u4CfYNFJPy+4SKMuCqGw2wxnA+URMg3t8a/bQ==}
     dev: true
 
-  /defaults/1.0.3:
-    resolution: {integrity: sha512-s82itHOnYrN0Ib8r+z7laQz3sdE+4FP3d9Q7VLO7U+KRT+CR0GsWuyHxzdAY82I7cXv0G/twrqomTJLOssO5HA==}
+  /defaults/1.0.4:
+    resolution: {integrity: sha512-eFuaLoy/Rxalv2kr+lqMlUnrDWV+3j4pljOIJgLIhI058IQfWJ7vXhyEIHu+HtC738klGALYxOKDO0bQP3tg8A==}
     dependencies:
       clone: 1.0.4
     dev: true
@@ -3706,7 +3706,7 @@ packages:
       got: 12.5.1
       registry-auth-token: 5.0.1
       registry-url: 6.0.1
-      semver: 7.3.8
+      semver: 7.3.7
     dev: true
 
   /parent-module/1.0.1:
@@ -4222,7 +4222,7 @@ packages:
     resolution: {integrity: sha512-0Ju4+6A8iOnpL/Thra7dZsSlOHYAHIeMxfhWQRI1/VLcT3WDBZKKtQt/QkBOsiIN9ZpuvHE6cGZ0x4glCMmfiA==}
     engines: {node: '>=12'}
     dependencies:
-      semver: 7.3.8
+      semver: 7.3.7
     dev: true
 
   /semver/5.7.1:
@@ -4778,7 +4778,7 @@ packages:
       is-yarn-global: 0.4.0
       latest-version: 7.0.0
       pupa: 3.1.0
-      semver: 7.3.8
+      semver: 7.3.7
       semver-diff: 4.0.0
       xdg-basedir: 5.1.0
     dev: true
@@ -4818,8 +4818,8 @@ packages:
       spdx-expression-parse: 3.0.1
     dev: true
 
-  /vite/3.1.6:
-    resolution: {integrity: sha512-qMXIwnehvvcK5XfJiXQUiTxoYAEMKhM+jqCY6ZSTKFBKu1hJnAKEzP3AOcnTerI0cMZYAaJ4wpW1wiXLMDt4mA==}
+  /vite/3.1.7:
+    resolution: {integrity: sha512-5vCAmU4S8lyVdFCInu9M54f/g8qbOMakVw5xJ4pjoaDy5wgy9sLLZkGdSLN52dlsBqh0tBqxjaqqa8LgPqwRAA==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
     peerDependencies:
@@ -4877,7 +4877,7 @@ packages:
       tinybench: 2.3.0
       tinypool: 0.3.0
       tinyspy: 1.0.2
-      vite: 3.1.6
+      vite: 3.1.7
     transitivePeerDependencies:
       - less
       - sass
@@ -4898,7 +4898,7 @@ packages:
   /wcwidth/1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
     dependencies:
-      defaults: 1.0.3
+      defaults: 1.0.4
     dev: true
 
   /web-streams-polyfill/3.2.1:
@@ -5008,7 +5008,7 @@ packages:
     dev: true
 
   /xregexp/2.0.0:
-    resolution: {integrity: sha1-UqY+VsoLhKfzpfPWGHLxJq16WUM=}
+    resolution: {integrity: sha512-xl/50/Cf32VsGq/1R8jJE5ajH1yMCQkpmoS10QbFZWl2Oor4H0Me64Pu2yxvsRWK3m6soJbmGfzSR7BYmDcWAA==}
     dev: true
 
   /xtend/4.0.2:
