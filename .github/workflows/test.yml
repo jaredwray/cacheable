@@ -36,15 +36,15 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: check
+      - name: Check
         run: pnpm check
 
-      - name: build
+      - name: Build
         run: pnpm build
 
-      - name: test
+      - name: Test
         run: pnpm test -- --coverage
 
       - name: Codecov
