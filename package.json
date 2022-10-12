@@ -47,7 +47,7 @@
   "devDependencies": {
     "@commitlint/cli": "17.1.2",
     "@commitlint/config-conventional": "17.1.0",
-    "@faker-js/faker": "7.5.0",
+    "@faker-js/faker": "7.6.0",
     "@release-it/conventional-changelog": "5.1.1",
     "@types/lodash.clonedeep": "4.5.7",
     "@types/node": "18.8.3",
