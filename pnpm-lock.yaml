@@ -3,7 +3,7 @@ lockfileVersion: 5.4
 specifiers:
   '@commitlint/cli': 17.1.2
   '@commitlint/config-conventional': 17.1.0
-  '@faker-js/faker': 7.5.0
+  '@faker-js/faker': 7.6.0
   '@release-it/conventional-changelog': 5.1.1
   '@types/lodash.clonedeep': 4.5.7
   '@types/node': 18.8.3
@@ -30,7 +30,7 @@ dependencies:
 devDependencies:
   '@commitlint/cli': 17.1.2
   '@commitlint/config-conventional': 17.1.0
-  '@faker-js/faker': 7.5.0
+  '@faker-js/faker': 7.6.0
   '@release-it/conventional-changelog': 5.1.1_release-it@15.5.0
   '@types/lodash.clonedeep': 4.5.7
   '@types/node': 18.8.3
@@ -279,8 +279,8 @@ packages:
       - supports-color
     dev: true
 
-  /@faker-js/faker/7.5.0:
-    resolution: {integrity: sha512-8wNUCCUHvfvI0gQpDUho/3gPzABffnCn5um65F8dzQ86zz6dlt4+nmAA7PQUc8L+eH+9RgR/qzy5N/8kN0Ozdw==}
+  /@faker-js/faker/7.6.0:
+    resolution: {integrity: sha512-XK6BTq1NDMo9Xqw/YkYyGjSsg44fbNwYRx7QK2CuoQgyy+f1rrTDHoExVM5PsyXCtfl2vs2vVJ0MN0yN6LppRw==}
     engines: {node: '>=14.0.0', npm: '>=6.0.0'}
     dev: true
 
