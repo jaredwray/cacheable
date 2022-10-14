@@ -63,7 +63,7 @@
     "prettier": "2.7.1",
     "release-it": "15.5.0",
     "typescript": "4.8.4",
-    "vitest": "0.24.2"
+    "vitest": "0.24.3"
   },
   "lint-staged": {
     "*.{ts,js}": "eslint --cache --fix",
