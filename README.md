@@ -12,14 +12,105 @@ A cache module for nodejs that allows easy wrapping of functions in cache, tiere
 - Use any cache you want, as long as it has the same API.
 - 100% test coverage via [vitest](https://github.com/vitest-dev/vitest).
 
-## Express.js Example
-
-See the [Express.js cache-manager example app](https://github.com/BryanDonovan/node-cache-manager-express-example) to see how to use
-`node-cache-manager` in your applications.
-
 ## Installation
 
     pnpm install cache-manager
+
+## Usage Examples
+
+### Single Store
+
+```typescript
+import { caching } from 'cache-manager';
+
+const memoryCache = caching('memory', {
+  max: 100,
+  ttl: 10 * 1000 /*miliseconds*/,
+});
+
+const ttl = 5 * 1000;
+console.log(await memoryCache.set('foo', 'bar', ttl));
+
+function getUser(id: string) {
+  return new Promise.resolve({ id: id, name: 'Bob' });
+}
+
+var userId = 123;
+var key = 'user_' + userId;
+
+await memoryCache.wrap(key, () => getUser(userId));
+
+// Outputs:
+// Returning user from slow database.
+// { id: 123, name: 'Bob' }
+// { id: 123, name: 'Bob' }
+```
+
+See unit tests in `test/caching.ts` for more information.
+
+#### Example setting/getting several keys with mset() and mget()
+
+```typescript
+await memoryCache.mset(
+  [
+    ['foo', 'bar'],
+    ['foo2', 'bar2'],
+  ],
+  ttl,
+);
+
+console.log(await memoryCache.mget('foo', 'foo2'));
+// >> ['bar', 'bar2']
+
+// Delete keys with mdel() passing arguments...
+await memoryCache.mdel('foo', 'foo2');
+```
+
+#### Example Express App Usage
+
+```typescript
+function respond(res, err, data) {
+  if (err) {
+  } else {
+    res.json(200, data);
+  }
+}
+
+app.get('/foo/bar', async (req, res) => {
+  var cacheKey = 'foo-bar:' + JSON.stringify(req.query);
+  try {
+    res.json(200, await memoryCache.wrap(cacheKey, () => DB.find(req.query)));
+  } catch (err) {
+    res.json(500, err);
+  }
+});
+```
+
+#### Custom Stores
+
+You can use your own custom store by creating one with the same API as the
+built-in memory stores (such as a redis or memcached store). To use your own store just pass
+in an instance of it. [example](https://github.com/node-cache-manager/node-cache-manager-redis-yet)
+
+### Multi-Store
+
+```typescript
+import { multiCaching } from 'cache-manager';
+
+const multiCache = multiCaching([memoryCache, someOtherCache]);
+const userId2 = 456;
+const key2 = 'user_' + userId;
+const ttl = 5;
+
+// Sets in all caches.
+await multiCache.set('foo2', 'bar2', ttl);
+
+// Fetches from highest priority cache that has the key.
+const result = await multiCache.get('foo2');
+
+// Delete from all caches
+await multiCache.del('foo2');
+```
 
 ## Store Engines
 
