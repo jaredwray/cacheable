@@ -13,9 +13,9 @@
     "release": "pnpm check && pnpm test -- --run && pnpm build && dotenv release-it",
     "fix": "pnpm lint && pnpm fmt",
     "check": "pnpm lint:check && pnpm fmt:check",
-    "lint": "eslint --cache --max-warnings 0 --fix '**/*.ts'",
+    "lint": "eslint --cache --max-warnings 0 --fix '**/*.{ts,mts,js}'",
     "fmt": "prettier --write '**/*.{md,json,yml}'",
-    "lint:check": "eslint --cache --max-warnings 0 '**/*.ts'",
+    "lint:check": "eslint --cache --max-warnings 0 '**/*.{ts,mts,js}'",
     "fmt:check": "prettier --check '**/*.{md,json,yml}'",
     "prepare": "husky install"
   },
