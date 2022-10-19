@@ -59,7 +59,11 @@ describe('memory store', () => {
       });
 
       function getCachedObject() {
-        return cache.wrap(key, async () => ({ foo: 'bar', arr: [1, 2, 3] }));
+        return cache.wrap(
+          key,
+          async () => ({ foo: 'bar', arr: [1, 2, 3] }),
+          10 * 1000,
+        );
       }
 
       function getCachedString() {

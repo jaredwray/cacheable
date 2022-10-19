@@ -37,7 +37,7 @@ export type Cache<S extends Store = Store> = {
   get: <T>(key: string) => Promise<T | undefined>;
   del: (key: string) => Promise<void>;
   reset: () => Promise<void>;
-  wrap<T>(key: string, fn: () => Promise<T>): Promise<T>;
+  wrap<T>(key: string, fn: () => Promise<T>, ttl?: Ttl): Promise<T>;
   store: S;
 };
 
