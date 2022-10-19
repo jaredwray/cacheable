@@ -6,6 +6,7 @@ A cache module for nodejs that allows easy wrapping of functions in cache, tiere
 
 ## Features
 
+- Made with Typescript and compatible with [ESModules](https://nodejs.org/docs/latest-v14.x/api/esm.html)
 - Easy way to wrap any function in cache.
 - Tiered caches -- data gets stored in each cache and fetched from the highest.
   priority cache(s) first.
@@ -23,27 +24,29 @@ A cache module for nodejs that allows easy wrapping of functions in cache, tiere
 ```typescript
 import { caching } from 'cache-manager';
 
-const memoryCache = caching('memory', {
+const memoryCache = await caching('memory', {
   max: 100,
   ttl: 10 * 1000 /*miliseconds*/,
 });
 
-const ttl = 5 * 1000;
-console.log(await memoryCache.set('foo', 'bar', ttl));
+const ttl = 5 * 1000; /*miliseconds*/
+await memoryCache.set('foo', 'bar', ttl);
 
-function getUser(id: string) {
-  return new Promise.resolve({ id: id, name: 'Bob' });
-}
+console.log(await memoryCache.get('foo'));
+// >> "bar"
 
-var userId = 123;
-var key = 'user_' + userId;
+await memoryCache.del('foo');
 
-await memoryCache.wrap(key, () => getUser(userId));
+console.log(await memoryCache.get('foo'));
+// >> undefined
 
-// Outputs:
-// Returning user from slow database.
-// { id: 123, name: 'Bob' }
-// { id: 123, name: 'Bob' }
+const getUser = (id: string) => new Promise.resolve({ id: id, name: 'Bob' });
+
+const userId = 123;
+const key = 'user_' + userId;
+
+console.log(await memoryCache.wrap(key, () => getUser(userId), ttl));
+// >> { id: 123, name: 'Bob' }
 ```
 
 See unit tests in `test/caching.ts` for more information.
@@ -66,25 +69,7 @@ console.log(await memoryCache.mget('foo', 'foo2'));
 await memoryCache.mdel('foo', 'foo2');
 ```
 
-#### Example Express App Usage
-
-```typescript
-function respond(res, err, data) {
-  if (err) {
-  } else {
-    res.json(200, data);
-  }
-}
-
-app.get('/foo/bar', async (req, res) => {
-  var cacheKey = 'foo-bar:' + JSON.stringify(req.query);
-  try {
-    res.json(200, await memoryCache.wrap(cacheKey, () => DB.find(req.query)));
-  } catch (err) {
-    res.json(500, err);
-  }
-});
-```
+#### [Example Express App Usage](./examples/express/src/index.mts)
 
 #### Custom Stores
 
@@ -97,7 +82,7 @@ in an instance of it. [example](https://github.com/node-cache-manager/node-cache
 ```typescript
 import { multiCaching } from 'cache-manager';
 
-const multiCache = multiCaching([memoryCache, someOtherCache]);
+const multiCache = await multiCaching([memoryCache, someOtherCache]);
 const userId2 = 456;
 const key2 = 'user_' + userId;
 const ttl = 5;
@@ -106,7 +91,8 @@ const ttl = 5;
 await multiCache.set('foo2', 'bar2', ttl);
 
 // Fetches from highest priority cache that has the key.
-const result = await multiCache.get('foo2');
+console.log(await multiCache.get('foo2'));
+// >> "bar2"
 
 // Delete from all caches
 await multiCache.del('foo2');
