@@ -100,13 +100,19 @@ await multiCache.del('foo2');
 
 ## Store Engines
 
+### Oficial and updated to last version
+
+- [node-cache-manager-redis-yet](https://github.com/node-cache-manager/node-cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+
+- [node-cache-manager-ioredis-yet](https://github.com/node-cache-manager/node-cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
+
+### Third party
+
 - [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis) (uses [sol-redis-pool](https://github.com/joshuah/sol-redis-pool))
 
 - [node-cache-manager-redis-store](https://github.com/dabroek/node-cache-manager-redis-store) (uses [node_redis](https://github.com/NodeRedis/node_redis))
 
 - [node-cache-manager-ioredis](https://github.com/dabroek/node-cache-manager-ioredis) (uses [ioredis](https://github.com/luin/ioredis))
-
-- [node-cache-manager-redis-yet](https://github.com/node-cache-manager/node-cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
 
 - [node-cache-manager-mongodb](https://github.com/v4l3r10/node-cache-manager-mongodb)
 
