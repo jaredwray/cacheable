@@ -1,3 +1,7 @@
+- 5.1.1 (2022-10-19)
+
+  - Fixes bad Cache wrap function definition
+
 - 5.1.0 (2022-10-19)
 
   - Add ttl argument in wrap method
