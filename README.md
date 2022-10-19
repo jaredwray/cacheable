@@ -49,7 +49,7 @@ console.log(await memoryCache.wrap(key, () => getUser(userId), ttl));
 // >> { id: 123, name: 'Bob' }
 ```
 
-See unit tests in `test/caching.ts` for more information.
+See unit tests in [`test/caching.test.ts`](./test/caching.test.ts) for more information.
 
 #### Example setting/getting several keys with mset() and mget()
 
@@ -73,9 +73,11 @@ await memoryCache.store.mdel('foo', 'foo2');
 
 #### Custom Stores
 
-You can use your own custom store by creating one with the same API as the
-built-in memory stores (such as a redis or memcached store). To use your own store just pass
-in an instance of it. [example](https://github.com/node-cache-manager/node-cache-manager-redis-yet)
+You can use your own custom store by creating one with the same API as the built-in memory stores.
+
+- [Example Custom Store lru-cache](./src/stores/memory.ts)
+- [Example Custom Store redis](https://github.com/node-cache-manager/node-cache-manager-redis-yet)
+- [Example Custom Store ioredis](https://github.com/node-cache-manager/node-cache-manager-ioredis-yet)
 
 ### Multi-Store
 
@@ -97,6 +99,8 @@ console.log(await multiCache.get('foo2'));
 // Delete from all caches
 await multiCache.del('foo2');
 ```
+
+See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) for more information.
 
 ## Store Engines
 
