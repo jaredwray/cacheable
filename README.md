@@ -54,7 +54,7 @@ See unit tests in `test/caching.ts` for more information.
 #### Example setting/getting several keys with mset() and mget()
 
 ```typescript
-await memoryCache.mset(
+await memoryCache.store.mset(
   [
     ['foo', 'bar'],
     ['foo2', 'bar2'],
@@ -62,11 +62,11 @@ await memoryCache.mset(
   ttl,
 );
 
-console.log(await memoryCache.mget('foo', 'foo2'));
+console.log(await memoryCache.store.mget('foo', 'foo2'));
 // >> ['bar', 'bar2']
 
 // Delete keys with mdel() passing arguments...
-await memoryCache.mdel('foo', 'foo2');
+await memoryCache.store.mdel('foo', 'foo2');
 ```
 
 #### [Example Express App Usage](./examples/express/src/index.mts)
