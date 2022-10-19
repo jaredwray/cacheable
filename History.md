@@ -1,3 +1,7 @@
+- 5.1.0 (2022-10-19)
+
+  - Add ttl argument in wrap method
+
 - 5.0.1
 
   - Fix unexported types - @botika
