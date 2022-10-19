@@ -74,11 +74,11 @@ export async function caching<S extends Store, T extends object = never>(
      * const result = await cache.wrap('key', () => Promise.resolve(1));
      *
      */
-    wrap: async <T>(key: string, fn: () => Promise<T>) => {
+    wrap: async <T>(key: string, fn: () => Promise<T>, ttl?: Ttl) => {
       const value = await store.get<T>(key);
       if (value === undefined) {
         const result = await fn();
-        await store.set<T>(key, result);
+        await store.set<T>(key, result, ttl);
         return result;
       }
       return value;
