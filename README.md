@@ -114,7 +114,7 @@ See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) f
 
 - [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis) (uses [sol-redis-pool](https://github.com/joshuah/sol-redis-pool))
 
-- [node-cache-manager-redis-store](https://github.com/dabroek/node-cache-manager-redis-store) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+- [node-cache-manager-redis-store](https://github.com/Tirke/node-cache-manager-ioredis) (uses [node_redis](https://github.com/NodeRedis/node_redis))
 
 - [node-cache-manager-ioredis](https://github.com/dabroek/node-cache-manager-ioredis) (uses [ioredis](https://github.com/luin/ioredis))
 
