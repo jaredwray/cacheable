@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, expect } from 'vitest';
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { faker } from '@faker-js/faker';
 
 import { caching, Cache, MemoryConfig, memoryStore } from '../src';
@@ -197,5 +197,14 @@ describe('caching', () => {
   describe('issues', () => {
     it('#183', () =>
       expect(cache.wrap('constructor', async () => 0)).resolves.toEqual(0));
+
+    it('#246', async () => {
+      const cache = await caching('memory');
+      const func = vi.fn(() => Promise.resolve(1));
+
+      await Promise.all([cache.wrap('foo', func), cache.wrap('foo', func)]);
+
+      await expect(func).toHaveBeenCalledTimes(1);
+    });
   });
 });
