@@ -142,7 +142,7 @@ describe('multiCaching', () => {
 
   describe('issues', () => {
     it('#253', async () => {
-      const cache0 = await caching('memory', { ttl: 100 });
+      const cache0 = await caching('memory', { ttl: 500 });
       const cache1 = await caching('memory', { ttl: 1000 });
       const multi = multiCaching([cache0, cache1]);
       const key = 'bar';
@@ -151,7 +151,7 @@ describe('multiCaching', () => {
       const fn = async () => value;
 
       await multi.wrap(key, fn);
-      await sleep(100);
+      await sleep(500);
       await expect(cache0.get(key)).resolves.toBeUndefined();
       await expect(cache1.get(key)).resolves.toEqual(value);
 

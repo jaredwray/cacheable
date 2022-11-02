@@ -1,3 +1,7 @@
+- 5.1.2 (2022-11-02)
+
+  - Fixes multi caching re populate higher priority caches when a key is found in lower ones
+
 - 5.1.1 (2022-10-19)
 
   - Fixes bad Cache wrap function definition
@@ -8,11 +12,11 @@
 
 - 5.0.1
 
-  - Fix unexported types - @botika
+  - Fix unexported types
 
 - 5.0.0
 
-  - Refactor to promise and typescript (#203). - @botika
+  - Refactor to promise and typescript (#203).
     - Remove `ignoreCacheErrors`: not valid in async/await context
     - Remove `refreshThreshold`: use lower ttl
     - Remove callbackFiller
