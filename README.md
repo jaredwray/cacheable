@@ -84,7 +84,7 @@ You can use your own custom store by creating one with the same API as the built
 ```typescript
 import { multiCaching } from 'cache-manager';
 
-const multiCache = await multiCaching([memoryCache, someOtherCache]);
+const multiCache = multiCaching([memoryCache, someOtherCache]);
 const userId2 = 456;
 const key2 = 'user_' + userId;
 const ttl = 5;
