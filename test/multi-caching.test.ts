@@ -1,4 +1,8 @@
 import { describe, expect, it, beforeEach } from 'vitest';
+import { faker } from '@faker-js/faker';
+
+import { sleep } from './utils';
+
 import {
   Cache,
   caching,
@@ -7,9 +11,8 @@ import {
   multiCaching,
   Store,
 } from '../src';
-import { faker } from '@faker-js/faker';
 
-describe('multiCaching', function () {
+describe('multiCaching', () => {
   let memoryCache: MemoryCache;
   let memoryCache2: MemoryCache;
   let memoryCache3: MemoryCache;
@@ -38,7 +41,7 @@ describe('multiCaching', function () {
   describe('get(), set(), del(), reset(), mget(), mset()', () => {
     let value: string;
 
-    beforeEach(function () {
+    beforeEach(() => {
       multiCache = multiCaching([memoryCache, memoryCache2, memoryCache3]);
       key = faker.datatype.string(20);
       value = faker.datatype.string();
@@ -134,6 +137,28 @@ describe('multiCaching', function () {
         await multiCache.set(key, value);
         await expect(multiCache.get(key)).resolves.toBeUndefined();
       });
+    });
+  });
+
+  describe('issues', () => {
+    it('#253', async () => {
+      const cache0 = await caching('memory', { ttl: 100 });
+      const cache1 = await caching('memory', { ttl: 1000 });
+      const multi = multiCaching([cache0, cache1]);
+      const key = 'bar';
+      const value = 'foo';
+
+      const fn = async () => value;
+
+      await multi.wrap(key, fn);
+      await sleep(100);
+      await expect(cache0.get(key)).resolves.toBeUndefined();
+      await expect(cache1.get(key)).resolves.toEqual(value);
+
+      await multi.wrap(key, fn);
+
+      await expect(cache0.get(key)).resolves.toEqual(value);
+      await expect(cache1.get(key)).resolves.toEqual(value);
     });
   });
 });
