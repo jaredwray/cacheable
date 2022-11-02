@@ -1,3 +1,7 @@
+- 5.1.3 (2022-11-02)
+
+  - Parallelize re populate higher priority caches at `wrap`
+
 - 5.1.2 (2022-11-02)
 
   - Fixes multi caching re populate higher priority caches when a key is found in lower ones
