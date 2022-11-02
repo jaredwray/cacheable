@@ -39,9 +39,9 @@ export function multiCaching<Caches extends Cache[]>(
         await set<T>(key, result, ttl);
         return result;
       } else {
-        for (let j = 0; j < i; j++) {
-          await caches[j].set(key, value, ttl);
-        }
+        await Promise.all(
+          caches.slice(0, i).map((cache) => cache.set(key, value, ttl)),
+        );
       }
       return value;
     },
