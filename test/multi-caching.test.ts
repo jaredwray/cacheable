@@ -151,7 +151,7 @@ describe('multiCaching', () => {
       const fn = async () => value;
 
       await multi.wrap(key, fn);
-      await sleep(500);
+      await sleep(600);
       await expect(cache0.get(key)).resolves.toBeUndefined();
       await expect(cache1.get(key)).resolves.toEqual(value);
 
