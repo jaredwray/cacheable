@@ -104,7 +104,7 @@ See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) f
 
 ## Store Engines
 
-### Oficial and updated to last version
+### Official and updated to last version
 
 - [node-cache-manager-redis-yet](https://github.com/node-cache-manager/node-cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
 
