@@ -9,7 +9,7 @@ specifiers:
   '@types/node': 18.11.9
   '@typescript-eslint/eslint-plugin': 5.44.0
   '@typescript-eslint/parser': 5.44.0
-  '@vitest/coverage-c8': 0.25.2
+  '@vitest/coverage-c8': 0.25.3
   dotenv-cli: 6.0.0
   eslint: 8.28.0
   eslint-config-prettier: 8.5.0
@@ -21,7 +21,7 @@ specifiers:
   prettier: 2.7.1
   release-it: 15.5.0
   typescript: 4.9.3
-  vitest: 0.25.2
+  vitest: 0.25.3
 
 dependencies:
   lodash.clonedeep: 4.5.0
@@ -36,7 +36,7 @@ devDependencies:
   '@types/node': 18.11.9
   '@typescript-eslint/eslint-plugin': 5.44.0_fnsv2sbzcckq65bwfk7a5xwslu
   '@typescript-eslint/parser': 5.44.0_hsf322ms6xhhd4b5ne6lb74y4a
-  '@vitest/coverage-c8': 0.25.2
+  '@vitest/coverage-c8': 0.25.3
   dotenv-cli: 6.0.0
   eslint: 8.28.0
   eslint-config-prettier: 8.5.0_eslint@8.28.0
@@ -46,7 +46,7 @@ devDependencies:
   prettier: 2.7.1
   release-it: 15.5.0
   typescript: 4.9.3
-  vitest: 0.25.2
+  vitest: 0.25.3
 
 packages:
 
@@ -740,11 +740,11 @@ packages:
       eslint-visitor-keys: 3.3.0
     dev: true
 
-  /@vitest/coverage-c8/0.25.2:
-    resolution: {integrity: sha512-qKsiUJh3bjbB5Q229CbxEWCqiDBwvIrcZ9OOuQdMEC0pce3/LlTUK3+K3hd7WqAYEbbiqXfC5MVMKHZkV82PgA==}
+  /@vitest/coverage-c8/0.25.3:
+    resolution: {integrity: sha512-+tmrB3E7pZTSM+aWKzLk0FpyyaQOoRQf0594hHp+E3Kk0tiFONiEFYf7+9a1Z+C2ffU/0w6KvyBjpNPdashMrg==}
     dependencies:
       c8: 7.12.0
-      vitest: 0.25.2
+      vitest: 0.25.3
     transitivePeerDependencies:
       - '@edge-runtime/vm'
       - '@vitest/browser'
@@ -4926,8 +4926,8 @@ packages:
       fsevents: 2.3.2
     dev: true
 
-  /vitest/0.25.2:
-    resolution: {integrity: sha512-qqkzfzglEFbQY7IGkgSJkdOhoqHjwAao/OrphnHboeYHC5JzsVFoLCaB2lnAy8krhj7sbrFTVRApzpkTOeuDWQ==}
+  /vitest/0.25.3:
+    resolution: {integrity: sha512-/UzHfXIKsELZhL7OaM2xFlRF8HRZgAHtPctacvNK8H4vOcbJJAMEgbWNGSAK7Y9b1NBe5SeM7VTuz2RsTHFJJA==}
     engines: {node: '>=v14.16.0'}
     hasBin: true
     peerDependencies:
