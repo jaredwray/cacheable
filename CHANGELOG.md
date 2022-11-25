@@ -14,28 +14,29 @@
 
   - Add ttl argument in wrap method
 
-- 5.0.1
+- 5.0.1 (2022-10-09)
 
   - Fix unexported types
 
-- 5.0.0
+- 5.0.0 (2022-09-29)
 
   - Refactor to promise and typescript (#203).
+    - Change `ttl` param unit to milliseconds
     - Remove `ignoreCacheErrors`: not valid in async/await context
     - Remove `refreshThreshold`: use lower ttl
     - Remove callbackFiller
     - Use function as `FactoryStore`
     - Remove multiple wrap
 
-- 4.1.0
+- 4.1.0 (2022-07-07)
 
   - Support for TTL as third arg in memory store set function (#196). - @ZirionNeft
 
-- 4.0.1
+- 4.0.1 (2022-06-03)
 
   - Fix TTL option bug for memory cache (#194). - @anchan828
 
-- 4.0.0
+- 4.0.0 (2022-06-01)
 
   - Upgrade to lru-cache 7.x (#193). - @orgads
     - This has a breaking change in memoryCache.dump().

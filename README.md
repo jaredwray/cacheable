@@ -26,10 +26,10 @@ import { caching } from 'cache-manager';
 
 const memoryCache = await caching('memory', {
   max: 100,
-  ttl: 10 * 1000 /*miliseconds*/,
+  ttl: 10 * 1000 /*milliseconds*/,
 });
 
-const ttl = 5 * 1000; /*miliseconds*/
+const ttl = 5 * 1000; /*milliseconds*/
 await memoryCache.set('foo', 'bar', ttl);
 
 console.log(await memoryCache.get('foo'));
