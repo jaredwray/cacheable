@@ -36,7 +36,7 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
   const lruOpts = {
     ...args,
     max: args?.max || 500,
-    ttl: args?.ttl ? args.ttl : 0,
+    ttl: args?.ttl !== undefined ? args.ttl : 0,
   };
 
   const lruCache = new LRUCache<string, unknown>(lruOpts);
@@ -49,7 +49,7 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
     keys: async () => [...lruCache.keys()],
     mget: async (...args) => args.map((x) => lruCache.get(x)),
     async mset(args, ttl?) {
-      const opt = { ttl: ttl ? ttl : lruOpts.ttl } as const;
+      const opt = { ttl: ttl !== undefined ? ttl : lruOpts.ttl } as const;
       for (const [key, value] of args) {
         if (!isCacheable(value))
           throw new Error(`no cacheable value ${JSON.stringify(value)}`);
@@ -69,7 +69,7 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
         throw new Error(`no cacheable value ${JSON.stringify(value)}`);
       if (shouldCloneBeforeSet) value = clone(value);
 
-      const ttl = opt ? opt : lruOpts.ttl;
+      const ttl = opt !== undefined ? opt : lruOpts.ttl;
 
       lruCache.set(key, value, { ttl });
     },

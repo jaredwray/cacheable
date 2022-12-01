@@ -24,6 +24,13 @@ describe('memory store', () => {
       await expect(store.get('foo')).resolves.toEqual('bar');
     });
 
+    it('when ttl arg is passed 0', async () => {
+      const store = memoryStore({ ttl: 1 });
+      await store.set('foo', 'bar', 0);
+      await sleep(20);
+      await expect(store.get('foo')).resolves.toEqual('bar');
+    });
+
     it('cache record should be expired', async () => {
       await store.set('foo', 'bar', 1);
       await sleep(20);
