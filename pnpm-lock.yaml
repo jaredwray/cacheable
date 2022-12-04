@@ -15,7 +15,7 @@ specifiers:
   eslint-config-prettier: 8.5.0
   eslint-plugin-prettier: 4.2.1
   husky: 8.0.2
-  lint-staged: 13.0.4
+  lint-staged: 13.1.0
   lodash.clonedeep: ^4.5.0
   lru-cache: ^7.14.0
   prettier: 2.8.0
@@ -42,7 +42,7 @@ devDependencies:
   eslint-config-prettier: 8.5.0_eslint@8.29.0
   eslint-plugin-prettier: 4.2.1_nrhoyyjffvfyk4vtlt5destxgm
   husky: 8.0.2
-  lint-staged: 13.0.4
+  lint-staged: 13.1.0
   prettier: 2.8.0
   release-it: 15.5.1
   typescript: 4.9.3
@@ -3166,8 +3166,8 @@ packages:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
     dev: true
 
-  /lint-staged/13.0.4:
-    resolution: {integrity: sha512-HxlHCXoYRsq9QCby5wFozmZW00hMs/9e3l+/dz6Qr8Kle4UH0kJTdABAbqhzG+3pcG6QjL9kz7NgGBfph+a5dw==}
+  /lint-staged/13.1.0:
+    resolution: {integrity: sha512-pn/sR8IrcF/T0vpWLilih8jmVouMlxqXxKuAojmbiGX5n/gDnz+abdPptlj0vYnbfE0SQNl3CY/HwtM0+yfOVQ==}
     engines: {node: ^14.13.1 || >=16.0.0}
     hasBin: true
     dependencies:
