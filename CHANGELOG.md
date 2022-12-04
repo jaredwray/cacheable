@@ -1,3 +1,8 @@
+- 5.1.4 (2022-12-04)
+
+  - Fix ttl argument with 0 value. - @nekocode
+  - Fix minor issues in README and CHANGELOG. - @salquier-appvizer
+
 - 5.1.3 (2022-11-02)
 
   - Parallelize re populate higher priority caches at `wrap`
