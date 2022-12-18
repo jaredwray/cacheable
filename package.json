@@ -44,8 +44,6 @@
 	"devDependencies": {
 		"@keyv/sqlite": "^3.6.2",
 		"@types/create-test-server": "^3.0.1",
-		"@types/delay": "^3.1.0",
-		"@types/get-stream": "^3.0.2",
 		"@types/jest": "^29.2.3",
 		"@types/node": "^18.11.9",
 		"@types/responselike": "^1.0.0",
