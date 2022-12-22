@@ -23,7 +23,7 @@ const promisify = (cacheableRequest: any) => async (options: any) => new Promise
 });
 let s: any;
 beforeAll(async () => {
-	s = await createTestServer();
+	s = await createTestServer({certificate: {days: 365, commonName: 'example.com'}});
 	let noStoreIndex = 0;
 	s.get('/no-store', (request_: any, response_: any) => {
 		noStoreIndex++;
