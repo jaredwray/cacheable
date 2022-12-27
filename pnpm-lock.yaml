@@ -19,7 +19,7 @@ specifiers:
   lodash.clonedeep: ^4.5.0
   lru-cache: ^7.14.0
   prettier: 2.8.1
-  release-it: 15.5.1
+  release-it: 15.6.0
   typescript: 4.9.4
   vitest: 0.26.2
 
@@ -31,7 +31,7 @@ devDependencies:
   '@commitlint/cli': 17.3.0
   '@commitlint/config-conventional': 17.3.0
   '@faker-js/faker': 7.6.0
-  '@release-it/conventional-changelog': 5.1.1_release-it@15.5.1
+  '@release-it/conventional-changelog': 5.1.1_release-it@15.6.0
   '@types/lodash.clonedeep': 4.5.7
   '@types/node': 18.11.18
   '@typescript-eslint/eslint-plugin': 5.47.1_txmweb6yn7coi7nfrp22gpyqmy
@@ -44,7 +44,7 @@ devDependencies:
   husky: 8.0.2
   lint-staged: 13.1.0
   prettier: 2.8.1
-  release-it: 15.5.1
+  release-it: 15.6.0
   typescript: 4.9.4
   vitest: 0.26.2
 
@@ -679,7 +679,7 @@ packages:
       config-chain: 1.1.13
     dev: true
 
-  /@release-it/conventional-changelog/5.1.1_release-it@15.5.1:
+  /@release-it/conventional-changelog/5.1.1_release-it@15.6.0:
     resolution: {integrity: sha512-QtbDBe36dQfzexAfDYrbLPvd5Cb5bMWmLcjcGhCOWBss7fe1/gCjoxDULVz+7N7G5Nu2UMeBwHcUp/w8RDh5VQ==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -688,7 +688,7 @@ packages:
       concat-stream: 2.0.0
       conventional-changelog: 3.1.25
       conventional-recommended-bump: 6.1.0
-      release-it: 15.5.1
+      release-it: 15.6.0
       semver: 7.3.8
     dev: true
 
@@ -1095,10 +1095,6 @@ packages:
       retry: 0.13.1
     dev: true
 
-  /asynckit/0.4.0:
-    resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
-    dev: true
-
   /balanced-match/1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
     dev: true
@@ -1373,13 +1369,6 @@ packages:
 
   /colorette/2.0.19:
     resolution: {integrity: sha512-3tlv/dIP7FWvj3BsbHrGLJ6l/oKh1O3TcgBqMn+yyCagOxc23fyzDS6HypQbgxWbkpDnf52p1LuR4eWDQ/K9WQ==}
-    dev: true
-
-  /combined-stream/1.0.8:
-    resolution: {integrity: sha512-FQN4MRfuJeHf7cBbBMJFXhKSDq+2kAArBlmRBvcvFE5BB1HZKXtSFASDhdlz9zOYwxh8lDdnvmMOe/+5cdoEdg==}
-    engines: {node: '>= 0.8'}
-    dependencies:
-      delayed-stream: 1.0.0
     dev: true
 
   /commander/9.4.1:
@@ -1759,11 +1748,6 @@ packages:
       escodegen: 1.14.3
       esprima: 4.0.1
       vm2: 3.9.13
-    dev: true
-
-  /delayed-stream/1.0.0:
-    resolution: {integrity: sha512-ZySD7Nf91aLB0RxL4KGrKHBXl7Eds1DAmEdcoVawXnLD7SDhpNgtuII2aAkg7a7QS41jxPSZ17p4VdGnMHk3MQ==}
-    engines: {node: '>=0.4.0'}
     dev: true
 
   /depd/2.0.0:
@@ -2278,15 +2262,6 @@ packages:
   /form-data-encoder/2.1.4:
     resolution: {integrity: sha512-yDYSgNMraqvnxiEXO4hi88+YZxaHC6QKzb5N84iRCTDeRO7ZALpir/lVmf/uXUhnwUr2O4HU8s/n6x+yNjQkHw==}
     engines: {node: '>= 14.17'}
-    dev: true
-
-  /form-data/4.0.0:
-    resolution: {integrity: sha512-ETEklSGi5t0QMZuiXoA/Q6vcnxcLQP5vdugSpuAyi6SVGi2clPPp+xgEhuMaHC+zGgn31Kd235W35f7Hykkaww==}
-    engines: {node: '>= 6'}
-    dependencies:
-      asynckit: 0.4.0
-      combined-stream: 1.0.8
-      mime-types: 2.1.35
     dev: true
 
   /formdata-polyfill/4.0.10:
@@ -4146,8 +4121,8 @@ packages:
       rc: 1.2.8
     dev: true
 
-  /release-it/15.5.1:
-    resolution: {integrity: sha512-1X1oyqay/amJh/V+xkSU9zN6LqGmLQJ0Q40+FaHE6+Pu6QCmgX9HbrpHxvF0HZeXkB5cdhHjmYsPbHnUQLRnYg==}
+  /release-it/15.6.0:
+    resolution: {integrity: sha512-NXewgzO8QV1LOFjn2K7/dgE1Y1cG+2JiLOU/x9X/Lq9UdFn2hTH1r9SSrufCxG+y/Rp+oN8liYTsNptKrj92kg==}
     engines: {node: '>=14.9'}
     hasBin: true
     dependencies:
@@ -4157,7 +4132,6 @@ packages:
       chalk: 5.1.2
       cosmiconfig: 8.0.0
       execa: 6.1.0
-      form-data: 4.0.0
       git-url-parse: 13.1.0
       globby: 13.1.2
       got: 12.5.3
