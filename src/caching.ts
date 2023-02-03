@@ -1,18 +1,19 @@
 import { MemoryCache, MemoryConfig, memoryStore } from './stores';
 
 export type Config = {
-  ttl?: Ttl;
+  ttl?: Milliseconds;
   isCacheable?: (val: unknown) => boolean;
 };
 
-export type Ttl = number;
+export type Milliseconds = number;
+export type Ttl = Milliseconds;
 
 export type Store = {
   get<T>(key: string): Promise<T | undefined>;
-  set<T>(key: string, data: T, ttl?: Ttl): Promise<void>;
+  set<T>(key: string, data: T, ttl?: Milliseconds): Promise<void>;
   del(key: string): Promise<void>;
   reset(): Promise<void>;
-  mset(args: [string, unknown][], ttl?: Ttl): Promise<void>;
+  mset(args: [string, unknown][], ttl?: Milliseconds): Promise<void>;
   mget(...args: string[]): Promise<unknown[]>;
   mdel(...args: string[]): Promise<void>;
   keys(pattern?: string): Promise<string[]>;
@@ -33,11 +34,11 @@ export type Stores<S extends Store, T extends object> =
 export type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
 
 export type Cache<S extends Store = Store> = {
-  set: (key: string, value: unknown, ttl?: Ttl) => Promise<void>;
+  set: (key: string, value: unknown, ttl?: Milliseconds) => Promise<void>;
   get: <T>(key: string) => Promise<T | undefined>;
   del: (key: string) => Promise<void>;
   reset: () => Promise<void>;
-  wrap<T>(key: string, fn: () => Promise<T>, ttl?: Ttl): Promise<T>;
+  wrap<T>(key: string, fn: () => Promise<T>, ttl?: Milliseconds): Promise<T>;
   store: S;
 };
 
@@ -74,7 +75,7 @@ export async function caching<S extends Store, T extends object = never>(
      * const result = await cache.wrap('key', () => Promise.resolve(1));
      *
      */
-    wrap: async <T>(key: string, fn: () => Promise<T>, ttl?: Ttl) => {
+    wrap: async <T>(key: string, fn: () => Promise<T>, ttl?: Milliseconds) => {
       const value = await store.get<T>(key);
       if (value === undefined) {
         const result = await fn();
@@ -86,7 +87,8 @@ export async function caching<S extends Store, T extends object = never>(
     store: store as S,
     del: (key: string) => store.del(key),
     get: <T>(key: string) => store.get<T>(key),
-    set: (key: string, value: unknown, ttl?: Ttl) => store.set(key, value, ttl),
+    set: (key: string, value: unknown, ttl?: Milliseconds) =>
+      store.set(key, value, ttl),
     reset: () => store.reset(),
   };
 }

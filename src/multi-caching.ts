@@ -1,4 +1,4 @@
-import { Cache, Ttl } from './caching';
+import { Cache, Milliseconds } from './caching';
 
 export type MultiCache = Omit<Cache, 'store'>;
 
@@ -16,7 +16,11 @@ export function multiCaching<Caches extends Cache[]>(
       } catch (e) {}
     }
   };
-  const set = async <T>(key: string, data: T, ttl?: Ttl | undefined) => {
+  const set = async <T>(
+    key: string,
+    data: T,
+    ttl?: Milliseconds | undefined,
+  ) => {
     await Promise.all(caches.map((cache) => cache.set(key, data, ttl)));
   };
   return {
@@ -25,7 +29,11 @@ export function multiCaching<Caches extends Cache[]>(
     del: async (key) => {
       await Promise.all(caches.map((cache) => cache.del(key)));
     },
-    async wrap<T>(key: string, fn: () => Promise<T>, ttl?: Ttl): Promise<T> {
+    async wrap<T>(
+      key: string,
+      fn: () => Promise<T>,
+      ttl?: Milliseconds,
+    ): Promise<T> {
       let value: T | undefined;
       let i = 0;
       for (; i < caches.length; i++) {
