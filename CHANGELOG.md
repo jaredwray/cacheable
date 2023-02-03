@@ -1,3 +1,7 @@
+- 5.1.5 (2023-02-03)
+
+  - Rename Ttl type to Milliseconds and continue to export Ttl as Milliseconds alias
+
 - 5.1.4 (2022-12-04)
 
   - Fix ttl argument with 0 value. - @nekocode
