@@ -1,3 +1,7 @@
+- 5.1.6 (2023-02-06)
+
+  - Deprecate Ttl type in favor of Milliseconds
+
 - 5.1.5 (2023-02-03)
 
   - Rename Ttl type to Milliseconds and continue to export Ttl as Milliseconds alias
