@@ -6,6 +6,9 @@ export type Config = {
 };
 
 export type Milliseconds = number;
+/**
+ * @deprecated will remove after 5.2.0. Use Milliseconds instead
+ */
 export type Ttl = Milliseconds;
 
 export type Store = {
