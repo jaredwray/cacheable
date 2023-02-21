@@ -4,6 +4,19 @@
 
 A cache module for nodejs that allows easy wrapping of functions in cache, tiered caches, and a consistent interface.
 
+## Fork Info
+
+This is a fork of https://github.com/node-cache-manager/node-cache-manager
+
+It re-adds `mget`, `mset` and `mdel` functionality to v5 of `node-cache-manager`.
+A [pull request](https://github.com/node-cache-manager/node-cache-manager/pull/366) is sent to merge into the main repo.
+
+Meanwhile, this can be used:
+
+```sh
+npm install @entrecode/cache-manager@5.1.7
+```
+
 ## Features
 
 - Made with Typescript and compatible with [ESModules](https://nodejs.org/docs/latest-v14.x/api/esm.html)
