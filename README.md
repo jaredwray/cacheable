@@ -98,6 +98,29 @@ console.log(await multiCache.get('foo2'));
 
 // Delete from all caches
 await multiCache.del('foo2');
+
+// Sets multiple keys in all caches.
+// You can pass as many key, value tuples as you want
+await multiCache.mset(
+  [
+    ['foo', 'bar'],
+    ['foo2', 'bar2'],
+  ],
+  ttl
+);
+
+// mget() fetches from highest priority cache.
+// If the first cache does not return all the keys,
+// the next cache is fetched with the keys that were not found.
+// This is done recursively until either:
+// - all have been found
+// - all caches has been fetched
+console.log(await multiCache.mget('key', 'key2');
+// >> ['bar', 'bar2']
+
+// Delete keys with mdel() passing arguments...
+await multiCache.mdel('foo', 'foo2');
+
 ```
 
 See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) for more information.

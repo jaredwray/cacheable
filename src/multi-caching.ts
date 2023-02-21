@@ -1,6 +1,10 @@
 import { Cache, Milliseconds } from './caching';
 
-export type MultiCache = Omit<Cache, 'store'>;
+export type MultiCache = Omit<Cache, 'store'> & {
+  mset(args: [string, unknown][], ttl?: Milliseconds): Promise<void>;
+  mget(...args: string[]): Promise<unknown[]>;
+  mdel(...args: string[]): Promise<void>;
+};
 
 /**
  * Module that lets you specify a hierarchy of caches.
@@ -55,6 +59,25 @@ export function multiCaching<Caches extends Cache[]>(
     },
     reset: async () => {
       await Promise.all(caches.map((x) => x.reset()));
+    },
+    mget: async (...keys: string[]) => {
+      const values = new Array(keys.length).fill(undefined);
+      for (const cache of caches) {
+        if (values.every((x) => x !== undefined)) break;
+        try {
+          const val = await cache.store.mget(...keys);
+          val.forEach((v, i) => {
+            if (values[i] === undefined && v !== undefined) values[i] = v;
+          });
+        } catch (e) {}
+      }
+      return values;
+    },
+    mset: async (args: [string, unknown][], ttl?: Milliseconds) => {
+      await Promise.all(caches.map((cache) => cache.store.mset(args, ttl)));
+    },
+    mdel: async (...keys: string[]) => {
+      await Promise.all(caches.map((cache) => cache.store.mdel(...keys)));
     },
   };
 }
