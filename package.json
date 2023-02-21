@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "5.1.6",
+  "version": "5.1.7",
   "description": "Cache module for Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,6 +22,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/node-cache-manager/node-cache-manager.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/@entrecode"
   },
   "keywords": [
     "cache",

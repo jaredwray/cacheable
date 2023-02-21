@@ -18,6 +18,7 @@ jobs:
         with:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
+          scope: '@entrecode'
 
       - uses: pnpm/action-setup@v2.2.4
         name: Install pnpm
