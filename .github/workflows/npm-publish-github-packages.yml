@@ -19,7 +19,6 @@ jobs:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
 
-
       - uses: pnpm/action-setup@v2.2.4
         name: Install pnpm
         id: pnpm-install
@@ -40,8 +39,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      - run: pnpm ci
-      - run: pnpm run build
-      - run: pnpm publish
+        run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
