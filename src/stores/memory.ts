@@ -45,7 +45,7 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
     async del(key) {
       lruCache.delete(key);
     },
-    get: async <T>(key: string) => lruCache.get<T>(key),
+    get: async <T>(key: string) => lruCache.get(key) as T,
     keys: async () => [...lruCache.keys()],
     mget: async (...args) => args.map((x) => lruCache.get(x)),
     async mset(args, ttl?) {
