@@ -1,3 +1,7 @@
+- 5.1.7 (2023-02-23)
+
+  - Fix breaking changes in lru-cache
+
 - 5.1.6 (2023-02-06)
 
   - Deprecate Ttl type in favor of Milliseconds
