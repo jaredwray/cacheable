@@ -19,7 +19,7 @@ specifiers:
   lodash.clonedeep: ^4.5.0
   lru-cache: ^7.17.0
   prettier: 2.8.4
-  release-it: 15.6.1
+  release-it: 15.7.0
   typescript: 4.9.5
   vitest: 0.29.2
 
@@ -31,7 +31,7 @@ devDependencies:
   '@commitlint/cli': 17.4.4
   '@commitlint/config-conventional': 17.4.4
   '@faker-js/faker': 7.6.0
-  '@release-it/conventional-changelog': 5.1.1_release-it@15.6.1
+  '@release-it/conventional-changelog': 5.1.1_release-it@15.7.0
   '@types/lodash.clonedeep': 4.5.7
   '@types/node': 18.14.2
   '@typescript-eslint/eslint-plugin': 5.54.0_6mj2wypvdnknez7kws2nfdgupi
@@ -44,7 +44,7 @@ devDependencies:
   husky: 8.0.3
   lint-staged: 13.1.2
   prettier: 2.8.4
-  release-it: 15.6.1
+  release-it: 15.7.0
   typescript: 4.9.5
   vitest: 0.29.2
 
@@ -684,7 +684,7 @@ packages:
       config-chain: 1.1.13
     dev: true
 
-  /@release-it/conventional-changelog/5.1.1_release-it@15.6.1:
+  /@release-it/conventional-changelog/5.1.1_release-it@15.7.0:
     resolution: {integrity: sha512-QtbDBe36dQfzexAfDYrbLPvd5Cb5bMWmLcjcGhCOWBss7fe1/gCjoxDULVz+7N7G5Nu2UMeBwHcUp/w8RDh5VQ==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -693,7 +693,7 @@ packages:
       concat-stream: 2.0.0
       conventional-changelog: 3.1.25
       conventional-recommended-bump: 6.1.0
-      release-it: 15.6.1
+      release-it: 15.7.0
       semver: 7.3.8
     dev: true
 
@@ -4249,8 +4249,8 @@ packages:
       rc: 1.2.8
     dev: true
 
-  /release-it/15.6.1:
-    resolution: {integrity: sha512-oPJKP2yxMcA/TaGFnS5uB0spDSPiDXXd1yGKSSMQ2xutyiSs8X+1UahlJCF/xHnp01QwUqRv0fpsV9MFr2GKmQ==}
+  /release-it/15.7.0:
+    resolution: {integrity: sha512-/ajllmzQNuxXCrPySwx+MiR/nBHp8H+lTn42QFw9YlFPJQpLFwgMjCOFTB4hhuavi9jMbDpWcTPFy31QJgzNcw==}
     engines: {node: '>=14.9'}
     hasBin: true
     dependencies:
