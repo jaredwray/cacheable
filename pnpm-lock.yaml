@@ -10,7 +10,7 @@ specifiers:
   '@typescript-eslint/eslint-plugin': 5.54.1
   '@typescript-eslint/parser': 5.54.1
   '@vitest/coverage-c8': 0.29.2
-  dotenv-cli: 7.0.0
+  dotenv-cli: 7.1.0
   eslint: 8.35.0
   eslint-config-prettier: 8.7.0
   eslint-plugin-prettier: 4.2.1
@@ -37,7 +37,7 @@ devDependencies:
   '@typescript-eslint/eslint-plugin': 5.54.1_mlk7dnz565t663n4razh6a6v6i
   '@typescript-eslint/parser': 5.54.1_ycpbpc6yetojsgtrx3mwntkhsu
   '@vitest/coverage-c8': 0.29.2_vitest@0.29.2
-  dotenv-cli: 7.0.0
+  dotenv-cli: 7.1.0
   eslint: 8.35.0
   eslint-config-prettier: 8.7.0_eslint@8.35.0
   eslint-plugin-prettier: 4.2.1_xprnzp4ul2bcpmfe73av4voica
@@ -1834,8 +1834,8 @@ packages:
       is-obj: 2.0.0
     dev: true
 
-  /dotenv-cli/7.0.0:
-    resolution: {integrity: sha512-XfMzVdpdDTRnlcgvFLg3lSyiLXqFxS4tH7RbK5IxkC4XIUuxPyrGoDufkfLjy/dA28EILzEu+mros6h8aQmyGg==}
+  /dotenv-cli/7.1.0:
+    resolution: {integrity: sha512-motytjZFQB3ZtGTIN4c0vnFgv4kuNZ2WxVnGY6PVFiygCzkm3IFBBguDUzezd9HgNA0OYYd6vNCWlozs0Q1Zxg==}
     hasBin: true
     dependencies:
       cross-spawn: 7.0.3
