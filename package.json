@@ -42,7 +42,7 @@
   "license": "MIT",
   "dependencies": {
     "lodash.clonedeep": "^4.5.0",
-    "lru-cache": "^8.0.0"
+    "lru-cache": "~7.18.3"
   },
   "devDependencies": {
     "@commitlint/cli": "17.4.4",
@@ -51,8 +51,8 @@
     "@release-it/conventional-changelog": "5.1.1",
     "@types/lodash.clonedeep": "4.5.7",
     "@types/node": "18.15.2",
-    "@typescript-eslint/eslint-plugin": "5.54.1",
-    "@typescript-eslint/parser": "5.54.1",
+    "@typescript-eslint/eslint-plugin": "5.55.0",
+    "@typescript-eslint/parser": "5.55.0",
     "@vitest/coverage-c8": "0.29.2",
     "dotenv-cli": "7.1.0",
     "eslint": "8.36.0",
