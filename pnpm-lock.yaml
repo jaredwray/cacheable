@@ -19,7 +19,7 @@ specifiers:
   lodash.clonedeep: ^4.5.0
   lru-cache: ~7.18.3
   prettier: 2.8.4
-  release-it: 15.8.0
+  release-it: 15.9.0
   typescript: 4.9.5
   vitest: 0.29.3
 
@@ -31,7 +31,7 @@ devDependencies:
   '@commitlint/cli': 17.4.4
   '@commitlint/config-conventional': 17.4.4
   '@faker-js/faker': 7.6.0
-  '@release-it/conventional-changelog': 5.1.1_release-it@15.8.0
+  '@release-it/conventional-changelog': 5.1.1_release-it@15.9.0
   '@types/lodash.clonedeep': 4.5.7
   '@types/node': 18.15.3
   '@typescript-eslint/eslint-plugin': 5.55.0_342y7v4tc7ytrrysmit6jo4wri
@@ -44,7 +44,7 @@ devDependencies:
   husky: 8.0.3
   lint-staged: 13.2.0
   prettier: 2.8.4
-  release-it: 15.8.0
+  release-it: 15.9.0
   typescript: 4.9.5
   vitest: 0.29.3
 
@@ -705,7 +705,7 @@ packages:
       config-chain: 1.1.13
     dev: true
 
-  /@release-it/conventional-changelog/5.1.1_release-it@15.8.0:
+  /@release-it/conventional-changelog/5.1.1_release-it@15.9.0:
     resolution: {integrity: sha512-QtbDBe36dQfzexAfDYrbLPvd5Cb5bMWmLcjcGhCOWBss7fe1/gCjoxDULVz+7N7G5Nu2UMeBwHcUp/w8RDh5VQ==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -714,7 +714,7 @@ packages:
       concat-stream: 2.0.0
       conventional-changelog: 3.1.25
       conventional-recommended-bump: 6.1.0
-      release-it: 15.8.0
+      release-it: 15.9.0
       semver: 7.3.8
     dev: true
 
@@ -2192,8 +2192,8 @@ packages:
       strip-final-newline: 2.0.0
     dev: true
 
-  /execa/7.0.0:
-    resolution: {integrity: sha512-tQbH0pH/8LHTnwTrsKWideqi6rFB/QNUawEwrn+WHyz7PX1Tuz2u7wfTvbaNBdP5JD5LVWxNo8/A8CHNZ3bV6g==}
+  /execa/7.1.0:
+    resolution: {integrity: sha512-T6nIJO3LHxUZ6ahVRaxXz9WLEruXLqdcluA+UuTptXmLM7nDAn9lx9IfkxPyzEL21583qSt4RmL44pO71EHaJQ==}
     engines: {node: ^14.18.0 || ^16.14.0 || >=18.0.0}
     dependencies:
       cross-spawn: 7.0.3
@@ -2207,8 +2207,8 @@ packages:
       strip-final-newline: 3.0.0
     dev: true
 
-  /execa/7.1.0:
-    resolution: {integrity: sha512-T6nIJO3LHxUZ6ahVRaxXz9WLEruXLqdcluA+UuTptXmLM7nDAn9lx9IfkxPyzEL21583qSt4RmL44pO71EHaJQ==}
+  /execa/7.1.1:
+    resolution: {integrity: sha512-wH0eMf/UXckdUYnO21+HDztteVv05rq2GXksxT4fCGeHkBhw1DROXh40wcjMcRqDOWE7iPJ4n3M7e2+YFP+76Q==}
     engines: {node: ^14.18.0 || ^16.14.0 || >=18.0.0}
     dependencies:
       cross-spawn: 7.0.3
@@ -3630,8 +3630,8 @@ packages:
       whatwg-url: 5.0.0
     dev: true
 
-  /node-fetch/3.3.0:
-    resolution: {integrity: sha512-BKwRP/O0UvoMKp7GNdwPlObhYGB5DQqwhEDQlNKuoqwVYSxkSZCSbHjnFFmUEtwSKRPU4kNK8PbDYYitwaE3QA==}
+  /node-fetch/3.3.1:
+    resolution: {integrity: sha512-cRVc/kyto/7E5shrWca1Wsea4y6tL9iYJE5FBCius3JQfb/4P4I295PfhgbJQBLTx6lATE4z+wK0rPM4VS2uow==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
     dependencies:
       data-uri-to-buffer: 4.0.1
@@ -4252,8 +4252,8 @@ packages:
       rc: 1.2.8
     dev: true
 
-  /release-it/15.8.0:
-    resolution: {integrity: sha512-eJwYY/vXefcnWn7OHlZRcQJYPSJw/fdO+29C/Re5MZE8FZReCHu+EYq3yB0Bm39/3cTVz/5I/2Fk5rtAsVFU1g==}
+  /release-it/15.9.0:
+    resolution: {integrity: sha512-uYlbEMvOHeMNLK7AOrckjxNrUB7fU2euiNQ199eGcqCaoOUxD+QqQ6MMBuYaLB0cqvjCgvH5XoaySZW5HFMPLg==}
     engines: {node: '>=14.9'}
     hasBin: true
     dependencies:
@@ -4262,7 +4262,7 @@ packages:
       async-retry: 1.3.3
       chalk: 5.2.0
       cosmiconfig: 8.1.0
-      execa: 7.0.0
+      execa: 7.1.1
       git-url-parse: 13.1.0
       globby: 13.1.3
       got: 12.6.0
@@ -4271,7 +4271,7 @@ packages:
       lodash: 4.17.21
       mime-types: 2.1.35
       new-github-release-url: 2.0.0
-      node-fetch: 3.3.0
+      node-fetch: 3.3.1
       open: 8.4.2
       ora: 6.1.2
       os-name: 5.1.0
