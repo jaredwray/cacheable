@@ -1,10 +1,7 @@
 import { Cache, Milliseconds } from './caching';
 
-export type MultiCache = Omit<Cache, 'store'> & {
-  mset(args: [string, unknown][], ttl?: Milliseconds): Promise<void>;
-  mget(...args: string[]): Promise<unknown[]>;
-  mdel(...args: string[]): Promise<void>;
-};
+export type MultiCache = Omit<Cache, 'store'> &
+  Pick<Cache['store'], 'mset' | 'mget' | 'mdel'>;
 
 /**
  * Module that lets you specify a hierarchy of caches.
