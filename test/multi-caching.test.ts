@@ -91,6 +91,56 @@ describe('multiCaching', () => {
       });
     });
 
+    describe('mset()', () => {
+      it('lets us set multiple keys in all caches', async () => {
+        const keys = [faker.datatype.string(20), faker.datatype.string(20)];
+        const values = [faker.datatype.string(), faker.datatype.string()];
+        await multiCache.mset(
+          [
+            [keys[0], values[0]],
+            [keys[1], values[1]],
+          ],
+          defaultTtl,
+        );
+        await expect(memoryCache.get(keys[0])).resolves.toEqual(values[0]);
+        await expect(memoryCache2.get(keys[0])).resolves.toEqual(values[0]);
+        await expect(memoryCache3.get(keys[0])).resolves.toEqual(values[0]);
+        await expect(memoryCache.get(keys[1])).resolves.toEqual(values[1]);
+        await expect(memoryCache2.get(keys[1])).resolves.toEqual(values[1]);
+        await expect(memoryCache3.get(keys[1])).resolves.toEqual(values[1]);
+      });
+    });
+
+    describe('mget()', () => {
+      it('lets us get multiple keys', async () => {
+        const keys = [faker.datatype.string(20), faker.datatype.string(20)];
+        const values = [faker.datatype.string(), faker.datatype.string()];
+        await multiCache.set(keys[0], values[0], defaultTtl);
+        await memoryCache3.set(keys[1], values[1], defaultTtl);
+        await expect(multiCache.mget(...keys)).resolves.toStrictEqual(values);
+      });
+    });
+
+    describe('mdel()', () => {
+      it('lets us delete multiple keys', async () => {
+        const keys = [faker.datatype.string(20), faker.datatype.string(20)];
+        const values = [faker.datatype.string(), faker.datatype.string()];
+        await multiCache.mset(
+          [
+            [keys[0], values[0]],
+            [keys[1], values[1]],
+          ],
+          defaultTtl,
+        );
+        await expect(multiCache.mget(...keys)).resolves.toStrictEqual(values);
+        await multiCache.mdel(...keys);
+        await expect(multiCache.mget(...keys)).resolves.toStrictEqual([
+          undefined,
+          undefined,
+        ]);
+      });
+    });
+
     describe('when cache fails', () => {
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       const empty = (async () => {}) as never;
