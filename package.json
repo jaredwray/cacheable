@@ -42,7 +42,7 @@
   "license": "MIT",
   "dependencies": {
     "lodash.clonedeep": "^4.5.0",
-    "lru-cache": "~7.18.3"
+    "lru-cache": "~8.0.0"
   },
   "devDependencies": {
     "@commitlint/cli": "17.4.4",
