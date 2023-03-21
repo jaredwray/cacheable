@@ -17,7 +17,7 @@ specifiers:
   husky: 8.0.3
   lint-staged: 13.2.0
   lodash.clonedeep: ^4.5.0
-  lru-cache: ~7.18.3
+  lru-cache: ~8.0.0
   prettier: 2.8.5
   release-it: 15.9.0
   typescript: 5.0.2
@@ -25,7 +25,7 @@ specifiers:
 
 dependencies:
   lodash.clonedeep: 4.5.0
-  lru-cache: 7.18.3
+  lru-cache: 8.0.4
 
 devDependencies:
   '@commitlint/cli': 17.4.4
@@ -3439,9 +3439,9 @@ packages:
       yallist: 4.0.0
     dev: true
 
-  /lru-cache/7.18.3:
-    resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
-    engines: {node: '>=12'}
+  /lru-cache/8.0.4:
+    resolution: {integrity: sha512-E9FF6+Oc/uFLqZCuZwRKUzgFt5Raih6LfxknOSAVTjNkrCZkBf7DQCwJxZQgd9l4eHjIJDGR+E+1QKD1RhThPw==}
+    engines: {node: '>=16.14'}
     dev: false
 
   /macos-release/3.1.0:
