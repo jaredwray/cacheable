@@ -45,7 +45,7 @@
     "lru-cache": "~7.18.3"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.5.0",
+    "@commitlint/cli": "17.5.1",
     "@commitlint/config-conventional": "17.4.4",
     "@faker-js/faker": "7.6.0",
     "@release-it/conventional-changelog": "5.1.1",
