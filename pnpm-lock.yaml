@@ -37,8 +37,8 @@ devDependencies:
     specifier: 0.29.8
     version: 0.29.8(vitest@0.29.8)
   dotenv-cli:
-    specifier: 7.1.0
-    version: 7.1.0
+    specifier: 7.2.1
+    version: 7.2.1
   eslint:
     specifier: 8.37.0
     version: 8.37.0
@@ -1911,8 +1911,8 @@ packages:
       is-obj: 2.0.0
     dev: true
 
-  /dotenv-cli@7.1.0:
-    resolution: {integrity: sha512-motytjZFQB3ZtGTIN4c0vnFgv4kuNZ2WxVnGY6PVFiygCzkm3IFBBguDUzezd9HgNA0OYYd6vNCWlozs0Q1Zxg==}
+  /dotenv-cli@7.2.1:
+    resolution: {integrity: sha512-ODHbGTskqRtXAzZapDPvgNuDVQApu4oKX8lZW7Y0+9hKA6le1ZJlyRS687oU9FXjOVEDU/VFV6zI125HzhM1UQ==}
     hasBin: true
     dependencies:
       cross-spawn: 7.0.3
