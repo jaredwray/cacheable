@@ -5,8 +5,8 @@ dependencies:
     specifier: ^4.5.0
     version: 4.5.0
   lru-cache:
-    specifier: ~9.0.0
-    version: 9.0.0
+    specifier: ~9.1.0
+    version: 9.1.0
 
 devDependencies:
   '@commitlint/cli':
@@ -3568,9 +3568,9 @@ packages:
       yallist: 4.0.0
     dev: true
 
-  /lru-cache@9.0.0:
-    resolution: {integrity: sha512-9AEKXzvOZc4BMacFnYiTOlDH/197LNnQIK9wZ6iMB5NXPzuv4bWR/Msv7iUMplkiMQ1qQL+KSv/JF1mZAB5Lrg==}
-    engines: {node: '>=16.14'}
+  /lru-cache@9.1.0:
+    resolution: {integrity: sha512-qFXQEwchrZcMVen2uIDceR8Tii6kCJak5rzDStfEM0qA3YLMswaxIEZO0DhIbJ3aqaJiDjt+3crlplOb0tDtKQ==}
+    engines: {node: 14 || >=16.14}
     dev: false
 
   /macos-release@3.1.0:
