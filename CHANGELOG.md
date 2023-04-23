@@ -1,3 +1,7 @@
+- 5.2.1 (2023-04-23)
+
+  - Fix breaking changes in lru-cache
+
 - 5.2.0 (2023-03-21)
 
   - Add mset, mget, mdel in multi-cache - @deyhle
