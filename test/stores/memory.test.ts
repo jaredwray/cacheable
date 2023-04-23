@@ -47,11 +47,11 @@ describe('memory store', () => {
     it('return total length of keys in cache', async () => {
       memoryCache = memoryStore({ ttl: 10 });
       await memoryCache.set('foo', 'bar');
-      await memoryCache.set('bar', 'foo');
-      expect(memoryCache.keyCount()).toEqual(2);
+      await memoryCache.set('bar', 'foo', 100);
+      expect(memoryCache.size).toEqual(2);
       await sleep(20);
       await expect(memoryCache.get('foo')).resolves.toBeUndefined();
-      expect(memoryCache.keyCount()).toEqual(1);
+      expect(memoryCache.size).toEqual(1);
     });
   });
 
@@ -89,10 +89,11 @@ describe('memory store', () => {
         return cache.wrap(key, async () => () => 'foo');
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      function Thing() {}
-
-      Thing.prototype.f = () => 'foo';
+      class Thing {
+        f() {
+          return 'foo';
+        }
+      }
 
       function getCachedObjectWithPrototype() {
         return cache.wrap(key, async () => new Thing());

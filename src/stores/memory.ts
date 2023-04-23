@@ -1,9 +1,7 @@
-import LRUCache, { Options } from 'lru-cache';
+import { LRUCache } from 'lru-cache';
 import cloneDeep from 'lodash.clonedeep';
 
 import { Config, Cache, Store } from '../caching';
-
-type Lru = LRUCache<string, unknown>;
 
 function clone<T>(object: T): T {
   if (typeof object === 'object' && object !== null) {
@@ -12,17 +10,22 @@ function clone<T>(object: T): T {
   return object;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LRU = LRUCache<string, any, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Pre = LRUCache.OptionsTTLLimit<string, any, unknown>;
+type Options = Omit<Pre, 'ttlAutopurge'> & Partial<Pick<Pre, 'ttlAutopurge'>>;
 export type MemoryConfig = {
   max?: number;
   sizeCalculation?: (key: string, value: unknown) => number;
   shouldCloneBeforeSet?: boolean;
-} & Options<string, unknown> &
+} & Options &
   Config;
 
 export type MemoryStore = Store & {
-  keyCount: () => number;
-  dump: Lru['dump'];
-  load: Lru['load'];
+  get size(): number;
+  dump: LRU['dump'];
+  load: LRU['load'];
 };
 export type MemoryCache = Cache<MemoryStore>;
 
@@ -34,12 +37,13 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
   const isCacheable = args?.isCacheable ?? ((val) => val !== undefined);
 
   const lruOpts = {
+    ttlAutopurge: true,
     ...args,
     max: args?.max || 500,
     ttl: args?.ttl !== undefined ? args.ttl : 0,
   };
 
-  const lruCache = new LRUCache<string, unknown>(lruOpts);
+  const lruCache = new LRUCache(lruOpts);
 
   return {
     async del(key) {
@@ -76,7 +80,9 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
     /**
      * This method is not available in the caching modules.
      */
-    keyCount: () => lruCache.size,
+    get size() {
+      return lruCache.size;
+    },
     /**
      * This method is not available in the caching modules.
      */
@@ -84,6 +90,6 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
     /**
      * This method is not available in the caching modules.
      */
-    load: (...args: Parameters<Lru['load']>) => lruCache.load(...args),
+    load: (...args: Parameters<LRU['load']>) => lruCache.load(...args),
   };
 }
