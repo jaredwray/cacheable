@@ -61,7 +61,7 @@
     "husky": "8.0.3",
     "lint-staged": "13.2.2",
     "prettier": "2.8.8",
-    "release-it": "15.10.2",
+    "release-it": "15.10.3",
     "typescript": "5.0.4",
     "vitest": "0.30.1"
   },
