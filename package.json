@@ -59,7 +59,7 @@
 		"sqlite3": "^5.0.8",
 		"ts-jest": "^28.0.5",
 		"ts-node": "^10.8.1",
-		"typescript": "^4.7.4",
+		"typescript": "^5.0.4",
 		"xo": "^0.50.0"
 	},
 	"jest": {
@@ -99,7 +99,8 @@
 			"@typescript-eslint/no-empty-function": 0,
 			"@typescript-eslint/restrict-plus-operands": 0,
 			"@typescript-eslint/no-floating-promises": 0,
-			"@typescript-eslint/await-thenable": 0
+			"@typescript-eslint/await-thenable": 0,
+			"n/prefer-global/url": 0
 		}
 	}
 }
