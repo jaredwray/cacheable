@@ -184,8 +184,9 @@ function createCacheableRequest(request: Function, cache: any) {
 			};
 
 			const errorHandler = (error: any) => ee.emit('error', new CacheableRequest.CacheError(error));
-			cache.once('error', errorHandler);
-			ee.on('response', () => cache.removeListener('error', errorHandler));
+			cache.once?.('error', errorHandler);
+			ee.on('error', () => cache.removeListener?.('error', errorHandler));
+			ee.on('response', () => cache.removeListener?.('error', errorHandler));
 			try {
 				await get(options);
 			} catch (error: unknown) {
