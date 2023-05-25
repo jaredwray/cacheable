@@ -2,9 +2,9 @@ name: tests
 
 on:
   push:
-    branches: [ commonjs ]
+    branches: [ v7 ]
   pull_request:
-    branches: [ commonjs ]
+    branches: [ v7 ]
 
 jobs:
   build:
