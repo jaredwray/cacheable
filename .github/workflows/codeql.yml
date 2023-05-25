@@ -13,10 +13,10 @@ name: "codeql"
 
 on:
   push:
-    branches: [ commonjs ]
+    branches: [ v7 ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ commonjs ]
+    branches: [ v7 ]
   schedule:
     - cron: '38 18 * * 4'
 
