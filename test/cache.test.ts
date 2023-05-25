@@ -334,7 +334,7 @@ test('TTL is not passed to cache if strictTtl is false', async () => {
 	const cache = {
 		get: store.get.bind(store),
 		set(key: any, value: any, ttl: number) {
-			expect(typeof ttl === 'undefined').toBeTruthy();
+			expect(ttl === undefined).toBeTruthy();
 			return store.set(key, value);
 		},
 		delete: store.delete.bind(store),
