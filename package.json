@@ -39,8 +39,8 @@
 		"responselike": "^2.0.0"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.18.5",
-		"@babel/preset-env": "^7.18.2",
+		"@babel/core": "^7.21.8",
+		"@babel/preset-env": "^7.21.5",
 		"@keyv/sqlite": "^3.6.5",
 		"@types/create-test-server": "^3.0.1",
 		"@types/delay": "^3.1.0",
