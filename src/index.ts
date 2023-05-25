@@ -161,7 +161,7 @@ function createCacheableRequest(request: Function, cache: any) {
 			const get = async (options_: any) => {
 				await Promise.resolve();
 				const cacheEntry = options_.cache ? await cache.get(key) : undefined;
-				if (typeof cacheEntry === 'undefined') {
+				if (cacheEntry === undefined) {
 					makeRequest(options_);
 					return;
 				}
@@ -210,11 +210,11 @@ function cloneResponse(response: any) {
 }
 
 function urlObjectToRequestOptions(url: any) {
-	interface Option {
+	type Option = {
 		path: string;
 		pathname?: string;
 		search?: string;
-	}
+	};
 	const options: Option = { ...url };
 	options.path = `${url.pathname || '/'}${url.search || ''}`;
 	delete options.pathname;
