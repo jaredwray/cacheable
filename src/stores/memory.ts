@@ -17,7 +17,7 @@ type Pre = LRUCache.OptionsTTLLimit<string, any, unknown>;
 type Options = Omit<Pre, 'ttlAutopurge'> & Partial<Pick<Pre, 'ttlAutopurge'>>;
 export type MemoryConfig = {
   max?: number;
-  sizeCalculation?: (key: string, value: unknown) => number;
+  sizeCalculation?: (value: unknown, key: string) => number;
   shouldCloneBeforeSet?: boolean;
 } & Options &
   Config;
