@@ -1,3 +1,7 @@
+- 5.2.2 (2023-05-29)
+
+  - Fix sizeCalculation key,value swap - @Mojtaba-NA
+
 - 5.2.1 (2023-04-23)
 
   - Fix breaking changes in lru-cache
