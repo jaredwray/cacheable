@@ -20,8 +20,8 @@ describe('caching', () => {
   describe('get() and set()', () => {
     beforeEach(async () => {
       cache = await caching('memory');
-      key = faker.random.alpha(20);
-      value = faker.datatype.string();
+      key = faker.string.alpha(20);
+      value = faker.string.sample();
     });
 
     it('lets us set and get data in cache', async () => {
@@ -60,10 +60,10 @@ describe('caching', () => {
     const store = 'memory';
 
     beforeEach(async () => {
-      key = faker.datatype.string(20);
-      value = faker.datatype.string();
-      key2 = faker.datatype.string(20);
-      value2 = faker.datatype.string();
+      key = faker.string.sample(20);
+      value = faker.string.sample();
+      key2 = faker.string.sample(20);
+      value2 = faker.string.sample();
 
       cache = await caching(store, {
         ttl: defaultTtl,
@@ -104,8 +104,8 @@ describe('caching', () => {
   describe('del()', function () {
     beforeEach(async () => {
       cache = await caching('memory');
-      key = faker.datatype.string(20);
-      value = faker.datatype.string();
+      key = faker.string.sample(20);
+      value = faker.string.sample();
       await cache.set(key, value, defaultTtl);
     });
 
@@ -121,8 +121,8 @@ describe('caching', () => {
 
       beforeEach(async () => {
         cache = await caching('memory');
-        key2 = faker.datatype.string(20);
-        value2 = faker.datatype.string();
+        key2 = faker.string.sample(20);
+        value2 = faker.string.sample();
         await cache.store.mset(
           [
             [key, value],
@@ -152,11 +152,11 @@ describe('caching', () => {
 
     beforeEach(async () => {
       cache = await caching('memory');
-      key = faker.datatype.string(20);
-      value = faker.datatype.string();
+      key = faker.string.sample(20);
+      value = faker.string.sample();
       await cache.set(key, value);
-      key2 = faker.datatype.string(20);
-      value2 = faker.datatype.string();
+      key2 = faker.string.sample(20);
+      value2 = faker.string.sample();
       await cache.set(key2, value2);
     });
 
@@ -178,9 +178,8 @@ describe('caching', () => {
       savedKeys = (
         await Promise.all(
           Array.from({ length: keyCount }).map(async (_, i) => {
-            const key =
-              (i % 3 === 0 ? 'prefix' : '') + faker.datatype.string(20);
-            value = faker.datatype.string();
+            const key = (i % 3 === 0 ? 'prefix' : '') + faker.string.sample(20);
+            value = faker.string.sample();
             await cache.set(key, value);
             return key;
           }),

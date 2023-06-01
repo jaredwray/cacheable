@@ -38,6 +38,66 @@ describe('memory store', () => {
     });
   });
 
+  describe('sizeCalculation', function () {
+    let store: MemoryStore;
+
+    beforeEach(() => {
+      store = memoryStore({
+        ttl: 0,
+        maxSize: 10,
+        sizeCalculation: (v, k) => JSON.stringify(v).length + k.length,
+      });
+    });
+
+    it('calculatedSize and sizeCalcuation must be the same', async function () {
+      await store.set('foo', 'bar');
+
+      expect(store.calculatedSize).toEqual(
+        JSON.stringify('bar').length + 'foo'.length,
+      );
+    });
+
+    it('should cache new value and drop the old one(s) if maxSize is reached', async function () {
+      const key = 'foo';
+      const value = 'bar';
+      await store.set(key, value);
+
+      const cache = await store.get(key);
+      expect(cache).toEqual(value);
+
+      const newKey = 'foo2';
+      const newValue = 'bar2';
+
+      await store.set(newKey, newValue);
+
+      const first = await store.get(key);
+      const second = await store.get(newKey);
+
+      expect(first).toBeUndefined();
+      expect(second).toEqual(newValue);
+    });
+
+    it('should not cache something greater than maxSize', async function () {
+      const key = 'foo';
+      const value = 'bar'.repeat(5);
+      await store.set(key, value);
+
+      const cache = await store.get(key);
+      expect(cache).toBeUndefined();
+    });
+
+    it('should throw if invalid sizeCalculation function is passed', () => {
+      expect(() =>
+        memoryStore({
+          // @ts-expect-error testing if this actually throws
+          sizeCalculation: () => {
+            return 'invalid-type';
+          },
+        }),
+      ).toThrow();
+    });
+  });
+
   describe('keyCount', function () {
     let memoryCache: MemoryStore;
 
@@ -62,7 +122,7 @@ describe('memory store', () => {
     describe('when cache misses', () => {
       let key: string;
       beforeEach(() => {
-        key = faker.datatype.string();
+        key = faker.string.sample();
       });
 
       function getCachedObject() {
@@ -215,10 +275,10 @@ describe('memory store', () => {
         const defaultTtl = 100;
 
         beforeEach(async () => {
-          key = faker.datatype.string(20);
-          value = faker.datatype.string();
-          key2 = faker.datatype.string(20);
-          value2 = faker.datatype.string();
+          key = faker.string.sample(20);
+          value = faker.string.sample();
+          key2 = faker.string.sample(20);
+          value2 = faker.string.sample();
 
           cache = await caching('memory', {
             shouldCloneBeforeSet: false,
@@ -267,10 +327,10 @@ describe('memory store', () => {
     let value2: string;
 
     beforeEach(function () {
-      key1 = faker.datatype.string(20);
-      value1 = faker.datatype.string();
-      key2 = faker.datatype.string(20);
-      value2 = faker.datatype.string();
+      key1 = faker.string.sample(20);
+      value1 = faker.string.sample();
+      key2 = faker.string.sample(20);
+      value2 = faker.string.sample();
     });
 
     it('lets us dump data', () => {
@@ -295,10 +355,10 @@ describe('memory store', () => {
     let data: Parameters<typeof memoryCache.load>[number];
 
     beforeEach(function () {
-      key1 = faker.datatype.string(20);
-      value1 = faker.datatype.string();
-      key2 = faker.datatype.string(20);
-      value2 = faker.datatype.string();
+      key1 = faker.string.sample(20);
+      value1 = faker.string.sample();
+      key2 = faker.string.sample(20);
+      value2 = faker.string.sample();
       data = [
         [key1, { value: value1 }],
         [key2, { value: value2 }],
