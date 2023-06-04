@@ -26,6 +26,7 @@ export type MemoryStore = Store & {
   get size(): number;
   dump: LRU['dump'];
   load: LRU['load'];
+  calculatedSize: LRU['calculatedSize'];
 };
 export type MemoryCache = Cache<MemoryStore>;
 
@@ -76,6 +77,9 @@ export function memoryStore(args?: MemoryConfig): MemoryStore {
       const ttl = opt !== undefined ? opt : lruOpts.ttl;
 
       lruCache.set(key, value, { ttl });
+    },
+    get calculatedSize() {
+      return lruCache.calculatedSize;
     },
     /**
      * This method is not available in the caching modules.

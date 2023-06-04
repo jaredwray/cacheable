@@ -22,8 +22,8 @@ describe('multiCaching', () => {
   let key: string;
 
   async function multiMset() {
-    const keys = [faker.datatype.string(20), faker.datatype.string(20)];
-    const values = [faker.datatype.string(), faker.datatype.string()];
+    const keys = [faker.string.sample(20), faker.string.sample(20)];
+    const values = [faker.string.sample(), faker.string.sample()];
     await multiCache.mset(
       [
         [keys[0], values[0]],
@@ -48,7 +48,7 @@ describe('multiCaching', () => {
       ttl,
     });
 
-    key = faker.datatype.string(20);
+    key = faker.string.sample(20);
   });
 
   describe('get(), set(), del(), reset(), mget(), mset()', () => {
@@ -56,8 +56,8 @@ describe('multiCaching', () => {
 
     beforeEach(() => {
       multiCache = multiCaching([memoryCache, memoryCache2, memoryCache3]);
-      key = faker.datatype.string(20);
-      value = faker.datatype.string();
+      key = faker.string.sample(20);
+      value = faker.string.sample();
     });
 
     describe('set()', () => {
@@ -127,7 +127,7 @@ describe('multiCaching', () => {
       it('lets us get multiple undefined', async () => {
         const len = 4;
         await multiMset();
-        const args = faker.datatype.array(len).map((x) => '' + x);
+        const args = new Array(len).fill('').map(() => faker.string.sample());
         await expect(multiCache.mget(...args)).resolves.toStrictEqual(
           new Array(len).fill(undefined),
         );
