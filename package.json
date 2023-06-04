@@ -45,8 +45,8 @@
     "lru-cache": "~9.1.1"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.6.3",
-    "@commitlint/config-conventional": "17.6.3",
+    "@commitlint/cli": "17.6.5",
+    "@commitlint/config-conventional": "17.6.5",
     "@faker-js/faker": "8.0.2",
     "@release-it/conventional-changelog": "5.1.1",
     "@types/lodash.clonedeep": "4.5.7",
