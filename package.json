@@ -12,6 +12,7 @@
 	"scripts": {
 		"test": "xo && nyc ava",
 		"coverage": "nyc report --reporter=text-lcov | coveralls"
+		"build": "echo 'Nothing to build'"
 	},
 	"files": [
 		"src"
