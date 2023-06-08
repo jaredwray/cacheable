@@ -12,7 +12,8 @@
 	"scripts": {
 		"test": "xo && nyc ava",
 		"coverage": "nyc report --reporter=text-lcov | coveralls",
-		"build": "echo 'Nothing to build'"
+		"build": "echo 'Nothing to build'",
+		"clean": "rm -rf ./node_modules && rm -rf ./.nyc_output && rm -rf ./package-lock.json"
 	},
 	"files": [
 		"src"
