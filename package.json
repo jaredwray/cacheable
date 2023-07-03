@@ -53,7 +53,7 @@
     "@types/node": "20.3.3",
     "@typescript-eslint/eslint-plugin": "5.60.1",
     "@typescript-eslint/parser": "5.60.1",
-    "@vitest/coverage-v8": "0.32.2",
+    "@vitest/coverage-v8": "0.32.4",
     "dotenv-cli": "7.2.1",
     "eslint": "8.44.0",
     "eslint-config-prettier": "8.8.0",
@@ -63,7 +63,7 @@
     "prettier": "2.8.8",
     "release-it": "15.11.0",
     "typescript": "5.1.6",
-    "vitest": "0.32.2"
+    "vitest": "0.32.4"
   },
   "lint-staged": {
     "*.{ts,js,mts,mjs}": "eslint --cache --fix",
