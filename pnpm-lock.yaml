@@ -24,7 +24,7 @@ devDependencies:
     version: 8.0.2
   '@release-it/conventional-changelog':
     specifier: 6.0.0
-    version: 6.0.0(release-it@16.0.0)
+    version: 6.0.0(release-it@16.1.0)
   '@types/lodash.clonedeep':
     specifier: 4.5.7
     version: 4.5.7
@@ -62,8 +62,8 @@ devDependencies:
     specifier: 2.8.8
     version: 2.8.8
   release-it:
-    specifier: 16.0.0
-    version: 16.0.0
+    specifier: 16.1.0
+    version: 16.1.0
   typescript:
     specifier: 5.1.6
     version: 5.1.6
@@ -779,7 +779,7 @@ packages:
       config-chain: 1.1.13
     dev: true
 
-  /@release-it/conventional-changelog@6.0.0(release-it@16.0.0):
+  /@release-it/conventional-changelog@6.0.0(release-it@16.1.0):
     resolution: {integrity: sha512-OOiHhDncIFaNVfKJHpNQQkvM1yI5UPvyCtS74d6BDjvqWRu74J4cBGWh8b0owY4k3TTiR2BMKHn1eZ7hrxCnrA==}
     engines: {node: '>=14'}
     peerDependencies:
@@ -788,7 +788,7 @@ packages:
       concat-stream: 2.0.0
       conventional-changelog: 4.0.0
       conventional-recommended-bump: 7.0.1
-      release-it: 16.0.0
+      release-it: 16.1.0
       semver: 7.5.1
     dev: true
 
@@ -4410,8 +4410,8 @@ packages:
       rc: 1.2.8
     dev: true
 
-  /release-it@16.0.0:
-    resolution: {integrity: sha512-TRZ0gxHyA10666UypV8bMBT06+lj/RXZBqDnBPh4hmnTtZwPVxb7pK3QycV9XfxHKhaCh7XkJSmltG/OZ2+ksQ==}
+  /release-it@16.1.0:
+    resolution: {integrity: sha512-d2XpGtPAIUoN/v0nJkfdx9GyFkgTXRj+7HATaZRmS+a0IhnE/qRDQ4kMVuDh8UCX1CKV6SRiFdV/vEpKpzZzxA==}
     engines: {node: '>=16'}
     hasBin: true
     dependencies:
