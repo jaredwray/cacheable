@@ -48,7 +48,7 @@
     "@commitlint/cli": "17.6.6",
     "@commitlint/config-conventional": "17.6.6",
     "@faker-js/faker": "8.0.2",
-    "@release-it/conventional-changelog": "6.0.0",
+    "@release-it/conventional-changelog": "7.0.0",
     "@types/lodash.clonedeep": "4.5.7",
     "@types/node": "20.4.1",
     "@typescript-eslint/eslint-plugin": "5.61.0",
