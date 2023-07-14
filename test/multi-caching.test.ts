@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { faker } from '@faker-js/faker';
 
 import { sleep } from './utils';
@@ -84,6 +84,48 @@ describe('multiCaching', () => {
         await expect(memoryCache3.get(key)).resolves.toEqual(value);
         await expect(multiCache.wrap(key, async () => 'foo')).resolves.toEqual(
           value,
+        );
+      });
+
+      it('lets us set the ttl to be milliseconds', async () => {
+        const ttl = 2 * 1000;
+        await multiCache.wrap(key, async () => value, ttl);
+
+        await expect(memoryCache.get(key)).resolves.toEqual(value);
+        await expect(memoryCache2.get(key)).resolves.toEqual(value);
+        await expect(memoryCache3.get(key)).resolves.toEqual(value);
+        await expect(multiCache.wrap(key, async () => 'foo')).resolves.toEqual(
+          value,
+        );
+
+        await sleep(ttl);
+        await expect(memoryCache.get(key)).resolves.toBeUndefined();
+        await expect(memoryCache2.get(key)).resolves.toBeUndefined();
+        await expect(memoryCache3.get(key)).resolves.toBeUndefined();
+        await expect(multiCache.wrap(key, async () => 'foo')).resolves.toEqual(
+          'foo',
+        );
+      });
+
+      it('lets us set the ttl to be a function', async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const sec = faker.number.int({ min: 2, max: 4 });
+        value = faker.string.sample(sec * 2);
+        const fn = vi.fn((v: string) => (v.length / 2) * 1000);
+        await multiCache.wrap(key, async () => value, fn);
+        await expect(memoryCache.get(key)).resolves.toEqual(value);
+        await expect(memoryCache2.get(key)).resolves.toEqual(value);
+        await expect(memoryCache3.get(key)).resolves.toEqual(value);
+        await expect(multiCache.wrap(key, async () => 'foo')).resolves.toEqual(
+          value,
+        );
+        expect(fn).toHaveBeenCalledTimes(1);
+        await sleep(sec * 1000);
+        await expect(memoryCache.get(key)).resolves.toBeUndefined();
+        await expect(memoryCache2.get(key)).resolves.toBeUndefined();
+        await expect(memoryCache3.get(key)).resolves.toBeUndefined();
+        await expect(multiCache.wrap(key, async () => 'foo')).resolves.toEqual(
+          'foo',
         );
       });
     });

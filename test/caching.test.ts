@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, expect } from 'vitest';
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { faker } from '@faker-js/faker';
 
 import { caching, Cache, MemoryConfig, memoryStore } from '../src';
@@ -191,6 +191,38 @@ describe('caching', () => {
       expect(
         cache.store.keys().then((x) => x.sort((a, b) => a.localeCompare(b))),
       ).resolves.toStrictEqual(savedKeys));
+  });
+
+  describe('wrap()', () => {
+    beforeEach(async () => {
+      cache = await caching('memory');
+      key = faker.string.sample(20);
+      value = faker.string.sample();
+    });
+    it('lets us set the ttl to be milliseconds', async () => {
+      const ttl = 2 * 1000;
+      await cache.wrap(key, async () => value, ttl);
+      await expect(cache.get(key)).resolves.toEqual(value);
+
+      await sleep(ttl);
+
+      await expect(cache.get(key)).resolves.toBeUndefined();
+      await expect(cache.wrap(key, async () => 'foo')).resolves.toEqual('foo');
+    });
+
+    it('lets us set the ttl to be a function', async () => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const sec = faker.number.int({ min: 2, max: 4 });
+      value = faker.string.sample(sec * 2);
+      const fn = vi.fn((v: string) => (v.length / 2) * 1000);
+      await cache.wrap(key, async () => value, fn);
+      await expect(cache.get(key)).resolves.toEqual(value);
+      await expect(cache.wrap(key, async () => 'foo')).resolves.toEqual(value);
+
+      expect(fn).toHaveBeenCalledTimes(1);
+      await sleep(sec * 1000);
+      await expect(cache.get(key)).resolves.toBeUndefined();
+    });
   });
 
   describe('issues', () => {

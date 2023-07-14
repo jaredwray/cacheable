@@ -1,4 +1,4 @@
-import { Cache, Milliseconds } from './caching';
+import { Cache, Milliseconds, WrapTTL } from './caching';
 
 export type MultiCache = Omit<Cache, 'store'> &
   Pick<Cache['store'], 'mset' | 'mget' | 'mdel'>;
@@ -33,7 +33,7 @@ export function multiCaching<Caches extends Cache[]>(
     async wrap<T>(
       key: string,
       fn: () => Promise<T>,
-      ttl?: Milliseconds,
+      ttl?: WrapTTL<T>,
     ): Promise<T> {
       let value: T | undefined;
       let i = 0;
@@ -45,11 +45,13 @@ export function multiCaching<Caches extends Cache[]>(
       }
       if (value === undefined) {
         const result = await fn();
-        await set<T>(key, result, ttl);
+        const cacheTTL = typeof ttl === 'function' ? ttl(result) : ttl;
+        await set<T>(key, result, cacheTTL);
         return result;
       } else {
+        const cacheTTL = typeof ttl === 'function' ? ttl(value) : ttl;
         await Promise.all(
-          caches.slice(0, i).map((cache) => cache.set(key, value, ttl)),
+          caches.slice(0, i).map((cache) => cache.set(key, value, cacheTTL)),
         );
       }
       return value;
