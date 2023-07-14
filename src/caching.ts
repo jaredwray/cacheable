@@ -35,13 +35,13 @@ export type Stores<S extends Store, T extends object> =
   | Store
   | FactoryStore<S, T>;
 export type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
-
+export type WrapTTL<T> = Milliseconds | ((v: T) => Milliseconds);
 export type Cache<S extends Store = Store> = {
   set: (key: string, value: unknown, ttl?: Milliseconds) => Promise<void>;
   get: <T>(key: string) => Promise<T | undefined>;
   del: (key: string) => Promise<void>;
   reset: () => Promise<void>;
-  wrap<T>(key: string, fn: () => Promise<T>, ttl?: Milliseconds): Promise<T>;
+  wrap<T>(key: string, fn: () => Promise<T>, ttl?: WrapTTL<T>): Promise<T>;
   store: S;
 };
 
@@ -78,11 +78,12 @@ export async function caching<S extends Store, T extends object = never>(
      * const result = await cache.wrap('key', () => Promise.resolve(1));
      *
      */
-    wrap: async <T>(key: string, fn: () => Promise<T>, ttl?: Milliseconds) => {
+    wrap: async <T>(key: string, fn: () => Promise<T>, ttl?: WrapTTL<T>) => {
       const value = await store.get<T>(key);
       if (value === undefined) {
         const result = await fn();
-        await store.set<T>(key, result, ttl);
+        const cacheTTL = typeof ttl === 'function' ? ttl(result) : ttl;
+        await store.set<T>(key, result, cacheTTL);
         return result;
       }
       return value;
