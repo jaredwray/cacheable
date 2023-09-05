@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import stream, {PassThrough as PassThroughStream} from 'node:stream';
 import {IncomingMessage} from 'node:http';
 import normalizeUrl from 'normalize-url';
-import getStream from 'get-stream';
+import {getStreamAsBuffer} from 'get-stream';
 import CachePolicy from 'http-cache-semantics';
 import Response from 'responselike';
 import Keyv from 'keyv';
@@ -127,7 +127,7 @@ class CacheableRequest {
 					clonedResponse = cloneResponse(response);
 					(async () => {
 						try {
-							const bodyPromise = getStream.buffer(response);
+							const bodyPromise = getStreamAsBuffer(response);
 							await Promise.race([
 								requestErrorPromise,
 								new Promise(resolve => response.once('end', resolve)), // eslint-disable-line no-promise-executor-return

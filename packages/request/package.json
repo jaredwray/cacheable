@@ -37,7 +37,7 @@
 	},
 	"dependencies": {
 		"@types/http-cache-semantics": "^4.0.1",
-		"get-stream": "^6.0.1",
+		"get-stream": "^8.0.1",
 		"http-cache-semantics": "^4.1.1",
 		"keyv": "^4.5.3",
 		"mimic-response": "^4.0.0",
