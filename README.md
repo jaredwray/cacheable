@@ -1,5 +1,6 @@
 # node-cache-manager [![npm version](https://badge.fury.io/js/cache-manager.svg)](https://www.npmjs.com/package/cache-manager) [![codecov](https://codecov.io/gh/node-cache-manager/node-cache-manager/branch/master/graph/badge.svg?token=ZV3G5IFigq)](https://codecov.io/gh/node-cache-manager/node-cache-manager)
 
+
 # Flexible NodeJS cache module
 
 A cache module for nodejs that allows easy wrapping of functions in cache, tiered caches, and a consistent interface.

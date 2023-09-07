@@ -1,3 +1,5 @@
+name: tests
+
 on:
   push:
     branches: [ master ]
