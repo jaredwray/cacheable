@@ -270,7 +270,7 @@ describe('multiCaching', () => {
 
           await multi.wrap('refreshThreshold', async () => 0);
           await new Promise((resolve) => {
-            setTimeout(resolve, 200);
+            setTimeout(resolve, 300);
           });
           await multi.wrap('refreshThreshold', async () => 1);
           await new Promise((resolve) => {
