@@ -254,5 +254,35 @@ describe('multiCaching', () => {
       await expect(cache0.get(key)).resolves.toEqual(value);
       await expect(cache1.get(key)).resolves.toEqual(value);
     });
+
+    it('#533', () => {
+      expect(
+        (async () => {
+          const cache0 = await caching('memory', {
+            ttl: 5 * 1000,
+            refreshThreshold: 4 * 1000,
+          });
+          const cache1 = await caching('memory', {
+            ttl: 10 * 1000,
+            refreshThreshold: 8 * 1000,
+          });
+          const multi = multiCaching([cache0, cache1]);
+
+          await multi.wrap('refreshThreshold', async () => 0);
+          await new Promise((resolve) => {
+            setTimeout(resolve, 2 * 1000);
+          });
+          await multi.wrap('refreshThreshold', async () => 1);
+          await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+          });
+          await multi.wrap('refreshThreshold', async () => 2);
+          await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+          });
+          return multi.wrap('refreshThreshold', async () => 3);
+        })(),
+      ).resolves.toEqual(1);
+    });
   });
 });

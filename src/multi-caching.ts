@@ -24,6 +24,7 @@ export function multiCaching<Caches extends Cache[]>(
   ) => {
     await Promise.all(caches.map((cache) => cache.set(key, data, ttl)));
   };
+
   return {
     get,
     set,
@@ -50,9 +51,10 @@ export function multiCaching<Caches extends Cache[]>(
         return result;
       } else {
         const cacheTTL = typeof ttl === 'function' ? ttl(value) : ttl;
-        await Promise.all(
+        Promise.all(
           caches.slice(0, i).map((cache) => cache.set(key, value, cacheTTL)),
-        );
+        ).then();
+        caches[i].wrap(key, fn, ttl).then(); // call wrap for store for internal refreshThreshold logic, see: src/caching.ts caching.wrap
       }
       return value;
     },

@@ -228,5 +228,30 @@ describe('caching', () => {
   describe('issues', () => {
     it('#183', () =>
       expect(cache.wrap('constructor', async () => 0)).resolves.toEqual(0));
+
+    it('#533', () => {
+      expect(
+        (async () => {
+          cache = await caching('memory', {
+            ttl: 5 * 1000,
+            refreshThreshold: 4 * 1000,
+          });
+
+          await cache.wrap('refreshThreshold', async () => 0);
+          await new Promise((resolve) => {
+            setTimeout(resolve, 2 * 1000);
+          });
+          await cache.wrap('refreshThreshold', async () => 1);
+          await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+          });
+          await cache.wrap('refreshThreshold', async () => 2);
+          await new Promise((resolve) => {
+            setTimeout(resolve, 500);
+          });
+          return cache.wrap('refreshThreshold', async () => 3);
+        })(),
+      ).resolves.toEqual(1);
+    });
   });
 });
