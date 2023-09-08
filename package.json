@@ -10,14 +10,13 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "test": "vitest",
-    "release": "pnpm check && pnpm test -- --run && pnpm build && dotenv release-it",
-    "fix": "pnpm lint && pnpm fmt",
-    "check": "pnpm lint:check && pnpm fmt:check",
+    "release": "yarn check && yarn test -- --run && yarn build",
+    "fix": "yarn lint && yarn fmt",
+    "check": "yarn lint:check && yarn fmt:check",
     "lint": "eslint --cache --max-warnings 0 --fix '**/*.{ts,mts,js}'",
     "fmt": "prettier --write '**/*.{md,json,yml}'",
     "lint:check": "eslint --cache --max-warnings 0 '**/*.{ts,mts,js}'",
-    "fmt:check": "prettier --check '**/*.{md,json,yml}'",
-    "prepare": "husky install"
+    "fmt:check": "prettier --check '**/*.{md,json,yml}'"
   },
   "repository": {
     "type": "git",
@@ -32,6 +31,10 @@
   ],
   "authors": [
     {
+      "name": "Jared Wray",
+      "email": "me@jaredwray.com"
+    },
+    {
       "name": "Bryan Donovan"
     },
     {
@@ -45,10 +48,7 @@
     "lru-cache": "^10.0.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "17.7.1",
-    "@commitlint/config-conventional": "17.7.0",
     "@faker-js/faker": "8.0.2",
-    "@release-it/conventional-changelog": "7.0.1",
     "@types/lodash.clonedeep": "4.5.7",
     "@types/node": "20.5.9",
     "@typescript-eslint/eslint-plugin": "6.6.0",
@@ -58,10 +58,8 @@
     "eslint": "8.48.0",
     "eslint-config-prettier": "9.0.0",
     "eslint-plugin-prettier": "5.0.0",
-    "husky": "8.0.3",
     "lint-staged": "14.0.1",
     "prettier": "3.0.3",
-    "release-it": "16.1.5",
     "typescript": "5.2.2",
     "vitest": "0.34.4"
   },
