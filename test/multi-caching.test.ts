@@ -259,26 +259,26 @@ describe('multiCaching', () => {
       expect(
         (async () => {
           const cache0 = await caching('memory', {
-            ttl: 500,
-            refreshThreshold: 400,
+            ttl: 5 * 1000,
+            refreshThreshold: 4 * 1000,
           });
           const cache1 = await caching('memory', {
-            ttl: 1000,
-            refreshThreshold: 800,
+            ttl: 10 * 1000,
+            refreshThreshold: 8 * 1000,
           });
           const multi = multiCaching([cache0, cache1]);
 
           await multi.wrap('refreshThreshold', async () => 0);
           await new Promise((resolve) => {
-            setTimeout(resolve, 300);
+            setTimeout(resolve, 2 * 1000);
           });
           await multi.wrap('refreshThreshold', async () => 1);
           await new Promise((resolve) => {
-            setTimeout(resolve, 50);
+            setTimeout(resolve, 500);
           });
           await multi.wrap('refreshThreshold', async () => 2);
           await new Promise((resolve) => {
-            setTimeout(resolve, 50);
+            setTimeout(resolve, 500);
           });
           return multi.wrap('refreshThreshold', async () => 3);
         })(),

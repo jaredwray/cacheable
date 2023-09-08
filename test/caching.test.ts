@@ -233,21 +233,21 @@ describe('caching', () => {
       expect(
         (async () => {
           cache = await caching('memory', {
-            ttl: 1000,
-            refreshThreshold: 800,
+            ttl: 5 * 1000,
+            refreshThreshold: 4 * 1000,
           });
 
           await cache.wrap('refreshThreshold', async () => 0);
           await new Promise((resolve) => {
-            setTimeout(resolve, 200);
+            setTimeout(resolve, 2 * 1000);
           });
           await cache.wrap('refreshThreshold', async () => 1);
           await new Promise((resolve) => {
-            setTimeout(resolve, 50);
+            setTimeout(resolve, 500);
           });
           await cache.wrap('refreshThreshold', async () => 2);
           await new Promise((resolve) => {
-            setTimeout(resolve, 50);
+            setTimeout(resolve, 500);
           });
           return cache.wrap('refreshThreshold', async () => 3);
         })(),
