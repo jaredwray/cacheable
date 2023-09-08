@@ -119,15 +119,42 @@ await multiCache.mset(
 // This is done recursively until either:
 // - all have been found
 // - all caches has been fetched
-console.log(await multiCache.mget('key', 'key2');
+console.log(await multiCache.mget('key', 'key2'));
 // >> ['bar', 'bar2']
 
 // Delete keys with mdel() passing arguments...
 await multiCache.mdel('foo', 'foo2');
-
 ```
 
 See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) for more information.
+
+### Refresh cache keys in background
+
+Both the `caching` and `multicaching` modules support a mechanism to refresh expiring cache keys in background when using the `wrap` function.  
+This is done by adding a `refreshThreshold` attribute while creating the caching store.
+
+If `refreshThreshold` is set and after retrieving a value from cache the TTL will be checked.  
+If the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously,  
+following same rules as standard fetching. In the meantime, the system will return the old value until expiration.
+
+NOTES:
+
+* In case of multicaching, the store that will be checked for refresh is the one where the key will be found first (highest priority).
+* If the threshold is low and the worker function is slow, the key may expire and you may encounter a racing condition with updating values.
+* The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
+
+For example, pass the refreshThreshold to `caching` like this:
+
+```typescript
+const memoryCache = await caching('memory', {
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+  refreshThreshold: 3 * 1000 /*milliseconds*/,
+});
+```
+
+When a value will be retrieved from Redis with a TTL minor than 3sec, the value will be updated in the background.
+```
 
 ## Store Engines
 
