@@ -155,7 +155,6 @@ const memoryCache = await caching('memory', {
 ```
 
 When a value will be retrieved from Redis with a TTL minor than 3sec, the value will be updated in the background.
-```
 
 ## Store Engines
 
