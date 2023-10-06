@@ -50,10 +50,10 @@
   "devDependencies": {
     "@faker-js/faker": "8.0.2",
     "@types/lodash.clonedeep": "4.5.7",
-    "@types/node": "20.5.9",
+    "@types/node": "20.8.2",
     "@typescript-eslint/eslint-plugin": "6.6.0",
     "@typescript-eslint/parser": "6.6.0",
-    "@vitest/coverage-v8": "0.34.4",
+    "@vitest/coverage-v8": "0.34.6",
     "dotenv-cli": "7.3.0",
     "eslint": "8.48.0",
     "eslint-config-prettier": "9.0.0",
@@ -61,7 +61,7 @@
     "lint-staged": "14.0.1",
     "prettier": "3.0.3",
     "typescript": "5.2.2",
-    "vitest": "0.34.4"
+    "vitest": "0.34.6"
   },
   "lint-staged": {
     "*.{ts,js,mts,mjs}": "eslint --cache --fix",
