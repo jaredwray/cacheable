@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
-    "test": "vitest",
+    "test": "vitest run --coverage",
     "release": "yarn check && yarn test -- --run && yarn build",
     "fix": "yarn lint && yarn fmt",
     "check": "yarn lint:check && yarn fmt:check",
