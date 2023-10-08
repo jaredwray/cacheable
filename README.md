@@ -111,7 +111,7 @@ await multiCache.mset(
     ['foo', 'bar'],
     ['foo2', 'bar2'],
   ],
-  ttl,
+  ttl
 );
 
 // mget() fetches from highest priority cache.
