@@ -84,6 +84,32 @@ You can use your own custom store by creating one with the same API as the built
 - [Example Custom Store redis](https://github.com/node-cache-manager/node-cache-manager-redis-yet)
 - [Example Custom Store ioredis](https://github.com/node-cache-manager/node-cache-manager-ioredis-yet)
 
+#### Create single cache store synchronously
+
+As `caching()` requires async functionality to resolve some stores, this is not well-suited to use for default function/constructor parameters etc.
+
+If you need to create a cache store synchronously, you can instead use `createCache()`:
+
+```typescript
+import { createCache, memoryStore } from 'node-cache-manager';
+
+// Create memory cache synchronously
+const memoryCache = createCache(memoryStore(), {
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+});
+
+// Default parameter in function
+function myService(cache = createCache(memoryStore())) {}
+
+// Default parameter in class constructor
+const DEFAULT_CACHE = createCache(memoryStore(), { ttl: 60 * 1000 });
+// ...
+class MyService {
+  constructor(private cache = DEFAULT_CACHE) {}
+}
+```
+
 ### Multi-Store
 
 ```typescript
