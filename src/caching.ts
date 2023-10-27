@@ -1,3 +1,4 @@
+import { coalesceAsync } from 'promise-coalesce';
 import { MemoryCache, MemoryConfig, memoryStore } from './stores';
 
 export type Config = {
@@ -80,20 +81,22 @@ export async function caching<S extends Store, T extends object = never>(
      *
      */
     wrap: async <T>(key: string, fn: () => Promise<T>, ttl?: WrapTTL<T>) => {
-      const value = await store.get<T>(key);
-      if (value === undefined) {
-        const result = await fn();
-        const cacheTTL = typeof ttl === 'function' ? ttl(result) : ttl;
-        await store.set<T>(key, result, cacheTTL);
-        return result;
-      } else if (args?.refreshThreshold) {
-        const cacheTTL = typeof ttl === 'function' ? ttl(value) : ttl;
-        const remainingTtl = await store.ttl(key);
-        if (remainingTtl !== -1 && remainingTtl < args.refreshThreshold) {
-          fn().then((result) => store.set<T>(key, result, cacheTTL));
+      return coalesceAsync(key, async () => {
+        const value = await store.get<T>(key);
+        if (value === undefined) {
+          const result = await fn();
+          const cacheTTL = typeof ttl === 'function' ? ttl(result) : ttl;
+          await store.set<T>(key, result, cacheTTL);
+          return result;
+        } else if (args?.refreshThreshold) {
+          const cacheTTL = typeof ttl === 'function' ? ttl(value) : ttl;
+          const remainingTtl = await store.ttl(key);
+          if (remainingTtl !== -1 && remainingTtl < args.refreshThreshold) {
+            fn().then((result) => store.set<T>(key, result, cacheTTL));
+          }
         }
-      }
-      return value;
+        return value;
+      });
     },
     store: store as S,
     del: (key: string) => store.del(key),

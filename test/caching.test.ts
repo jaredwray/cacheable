@@ -1,14 +1,34 @@
-import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { faker } from '@faker-js/faker';
+import promiseCoalesce from 'promise-coalesce';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { caching, Cache, MemoryConfig, memoryStore } from '../src';
+import { Cache, MemoryConfig, caching, memoryStore } from '../src';
 import { sleep } from './utils';
+
+// Allow the module to be mocked so we can assert
+// the old and new behavior for issue #417
+vi.mock('promise-coalesce', async () => {
+  const actualModule =
+    await vi.importActual<typeof promiseCoalesce>('promise-coalesce');
+
+  return {
+    ...actualModule,
+    coalesceAsync: vi
+      .fn()
+      .mockImplementation((key: string, fn: () => Promise<unknown>) => {
+        if (key.startsWith('mock_no_coalesce')) {
+          return Promise.resolve(fn());
+        }
+        return actualModule.coalesceAsync(key, fn);
+      }),
+  };
+});
 
 describe('caching', () => {
   let cache: Cache;
   let key: string;
-  const defaultTtl = 100;
   let value: string;
+  const defaultTtl = 100;
 
   describe('constructor', () => {
     it('should from store', async () => {
@@ -199,6 +219,7 @@ describe('caching', () => {
       key = faker.string.sample(20);
       value = faker.string.sample();
     });
+
     it('lets us set the ttl to be milliseconds', async () => {
       const ttl = 2 * 1000;
       await cache.wrap(key, async () => value, ttl);
@@ -223,14 +244,127 @@ describe('caching', () => {
       await sleep(sec * 1000);
       await expect(cache.get(key)).resolves.toBeUndefined();
     });
+
+    it('calls fn to fetch value on cache miss', async () => {
+      const fn = vi.fn().mockResolvedValue(value);
+      const ttl = 2 * 1000;
+
+      // Confirm the cache is empty.
+      await expect(cache.get(key)).resolves.toBeUndefined();
+
+      // The first request will populate the cache.
+      fn.mockClear(); // reset count
+      await expect(cache.wrap(key, fn, ttl)).resolves.toBe(value);
+      await expect(cache.get(key)).resolves.toBe(value);
+      expect(fn).toHaveBeenCalledTimes(1);
+
+      // The second request will return the cached value.
+      fn.mockClear(); // reset count
+      await expect(cache.wrap(key, fn, ttl)).resolves.toBe(value);
+      await expect(cache.get(key)).resolves.toBe(value);
+      expect(fn).toHaveBeenCalledTimes(0);
+    });
+
+    it('does not call fn to fetch value on cache hit', async () => {
+      const fn = vi.fn().mockResolvedValue(value);
+      const ttl = 2 * 1000;
+
+      // Confirm the cache is contains the value.
+      await cache.set(key, value, ttl);
+      await expect(cache.get(key)).resolves.toBe(value);
+
+      // Will find the cached value and not call the generator function.
+      fn.mockClear(); // reset count
+      await expect(cache.wrap(key, fn, ttl)).resolves.toBe(value);
+      await expect(cache.get(key)).resolves.toBe(value);
+      expect(fn).toHaveBeenCalledTimes(0);
+    });
+
+    it('calls fn once to fetch value on cache miss when invoked multiple times', async () => {
+      const fn = vi.fn().mockResolvedValue(value);
+      const ttl = 2 * 1000;
+
+      // Confirm the cache is empty.
+      await expect(cache.get(key)).resolves.toBeUndefined();
+
+      // Simulate several concurrent requests for the same value.
+      const results = await Promise.allSettled([
+        cache.wrap(key, fn, ttl), // 1
+        cache.wrap(key, fn, ttl), // 2
+        cache.wrap(key, fn, ttl), // 3
+        cache.wrap(key, fn, ttl), // 4
+        cache.wrap(key, fn, ttl), // 5
+        cache.wrap(key, fn, ttl), // 6
+        cache.wrap(key, fn, ttl), // 7
+        cache.wrap(key, fn, ttl), // 8
+        cache.wrap(key, fn, ttl), // 9
+        cache.wrap(key, fn, ttl), // 10
+      ]);
+
+      // Assert that the function was called exactly once.
+      expect(fn).toHaveBeenCalledTimes(1);
+
+      // Assert that all requests resolved to the same value.
+      results.forEach((result) => {
+        expect(result).toMatchObject({
+          status: 'fulfilled',
+          value,
+        });
+      });
+    });
   });
 
   describe('issues', () => {
-    it('#183', () =>
-      expect(cache.wrap('constructor', async () => 0)).resolves.toEqual(0));
+    beforeEach(async () => {
+      cache = await caching('memory');
+      key = faker.string.sample(20);
+      value = faker.string.sample();
+    });
 
-    it('#533', () => {
-      expect(
+    it('#183', async () => {
+      await expect(cache.wrap('constructor', async () => 0)).resolves.toEqual(
+        0,
+      );
+    });
+
+    it('#417', async () => {
+      // This test emulates the undesired behavior reported in issue 417.
+      // See the wrap() tests for the resolution.
+      key = 'mock_no_coalesce';
+      const fn = vi.fn().mockResolvedValue(value);
+      const ttl = 2 * 1000;
+
+      // Confirm the cache is empty.
+      await expect(cache.get(key)).resolves.toBeUndefined();
+
+      // Simulate several concurrent requests for the same value.
+      const results = await Promise.allSettled([
+        cache.wrap(key, fn, ttl), // 1
+        cache.wrap(key, fn, ttl), // 2
+        cache.wrap(key, fn, ttl), // 3
+        cache.wrap(key, fn, ttl), // 4
+        cache.wrap(key, fn, ttl), // 5
+        cache.wrap(key, fn, ttl), // 6
+        cache.wrap(key, fn, ttl), // 7
+        cache.wrap(key, fn, ttl), // 8
+        cache.wrap(key, fn, ttl), // 9
+        cache.wrap(key, fn, ttl), // 10
+      ]);
+
+      // Assert that the function was called multiple times (bad).
+      expect(fn).toHaveBeenCalledTimes(10);
+
+      // Assert that all requests resolved to the same value.
+      results.forEach((result) => {
+        expect(result).toMatchObject({
+          status: 'fulfilled',
+          value,
+        });
+      });
+    });
+
+    it('#533', async () => {
+      await expect(
         (async () => {
           cache = await caching('memory', {
             ttl: 5 * 1000,

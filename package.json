@@ -45,7 +45,8 @@
   "license": "MIT",
   "dependencies": {
     "lodash.clonedeep": "^4.5.0",
-    "lru-cache": "^10.0.1"
+    "lru-cache": "^10.0.1",
+    "promise-coalesce": "^1.1.1"
   },
   "devDependencies": {
     "@faker-js/faker": "8.1.0",
