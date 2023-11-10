@@ -1,4 +1,5 @@
 import { coalesceAsync } from 'promise-coalesce';
+import { RedisClusterType } from 'redis';
 import { MemoryCache, MemoryConfig, memoryStore } from './stores';
 
 export type Config = {
@@ -23,6 +24,12 @@ export type Store = {
   mdel(...args: string[]): Promise<void>;
   keys(pattern?: string): Promise<string[]>;
   ttl(key: string): Promise<number>;
+
+  // Used by REDIS //
+  sMembers?(key: string): Promise<string[]>;
+  sAdd?(key: string, members: string[] | string): Promise<number>;
+  sRemove?(key: string, members: string[] | string): Promise<number>;
+  client?: RedisClusterType;
 };
 
 export type StoreConfig = Config;
