@@ -45,7 +45,7 @@
   "license": "MIT",
   "dependencies": {
     "lodash.clonedeep": "^4.5.0",
-    "lru-cache": "^10.0.1",
+    "lru-cache": "^10.0.2",
     "promise-coalesce": "^1.1.1"
   },
   "devDependencies": {
