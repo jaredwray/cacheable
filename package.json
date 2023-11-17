@@ -5,22 +5,30 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
-    "test": "vitest run --coverage",
-    "release": "npm run check && npm test -- --run && npm build",
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "test": "rimraf coverage && vitest run --coverage",
+    "release": "npm run check && npm test -- --run && npm run build && semantic-release",
     "fix": "npm run lint && npm run fmt",
     "check": "npm run lint:check && npm run fmt:check",
     "lint": "eslint --cache --max-warnings 0 --fix '**/*.{ts,mts,js}'",
     "fmt": "prettier --write '**/*.{md,json,yml}'",
     "lint:check": "eslint --cache --max-warnings 0 '**/*.{ts,mts,js}'",
-    "fmt:check": "prettier --check '**/*.{md,json,yml}'"
+    "fmt:check": "prettier --check '**/*.{md,json,yml}'",
+    "release:dry-run": "semantic-release --dry-run --branches $(git branch) --repository-url $(git remote get-url origin) --ci false"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/node-cache-manager/node-cache-manager.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "cache",
@@ -50,6 +58,9 @@
   },
   "devDependencies": {
     "@faker-js/faker": "8.3.1",
+    "@semantic-release/changelog": "6.0.3",
+    "@semantic-release/git": "10.0.1",
+    "@semantic-release/npm": "11.0.1",
     "@types/lodash.clonedeep": "4.5.9",
     "@types/node": "20.9.0",
     "@typescript-eslint/eslint-plugin": "6.11.0",
@@ -61,11 +72,46 @@
     "eslint-plugin-prettier": "5.0.1",
     "lint-staged": "15.1.0",
     "prettier": "3.1.0",
+    "rimraf": "5.0.5",
+    "semantic-release": "22.0.8",
     "typescript": "5.2.2",
     "vitest": "0.34.6"
   },
   "lint-staged": {
     "*.{ts,js,mts,mjs}": "eslint --cache --fix",
     "*.{md,json,yml}": "prettier --write"
+  },
+  "release": {
+    "branches": [
+      "master"
+    ],
+    "tagFormat": "v${version}",
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      "@semantic-release/npm",
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "CHANGELOG.md",
+            "package.json",
+            "package-lock.json"
+          ]
+        }
+      ],
+      [
+        "@semantic-release/github",
+        {
+          "assets": [
+            {
+              "path": "dist/*",
+              "label": "Distribution"
+            }
+          ]
+        }
+      ]
+    ]
   }
 }
