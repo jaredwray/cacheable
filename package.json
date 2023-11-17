@@ -10,9 +10,9 @@
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "test": "vitest run --coverage",
-    "release": "yarn check && yarn test -- --run && yarn build",
-    "fix": "yarn lint && yarn fmt",
-    "check": "yarn lint:check && yarn fmt:check",
+    "release": "npm run check && npm test -- --run && npm build",
+    "fix": "npm run lint && npm run fmt",
+    "check": "npm run lint:check && npm run fmt:check",
     "lint": "eslint --cache --max-warnings 0 --fix '**/*.{ts,mts,js}'",
     "fmt": "prettier --write '**/*.{md,json,yml}'",
     "lint:check": "eslint --cache --max-warnings 0 '**/*.{ts,mts,js}'",
