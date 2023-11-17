@@ -1,0 +1,33 @@
+# dependencies
+node_modules
+
+# dev tools
+.idea
+*.iml
+out
+.vscode
+.eslintcache
+yarn.lock
+.github
+.editorconfig
+.eslintignore
+.eslintrc.js
+.gitignore
+.nvmrc
+.prettierignore
+.prettierrc
+CODE_OF_CONDUCT.md
+codecov.yml
+CONTRIBUTING.md
+tsconfig.build.json
+tsconfig.json
+vite.config.ts
+
+# tests
+coverage
+.nyc_output
+
+# source files
+src
+examples
+test
