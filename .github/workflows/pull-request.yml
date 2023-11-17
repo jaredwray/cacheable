@@ -1,11 +1,8 @@
-name: tests
+name: pull-request
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
     branches: [ master ]
-
 
 jobs:
   test:
@@ -27,6 +24,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Check and Lint
+        run: npm run check
 
       - name: Test
         run: npm run test
