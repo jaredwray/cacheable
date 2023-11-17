@@ -1,24 +1,8 @@
 name: Release and Publish
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_type:
-        type: 'choice'
-        description: 'Release type'
-        required: true
-        default: 'patch'
-        options:
-          - 'major'
-          - 'minor'
-          - 'patch'
-      version_message:
-        description: 'Upgrade reasons (optional)'
-        required: false
-
-
-permissions:
-  contents: write
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -42,16 +26,7 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Bump version
-        run: |
-          release_type=${{ github.event.inputs.release_type }}
-          commit_message=${{ github.event.inputs.version_message }}
-          [ -n "$commit_message" ] && npm version $release_type -m "$commit_message" || npm version $release_type
-
       - name: Publish to NPM
         run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
-
-      - name: Push commit and tags to the repo
-        run: git push --follow-tags
