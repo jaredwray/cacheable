@@ -46,7 +46,7 @@ jobs:
         run: |
           release_type=${{ github.event.inputs.release_type }}
           commit_message=${{ github.event.inputs.version_message }}
-          npm version $release_type ${commit_message && `-m "${commit_message}"`}
+          [ -n "$commit_message" ] && npm version $release_type -m "$commit_message" || npm version $release_type
 
       - name: Publish to NPM
         run: npm publish
