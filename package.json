@@ -8,8 +8,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
-    "test": "vitest run --coverage",
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "test": "rimraf coverage && vitest run --coverage",
     "release": "yarn check && yarn test -- --run && yarn build",
     "fix": "yarn lint && yarn fmt",
     "check": "yarn lint:check && yarn fmt:check",
@@ -61,6 +61,7 @@
     "eslint-plugin-prettier": "5.0.1",
     "lint-staged": "15.1.0",
     "prettier": "3.1.0",
+    "rimraf": "5.0.5",
     "typescript": "5.2.2",
     "vitest": "0.34.6"
   },
