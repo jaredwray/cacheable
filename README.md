@@ -1,4 +1,5 @@
-# node-cache-manager 
+# node-cache-manager
+
 [![codecov](https://codecov.io/gh/node-cache-manager/node-cache-manager/branch/master/graph/badge.svg?token=ZV3G5IFigq)](https://codecov.io/gh/node-cache-manager/node-cache-manager)
 [![tests](https://github.com/node-cache-manager/node-cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/node-cache-manager/node-cache-manager/actions/workflows/test.yml)
 [![license](https://img.shields.io/github/license/node-cache-manager/node-cache-manager)](https://github.com/node-cache-manager/node-cache-manager/blob/master/LICENSE)
@@ -111,7 +112,7 @@ await multiCache.mset(
     ['foo', 'bar'],
     ['foo2', 'bar2'],
   ],
-  ttl
+  ttl,
 );
 
 // mget() fetches from highest priority cache.
@@ -140,10 +141,10 @@ following same rules as standard fetching. In the meantime, the system will retu
 
 NOTES:
 
-* In case of multicaching, the store that will be checked for refresh is the one where the key will be found first (highest priority).
-* If the threshold is low and the worker function is slow, the key may expire and you may encounter a racing condition with updating values.
-* The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
-* If no `ttl` is set for the key, the refresh mechanism will not be triggered. For redis, the `ttl` is set to -1 by default.
+- In case of multicaching, the store that will be checked for refresh is the one where the key will be found first (highest priority).
+- If the threshold is low and the worker function is slow, the key may expire and you may encounter a racing condition with updating values.
+- The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
+- If no `ttl` is set for the key, the refresh mechanism will not be triggered. For redis, the `ttl` is set to -1 by default.
 
 For example, pass the refreshThreshold to `caching` like this:
 
