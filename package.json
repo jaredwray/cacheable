@@ -11,6 +11,7 @@
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
     "test": "vitest run --coverage",
     "release": "yarn check && yarn test -- --run && yarn build",
+    "prepare": "yarn build",
     "fix": "yarn lint && yarn fmt",
     "check": "yarn lint:check && yarn fmt:check",
     "lint": "eslint --cache --max-warnings 0 --fix '**/*.{ts,mts,js}'",
