@@ -388,4 +388,40 @@ describe('caching', () => {
       ).resolves.toEqual(1);
     });
   });
+
+  it('only calls fn once when refreshing the cache', async () => {
+    const key = faker.string.alpha(20);
+    let callCount = 0;
+    cache = await caching('memory', {
+      ttl: 5 * 1000,
+      refreshThreshold: 4 * 1000,
+    });
+    const resolveAfter =
+      (timeout: number, value: number) => (): Promise<number> =>
+        new Promise((resolve) =>
+          setTimeout(() => {
+            callCount++;
+            resolve(value);
+          }, timeout),
+        );
+    const delay = (timeout: number) =>
+      new Promise((resolve) => setTimeout(resolve, timeout));
+
+    let value = await cache.wrap(key, resolveAfter(100, 1));
+    expect(value).toEqual(1);
+    expect(callCount).toEqual(1);
+
+    await delay(1100);
+    for (let i = 0; i < 6; i++) {
+      // Only the first fn should be called - returning 2
+      value = await cache.wrap(key, resolveAfter(2000, 2 + i));
+      expect(value).toEqual(1);
+      expect(callCount).toEqual(1);
+    }
+
+    await delay(2100);
+    value = await cache.wrap(key, resolveAfter(2000, 8));
+    expect(value).toEqual(2);
+    expect(callCount).toEqual(2);
+  });
 });

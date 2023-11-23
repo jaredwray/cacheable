@@ -92,7 +92,9 @@ export async function caching<S extends Store, T extends object = never>(
           const cacheTTL = typeof ttl === 'function' ? ttl(value) : ttl;
           const remainingTtl = await store.ttl(key);
           if (remainingTtl !== -1 && remainingTtl < args.refreshThreshold) {
-            fn().then((result) => store.set<T>(key, result, cacheTTL));
+            coalesceAsync(`+++${key}`, fn).then((result) =>
+              store.set<T>(key, result, cacheTTL),
+            );
           }
         }
         return value;
