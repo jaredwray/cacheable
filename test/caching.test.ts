@@ -2,7 +2,7 @@ import { faker } from '@faker-js/faker';
 import promiseCoalesce from 'promise-coalesce';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Cache, MemoryConfig, caching, memoryStore } from '../src';
+import { caching, Cache, MemoryConfig, memoryStore, createCache } from '../src';
 import { sleep } from './utils';
 
 // Allow the module to be mocked so we can assert
@@ -423,5 +423,17 @@ describe('caching', () => {
     value = await cache.wrap(key, resolveAfter(2000, 8));
     expect(value).toEqual(2);
     expect(callCount).toEqual(2);
+  });
+});
+
+describe('createCache', () => {
+  it('should create cache instance by store', async () => {
+    const store = memoryStore();
+    const cache1 = await caching(store);
+    const cache2 = createCache(store);
+    expect(cache1.store).toBe(cache2.store);
+    Object.entries(cache1).forEach(([key, value]) => {
+      expect(cache2[key as keyof Cache].toString()).toBe(value.toString());
+    });
   });
 });
