@@ -1,5 +1,5 @@
 import { coalesceAsync } from 'promise-coalesce';
-import { MemoryCache, MemoryConfig, memoryStore } from './stores';
+import { MemoryCache, MemoryConfig, MemoryStore, memoryStore } from './stores';
 
 export type Config = {
   ttl?: Milliseconds;
@@ -63,13 +63,34 @@ export async function caching<S extends Store, T extends object = never>(
 export async function caching<S extends Store, T extends object = never>(
   factory: Stores<S, T>,
   args?: CachingConfig<T>,
-): Promise<Cache<S> | MemoryCache> {
-  let store: Store;
-  if (factory === 'memory') store = memoryStore(args as MemoryConfig);
-  else if (typeof factory === 'function')
-    store = await factory(args as FactoryConfig<T>);
-  else store = factory;
+): Promise<Cache<S> | Cache<Store> | MemoryCache> {
+  if (factory === 'memory') {
+    const store = memoryStore(args as MemoryConfig);
+    return createCache(store, args as MemoryConfig);
+  }
+  if (typeof factory === 'function') {
+    const store = await factory(args as FactoryConfig<T>);
+    return createCache(store, args);
+  }
 
+  const store = factory;
+  return createCache(store, args);
+}
+
+export function createCache(
+  store: MemoryStore,
+  args?: MemoryConfig,
+): MemoryCache;
+
+export function createCache(store: Store, args?: Config): Cache<Store>;
+
+/**
+ * Create cache instance by store (non-async).
+ */
+export function createCache<S extends Store, C extends Config>(
+  store: S,
+  args?: C,
+): Cache<S> {
   return {
     /**
      * Wraps a function in cache. I.e., the first time the function is run,
