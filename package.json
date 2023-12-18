@@ -5,10 +5,12 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist/**/*.js",
+    "dist/**/*.d.ts"
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "clean": "rimraf ./dist ./coverage ./node_modules ./package-lock.json ./yarn.lock",
     "test": "vitest run --coverage",
     "release": "yarn check && yarn test -- --run && yarn build",
     "prepare": "yarn build",
@@ -62,6 +64,7 @@
     "eslint-plugin-prettier": "5.0.1",
     "lint-staged": "15.1.0",
     "prettier": "3.1.0",
+    "rimraf": "^5.0.5",
     "typescript": "5.2.2",
     "vitest": "0.34.6"
   },
