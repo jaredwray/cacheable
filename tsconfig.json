@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "lib": ["esnext"],
+    "lib": ["ES2020"],
     "module": "commonjs",
-    "target": "ES2015",
+    "target": "ES2020",
     "strict": true,
     "esModuleInterop": true,
     "sourceMap": true,
