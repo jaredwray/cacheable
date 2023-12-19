@@ -9,7 +9,7 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
     "clean": "rimraf ./dist ./coverage ./node_modules ./package-lock.json ./yarn.lock",
     "test": "vitest run --coverage",
     "release": "yarn check && yarn test -- --run && yarn build",
@@ -49,7 +49,7 @@
   "dependencies": {
     "lodash.clonedeep": "^4.5.0",
     "lru-cache": "^10.0.2",
-    "promise-coalesce": "^1.1.1"
+    "promise-coalesce": "^1.1.2"
   },
   "devDependencies": {
     "@faker-js/faker": "8.3.1",
