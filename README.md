@@ -158,7 +158,7 @@ See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) f
 ### Refresh cache keys in background
 
 Both the `caching` and `multicaching` modules support a mechanism to refresh expiring cache keys in background when using the `wrap` function.  
-This is done by adding a `refreshThreshold` attribute while creating the caching store.
+This is done by adding a `refreshThreshold` attribute while creating the caching store or passing it to the `wrap` function.
 
 If `refreshThreshold` is set and after retrieving a value from cache the TTL will be checked.  
 If the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously,  
