@@ -111,7 +111,7 @@ describe('multiCaching', () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const sec = faker.number.int({ min: 2, max: 4 });
         value = faker.string.sample(sec * 2);
-        const fn = vi.fn((v: string) => (v.length / 2) * 1000);
+        const fn = vi.fn((v: string) => 1000);
         await multiCache.wrap(key, async () => value, fn);
         await expect(memoryCache.get(key)).resolves.toEqual(value);
         await expect(memoryCache2.get(key)).resolves.toEqual(value);
@@ -120,7 +120,7 @@ describe('multiCaching', () => {
           value,
         );
         expect(fn).toHaveBeenCalledTimes(1);
-        await sleep(sec * 1000);
+        await sleep(2000);
         await expect(memoryCache.get(key)).resolves.toBeUndefined();
         await expect(memoryCache2.get(key)).resolves.toBeUndefined();
         await expect(memoryCache3.get(key)).resolves.toBeUndefined();
