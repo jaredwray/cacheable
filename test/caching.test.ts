@@ -372,17 +372,11 @@ describe('caching', () => {
           });
 
           await cache.wrap('refreshThreshold', async () => 0);
-          await new Promise((resolve) => {
-            setTimeout(resolve, 2 * 1000);
-          });
+          await sleep(2 * 1000);
           await cache.wrap('refreshThreshold', async () => 1);
-          await new Promise((resolve) => {
-            setTimeout(resolve, 500);
-          });
+          await sleep(500);
           await cache.wrap('refreshThreshold', async () => 2);
-          await new Promise((resolve) => {
-            setTimeout(resolve, 500);
-          });
+          await sleep(500);
           return cache.wrap('refreshThreshold', async () => 3);
         })(),
       ).resolves.toEqual(1);
@@ -404,14 +398,12 @@ describe('caching', () => {
             resolve(value);
           }, timeout),
         );
-    const delay = (timeout: number) =>
-      new Promise((resolve) => setTimeout(resolve, timeout));
 
     let value = await cache.wrap(key, resolveAfter(100, 1));
     expect(value).toEqual(1);
     expect(callCount).toEqual(1);
 
-    await delay(1100);
+    await sleep(1100);
     for (let i = 0; i < 6; i++) {
       // Only the first fn should be called - returning 2
       value = await cache.wrap(key, resolveAfter(2000, 2 + i));
@@ -419,7 +411,7 @@ describe('caching', () => {
       expect(callCount).toEqual(1);
     }
 
-    await delay(2100);
+    await sleep(2100);
     value = await cache.wrap(key, resolveAfter(2000, 8));
     expect(value).toEqual(2);
     expect(callCount).toEqual(2);
