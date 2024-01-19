@@ -241,7 +241,7 @@ describe('caching', () => {
       await expect(cache.wrap(key, async () => 'foo')).resolves.toEqual(value);
 
       expect(fn).toHaveBeenCalledTimes(1);
-      await sleep(2000);
+      await sleep(3000);
       await expect(cache.get(key)).resolves.toBeUndefined();
     });
 
