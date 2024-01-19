@@ -424,6 +424,33 @@ describe('caching', () => {
     expect(value).toEqual(2);
     expect(callCount).toEqual(2);
   });
+
+  it('should allow dynamic refreshThreshold on wrap function', async () => {
+    cache = await caching('memory', {
+      ttl: 2 * 1000,
+      refreshThreshold: 1 * 1000,
+    });
+
+    // Without override params
+
+    // 1st call should be cached
+    expect(await cache.wrap('refreshThreshold', async () => 0)).toEqual(0);
+    await sleep(1001);
+    // background refresh, but stale value returned
+    expect(await cache.wrap('refreshThreshold', async () => 1)).toEqual(0);
+    // New value in cache
+    expect(await cache.wrap('refreshThreshold', async () => 2)).toEqual(1);
+
+    // With override params
+
+    await sleep(1001);
+    // No background refresh with the new override params
+    expect(await cache.wrap('refreshThreshold', async () => 3, undefined, 500)).toEqual(1);
+    await sleep(500);
+    // Background refresh, but stale value returned
+    expect(await cache.wrap('refreshThreshold', async () => 4, undefined, 500)).toEqual(1);
+    expect(await cache.wrap('refreshThreshold', async () => 5, undefined, 500)).toEqual(4);
+  });
 });
 
 describe('createCache', () => {
