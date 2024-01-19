@@ -269,17 +269,11 @@ describe('multiCaching', () => {
           const multi = multiCaching([cache0, cache1]);
 
           await multi.wrap('refreshThreshold', async () => 0);
-          await new Promise((resolve) => {
-            setTimeout(resolve, 2 * 1000);
-          });
+          await sleep(2 * 1000);
           await multi.wrap('refreshThreshold', async () => 1);
-          await new Promise((resolve) => {
-            setTimeout(resolve, 500);
-          });
+          await sleep(500);
           await multi.wrap('refreshThreshold', async () => 2);
-          await new Promise((resolve) => {
-            setTimeout(resolve, 500);
-          });
+          await sleep(500);
           return multi.wrap('refreshThreshold', async () => 3);
         })(),
       ).resolves.toEqual(1);
