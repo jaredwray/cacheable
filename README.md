@@ -178,6 +178,10 @@ const memoryCache = await caching('memory', {
   max: 100,
   ttl: 10 * 1000 /*milliseconds*/,
   refreshThreshold: 3 * 1000 /*milliseconds*/,
+  
+  /* optional, but if not set, background refresh error will be an unhandled
+   * promise rejection, which might crash your node process */
+  onBackgroundRefreshError: (error) => { /* log or otherwise handle error */ }
 });
 ```
 

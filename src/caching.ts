@@ -5,6 +5,7 @@ export type Config = {
   ttl?: Milliseconds;
   refreshThreshold?: Milliseconds;
   isCacheable?: (val: unknown) => boolean;
+  onBackgroundRefreshError?: (error: unknown) => void;
 };
 
 export type Milliseconds = number;
@@ -114,9 +115,15 @@ export function createCache<S extends Store, C extends Config>(
           const cacheTTL = typeof ttl === 'function' ? ttl(value) : ttl;
           const remainingTtl = await store.ttl(key);
           if (remainingTtl !== -1 && remainingTtl < refreshThresholdConfig) {
-            coalesceAsync(`+++${key}`, fn).then((result) =>
-              store.set<T>(key, result, cacheTTL),
-            );
+            coalesceAsync(`+++${key}`, fn)
+              .then((result) => store.set<T>(key, result, cacheTTL))
+              .catch((error) => {
+                if (args?.onBackgroundRefreshError) {
+                  args.onBackgroundRefreshError(error);
+                } else {
+                  return Promise.reject(error);
+                }
+              });
           }
         }
         return value;
