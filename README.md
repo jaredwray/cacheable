@@ -217,6 +217,8 @@ When a value will be retrieved from Redis with a TTL minor than 3sec, the value 
 
 - [node-cache-manager-sqlite](https://github.com/maxpert/node-cache-manager-sqlite)
 
+- [@resolid/cache-manager-sqlite](https://github.com/huijiewei/cache-manager-sqlite) (uses [better-sqlite3](https://github.com/WiseLibs/better-sqlite3))
+
 ## Contribute
 
 If you would like to contribute to the project, please fork it and send us a pull request. Please add tests
