@@ -3,7 +3,9 @@ import promiseCoalesce from 'promise-coalesce';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { caching, Cache, MemoryConfig, memoryStore, createCache } from '../src';
-import { sleep } from './utils';
+import { sleep, disableExistingExceptionListeners } from './utils';
+import { afterEach } from 'node:test';
+import process from 'node:process';
 
 // Allow the module to be mocked so we can assert
 // the old and new behavior for issue #417
@@ -415,6 +417,70 @@ describe('caching', () => {
     value = await cache.wrap(key, resolveAfter(2000, 8));
     expect(value).toEqual(2);
     expect(callCount).toEqual(2);
+  });
+
+  describe('if onBackgroundRefreshError is not set', async () => {
+    const rejectionHandler = vi.fn();
+    let restoreListeners: () => void;
+
+    beforeEach(() => {
+      restoreListeners = disableExistingExceptionListeners();
+      process.on('uncaughtException', rejectionHandler);
+    });
+
+    afterEach(() => {
+      process.off('uncaughtException', rejectionHandler);
+      restoreListeners();
+    });
+
+    it('failed background cache refresh calls uncaughtException', async () => {
+      key = faker.string.alpha(20);
+
+      cache = await caching('memory', {
+        ttl: 1000,
+        refreshThreshold: 500,
+      });
+
+      value = await cache.wrap(key, () => Promise.resolve('ok'));
+      expect(value).toEqual('ok');
+      expect(rejectionHandler).not.toHaveBeenCalled();
+
+      await sleep(600);
+
+      value = await cache.wrap(key, () => Promise.reject(new Error('failed')));
+
+      expect(value).toEqual('ok'); // previous successful value returned
+      await vi.waitUntil(() => rejectionHandler.mock.calls.length > 0);
+      expect(rejectionHandler).toHaveBeenCalledTimes(1);
+      expect(rejectionHandler).toHaveBeenCalledWith(
+        new Error('failed'),
+        'unhandledRejection',
+      );
+    });
+  });
+
+  it('if onBackgroundRefreshError if set, failed background cache refresh calls it', async () => {
+    key = faker.string.alpha(20);
+    const onBackgroundRefreshError = vi.fn();
+
+    cache = await caching('memory', {
+      ttl: 1000,
+      refreshThreshold: 500,
+      onBackgroundRefreshError,
+    });
+
+    value = await cache.wrap(key, () => Promise.resolve('ok'));
+    expect(value).toEqual('ok');
+    expect(onBackgroundRefreshError).not.toHaveBeenCalled();
+
+    await sleep(600);
+
+    value = await cache.wrap(key, () => Promise.reject(new Error('failed')));
+
+    expect(value).toEqual('ok'); // previous successful value returned
+    await vi.waitUntil(() => onBackgroundRefreshError.mock.calls.length > 0);
+    expect(onBackgroundRefreshError).toBeCalledTimes(1);
+    expect(onBackgroundRefreshError).toHaveBeenCalledWith(new Error('failed'));
   });
 
   it('should allow dynamic refreshThreshold on wrap function', async () => {
