@@ -47,13 +47,11 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "lodash.clonedeep": "^4.5.0",
     "lru-cache": "^10.1.0",
     "promise-coalesce": "^1.1.2"
   },
   "devDependencies": {
     "@faker-js/faker": "8.3.1",
-    "@types/lodash.clonedeep": "4.5.9",
     "@types/node": "20.11.5",
     "@typescript-eslint/eslint-plugin": "6.19.0",
     "@typescript-eslint/parser": "6.19.0",

@@ -1,11 +1,10 @@
 import { LRUCache } from 'lru-cache';
-import cloneDeep from 'lodash.clonedeep';
 
 import { Config, Cache, Store } from '../caching';
 
 function clone<T>(object: T): T {
   if (typeof object === 'object' && object !== null) {
-    return cloneDeep(object);
+    return structuredClone(object);
   }
   return object;
 }
