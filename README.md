@@ -155,6 +155,22 @@ await multiCache.mdel('foo', 'foo2');
 
 See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) for more information.
 
+### Cache Manager Options
+
+The `caching` and `multiCaching` functions accept an options object as the second parameter. The following options are available:
+* max: The maximum number of items that can be stored in the cache. If the cache is full, the least recently used item is removed.
+* ttl: The time to live in milliseconds. This is the maximum amount of time that an item can be in the cache before it is removed.
+* shouldCloneBeforeSet: If true, the value will be cloned before being set in the cache. This is set to false by default.
+
+```typescript
+import { caching } from 'cache-manager';
+
+const memoryCache = await caching('memory', {
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+  shouldCloneBeforeSet: true, // this is set by false by default (optional)
+});
+
 ### Refresh cache keys in background
 
 Both the `caching` and `multicaching` modules support a mechanism to refresh expiring cache keys in background when using the `wrap` function.  
