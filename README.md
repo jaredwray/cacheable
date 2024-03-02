@@ -160,7 +160,7 @@ See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) f
 The `caching` and `multiCaching` functions accept an options object as the second parameter. The following options are available:
 * max: The maximum number of items that can be stored in the cache. If the cache is full, the least recently used item is removed.
 * ttl: The time to live in milliseconds. This is the maximum amount of time that an item can be in the cache before it is removed.
-* shouldCloneBeforeSet: If true, the value will be cloned before being set in the cache. This is set to false by default.
+* shouldCloneBeforeSet: If true, the value will be cloned before being set in the cache. This is set to `true` by default.
 
 ```typescript
 import { caching } from 'cache-manager';
@@ -168,7 +168,7 @@ import { caching } from 'cache-manager';
 const memoryCache = await caching('memory', {
   max: 100,
   ttl: 10 * 1000 /*milliseconds*/,
-  shouldCloneBeforeSet: true, // this is set by false by default (optional)
+  shouldCloneBeforeSet: false, // this is set true by default (optional)
 });
 
 ### Refresh cache keys in background
