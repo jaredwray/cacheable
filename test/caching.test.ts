@@ -199,7 +199,7 @@ describe('caching', () => {
 
       savedKeys = (
         await Promise.all(
-          Array.from({ length: keyCount }).map(async (_, i) => {
+          Array.from({length: keyCount}).map(async (_, i) => {
             const key = (i % 3 === 0 ? 'prefix' : '') + faker.string.sample(20);
             value = faker.string.sample();
             await cache.set(key, value);
@@ -235,7 +235,7 @@ describe('caching', () => {
 
     it('lets us set the ttl to be a function', async () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const sec = faker.number.int({ min: 2, max: 4 });
+      const sec = faker.number.int({min: 2, max: 4});
       value = faker.string.sample(sec * 2);
       const fn = vi.fn((v: string) => 1000);
       await cache.wrap(key, async () => value, fn);
@@ -312,6 +312,111 @@ describe('caching', () => {
           status: 'fulfilled',
           value,
         });
+      });
+    });
+
+    describe('with onCacheError callback', () => {
+      let onCacheError: Mock;
+
+      beforeEach(async () => {
+        onCacheError = vi.fn();
+        cache = await caching('memory', {
+          onCacheError,
+          ttl: 1000,
+        });
+      });
+
+      it('calls onCacheError when store.get() fails', async () => {
+        const error = new Error('store.get() failed');
+        const fn = vi.fn().mockResolvedValue(value);
+
+        cache.store.get = vi.fn().mockRejectedValue(error);
+
+        await cache.wrap(key, fn);
+        expect(onCacheError).toHaveBeenCalledWith(error);
+      });
+
+      it('calls fn when store.get() fails and onCacheError does not throw', async () => {
+        const error = new Error('store.get() failed');
+        const fn = vi.fn().mockResolvedValue(value);
+
+        cache.store.get = vi.fn().mockRejectedValue(error);
+
+        const result = await cache.wrap(key, fn);
+        expect(result).toBe(value);
+        expect(fn).toHaveBeenCalledOnce();
+      });
+
+      it('rethrows error when store.get() fails and onCacheError throws', async () => {
+        const error = new Error('store.get() failed');
+        const fn = vi.fn().mockResolvedValue(value);
+
+        cache.store.get = vi.fn().mockRejectedValue(error);
+
+        const callbackError = new Error('onCacheError threw');
+
+        onCacheError.mockImplementation(() => {
+          throw callbackError;
+        });
+
+        await expect(cache.wrap(key, fn)).rejects.toStrictEqual(callbackError);
+      });
+
+      it('calls onCacheError when store.get() fails', async () => {
+        const error = new Error('store.get() failed');
+        const fn = vi.fn().mockResolvedValue(value);
+
+        cache.store.get = vi.fn().mockRejectedValue(error);
+
+        await cache.wrap(key, fn);
+        expect(onCacheError).toHaveBeenCalledWith(error);
+      });
+
+      it('calls fn when store.set() fails and onCacheError does not throw', async () => {
+        const error = new Error('store.set() failed');
+        const fn = vi.fn().mockResolvedValue(value);
+
+        cache.store.set = vi.fn().mockRejectedValue(error);
+
+        const result = await cache.wrap(key, fn);
+        expect(result).toBe(value);
+        expect(fn).toHaveBeenCalledOnce();
+      });
+
+      it('rethrows error when store.set() fails and onCacheError throws', async () => {
+        const error = new Error('store.set() failed');
+        const fn = vi.fn().mockResolvedValue(value);
+
+        cache.store.set = vi.fn().mockRejectedValue(error);
+
+        const callbackError = new Error('onCacheError threw');
+
+        onCacheError.mockImplementation(() => {
+          throw callbackError;
+        });
+
+        await expect(cache.wrap(key, fn)).rejects.toStrictEqual(callbackError);
+      });
+    });
+
+    describe('without onCacheError callback', () => {
+
+      it('throws when store.get() fails', async () => {
+        const error = new Error('store.get() failed');
+        const fn = vi.fn().mockResolvedValue(value);
+
+        cache.store.get = vi.fn().mockRejectedValue(error);
+
+        await expect(cache.wrap(key, fn)).rejects.toStrictEqual(error);
+      });
+
+      it('throws when store.set() fails', async () => {
+        const error = new Error('store.set() failed');
+        const fn = vi.fn().mockResolvedValue(value);
+
+        cache.store.set = vi.fn().mockRejectedValue(error);
+
+        await expect(cache.wrap(key, fn)).rejects.toStrictEqual(error);
       });
     });
   });
