@@ -199,7 +199,7 @@ describe('caching', () => {
 
       savedKeys = (
         await Promise.all(
-          Array.from({length: keyCount}).map(async (_, i) => {
+          Array.from({ length: keyCount }).map(async (_, i) => {
             const key = (i % 3 === 0 ? 'prefix' : '') + faker.string.sample(20);
             value = faker.string.sample();
             await cache.set(key, value);
@@ -235,7 +235,7 @@ describe('caching', () => {
 
     it('lets us set the ttl to be a function', async () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const sec = faker.number.int({min: 2, max: 4});
+      const sec = faker.number.int({ min: 2, max: 4 });
       value = faker.string.sample(sec * 2);
       const fn = vi.fn((v: string) => 1000);
       await cache.wrap(key, async () => value, fn);
