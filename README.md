@@ -170,6 +170,7 @@ const memoryCache = await caching('memory', {
   ttl: 10 * 1000 /*milliseconds*/,
   shouldCloneBeforeSet: false, // this is set true by default (optional)
 });
+```
 
 ### Refresh cache keys in background
 
