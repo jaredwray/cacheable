@@ -8,3 +8,4 @@ out
 .eslintcache
 dist
 yarn.lock
+pnpm-lock.yaml
