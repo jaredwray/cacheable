@@ -242,9 +242,8 @@ When a value will be retrieved from Redis with a TTL minor than 3sec, the value 
 
 ## Contribute
 
-If you would like to contribute to the project, please fork it and send us a pull request. Please add tests
-for any new features or bug fixes.
+If you would like to contribute to the project, please read how to contribute here [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-node-cache-manager is licensed under the [MIT license](./LICENSE).
+cache-manager is licensed under the [MIT license](./LICENSE).
