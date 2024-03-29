@@ -1,3 +1,4 @@
+/* eslint-disable max-nested-callbacks */
 import {
 	describe, expect, it, beforeEach, vi,
 } from 'vitest';
@@ -9,8 +10,8 @@ import {
 	type MultiCache,
 	multiCaching,
 	type Store,
-} from '../src';
-import {sleep} from './utils';
+} from '../src/index.js';
+import {sleep} from './utils.js';
 
 describe('multiCaching', () => {
 	let memoryCache: MemoryCache;
@@ -189,12 +190,13 @@ describe('multiCaching', () => {
 			const empty = (async () => {}) as never;
 			const cache: Cache = {
 				async get() {
-					throw new Error();
+					throw new Error('this is an error');
 				},
 				set: empty,
 				del: empty,
 				reset: empty,
 				wrap: empty,
+				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 				store: {} as Store,
 			};
 
@@ -204,6 +206,7 @@ describe('multiCaching', () => {
 				del: empty,
 				reset: empty,
 				wrap: empty,
+				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 				store: {} as Store,
 			};
 
@@ -255,6 +258,7 @@ describe('multiCaching', () => {
 		});
 
 		it('#533', () => {
+			// eslint-disable-next-line @typescript-eslint/no-floating-promises
 			expect(
 				(async () => {
 					const cache0 = await caching('memory', {
