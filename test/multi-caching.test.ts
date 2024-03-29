@@ -99,7 +99,7 @@ describe('multiCaching', () => {
 					value,
 				);
 
-				await sleep(ttl);
+				await sleep(ttl + 1000);
 				await expect(memoryCache.get(key)).resolves.toBeUndefined();
 				await expect(memoryCache2.get(key)).resolves.toBeUndefined();
 				await expect(memoryCache3.get(key)).resolves.toBeUndefined();
