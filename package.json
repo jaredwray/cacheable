@@ -56,5 +56,12 @@
     "typescript": "^5.4.3",
     "vitest": "^1.4.0",
     "xo": "^0.58.0"
-  }
+  },
+  "xo": {
+    "extends": "xo-typescript",
+    "extensions": [
+      "ts",
+      "tsx"
+    ]
+  }  
 }
