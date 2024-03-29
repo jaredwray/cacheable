@@ -1,3 +1,3 @@
-export * from './caching';
-export * from './multi-caching';
-export * from './stores';
+export * from './caching.js';
+export * from './multi-caching.js';
+export * from './stores/index.js';
