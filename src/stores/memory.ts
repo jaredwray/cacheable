@@ -1,6 +1,6 @@
 import {LRUCache} from 'lru-cache';
 import cloneDeep from 'lodash.clonedeep';
-import {type Config, type Cache, type Store} from '../caching';
+import {type Config, type Cache, type Store} from '../caching.js';
 
 function clone<T>(object: T): T {
 	if (typeof object === 'object' && object !== null) {
@@ -10,6 +10,7 @@ function clone<T>(object: T): T {
 	return object;
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type LRU = LRUCache<string, any>;
 
 type Pre = LRUCache.OptionsTTLLimit<string, any, unknown>;
@@ -22,10 +23,10 @@ export type MemoryConfig = {
 Config;
 
 export type MemoryStore = Store & {
-	get size(): number;
 	dump: LRU['dump'];
 	load: LRU['load'];
 	calculatedSize: LRU['calculatedSize'];
+	get size(): number;
 };
 export type MemoryCache = Cache<MemoryStore>;
 
@@ -39,7 +40,7 @@ export function memoryStore(arguments_?: MemoryConfig): MemoryStore {
 	const lruOptions = {
 		ttlAutopurge: true,
 		...arguments_,
-		max: arguments_?.max || 500,
+		max: arguments_?.max ?? 500,
 		ttl: arguments_?.ttl === undefined ? 0 : arguments_.ttl,
 	};
 
@@ -51,9 +52,10 @@ export function memoryStore(arguments_?: MemoryConfig): MemoryStore {
 		},
 		get: async <T>(key: string) => lruCache.get(key) as T,
 		keys: async () => [...lruCache.keys()],
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 		mget: async (...arguments_) => arguments_.map(x => lruCache.get(x)),
 		async mset(arguments_, ttl?) {
-			const opt = {ttl: ttl === undefined ? lruOptions.ttl : ttl} as const;
+			const opt = {ttl: ttl ?? lruOptions.ttl} as const;
 			for (const [key, value] of arguments_) {
 				if (!isCacheable(value)) {
 					throw new Error(`no cacheable value ${JSON.stringify(value)}`);
@@ -84,7 +86,7 @@ export function memoryStore(arguments_?: MemoryConfig): MemoryStore {
 				value = clone(value);
 			}
 
-			const ttl = opt === undefined ? lruOptions.ttl : opt;
+			const ttl = opt ?? lruOptions.ttl;
 
 			lruCache.set(key, value, {ttl});
 		},
