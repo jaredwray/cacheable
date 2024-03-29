@@ -1,7 +1,7 @@
 # node-cache-manager 
-[![codecov](https://codecov.io/gh/node-cache-manager/node-cache-manager/branch/master/graph/badge.svg?token=ZV3G5IFigq)](https://codecov.io/gh/node-cache-manager/node-cache-manager)
-[![tests](https://github.com/node-cache-manager/node-cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/node-cache-manager/node-cache-manager/actions/workflows/test.yml)
-[![license](https://img.shields.io/github/license/node-cache-manager/node-cache-manager)](https://github.com/node-cache-manager/node-cache-manager/blob/master/LICENSE)
+[![codecov](https://codecov.io/gh/node-cache-manager/cache-manager/branch/main/graph/badge.svg?token=ZV3G5IFigq)](https://codecov.io/gh/node-cache-manager/cache-manager)
+[![tests](https://github.com/node-cache-manager/cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/node-cache-manager/cache-manager/actions/workflows/test.yml)
+[![license](https://img.shields.io/github/license/node-cache-manager/cache-manager)](https://github.com/node-cache-manager/cache-manager/blob/main/LICENSE)
 [![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
 ![npm](https://img.shields.io/npm/v/cache-manager)
 
