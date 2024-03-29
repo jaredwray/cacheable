@@ -1,3 +1,4 @@
+/* eslint-disable max-nested-callbacks */
 import {afterEach} from 'node:test';
 import process from 'node:process';
 import {faker} from '@faker-js/faker';
@@ -7,14 +8,14 @@ import {
 } from 'vitest';
 import {
 	caching, type Cache, type MemoryConfig, memoryStore, createCache,
-} from '../src';
-import {sleep, disableExistingExceptionListeners} from './utils';
+} from '../src/index.js';
+import {sleep, disableExistingExceptionListeners} from './utils.js';
 
 // Allow the module to be mocked so we can assert
 // the old and new behavior for issue #417
 vi.mock('promise-coalesce', async () => {
 	const actualModule
-    = await vi.importActual<typeof promiseCoalesce>('promise-coalesce');
+		= await vi.importActual<typeof promiseCoalesce>('promise-coalesce');
 
 	return {
 		...actualModule,
@@ -210,6 +211,7 @@ describe('caching', () => {
 						return key;
 					}),
 				)
+				// eslint-disable-next-line unicorn/no-await-expression-member
 			).sort((a, b) => a.localeCompare(b));
 		});
 
@@ -396,21 +398,24 @@ describe('caching', () => {
 			refreshThreshold: 4 * 1000,
 		});
 		const resolveAfter
-      = (timeout: number, value: number) => async (): Promise<number> =>
-      	new Promise(resolve =>
-      		setTimeout(() => {
-      			callCount++;
-      			resolve(value);
-      		}, timeout),
-      	);
+			= (timeout: number, value: number) => async (): Promise<number> =>
+				new Promise(resolve =>
+					// eslint-disable-next-line no-promise-executor-return
+					setTimeout(() => {
+						callCount++;
+						resolve(value);
+					}, timeout),
+				);
 
 		let value = await cache.wrap(key, resolveAfter(100, 1));
 		expect(value).toEqual(1);
 		expect(callCount).toEqual(1);
 
 		await sleep(1100);
+
 		for (let i = 0; i < 6; i++) {
 			// Only the first fn should be called - returning 2
+			// eslint-disable-next-line no-await-in-loop
 			value = await cache.wrap(key, resolveAfter(2000, 2 + i));
 			expect(value).toEqual(1);
 			expect(callCount).toEqual(1);
@@ -525,6 +530,7 @@ describe('createCache', () => {
 		const cache2 = createCache(store);
 		expect(cache1.store).toBe(cache2.store);
 		for (const [key, value] of Object.entries(cache1)) {
+			// eslint-disable-next-line @typescript-eslint/no-base-to-string
 			expect(cache2[key as keyof Cache].toString()).toBe(value.toString());
 		}
 	});
