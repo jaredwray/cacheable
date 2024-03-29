@@ -1,7 +1,7 @@
 import {coalesceAsync} from 'promise-coalesce';
 import {
 	type MemoryCache, type MemoryConfig, type MemoryStore, memoryStore,
-} from './stores';
+} from './stores/index.js';
 
 export type Config = {
 	ttl?: Milliseconds;
@@ -40,14 +40,15 @@ export type Stores<S extends Store, T extends Record<string, unknown>> =
   | Store
   | FactoryStore<S, T>;
 export type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
+// eslint-disable-next-line @typescript-eslint/naming-convention
 export type WrapTTL<T> = Milliseconds | ((v: T) => Milliseconds);
 export type Cache<S extends Store = Store> = {
+	store: S;
 	set: (key: string, value: unknown, ttl?: Milliseconds) => Promise<void>;
 	get: <T>(key: string) => Promise<T | undefined>;
 	del: (key: string) => Promise<void>;
 	reset: () => Promise<void>;
 	wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds): Promise<T>;
-	store: S;
 };
 
 export async function caching(
@@ -106,26 +107,27 @@ export function createCache<S extends Store, C extends Config>(
      *
      */
 		async wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds) {
-			const refreshThresholdConfig = refreshThreshold || arguments_?.refreshThreshold || 0;
+			const refreshThresholdConfig = refreshThreshold ?? arguments_?.refreshThreshold ?? 0;
 			return coalesceAsync(key, async () => {
 				const value = await store.get<T>(key);
 				if (value === undefined) {
 					const result = await function_();
-					const cacheTTL = typeof ttl === 'function' ? ttl(result) : ttl;
-					await store.set<T>(key, result, cacheTTL);
+					const cacheTtl = typeof ttl === 'function' ? ttl(result) : ttl;
+					await store.set<T>(key, result, cacheTtl);
 					return result;
 				}
 
 				if (refreshThresholdConfig) {
-					const cacheTTL = typeof ttl === 'function' ? ttl(value) : ttl;
+					const cacheTtl = typeof ttl === 'function' ? ttl(value) : ttl;
 					const remainingTtl = await store.ttl(key);
 					if (remainingTtl !== -1 && remainingTtl < refreshThresholdConfig) {
 						coalesceAsync(`+++${key}`, function_)
-							.then(async result => store.set<T>(key, result, cacheTTL))
+							.then(async result => store.set<T>(key, result, cacheTtl))
 							.catch(async error => {
 								if (arguments_?.onBackgroundRefreshError) {
 									arguments_.onBackgroundRefreshError(error);
 								} else {
+									// eslint-disable-next-line @typescript-eslint/no-throw-literal
 									throw error;
 								}
 							});
