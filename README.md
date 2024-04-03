@@ -1,7 +1,7 @@
 # node-cache-manager 
-[![codecov](https://codecov.io/gh/node-cache-manager/node-cache-manager/branch/master/graph/badge.svg?token=ZV3G5IFigq)](https://codecov.io/gh/node-cache-manager/node-cache-manager)
-[![tests](https://github.com/node-cache-manager/node-cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/node-cache-manager/node-cache-manager/actions/workflows/test.yml)
-[![license](https://img.shields.io/github/license/node-cache-manager/node-cache-manager)](https://github.com/node-cache-manager/node-cache-manager/blob/master/LICENSE)
+[![codecov](https://codecov.io/gh/node-cache-manager/cache-manager/branch/main/graph/badge.svg?token=ZV3G5IFigq)](https://codecov.io/gh/node-cache-manager/cache-manager)
+[![tests](https://github.com/node-cache-manager/cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/node-cache-manager/cache-manager/actions/workflows/test.yml)
+[![license](https://img.shields.io/github/license/node-cache-manager/cache-manager)](https://github.com/node-cache-manager/cache-manager/blob/main/LICENSE)
 [![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
 ![npm](https://img.shields.io/npm/v/cache-manager)
 
@@ -170,6 +170,7 @@ const memoryCache = await caching('memory', {
   ttl: 10 * 1000 /*milliseconds*/,
   shouldCloneBeforeSet: false, // this is set true by default (optional)
 });
+```
 
 ### Refresh cache keys in background
 
@@ -241,9 +242,8 @@ When a value will be retrieved from Redis with a TTL minor than 3sec, the value 
 
 ## Contribute
 
-If you would like to contribute to the project, please fork it and send us a pull request. Please add tests
-for any new features or bug fixes.
+If you would like to contribute to the project, please read how to contribute here [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-node-cache-manager is licensed under the [MIT license](./LICENSE).
+cache-manager is licensed under the [MIT license](./LICENSE).
