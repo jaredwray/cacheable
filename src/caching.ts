@@ -1,5 +1,6 @@
 import { coalesceAsync } from 'promise-coalesce';
 import { MemoryCache, MemoryConfig, MemoryStore, memoryStore } from './stores';
+import EventEmitter from 'eventemitter3';
 
 export type Config = {
   ttl?: Milliseconds;
@@ -45,7 +46,13 @@ export type Cache<S extends Store = Store> = {
   get: <T>(key: string) => Promise<T | undefined>;
   del: (key: string) => Promise<void>;
   reset: () => Promise<void>;
-  wrap<T>(key: string, fn: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds): Promise<T>;
+  on: (event: 'error', handler: (e: Error) => void) => void;
+  wrap<T>(
+    key: string,
+    fn: () => Promise<T>,
+    ttl?: WrapTTL<T>,
+    refreshThreshold?: Milliseconds,
+  ): Promise<T>;
   store: S;
 };
 
@@ -75,8 +82,7 @@ export async function caching<S extends Store, T extends object = never>(
     return createCache(store, args);
   }
 
-  const store = factory;
-  return createCache(store, args);
+  return createCache(factory, args);
 }
 
 export function createCache(
@@ -93,6 +99,8 @@ export function createCache<S extends Store, C extends Config>(
   store: S,
   args?: C,
 ): Cache<S> {
+  const eventEmitter = new EventEmitter();
+
   return {
     /**
      * Wraps a function in cache. I.e., the first time the function is run,
@@ -103,26 +111,24 @@ export function createCache<S extends Store, C extends Config>(
      * const result = await cache.wrap('key', () => Promise.resolve(1));
      *
      */
-    wrap: async <T>(key: string, fn: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds) => {
-      const refreshThresholdConfig = refreshThreshold || args?.refreshThreshold || 0;
+    wrap: async <T>(
+      key: string,
+      fn: () => Promise<T>,
+      ttl?: WrapTTL<T>,
+      refreshThreshold?: Milliseconds,
+    ) => {
+      const refreshThresholdConfig =
+        refreshThreshold || args?.refreshThreshold || 0;
       return coalesceAsync(key, async () => {
         const value = await store.get<T>(key).catch((error) => {
-          if (args?.onCacheError) {
-            args.onCacheError(error);
-          } else {
-            return Promise.reject(error);
-          }
+          eventEmitter.emit('error', error);
         });
         if (value === undefined) {
           const result = await fn();
 
           const cacheTTL = typeof ttl === 'function' ? ttl(result) : ttl;
           await store.set<T>(key, result, cacheTTL).catch((error) => {
-            if (args?.onCacheError) {
-              args.onCacheError(error);
-            } else {
-              return Promise.reject(error);
-            }
+            eventEmitter.emit('error', error);
           });
 
           return result;
@@ -133,6 +139,7 @@ export function createCache<S extends Store, C extends Config>(
             coalesceAsync(`+++${key}`, fn)
               .then((result) => store.set<T>(key, result, cacheTTL))
               .catch((error) => {
+                eventEmitter.emit('error', error);
                 if (args?.onBackgroundRefreshError) {
                   args.onBackgroundRefreshError(error);
                 } else {
@@ -150,5 +157,7 @@ export function createCache<S extends Store, C extends Config>(
     set: (key: string, value: unknown, ttl?: Milliseconds) =>
       store.set(key, value, ttl),
     reset: () => store.reset(),
+    on: (event: 'error', handler: (e: Error) => void) =>
+      eventEmitter.on('error', handler),
   };
 }

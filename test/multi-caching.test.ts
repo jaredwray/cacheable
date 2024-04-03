@@ -111,7 +111,7 @@ describe('multiCaching', () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const sec = faker.number.int({ min: 2, max: 4 });
         value = faker.string.sample(sec * 2);
-        const fn = vi.fn((v: string) => 1000);
+        const fn = vi.fn(() => 1000);
         await multiCache.wrap(key, async () => value, fn);
         await expect(memoryCache.get(key)).resolves.toEqual(value);
         await expect(memoryCache2.get(key)).resolves.toEqual(value);
@@ -197,6 +197,7 @@ describe('multiCaching', () => {
         reset: empty,
         wrap: empty,
         store: {} as Store,
+        on: empty,
       };
 
       const cacheEmpty: Cache = {
@@ -206,6 +207,19 @@ describe('multiCaching', () => {
         reset: empty,
         wrap: empty,
         store: {} as Store,
+        on: empty,
+      };
+
+      const errorCache: Cache = {
+        get: empty,
+        set: async () => {
+          throw new Error();
+        },
+        del: empty,
+        reset: empty,
+        wrap: empty,
+        store: {} as Store,
+        on: empty,
       };
 
       it('should get error', async () => {
@@ -230,6 +244,30 @@ describe('multiCaching', () => {
         multiCache = multiCaching([cacheEmpty, cacheEmpty]);
         await multiCache.set(key, value);
         await expect(multiCache.get(key)).resolves.toBeUndefined();
+      });
+
+      it('should receive error event on get failure', async () => {
+        multiCache = multiCaching([cache, memoryCache]);
+        let errorMsg;
+        multiCache.on('error', (e) => {
+          errorMsg = e;
+        });
+
+        await multiCache.get(key);
+
+        expect(errorMsg).not.toBeUndefined();
+      });
+
+      it('should receive error event on set failure', async () => {
+        multiCache = multiCaching([errorCache, memoryCache]);
+        let errorMsg;
+        multiCache.on('error', (e) => {
+          errorMsg = e;
+        });
+
+        await multiCache.set(key, value);
+
+        expect(errorMsg).not.toBeUndefined();
       });
     });
   });
