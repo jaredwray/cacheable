@@ -37,9 +37,9 @@ export type FactoryStore<S extends Store, T extends Record<string, unknown> = ne
 ) => S | Promise<S>;
 
 export type Stores<S extends Store, T extends Record<string, unknown>> =
-  | 'memory'
-  | Store
-  | FactoryStore<S, T>;
+    | 'memory'
+    | Store
+    | FactoryStore<S, T>;
 export type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export type WrapTTL<T> = Milliseconds | ((v: T) => Milliseconds);
@@ -102,18 +102,20 @@ export function createCache<S extends Store, C extends Config>(
 
 	return {
 		/**
-     * Wraps a function in cache. I.e., the first time the function is run,
-     * its results are stored in cache so subsequent calls retrieve from cache
-     * instead of calling the function.
+         * Wraps a function in cache. I.e., the first time the function is run,
+         * its results are stored in cache so subsequent calls retrieve from cache
+         * instead of calling the function.
 
-     * @example
-     * const result = await cache.wrap('key', () => Promise.resolve(1));
-     *
-     */
+         * @example
+         * const result = await cache.wrap('key', () => Promise.resolve(1));
+         *
+         */
 		async wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds) {
 			const refreshThresholdConfig = refreshThreshold ?? arguments_?.refreshThreshold ?? 0;
 			return coalesceAsync(key, async () => {
-				const value = await store.get<T>(key).catch(error => eventEmitter.emit('error', error));
+				const value = await store.get<T>(key).catch(error => {
+					eventEmitter.emit('error', error);
+				});
 
 				if (value === undefined) {
 					const result = await function_();
