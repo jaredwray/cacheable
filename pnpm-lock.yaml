@@ -11,9 +11,6 @@ dependencies:
   lru-cache:
     specifier: ^10.1.0
     version: 10.2.0
-  pnpm:
-    specifier: ^8.15.6
-    version: 8.15.6
   promise-coalesce:
     specifier: ^1.1.2
     version: 1.1.2
@@ -1924,12 +1921,6 @@ packages:
       mlly: 1.6.1
       pathe: 1.1.2
     dev: true
-
-  /pnpm@8.15.6:
-    resolution: {integrity: sha512-d7iem+d6Kwatj0A6Gcrl4il29hAj+YrTI9XDAZSVjrwC7gpq5dE+5FT2E05OjK8poF8LGg4dKxe8prah8RWfhg==}
-    engines: {node: '>=16.14'}
-    hasBin: true
-    dev: false
 
   /postcss@8.4.38:
     resolution: {integrity: sha512-Wglpdk03BSfXkHoQa3b/oulrotAkwrlLDRSOb9D0bN86FdRyE9lppSp33aHNPgBa0JKCoB+drFLZkQoRRYae5A==}
