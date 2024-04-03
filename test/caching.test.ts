@@ -320,39 +320,40 @@ describe('caching', () => {
 			}
 		});
 
-    describe('error handling on wrap', () => {
-      it('receives an error when store.get() fails', async () => {
-        const error = new Error('store.get() failed');
-        const fn = vi.fn().mockResolvedValue(value);
-        const cache = await caching('memory');
-        cache.store.get = vi.fn().mockRejectedValue(error);
+		describe('error handling on wrap', () => {
+			it('emits an error event when store.get() fails', async () => {
+				const error = new Error('store.get() failed');
+				const function_ = vi.fn().mockResolvedValue(value);
+				const cache = await caching('memory');
+				cache.store.get = vi.fn().mockRejectedValue(error);
 
-        let errorMsg;
-        cache.on('error', (e) => {
-          errorMsg = e;
-        });
+				let errorMessage;
+				cache.on('error', error => {
+					errorMessage = error;
+				});
 
-        await cache.wrap(key, fn);
+				await cache.wrap(key, function_);
 
-        expect(errorMsg).not.toBeUndefined();
-      });
+				expect(errorMessage).not.toBeUndefined();
+				expect(function_).toHaveBeenCalled();
+			});
 
-      it('receives an error when store.set() fails', async () => {
-        const error = new Error('store.set() failed');
-        const fn = vi.fn().mockResolvedValue(value);
-        const cache = await caching('memory');
-        cache.store.set = vi.fn().mockRejectedValue(error);
+			it('emits an error event when store.set() fails', async () => {
+				const error = new Error('store.set() failed');
+				const function_ = vi.fn().mockResolvedValue(value);
+				const cache = await caching('memory');
+				cache.store.set = vi.fn().mockRejectedValue(error);
 
-        let errorMsg;
-        cache.on('error', (e) => {
-          errorMsg = e;
-        });
+				let errorMessage;
+				cache.on('error', error => {
+					errorMessage = error;
+				});
 
-        await cache.wrap(key, fn);
+				await cache.wrap(key, function_);
 
-        expect(errorMsg).not.toBeUndefined();
-      });
-    });
+				expect(errorMessage).not.toBeUndefined();
+			});
+		});
 	});
 
 	describe('issues', () => {
@@ -549,17 +550,17 @@ describe('caching', () => {
 
 		await sleep(1001);
 		// No background refresh with the new override params
-    expect(
-      await cache.wrap('refreshThreshold', async () => 3, undefined, 500),
-    ).toEqual(1);
+		expect(
+			await cache.wrap('refreshThreshold', async () => 3, undefined, 500),
+		).toEqual(1);
 		await sleep(500);
 		// Background refresh, but stale value returned
-    expect(
-      await cache.wrap('refreshThreshold', async () => 4, undefined, 500),
-    ).toEqual(1);
-    expect(
-      await cache.wrap('refreshThreshold', async () => 5, undefined, 500),
-    ).toEqual(4);
+		expect(
+			await cache.wrap('refreshThreshold', async () => 4, undefined, 500),
+		).toEqual(1);
+		expect(
+			await cache.wrap('refreshThreshold', async () => 5, undefined, 500),
+		).toEqual(4);
 	});
 });
 

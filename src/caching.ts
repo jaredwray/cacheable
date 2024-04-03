@@ -1,15 +1,14 @@
+import EventEmitter from 'eventemitter3';
 import {coalesceAsync} from 'promise-coalesce';
 import {
 	type MemoryCache, type MemoryConfig, type MemoryStore, memoryStore,
 } from './stores/index.js';
-import EventEmitter from 'eventemitter3';
 
 export type Config = {
 	ttl?: Milliseconds;
 	refreshThreshold?: Milliseconds;
 	isCacheable?: (value: unknown) => boolean;
 	onBackgroundRefreshError?: (error: unknown) => void;
-  onCacheError?: (error: unknown) => void;
 };
 
 export type Milliseconds = number;
@@ -50,14 +49,8 @@ export type Cache<S extends Store = Store> = {
 	get: <T>(key: string) => Promise<T | undefined>;
 	del: (key: string) => Promise<void>;
 	reset: () => Promise<void>;
-	on: (event: 'error', handler: (e: Error) => void) => void;
-  wrap<T>(
-    key: string,
-    function_: () => Promise<T>,
-    ttl?: WrapTTL<T>,
-    refreshThreshold?: Milliseconds,
-  ): Promise<T>;
-
+	on: (event: 'error', handler: (error: Error) => void) => void;
+	wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds): Promise<T>;
 };
 
 export async function caching(
@@ -87,7 +80,8 @@ export async function caching<S extends Store, T extends Record<string, unknown>
 		return createCache(store, arguments_);
 	}
 
-	return createCache(factory, arguments_);
+	const store = factory;
+	return createCache(store, arguments_);
 }
 
 export function createCache(
@@ -104,7 +98,7 @@ export function createCache<S extends Store, C extends Config>(
 	store: S,
 	arguments_?: C,
 ): Cache<S> {
-  const eventEmitter = new EventEmitter();
+	const eventEmitter = new EventEmitter();
 
 	return {
 		/**
@@ -119,17 +113,13 @@ export function createCache<S extends Store, C extends Config>(
 		async wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds) {
 			const refreshThresholdConfig = refreshThreshold ?? arguments_?.refreshThreshold ?? 0;
 			return coalesceAsync(key, async () => {
-				const value = await store.get<T>(key).catch((error) => {
-				  eventEmitter.emit('error', error);
-				});
+				const value = await store.get<T>(key).catch(error => eventEmitter.emit('error', error));
 
 				if (value === undefined) {
 					const result = await function_();
 
-          const cacheTtl = typeof ttl === 'function' ? ttl(result) : ttl;
-					await store.set<T>(key, result, cacheTtl).catch((error) => {
-            eventEmitter.emit('error', error);
-          });
+					const cacheTtl = typeof ttl === 'function' ? ttl(result) : ttl;
+					await store.set<T>(key, result, cacheTtl).catch(error => eventEmitter.emit('error', error));
 					return result;
 				}
 
@@ -141,7 +131,7 @@ export function createCache<S extends Store, C extends Config>(
 							.then(async result => store.set<T>(key, result, cacheTtl))
 							.catch(async error => {
 								eventEmitter.emit('error', error);
-                if (arguments_?.onBackgroundRefreshError) {
+								if (arguments_?.onBackgroundRefreshError) {
 									arguments_.onBackgroundRefreshError(error);
 								} else {
 									// eslint-disable-next-line @typescript-eslint/no-throw-literal
@@ -160,7 +150,7 @@ export function createCache<S extends Store, C extends Config>(
 		set: async (key: string, value: unknown, ttl?: Milliseconds) =>
 			store.set(key, value, ttl),
 		reset: async () => store.reset(),
-    on: (event: 'error', handler: (e: Error) => void) =>
-      eventEmitter.on('error', handler),
+		on: (event: 'error', handler: (error: Error) => void) =>
+			eventEmitter.on('error', handler),
 	};
 }
