@@ -231,8 +231,6 @@ memoryCache.on('error', (error) => {
 });
 ```
 
-We also have added 
-
 ## Store Engines
 
 ### Official and updated to last version
