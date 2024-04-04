@@ -133,6 +133,7 @@ export function createCache<S extends Store, C extends Config>(
 							.then(async result => store.set<T>(key, result, cacheTtl))
 							.catch(async error => {
 								eventEmitter.emit('error', error);
+								eventEmitter.emit('onBackgroundRefreshError', error);
 								if (arguments_?.onBackgroundRefreshError) {
 									arguments_.onBackgroundRefreshError(error);
 								} else {
