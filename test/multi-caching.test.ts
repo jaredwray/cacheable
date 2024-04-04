@@ -272,6 +272,33 @@ describe('multiCaching', () => {
 
 				expect(errorMessage).not.toBeUndefined();
 			});
+
+			it('should receive error event on mget failure', async () => {
+				multiCache = multiCaching([setErrorCache, memoryCache]);
+				let errorMessage;
+				multiCache.on('error', error => {
+					errorMessage = error;
+				});
+
+				await multiCache.mget(key, value);
+
+				expect(errorMessage).not.toBeUndefined();
+			});
+
+			it('should receive error event on get failure during wrap', async () => {
+				multiCache = multiCaching([getErrorCache, memoryCache]);
+				const error = new Error('store.get() failed');
+				const function_ = vi.fn().mockResolvedValue(value);
+
+				let errorMessage;
+				multiCache.on('error', error => {
+					errorMessage = error;
+				});
+
+				await multiCache.wrap(key, function_);
+
+				expect(errorMessage).not.toBeUndefined();
+			});
 		});
 	});
 
