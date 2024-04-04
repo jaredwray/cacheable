@@ -9,6 +9,19 @@
 
 A cache module for nodejs that allows easy wrapping of functions in cache, tiered caches, and a consistent interface.
 
+## Table of Contents
+* [Features](#features)
+* [Installation](#installation)
+* [Usage Examples](#usage-examples)
+  * [Single Store](#single-store)
+  * [Multi-Store](#multi-store)
+  * [Cache Manager Options](#cache-manager-options)
+  * [Refresh cache keys in background](#refresh-cache-keys-in-background)
+  * [Error Handling](#error-handling)
+  * [Store Engines](#store-engines)
+* [Contribute](#contribute)
+* [License](#license)
+
 ## Features
 
 - Made with Typescript and compatible with [ESModules](https://nodejs.org/docs/latest-v14.x/api/esm.html)
@@ -203,6 +216,22 @@ const memoryCache = await caching('memory', {
 ```
 
 When a value will be retrieved from Redis with a TTL minor than 3sec, the value will be updated in the background.
+
+## Error Handling
+
+Cache Manager now does not throw errors by default. Instead, all errors are evented through the `error` event. Here is an example on how to use it:
+
+```javascript
+const memoryCache = await caching('memory', {
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+});
+memoryCache.on('error', (error) => {
+  console.error('Cache error:', error);
+});
+```
+
+We also have added 
 
 ## Store Engines
 
