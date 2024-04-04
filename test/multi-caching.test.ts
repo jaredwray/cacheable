@@ -111,7 +111,7 @@ describe('multiCaching', () => {
 			it('lets us set the ttl to be a function', async () => {
 				const sec = faker.number.int({min: 2, max: 4});
 				value = faker.string.sample(sec * 2);
-				const function_ = vi.fn((v: string) => 1000);
+				const function_ = vi.fn(() => 1000);
 				await multiCache.wrap(key, async () => value, function_);
 				await expect(memoryCache.get(key)).resolves.toEqual(value);
 				await expect(memoryCache2.get(key)).resolves.toEqual(value);
@@ -188,7 +188,7 @@ describe('multiCaching', () => {
 		describe('when cache fails', () => {
 			// eslint-disable-next-line @typescript-eslint/no-empty-function
 			const empty = (async () => {}) as never;
-			const cache: Cache = {
+			const getErrorCache: Cache = {
 				async get() {
 					throw new Error('this is an error');
 				},
@@ -198,6 +198,20 @@ describe('multiCaching', () => {
 				wrap: empty,
 				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 				store: {} as Store,
+				on: empty,
+			};
+
+			const setErrorCache: Cache = {
+				get: empty,
+				async set() {
+					throw new Error('this is an error');
+				},
+				del: empty,
+				reset: empty,
+				wrap: empty,
+				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+				store: {} as Store,
+				on: empty,
 			};
 
 			const cacheEmpty: Cache = {
@@ -208,16 +222,17 @@ describe('multiCaching', () => {
 				wrap: empty,
 				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 				store: {} as Store,
+				on: empty,
 			};
 
 			it('should get error', async () => {
-				multiCache = multiCaching([cache, memoryCache]);
+				multiCache = multiCaching([getErrorCache, memoryCache]);
 				await multiCache.set(key, value);
 				await expect(multiCache.get(key)).resolves.toEqual(value);
 			});
 
 			it('should get all error', async () => {
-				multiCache = multiCaching([cache]);
+				multiCache = multiCaching([getErrorCache]);
 				await multiCache.set(key, value);
 				await expect(multiCache.get(key)).resolves.toBeUndefined();
 			});
@@ -232,6 +247,57 @@ describe('multiCaching', () => {
 				multiCache = multiCaching([cacheEmpty, cacheEmpty]);
 				await multiCache.set(key, value);
 				await expect(multiCache.get(key)).resolves.toBeUndefined();
+			});
+
+			it('emits an error event when store.get() fails', async () => {
+				multiCache = multiCaching([getErrorCache, memoryCache]);
+				let errorMessage;
+				multiCache.on('error', error => {
+					errorMessage = error;
+				});
+
+				await multiCache.get(key);
+
+				expect(errorMessage).not.toBeUndefined();
+			});
+
+			it('should receive error event on set failure', async () => {
+				multiCache = multiCaching([setErrorCache, memoryCache]);
+				let errorMessage;
+				multiCache.on('error', error => {
+					errorMessage = error;
+				});
+
+				await multiCache.set(key, value);
+
+				expect(errorMessage).not.toBeUndefined();
+			});
+
+			it('should receive error event on mget failure', async () => {
+				multiCache = multiCaching([setErrorCache, memoryCache]);
+				let errorMessage;
+				multiCache.on('error', error => {
+					errorMessage = error;
+				});
+
+				await multiCache.mget(key, value);
+
+				expect(errorMessage).not.toBeUndefined();
+			});
+
+			it('should receive error event on get failure during wrap', async () => {
+				multiCache = multiCaching([getErrorCache, memoryCache]);
+				const error = new Error('store.get() failed');
+				const function_ = vi.fn().mockResolvedValue(value);
+
+				let errorMessage;
+				multiCache.on('error', error => {
+					errorMessage = error;
+				});
+
+				await multiCache.wrap(key, function_);
+
+				expect(errorMessage).not.toBeUndefined();
 			});
 		});
 	});

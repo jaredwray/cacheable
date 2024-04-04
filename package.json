@@ -40,6 +40,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "eventemitter3": "^5.0.1",
     "lodash.clonedeep": "^4.5.0",
     "lru-cache": "^10.2.0",
     "promise-coalesce": "^1.1.2"
@@ -63,5 +64,5 @@
       "ts",
       "tsx"
     ]
-  }  
+  }
 }

@@ -1,3 +1,4 @@
+import EventEmitter from 'eventemitter3';
 import {coalesceAsync} from 'promise-coalesce';
 import {
 	type MemoryCache, type MemoryConfig, type MemoryStore, memoryStore,
@@ -36,9 +37,9 @@ export type FactoryStore<S extends Store, T extends Record<string, unknown> = ne
 ) => S | Promise<S>;
 
 export type Stores<S extends Store, T extends Record<string, unknown>> =
-  | 'memory'
-  | Store
-  | FactoryStore<S, T>;
+    | 'memory'
+    | Store
+    | FactoryStore<S, T>;
 export type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export type WrapTTL<T> = Milliseconds | ((v: T) => Milliseconds);
@@ -48,6 +49,7 @@ export type Cache<S extends Store = Store> = {
 	get: <T>(key: string) => Promise<T | undefined>;
 	del: (key: string) => Promise<void>;
 	reset: () => Promise<void>;
+	on: (event: 'error', handler: (error: Error) => void) => void;
 	wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds): Promise<T>;
 };
 
@@ -96,24 +98,30 @@ export function createCache<S extends Store, C extends Config>(
 	store: S,
 	arguments_?: C,
 ): Cache<S> {
+	const eventEmitter = new EventEmitter();
+
 	return {
 		/**
-     * Wraps a function in cache. I.e., the first time the function is run,
-     * its results are stored in cache so subsequent calls retrieve from cache
-     * instead of calling the function.
+         * Wraps a function in cache. I.e., the first time the function is run,
+         * its results are stored in cache so subsequent calls retrieve from cache
+         * instead of calling the function.
 
-     * @example
-     * const result = await cache.wrap('key', () => Promise.resolve(1));
-     *
-     */
+         * @example
+         * const result = await cache.wrap('key', () => Promise.resolve(1));
+         *
+         */
 		async wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds) {
 			const refreshThresholdConfig = refreshThreshold ?? arguments_?.refreshThreshold ?? 0;
 			return coalesceAsync(key, async () => {
-				const value = await store.get<T>(key);
+				const value = await store.get<T>(key).catch(error => {
+					eventEmitter.emit('error', error);
+				});
+
 				if (value === undefined) {
 					const result = await function_();
+
 					const cacheTtl = typeof ttl === 'function' ? ttl(result) : ttl;
-					await store.set<T>(key, result, cacheTtl);
+					await store.set<T>(key, result, cacheTtl).catch(error => eventEmitter.emit('error', error));
 					return result;
 				}
 
@@ -124,6 +132,7 @@ export function createCache<S extends Store, C extends Config>(
 						coalesceAsync(`+++${key}`, function_)
 							.then(async result => store.set<T>(key, result, cacheTtl))
 							.catch(async error => {
+								eventEmitter.emit('error', error);
 								if (arguments_?.onBackgroundRefreshError) {
 									arguments_.onBackgroundRefreshError(error);
 								} else {
@@ -143,5 +152,7 @@ export function createCache<S extends Store, C extends Config>(
 		set: async (key: string, value: unknown, ttl?: Milliseconds) =>
 			store.set(key, value, ttl),
 		reset: async () => store.reset(),
+		on: (event: 'error', handler: (error: Error) => void) =>
+			eventEmitter.on('error', handler),
 	};
 }
