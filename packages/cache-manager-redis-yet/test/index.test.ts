@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from 'vitest';
-import cacheManager from 'cache-manager';
+import { caching } from 'cache-manager';
 import { createClient, RedisClientType } from 'redis';
 
 import {
@@ -27,8 +27,8 @@ const configTtl = {
 } as const;
 
 beforeEach(async () => {
-  redisCache = await cacheManager.caching(redisStore, config);
-  redisCacheTtl = await cacheManager.caching(redisStore, configTtl);
+  redisCache = await caching(redisStore, config);
+  redisCacheTtl = await caching(redisStore, configTtl);
 
   await redisCache.reset();
   const conf = {
@@ -44,7 +44,7 @@ beforeEach(async () => {
       return redisCache.store.isCacheable(val);
     },
   };
-  customRedisCache = await cacheManager.caching(redisStore, conf);
+  customRedisCache = await caching(redisStore, conf);
 
   await customRedisCache.reset();
 });
@@ -53,7 +53,7 @@ describe('instance', () => {
   it('should be constructed', async () => {
     const instance: RedisClientType = await createClient(config);
     await instance.connect();
-    const cache = await cacheManager.caching(
+    const cache = await caching(
       (c) => redisInsStore(instance, c),
       config,
     );
