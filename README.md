@@ -1,276 +1,82 @@
-# node-cache-manager 
-[![codecov](https://codecov.io/gh/node-cache-manager/cache-manager/branch/main/graph/badge.svg?token=ZV3G5IFigq)](https://codecov.io/gh/node-cache-manager/cache-manager)
-[![tests](https://github.com/node-cache-manager/cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/node-cache-manager/cache-manager/actions/workflows/test.yml)
-[![license](https://img.shields.io/github/license/node-cache-manager/cache-manager)](https://github.com/node-cache-manager/cache-manager/blob/main/LICENSE)
-[![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
-![npm](https://img.shields.io/npm/v/cache-manager)
+# Cache Manager
 
-# Flexible NodeJS cache module
+This is the cache manager mono repo that has the following packages:
+* `cache-manager` - The core package that provides the cache manager library.
+* `cache-manager-redis-yet` - The redis store for cache manager.
+* `cache-manager-ioredis-yet` - The ioredis store for cache manager.
 
-A cache module for nodejs that allows easy wrapping of functions in cache, tiered caches, and a consistent interface.
+## Getting Started
 
-## Table of Contents
-* [Features](#features)
-* [Installation](#installation)
-* [Usage Examples](#usage-examples)
-  * [Single Store](#single-store)
-  * [Multi-Store](#multi-store)
-  * [Cache Manager Options](#cache-manager-options)
-  * [Refresh cache keys in background](#refresh-cache-keys-in-background)
-  * [Error Handling](#error-handling)
-  * [Store Engines](#store-engines)
-* [Contribute](#contribute)
-* [License](#license)
+To get started you can visit the [cache-manager](/packages/cache-manager/README.md) package and learn how to use it. In addition here are some other documents:
 
-## Features
+* [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Our code of conduct
+* [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute to this project
+* [SECURITY.md](SECURITY.md) - Security guidelines and supported versions
 
-- Made with Typescript and compatible with [ESModules](https://nodejs.org/docs/latest-v14.x/api/esm.html)
-- Easy way to wrap any function in cache.
-- Tiered caches -- data gets stored in each cache and fetched from the highest.
-  priority cache(s) first.
-- Use any cache you want, as long as it has the same API.
-- 100% test coverage via [vitest](https://github.com/vitest-dev/vitest).
+## Getting Started with the Mono Repo
 
-## Installation
+Start by installing `pnpm` globally:
 
-    pnpm install cache-manager
-
-## Usage Examples
-
-### Single Store
-
-```typescript
-import { caching } from 'cache-manager';
-
-const memoryCache = await caching('memory', {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-});
-
-const ttl = 5 * 1000; /*milliseconds*/
-await memoryCache.set('foo', 'bar', ttl);
-
-console.log(await memoryCache.get('foo'));
-// >> "bar"
-
-await memoryCache.del('foo');
-
-console.log(await memoryCache.get('foo'));
-// >> undefined
-
-const getUser = (id: string) => new Promise.resolve({ id: id, name: 'Bob' });
-
-const userId = 123;
-const key = 'user_' + userId;
-
-console.log(await memoryCache.wrap(key, () => getUser(userId), ttl));
-// >> { id: 123, name: 'Bob' }
+```bash
+npm install -g pnpm
 ```
 
-See unit tests in [`test/caching.test.ts`](./test/caching.test.ts) for more information.
+Then install the dependencies:
 
-#### Example setting/getting several keys with mset() and mget()
-
-```typescript
-await memoryCache.store.mset(
-  [
-    ['foo', 'bar'],
-    ['foo2', 'bar2'],
-  ],
-  ttl,
-);
-
-console.log(await memoryCache.store.mget('foo', 'foo2'));
-// >> ['bar', 'bar2']
-
-// Delete keys with mdel() passing arguments...
-await memoryCache.store.mdel('foo', 'foo2');
+```bash
+pnpm install
 ```
 
-#### [Example Express App Usage](./examples/express/src/index.mts)
+To run the tests:
 
-#### Custom Stores
-
-You can use your own custom store by creating one with the same API as the built-in memory stores.
-
-- [Example Custom Store lru-cache](./src/stores/memory.ts)
-- [Example Custom Store redis](https://github.com/node-cache-manager/node-cache-manager-redis-yet)
-- [Example Custom Store ioredis](https://github.com/node-cache-manager/node-cache-manager-ioredis-yet)
-
-#### Create single cache store synchronously
-
-As `caching()` requires async functionality to resolve some stores, this is not well-suited to use for default function/constructor parameters etc.
-
-If you need to create a cache store synchronously, you can instead use `createCache()`:
-
-```typescript
-import { createCache, memoryStore } from 'node-cache-manager';
-
-// Create memory cache synchronously
-const memoryCache = createCache(memoryStore(), {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-});
-
-// Default parameter in function
-function myService(cache = createCache(memoryStore())) {}
-
-// Default parameter in class constructor
-const DEFAULT_CACHE = createCache(memoryStore(), { ttl: 60 * 1000 });
-// ...
-class MyService {
-  constructor(private cache = DEFAULT_CACHE) {}
-}
+```bash
+pnpm test
 ```
 
-### Multi-Store
+To build the packages:
 
-```typescript
-import { multiCaching } from 'cache-manager';
-
-const multiCache = multiCaching([memoryCache, someOtherCache]);
-const userId2 = 456;
-const key2 = 'user_' + userId;
-const ttl = 5;
-
-// Sets in all caches.
-await multiCache.set('foo2', 'bar2', ttl);
-
-// Fetches from highest priority cache that has the key.
-console.log(await multiCache.get('foo2'));
-// >> "bar2"
-
-// Delete from all caches
-await multiCache.del('foo2');
-
-// Sets multiple keys in all caches.
-// You can pass as many key, value tuples as you want
-await multiCache.mset(
-  [
-    ['foo', 'bar'],
-    ['foo2', 'bar2'],
-  ],
-  ttl
-);
-
-// mget() fetches from highest priority cache.
-// If the first cache does not return all the keys,
-// the next cache is fetched with the keys that were not found.
-// This is done recursively until either:
-// - all have been found
-// - all caches has been fetched
-console.log(await multiCache.mget('key', 'key2'));
-// >> ['bar', 'bar2']
-
-// Delete keys with mdel() passing arguments...
-await multiCache.mdel('foo', 'foo2');
+```bash
+pnpm build
 ```
 
-See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) for more information.
+## Open a Pull Request
 
-### Cache Manager Options
+You can contribute changes to this repo by opening a pull request:
 
-The `caching` and `multiCaching` functions accept an options object as the second parameter. The following options are available:
-* max: The maximum number of items that can be stored in the cache. If the cache is full, the least recently used item is removed.
-* ttl: The time to live in milliseconds. This is the maximum amount of time that an item can be in the cache before it is removed.
-* shouldCloneBeforeSet: If true, the value will be cloned before being set in the cache. This is set to `true` by default.
+1) After forking this repository to your Git account, make the proposed changes on your forked branch.
+2) Run tests and linting locally.
+	- [Install and run Docker](https://docs.docker.com/get-docker/) if you aren't already.
+	- Run `pnpm test:services:start`, allow for the services to come up.
+	- Run `pnpm test`.
+3) Commit your changes and push them to your forked repository.
+4) Navigate to the main `cache-manager` repository and select the *Pull Requests* tab.
+5) Click the *New pull request* button, then select the option "Compare across forks"
+6) Leave the base branch set to main. Set the compare branch to your forked branch, and open the pull request.
+7) Once your pull request is created, ensure that all checks have passed and that your branch has no conflicts with the base branch. If there are any issues, resolve these changes in your local repository, and then commit and push them to git.
+8) Similarly, respond to any reviewer comments or requests for changes by making edits to your local repository and pushing them to Git.
+9) Once the pull request has been reviewed, those with write access to the branch will be able to merge your changes into the `cache-manager` repository.
 
-```typescript
-import { caching } from 'cache-manager';
+If you need more information on the steps to create a pull request, you can find a detailed walkthrough in the [Github documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork)
 
-const memoryCache = await caching('memory', {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-  shouldCloneBeforeSet: false, // this is set true by default (optional)
-});
-```
+## Post an Issue
 
-### Refresh cache keys in background
+To post an issue, navigate to the "Issues" tab in the main repository, and then select "New Issue." Enter a clear title describing the issue, as well as a description containing additional relevant information. Also select the label that best describes your issue type. For a bug report, for example, create an issue with the label "bug." In the description field, Be sure to include replication steps, as well as any relevant error messages.
 
-Both the `caching` and `multicaching` modules support a mechanism to refresh expiring cache keys in background when using the `wrap` function.  
-This is done by adding a `refreshThreshold` attribute while creating the caching store or passing it to the `wrap` function.
+If you're reporting a security violation, be sure to check out the project's [security policy](SECURITY.md).
 
-If `refreshThreshold` is set and after retrieving a value from cache the TTL will be checked.  
-If the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously,  
-following same rules as standard fetching. In the meantime, the system will return the old value until expiration.
+Please also refer to our [Code of Conduct](CODE_OF_CONDUCT.md) for more information on how to report issues.
 
-NOTES:
+## Ask a Question
 
-* In case of multicaching, the store that will be checked for refresh is the one where the key will be found first (highest priority).
-* If the threshold is low and the worker function is slow, the key may expire and you may encounter a racing condition with updating values.
-* The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
-* If no `ttl` is set for the key, the refresh mechanism will not be triggered. For redis, the `ttl` is set to -1 by default.
+To ask a question, create an issue with the label "question." In the issue description, include the related code and any context that can help us answer your question.
 
-For example, pass the refreshThreshold to `caching` like this:
+## Request the Addition of a Storage Adapter
 
-```typescript
-const memoryCache = await caching('memory', {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-  refreshThreshold: 3 * 1000 /*milliseconds*/,
-  
-  /* optional, but if not set, background refresh error will be an unhandled
-   * promise rejection, which might crash your node process */
-  onBackgroundRefreshError: (error) => { /* log or otherwise handle error */ }
-});
-```
+To request a new storage adapter, create an issue with the label "storage adapter." In the issue description, include any relevant information about the storage adapter that you would like to be added. 
 
-When a value will be retrieved from Redis with a TTL minor than 3sec, the value will be updated in the background.
+Once this request has been submitted in "issues" we will give it 30-60 days for any upvotes to take place. If there is little interest in the request, it will be closed.
 
-## Error Handling
-
-Cache Manager now does not throw errors by default. Instead, all errors are evented through the `error` event. Here is an example on how to use it:
-
-```javascript
-const memoryCache = await caching('memory', {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-});
-memoryCache.on('error', (error) => {
-  console.error('Cache error:', error);
-});
-```
-
-## Store Engines
-
-### Official and updated to last version
-
-- [node-cache-manager-redis-yet](https://github.com/node-cache-manager/node-cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
-
-- [node-cache-manager-ioredis-yet](https://github.com/node-cache-manager/node-cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
-
-### Third party
-
-- [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis) (uses [sol-redis-pool](https://github.com/joshuah/sol-redis-pool))
-
-- [node-cache-manager-redis-store](https://github.com/dabroek/node-cache-manager-redis-store) (uses [node_redis](https://github.com/NodeRedis/node_redis))
-
-- [node-cache-manager-ioredis](https://github.com/Tirke/node-cache-manager-ioredis) (uses [ioredis](https://github.com/luin/ioredis))
-
-- [node-cache-manager-mongodb](https://github.com/v4l3r10/node-cache-manager-mongodb)
-
-- [node-cache-manager-mongoose](https://github.com/disjunction/node-cache-manager-mongoose)
-
-- [node-cache-manager-fs-binary](https://github.com/sheershoff/node-cache-manager-fs-binary)
-
-- [node-cache-manager-fs-hash](https://github.com/rolandstarke/node-cache-manager-fs-hash)
-
-- [node-cache-manager-hazelcast](https://github.com/marudor/node-cache-manager-hazelcast)
-
-- [node-cache-manager-memcached-store](https://github.com/theogravity/node-cache-manager-memcached-store)
-
-- [node-cache-manager-memory-store](https://github.com/theogravity/node-cache-manager-memory-store)
-
-- [node-cache-manager-couchbase](https://github.com/davidepellegatta/node-cache-manager-couchbase)
-
-- [node-cache-manager-sqlite](https://github.com/maxpert/node-cache-manager-sqlite)
-
-- [@resolid/cache-manager-sqlite](https://github.com/huijiewei/cache-manager-sqlite) (uses [better-sqlite3](https://github.com/WiseLibs/better-sqlite3))
-
-## Contribute
-
-If you would like to contribute to the project, please read how to contribute here [CONTRIBUTING.md](./CONTRIBUTING.md).
+If there is already an adapter that you would like to add, please post an issue with the label "storage adapter" and include the name of the adapter you would like to add with the description and any relevant information. 
 
 ## License
-
-cache-manager is licensed under the [MIT license](./LICENSE).
+MIT [LISCENCE](LICENSE)

@@ -1,0 +1,276 @@
+# node-cache-manager 
+[![codecov](https://codecov.io/gh/node-cache-manager/cache-manager/branch/main/graph/badge.svg?token=ZV3G5IFigq)](https://codecov.io/gh/node-cache-manager/cache-manager)
+[![tests](https://github.com/node-cache-manager/cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/node-cache-manager/cache-manager/actions/workflows/test.yml)
+[![license](https://img.shields.io/github/license/node-cache-manager/cache-manager)](https://github.com/node-cache-manager/cache-manager/blob/main/LICENSE)
+[![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
+![npm](https://img.shields.io/npm/v/cache-manager)
+
+# Flexible NodeJS cache module
+
+A cache module for nodejs that allows easy wrapping of functions in cache, tiered caches, and a consistent interface.
+
+## Table of Contents
+* [Features](#features)
+* [Installation](#installation)
+* [Usage Examples](#usage-examples)
+  * [Single Store](#single-store)
+  * [Multi-Store](#multi-store)
+  * [Cache Manager Options](#cache-manager-options)
+  * [Refresh cache keys in background](#refresh-cache-keys-in-background)
+  * [Error Handling](#error-handling)
+  * [Store Engines](#store-engines)
+* [Contribute](#contribute)
+* [License](#license)
+
+## Features
+
+- Made with Typescript and compatible with [ESModules](https://nodejs.org/docs/latest-v14.x/api/esm.html)
+- Easy way to wrap any function in cache.
+- Tiered caches -- data gets stored in each cache and fetched from the highest.
+  priority cache(s) first.
+- Use any cache you want, as long as it has the same API.
+- 100% test coverage via [vitest](https://github.com/vitest-dev/vitest).
+
+## Installation
+
+    pnpm install cache-manager
+
+## Usage Examples
+
+### Single Store
+
+```typescript
+import { caching } from 'cache-manager';
+
+const memoryCache = await caching('memory', {
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+});
+
+const ttl = 5 * 1000; /*milliseconds*/
+await memoryCache.set('foo', 'bar', ttl);
+
+console.log(await memoryCache.get('foo'));
+// >> "bar"
+
+await memoryCache.del('foo');
+
+console.log(await memoryCache.get('foo'));
+// >> undefined
+
+const getUser = (id: string) => new Promise.resolve({ id: id, name: 'Bob' });
+
+const userId = 123;
+const key = 'user_' + userId;
+
+console.log(await memoryCache.wrap(key, () => getUser(userId), ttl));
+// >> { id: 123, name: 'Bob' }
+```
+
+See unit tests in [`test/caching.test.ts`](./test/caching.test.ts) for more information.
+
+#### Example setting/getting several keys with mset() and mget()
+
+```typescript
+await memoryCache.store.mset(
+  [
+    ['foo', 'bar'],
+    ['foo2', 'bar2'],
+  ],
+  ttl,
+);
+
+console.log(await memoryCache.store.mget('foo', 'foo2'));
+// >> ['bar', 'bar2']
+
+// Delete keys with mdel() passing arguments...
+await memoryCache.store.mdel('foo', 'foo2');
+```
+
+#### [Example Express App Usage](./examples/express/src/index.mts)
+
+#### Custom Stores
+
+You can use your own custom store by creating one with the same API as the built-in memory stores.
+
+- [Example Custom Store lru-cache](./src/stores/memory.ts)
+- [Example Custom Store redis](https://github.com/node-cache-manager/node-cache-manager-redis-yet)
+- [Example Custom Store ioredis](https://github.com/node-cache-manager/node-cache-manager-ioredis-yet)
+
+#### Create single cache store synchronously
+
+As `caching()` requires async functionality to resolve some stores, this is not well-suited to use for default function/constructor parameters etc.
+
+If you need to create a cache store synchronously, you can instead use `createCache()`:
+
+```typescript
+import { createCache, memoryStore } from 'node-cache-manager';
+
+// Create memory cache synchronously
+const memoryCache = createCache(memoryStore(), {
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+});
+
+// Default parameter in function
+function myService(cache = createCache(memoryStore())) {}
+
+// Default parameter in class constructor
+const DEFAULT_CACHE = createCache(memoryStore(), { ttl: 60 * 1000 });
+// ...
+class MyService {
+  constructor(private cache = DEFAULT_CACHE) {}
+}
+```
+
+### Multi-Store
+
+```typescript
+import { multiCaching } from 'cache-manager';
+
+const multiCache = multiCaching([memoryCache, someOtherCache]);
+const userId2 = 456;
+const key2 = 'user_' + userId;
+const ttl = 5;
+
+// Sets in all caches.
+await multiCache.set('foo2', 'bar2', ttl);
+
+// Fetches from highest priority cache that has the key.
+console.log(await multiCache.get('foo2'));
+// >> "bar2"
+
+// Delete from all caches
+await multiCache.del('foo2');
+
+// Sets multiple keys in all caches.
+// You can pass as many key, value tuples as you want
+await multiCache.mset(
+  [
+    ['foo', 'bar'],
+    ['foo2', 'bar2'],
+  ],
+  ttl
+);
+
+// mget() fetches from highest priority cache.
+// If the first cache does not return all the keys,
+// the next cache is fetched with the keys that were not found.
+// This is done recursively until either:
+// - all have been found
+// - all caches has been fetched
+console.log(await multiCache.mget('key', 'key2'));
+// >> ['bar', 'bar2']
+
+// Delete keys with mdel() passing arguments...
+await multiCache.mdel('foo', 'foo2');
+```
+
+See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) for more information.
+
+### Cache Manager Options
+
+The `caching` and `multiCaching` functions accept an options object as the second parameter. The following options are available:
+* max: The maximum number of items that can be stored in the cache. If the cache is full, the least recently used item is removed.
+* ttl: The time to live in milliseconds. This is the maximum amount of time that an item can be in the cache before it is removed.
+* shouldCloneBeforeSet: If true, the value will be cloned before being set in the cache. This is set to `true` by default.
+
+```typescript
+import { caching } from 'cache-manager';
+
+const memoryCache = await caching('memory', {
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+  shouldCloneBeforeSet: false, // this is set true by default (optional)
+});
+```
+
+### Refresh cache keys in background
+
+Both the `caching` and `multicaching` modules support a mechanism to refresh expiring cache keys in background when using the `wrap` function.  
+This is done by adding a `refreshThreshold` attribute while creating the caching store or passing it to the `wrap` function.
+
+If `refreshThreshold` is set and after retrieving a value from cache the TTL will be checked.  
+If the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously,  
+following same rules as standard fetching. In the meantime, the system will return the old value until expiration.
+
+NOTES:
+
+* In case of multicaching, the store that will be checked for refresh is the one where the key will be found first (highest priority).
+* If the threshold is low and the worker function is slow, the key may expire and you may encounter a racing condition with updating values.
+* The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
+* If no `ttl` is set for the key, the refresh mechanism will not be triggered. For redis, the `ttl` is set to -1 by default.
+
+For example, pass the refreshThreshold to `caching` like this:
+
+```typescript
+const memoryCache = await caching('memory', {
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+  refreshThreshold: 3 * 1000 /*milliseconds*/,
+  
+  /* optional, but if not set, background refresh error will be an unhandled
+   * promise rejection, which might crash your node process */
+  onBackgroundRefreshError: (error) => { /* log or otherwise handle error */ }
+});
+```
+
+When a value will be retrieved from Redis with a TTL minor than 3sec, the value will be updated in the background.
+
+## Error Handling
+
+Cache Manager now does not throw errors by default. Instead, all errors are evented through the `error` event. Here is an example on how to use it:
+
+```javascript
+const memoryCache = await caching('memory', {
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+});
+memoryCache.on('error', (error) => {
+  console.error('Cache error:', error);
+});
+```
+
+## Store Engines
+
+### Official and updated to last version
+
+- [node-cache-manager-redis-yet](https://github.com/node-cache-manager/node-cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+
+- [node-cache-manager-ioredis-yet](https://github.com/node-cache-manager/node-cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
+
+### Third party
+
+- [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis) (uses [sol-redis-pool](https://github.com/joshuah/sol-redis-pool))
+
+- [node-cache-manager-redis-store](https://github.com/dabroek/node-cache-manager-redis-store) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+
+- [node-cache-manager-ioredis](https://github.com/Tirke/node-cache-manager-ioredis) (uses [ioredis](https://github.com/luin/ioredis))
+
+- [node-cache-manager-mongodb](https://github.com/v4l3r10/node-cache-manager-mongodb)
+
+- [node-cache-manager-mongoose](https://github.com/disjunction/node-cache-manager-mongoose)
+
+- [node-cache-manager-fs-binary](https://github.com/sheershoff/node-cache-manager-fs-binary)
+
+- [node-cache-manager-fs-hash](https://github.com/rolandstarke/node-cache-manager-fs-hash)
+
+- [node-cache-manager-hazelcast](https://github.com/marudor/node-cache-manager-hazelcast)
+
+- [node-cache-manager-memcached-store](https://github.com/theogravity/node-cache-manager-memcached-store)
+
+- [node-cache-manager-memory-store](https://github.com/theogravity/node-cache-manager-memory-store)
+
+- [node-cache-manager-couchbase](https://github.com/davidepellegatta/node-cache-manager-couchbase)
+
+- [node-cache-manager-sqlite](https://github.com/maxpert/node-cache-manager-sqlite)
+
+- [@resolid/cache-manager-sqlite](https://github.com/huijiewei/cache-manager-sqlite) (uses [better-sqlite3](https://github.com/WiseLibs/better-sqlite3))
+
+## Contribute
+
+If you would like to contribute to the project, please read how to contribute here [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## License
+
+cache-manager is licensed under the [MIT license](./LICENSE).
