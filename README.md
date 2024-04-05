@@ -1,5 +1,11 @@
 # Cache Manager
 
+[![codecov](https://codecov.io/gh/jaredwray/cache-manager/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cache-manager)
+[![tests](https://github.com/jaredwray/cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/jaredwray/cache-manager/actions/workflows/test.yml)
+[![license](https://img.shields.io/github/license/jaredwray/cache-manager)](https://github.com/jaredwray/cache-manager/blob/main/LICENSE)
+[![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
+![npm](https://img.shields.io/npm/v/cache-manager)
+
 This is the cache manager mono repo that has the following packages:
 * `cache-manager` - The core package that provides the cache manager library.
 * `cache-manager-redis-yet` - The redis store for cache manager.
@@ -97,8 +103,6 @@ If you need more information on the steps to create a pull request, you can find
 ## Post an Issue
 
 To post an issue, navigate to the "Issues" tab in the main repository, and then select "New Issue." Enter a clear title describing the issue, as well as a description containing additional relevant information. Also select the label that best describes your issue type. For a bug report, for example, create an issue with the label "bug." In the description field, Be sure to include replication steps, as well as any relevant error messages.
-
-If you're reporting a security violation, be sure to check out the project's [security policy](SECURITY.md).
 
 Please also refer to our [Code of Conduct](CODE_OF_CONDUCT.md) for more information on how to report issues.
 

@@ -1,8 +1,12 @@
 # Redis store for node cache manager
 
-[![npm version](https://badge.fury.io/js/cache-manager-ioredis-yet.svg)](https://www.npmjs.com/package/cache-manager-ioredis-yet) [![codecov](https://codecov.io/gh/node-cache-manager/node-cache-manager-ioredis-yet/branch/master/graph/badge.svg?token=NX28S97MDF)](https://codecov.io/gh/node-cache-manager/node-cache-manager-ioredis-yet)
+[![codecov](https://codecov.io/gh/jaredwray/cache-manager/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cache-manager)
+[![tests](https://github.com/jaredwray/cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/jaredwray/cache-manager/actions/workflows/test.yml)
+[![license](https://img.shields.io/github/license/jaredwray/cache-manager)](https://github.com/jaredwray/cache-manager/blob/main/LICENSE)
+[![npm](https://img.shields.io/npm/dm/cache-manager-ioredis-yet)](https://npmjs.com/package/cache-manager-ioredis-yet)
+![npm](https://img.shields.io/npm/v/cache-manager-ioredis-yet)
 
-Redis cache store for [node-cache-manager](https://github.com/node-cache-manager/node-cache-manager).
+Redis cache store for [node-cache-manager](https://github.com/jaredwray/cache-manager).
 
 ## Installation
 
