@@ -13,6 +13,7 @@ To get started you can visit the [cache-manager](/packages/cache-manager/README.
 * [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute to this project
 * [SECURITY.md](SECURITY.md) - Security guidelines and supported versions
 
+
 ## Store Engines
 
 ### Official and updated to last version
@@ -48,6 +49,7 @@ To get started you can visit the [cache-manager](/packages/cache-manager/README.
 - [node-cache-manager-sqlite](https://github.com/maxpert/node-cache-manager-sqlite)
 
 - [@resolid/cache-manager-sqlite](https://github.com/huijiewei/cache-manager-sqlite) (uses [better-sqlite3](https://github.com/WiseLibs/better-sqlite3))
+
 
 ## Getting Started with the Mono Repo
 
@@ -105,14 +107,6 @@ Please also refer to our [Code of Conduct](CODE_OF_CONDUCT.md) for more informat
 ## Ask a Question
 
 To ask a question, create an issue with the label "question." In the issue description, include the related code and any context that can help us answer your question.
-
-## Request the Addition of a Storage Adapter
-
-To request a new storage adapter, create an issue with the label "storage adapter." In the issue description, include any relevant information about the storage adapter that you would like to be added. 
-
-Once this request has been submitted in "issues" we will give it 30-60 days for any upvotes to take place. If there is little interest in the request, it will be closed.
-
-If there is already an adapter that you would like to add, please post an issue with the label "storage adapter" and include the name of the adapter you would like to add with the description and any relevant information. 
 
 ## License
 MIT [LISCENCE](LICENSE)
