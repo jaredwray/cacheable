@@ -15,7 +15,7 @@
     }
   ],
   "description": "Redis store for node-cache-manager updated",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -36,16 +36,9 @@
   ],
   "scripts": {
     "clean": "rimraf dist coverage node_modules yarn.lock pnpm-lock.yaml package-lock.json",
-    "build": "rm -rf dist && tsc -p tsconfig.build.json",
-    "test:watch": "vitest test.ts",
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
     "test": "vitest run --coverage",
     "test:ci": "vitest run",
-    "fix": "npm run lint && npm run fmt",
-    "check": "npm run lint:check && npm run fmt:check",
-    "lint": "eslint --cache --fix '**/*.{ts,js}'",
-    "fmt": "prettier --write '**/*.{md,prisma,json}'",
-    "lint:check": "eslint --cache --max-warnings 0 '**/*.{ts,js}'",
-    "fmt:check": "prettier --check '**/*.{md,json}'",
     "prepare": "npm run build"
   },
   "dependencies": {
