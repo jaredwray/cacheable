@@ -1,68 +1,17 @@
 {
-  "name": "cache-manager",
-  "version": "5.5.0",
-  "description": "Cache module for Node.js",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts"
-  ],
+  "name": "cache-manager-mono-repo",
+  "version": "1.0.0",
+  "description": "Cache Manager Mono Repo",
   "scripts": {
-    "build": "rimraf dist && tsc -p tsconfig.build.json",
-    "clean": "rimraf ./dist ./coverage ./node_modules ./package-lock.json ./yarn.lock ./pnpm-lock.yaml",
-    "test": "xo --fix && vitest run --coverage",
-    "prepare": "npm run build"
+    "test": "pnpm recursive run test",
+    "test:ci": "c8 --reporter=lcov pnpm recursive run test:ci",
+    "build": "pnpm recursive run build",
+    "clean": "pnpm recursive run clean"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/node-cache-manager/cache-manager.git"
-  },
-  "keywords": [
-    "cache",
-    "redis",
-    "lru-cache",
-    "memory cache",
-    "multiple cache"
-  ],
-  "authors": [
-    {
-      "name": "Jared Wray",
-      "email": "me@jaredwray.com"
-    },
-    {
-      "name": "Bryan Donovan"
-    },
-    {
-      "name": "Juan Aguilar Santillana",
-      "email": "mhpoin@gmail.com"
-    }
-  ],
+  "keywords": [],
+  "author": "Jared Wray <me@jaredwray.com>",
   "license": "MIT",
-  "dependencies": {
-    "eventemitter3": "^5.0.1",
-    "lodash.clonedeep": "^4.5.0",
-    "lru-cache": "^10.2.0",
-    "promise-coalesce": "^1.1.2"
-  },
   "devDependencies": {
-    "@faker-js/faker": "^8.4.1",
-    "@types/lodash.clonedeep": "^4.5.9",
-    "@types/node": "^20.11.30",
-    "@typescript-eslint/eslint-plugin": "^7.4.0",
-    "@typescript-eslint/parser": "^7.4.0",
-    "@vitest/coverage-v8": "^1.4.0",
-    "eslint-config-xo-typescript": "^4.0.0",
-    "rimraf": "^5.0.5",
-    "typescript": "^5.4.3",
-    "vitest": "^1.4.0",
-    "xo": "^0.58.0"
-  },
-  "xo": {
-    "extends": "xo-typescript",
-    "extensions": [
-      "ts",
-      "tsx"
-    ]
+    "c8": "^9.1.0"
   }
 }
