@@ -11,8 +11,6 @@ To get started you can visit the [cache-manager](/packages/cache-manager/README.
 
 * [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Our code of conduct
 * [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute to this project
-* [SECURITY.md](SECURITY.md) - Security guidelines and supported versions
-
 
 ## Store Engines
 
