@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "5.5.0",
+  "version": "5.5.1",
   "description": "Cache module for Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,7 +17,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/node-cache-manager/cache-manager.git"
+    "url": "https://github.com/jaredwray/cache-manager.git"
   },
   "keywords": [
     "cache",

@@ -5,6 +5,8 @@
   "scripts": {
     "test": "pnpm recursive run test",
     "test:ci": "c8 --reporter=lcov pnpm recursive run test:ci",
+    "test:services:start": "docker-compose up -d",
+    "test:services:stop": "docker-compose down",
     "build": "pnpm recursive run build",
     "clean": "pnpm recursive run clean"
   },

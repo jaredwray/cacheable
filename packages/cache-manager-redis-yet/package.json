@@ -1,0 +1,70 @@
+{
+  "name": "cache-manager-redis-yet",
+  "description": "Redis store for node-cache-manager updated",
+  "version": "5.0.0",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jaredwray/cache-manager.git"
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "clean": "rimraf dist node_modules yarn.lock package-lock.json pnpm-lock.yaml .eslintcache coverage",
+    "test": "vitest run --coverage",
+    "test:ci": "vitest run",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "cache-manager",
+    "redis",
+    "redis-cluster"
+  ],
+  "authors": [
+    {
+      "name": "Matthijs Dabroek",
+      "email": "dabroek@gmail.com"
+    },
+    {
+      "name": "Juan Aguilar Santillana",
+      "email": "mhpoin@gmail.com"
+    },
+    {
+      "name": "Jared Wray",
+      "email": "me@jaredwray.com"
+    }
+  ],
+  "dependencies": {
+    "@redis/bloom": "^1.2.0",
+    "@redis/client": "^1.5.14",
+    "@redis/graph": "^1.1.1",
+    "@redis/json": "^1.0.6",
+    "@redis/search": "^1.1.6",
+    "@redis/time-series": "^1.0.5",
+    "cache-manager": "^5.4.0",
+    "redis": "^4.6.13"
+  },
+  "devDependencies": {
+    "@types/node": "20.11.27",
+    "@typescript-eslint/eslint-plugin": "7.2.0",
+    "@typescript-eslint/parser": "7.2.0",
+    "@vitest/coverage-v8": "1.3.1",
+    "dotenv-cli": "7.4.1",
+    "eslint": "8.57.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-plugin-prettier": "5.1.3",
+    "lint-staged": "15.2.2",
+    "prettier": "3.2.5",
+    "rimraf": "^5.0.5",
+    "typescript": "5.4.2",
+    "vitest": "1.3.1"
+  },
+  "engines": {
+    "node": ">= 18"
+  },
+  "lint-staged": {
+    "*.{ts,js}": "eslint --cache --fix",
+    "*.{json,prisma,md,yml}": "prettier --write"
+  }
+}
