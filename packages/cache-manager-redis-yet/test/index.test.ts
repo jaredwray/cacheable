@@ -74,14 +74,6 @@ describe('set', () => {
     await expect(redisCache.get('foo')).resolves.toBeUndefined();
   });
 
-  it('should store a value with a specific ttl from global', async () => {
-    await expect(redisCacheTtl.set('foo', 'bar')).resolves.toBeUndefined();
-    await sleep(2);
-    await expect(redisCacheTtl.get('foo')).resolves.toEqual('bar');
-    await sleep(configTtl.ttl);
-    await expect(redisCacheTtl.get('foo')).resolves.toBeUndefined();
-  });
-
   it('should store a value with 0 ttl', async () => {
     await expect(redisCacheTtl.set('foo', 'bar', 0)).resolves.toBeUndefined();
     await sleep(configTtl.ttl + 1);

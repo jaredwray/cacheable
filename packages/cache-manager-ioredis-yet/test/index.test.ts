@@ -13,7 +13,7 @@ let redisCache: RedisCache;
 let customRedisCache: RedisCache;
 
 const config: RedisOptions & Config = {
-  port: 6379,
+  port: 63791,
   host: 'localhost',
   ttl: 0,
 };
