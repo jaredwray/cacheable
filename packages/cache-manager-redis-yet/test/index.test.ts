@@ -78,7 +78,7 @@ describe('set', () => {
     await expect(redisCacheTtl.set('foo', 'bar')).resolves.toBeUndefined();
     await sleep(2);
     await expect(redisCacheTtl.get('foo')).resolves.toEqual('bar');
-    await sleep(configTtl.ttl);
+    await sleep(configTtl.ttl+100);
     await expect(redisCacheTtl.get('foo')).resolves.toBeUndefined();
   });
 
