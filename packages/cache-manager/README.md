@@ -94,8 +94,8 @@ await memoryCache.store.mdel('foo', 'foo2');
 You can use your own custom store by creating one with the same API as the built-in memory stores.
 
 - [Example Custom Store lru-cache](./src/stores/memory.ts)
-- [Example Custom Store redis](https://github.com/node-cache-manager/node-cache-manager-redis-yet)
-- [Example Custom Store ioredis](https://github.com/node-cache-manager/node-cache-manager-ioredis-yet)
+- [Example Custom Store redis](https://github.com/jaredwray/cache-manager/packages/cache-manager-redis-yet)
+- [Example Custom Store ioredis](https://github.com/jaredwray/cache-manager/packages/cache-manager-ioredis-yet)
 
 #### Create single cache store synchronously
 
@@ -235,9 +235,9 @@ memoryCache.on('error', (error) => {
 
 ### Official and updated to last version
 
-- [node-cache-manager-redis-yet](https://github.com/node-cache-manager/node-cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+- [node-cache-manager-redis-yet](https://github.com/jaredwray/cache-manager/packages/cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
 
-- [node-cache-manager-ioredis-yet](https://github.com/node-cache-manager/node-cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
+- [node-cache-manager-ioredis-yet](https://github.com/jaredwray/cache-manager/packages/cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
 
 ### Third party
 
