@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Cache Manager Mono Repo",
   "scripts": {
-    "test": "pnpm --filter cache-manager test && pnpm --filter cache-manager-redis-yet test && pnpm --filter cache-manager-ioredis-yet test",
+    "test": "pnpm recursive run test",
     "test:ci": "c8 --reporter=lcov pnpm recursive run test:ci",
     "test:services:start": "docker-compose up -d",
     "test:services:stop": "docker-compose down",

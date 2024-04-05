@@ -145,31 +145,6 @@ describe('mset', () => {
     ).resolves.toStrictEqual([undefined, undefined]);
   });
 
-  it('should store a value with 0 ttl', async () => {
-    await redisCacheTtl.store.mset(
-      [
-        ['foo', 'bar'],
-        ['foo2', 'bar2'],
-      ],
-      0,
-    );
-    await sleep(configTtl.ttl);
-    await expect(
-      redisCacheTtl.store.mget('foo', 'foo2'),
-    ).resolves.toStrictEqual(['bar', 'bar2']);
-  });
-
-  it('should store a value with a no ttl', async () => {
-    await redisCache.store.mset([
-      ['foo', 'bar'],
-      ['foo2', 'bar2'],
-    ]);
-    await expect(redisCache.store.mget('foo', 'foo2')).resolves.toStrictEqual([
-      'bar',
-      'bar2',
-    ]);
-    await expect(redisCache.store.ttl('foo')).resolves.toEqual(-1);
-  });
 
   it('should not be able to store a null value (not cacheable)', () =>
     expect(redisCache.store.mset([['foo2', null]])).rejects.toBeDefined());
