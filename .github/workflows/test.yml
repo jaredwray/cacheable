@@ -24,6 +24,9 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
+      - name: Start Test Services
+        run: pnpm test:services:start
+
       - name: Install dependencies
         run: pnpm install
 
