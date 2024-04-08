@@ -22,9 +22,9 @@ To get started you can visit the [cache-manager](/packages/cache-manager/README.
 
 ### Official and updated to last version
 
-- [node-cache-manager-redis-yet](https://github.com/jaredwray/cache-manager/packages/cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
 
-- [node-cache-manager-ioredis-yet](https://github.com/jaredwray/cache-manager/packages/cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
+- [node-cache-manager-redis-yet](https://github.com/jaredwray/cache-manager/tree/main/packages/cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+- [node-cache-manager-ioredis-yet](https://github.com/jaredwray/cache-manager/tree/main/packages/cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
 
 ### Third party
 
