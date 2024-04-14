@@ -12,7 +12,7 @@
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "clean": "rimraf ./dist ./coverage ./node_modules ./package-lock.json ./yarn.lock ./pnpm-lock.yaml",
     "test": "xo --fix && vitest run --coverage",
-    "test:ci": "xo --fix && vitest run",
+    "test:ci": "xo && vitest run",
     "prepare": "npm run build"
   },
   "repository": {
