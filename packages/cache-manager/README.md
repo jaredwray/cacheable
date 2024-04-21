@@ -170,10 +170,11 @@ See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) f
 
 ### Cache Manager Options
 
-The `caching` and `multiCaching` functions accept an options object as the second parameter. The following options are available:
-* max: The maximum number of items that can be stored in the cache. If the cache is full, the least recently used item is removed.
+The `caching` function accepts an options object as the second parameter. The following options are available:
 * ttl: The time to live in milliseconds. This is the maximum amount of time that an item can be in the cache before it is removed.
-* shouldCloneBeforeSet: If true, the value will be cloned before being set in the cache. This is set to `true` by default.
+* refreshThreshold: discussed in details below.
+* isCacheable: a function to determine whether the value is cacheable or not.
+* onBackgroundRefreshError: a function to handle errors that occur during background refresh.
 
 ```typescript
 import { caching } from 'cache-manager';
@@ -184,6 +185,10 @@ const memoryCache = await caching('memory', {
   shouldCloneBeforeSet: false, // this is set true by default (optional)
 });
 ```
+
+When creating a memory store, you also get these addition options:
+* max: The maximum number of items that can be stored in the cache. If the cache is full, the least recently used item is removed.
+* shouldCloneBeforeSet: If true, the value will be cloned before being set in the cache. This is set to `true` by default.
 
 ### Refresh cache keys in background
 
@@ -219,14 +224,11 @@ When a value will be retrieved from Redis with a TTL minor than 3sec, the value 
 
 ## Error Handling
 
-Cache Manager now does not throw errors by default. Instead, all errors are evented through the `error` event. Here is an example on how to use it:
+`multiCaching` now does not throw errors by default. Instead, all errors are evented through the `error` event. Here is an example on how to use it:
 
 ```javascript
-const memoryCache = await caching('memory', {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-});
-memoryCache.on('error', (error) => {
+const multicache = await multiCaching([memoryCache, someOtherCache]);
+multicache.on('error', (error) => {
   console.error('Cache error:', error);
 });
 ```
