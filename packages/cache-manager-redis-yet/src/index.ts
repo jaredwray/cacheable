@@ -59,15 +59,14 @@ function builder<T extends Clients>(
   name: Name<T>,
   reset: () => Promise<void>,
   keys: (pattern: string) => Promise<string[]>,
-  options?: Config,
-  customOptions?: CustomOptions,
+  options?: Config & CustomOptions,
 ) {
   const isCacheable =
     options?.isCacheable || ((value) => value !== undefined && value !== null);
 
   return {
     async get<T>(key: string) {
-      const val = await redisCache.get(getFullKey(key, customOptions?.keyPrefix));
+      const val = await redisCache.get(getFullKey(key, options?.keyPrefix));
       if (val === undefined || val === null) return undefined;
       else return JSON.parse(val) as T;
     },
@@ -79,8 +78,8 @@ function builder<T extends Clients>(
         const t = ttl === undefined ? options?.ttl : ttl;
         
       if (t !== undefined && t !== 0)
-        await redisCache.set(getFullKey(key, customOptions?.keyPrefix), getVal(value), { PX: t });
-      else await redisCache.set(getFullKey(key, customOptions?.keyPrefix), getVal(value));
+        await redisCache.set(getFullKey(key, options?.keyPrefix), getVal(value), { PX: t });
+      else await redisCache.set(getFullKey(key, options?.keyPrefix), getVal(value));
     },
     async mset(args, ttl) {
       const t = ttl === undefined ? options?.ttl : ttl;
@@ -92,7 +91,7 @@ function builder<T extends Clients>(
               `"${getVal(value)}" is not a cacheable value`,
             );
           
-          multi.set(getFullKey(key, customOptions?.keyPrefix), getVal(value), { PX: t });
+          multi.set(getFullKey(key, options?.keyPrefix), getVal(value), { PX: t });
         }
         await multi.exec();
       } else
@@ -133,23 +132,23 @@ function builder<T extends Clients>(
 
 
 // TODO: past instance as option
-export async function redisStore(options?: RedisClientOptions & Config, customOptions?: CustomOptions) {
+export async function redisStore(options?: RedisClientOptions & Config & CustomOptions) {
   const redisCache = createClient(options);
   await redisCache.connect();
 
-  return redisInsStore(redisCache as RedisClientType, options, customOptions);
+  return redisInsStore(redisCache as RedisClientType, options);
 }
 
 /**
  * redisCache should be connected
  */
-export function redisInsStore(redisCache: RedisClientType, options?: Config, customOptions?: CustomOptions) {
+export function redisInsStore(redisCache: RedisClientType, options?: Config & CustomOptions) {
   const reset = async () => {
     await redisCache.flushDb();
   };
   const keys = (pattern: string) => redisCache.keys(pattern);
 
-  return builder(redisCache, 'redis', reset, keys, options, customOptions);
+  return builder(redisCache, 'redis', reset, keys, options);
 }
 
 // TODO: coverage
