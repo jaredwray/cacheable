@@ -10,11 +10,11 @@
     "url": "https://github.com/jaredwray/cache-manager.git"
   },
   "scripts": {
-    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rimraf dist node_modules yarn.lock package-lock.json pnpm-lock.yaml .eslintcache coverage",
     "test": "vitest run --coverage",
     "test:ci": "vitest run",
-    "prepare": "npm run build"
+    "prepare": "pnpm build"
   },
   "keywords": [
     "cache-manager",

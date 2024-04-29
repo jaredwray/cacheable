@@ -36,10 +36,10 @@
   ],
   "scripts": {
     "clean": "rimraf dist coverage node_modules yarn.lock pnpm-lock.yaml package-lock.json",
-    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
     "test": "vitest run --coverage",
     "test:ci": "vitest run",
-    "prepare": "npm run build"
+    "prepare": "pnpm build"
   },
   "dependencies": {
     "cache-manager": "^5.4.0",
