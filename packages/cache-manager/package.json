@@ -9,11 +9,11 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
-    "build": "rimraf dist && tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
     "clean": "rimraf ./dist ./coverage ./node_modules ./package-lock.json ./yarn.lock ./pnpm-lock.yaml",
     "test": "xo --fix && vitest run --coverage",
     "test:ci": "xo && vitest run",
-    "prepare": "npm run build"
+    "prepare": "pnpm build"
   },
   "repository": {
     "type": "git",
@@ -49,13 +49,13 @@
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
     "@types/lodash.clonedeep": "^4.5.9",
-    "@types/node": "^20.11.30",
-    "@typescript-eslint/eslint-plugin": "^7.4.0",
-    "@typescript-eslint/parser": "^7.4.0",
+    "@types/node": "^20.12.7",
+    "@typescript-eslint/eslint-plugin": "^7.7.1",
+    "@typescript-eslint/parser": "^7.7.1",
     "@vitest/coverage-v8": "^1.4.0",
     "eslint-config-xo-typescript": "^4.0.0",
     "rimraf": "^5.0.5",
-    "typescript": "^5.4.3",
+    "typescript": "^5.4.5",
     "vitest": "^1.4.0",
     "xo": "^0.58.0"
   },
