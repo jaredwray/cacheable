@@ -8,9 +8,9 @@ import Redis, {
 import * as telejson from 'telejson';
 
 const stringify = (value: unknown) =>
-  telejson.stringify({ v: value }, { maxDepth: Infinity });
+  telejson.stringify({ v: value }, { maxDepth: Infinity }).slice(5, -1);
 
-const parse = (value: string) => telejson.parse(value)?.v;
+const parse = (value: string) => telejson.parse('{"v":' + value + '}')?.v;
 
 import type { Cache, Store, Config } from 'cache-manager';
 
