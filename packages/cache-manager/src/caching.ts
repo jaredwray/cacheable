@@ -43,13 +43,29 @@ export type Stores<S extends Store, T extends Record<string, unknown>> =
 export type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export type WrapTTL<T> = Milliseconds | ((v: T) => Milliseconds);
+
+export type ErrorEvent<T = never> = {
+	operation: 'get' | 'set' | 'del' | 'wrap' | 'reset';
+	error: unknown;
+	key?: string;
+	data?: T;
+} | {
+	operation: 'mget' | 'mset' | 'mdel';
+	error: unknown;
+	keys: string[];
+	data?: T[];
+};
+
+export type ErrorEventHandler<T = unknown> = (event: ErrorEvent<T>) => void;
+
 export type Cache<S extends Store = Store> = {
 	store: S;
 	set: (key: string, value: unknown, ttl?: Milliseconds) => Promise<void>;
 	get: <T>(key: string) => Promise<T | undefined>;
 	del: (key: string) => Promise<void>;
 	reset: () => Promise<void>;
-	on: (event: 'error', handler: (error: Error) => void) => void;
+	on: <T>(event: 'error', handler: ErrorEventHandler<T>) => void;
+	removeListener: <T>(event: 'error', handler: ErrorEventHandler<T>) => void;
 	wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds): Promise<T>;
 };
 
@@ -114,14 +130,20 @@ export function createCache<S extends Store, C extends Config>(
 			const refreshThresholdConfig = refreshThreshold ?? arguments_?.refreshThreshold ?? 0;
 			return coalesceAsync(key, async () => {
 				const value = await store.get<T>(key).catch(error => {
-					eventEmitter.emit('error', error);
+					const errorEvent: ErrorEvent<T> = {error, key, operation: 'wrap'};
+					eventEmitter.emit('error', errorEvent);
 				});
 
 				if (value === undefined) {
 					const result = await function_();
 
 					const cacheTtl = typeof ttl === 'function' ? ttl(result) : ttl;
-					await store.set<T>(key, result, cacheTtl).catch(error => eventEmitter.emit('error', error));
+					await store.set<T>(key, result, cacheTtl).catch(error => {
+						const errorEvent: ErrorEvent<T> = {
+							error, key, operation: 'wrap', data: result,
+						};
+						eventEmitter.emit('error', errorEvent);
+					});
 					return result;
 				}
 
@@ -132,7 +154,10 @@ export function createCache<S extends Store, C extends Config>(
 						coalesceAsync(`+++${key}`, function_)
 							.then(async result => store.set<T>(key, result, cacheTtl))
 							.catch(async error => {
-								eventEmitter.emit('error', error);
+								const errorEvent: ErrorEvent<T> = {
+									error, key, operation: 'wrap', data: value,
+								};
+								eventEmitter.emit('error', errorEvent);
 								eventEmitter.emit('onBackgroundRefreshError', error);
 								if (arguments_?.onBackgroundRefreshError) {
 									arguments_.onBackgroundRefreshError(error);
@@ -153,7 +178,8 @@ export function createCache<S extends Store, C extends Config>(
 		set: async (key: string, value: unknown, ttl?: Milliseconds) =>
 			store.set(key, value, ttl),
 		reset: async () => store.reset(),
-		on: (event: 'error', handler: (error: Error) => void) =>
+		on: <T>(event: 'error', handler: (error: ErrorEvent<T>) => void) =>
 			eventEmitter.on('error', handler),
+		removeListener: <T>(event: 'error', handler: (error: ErrorEvent<T>) => void) => eventEmitter.removeListener(event, handler),
 	};
 }

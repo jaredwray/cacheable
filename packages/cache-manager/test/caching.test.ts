@@ -327,14 +327,17 @@ describe('caching', () => {
 				const cache = await caching('memory');
 				cache.store.get = vi.fn().mockRejectedValue(error);
 
-				let errorMessage;
+				let errorEvent;
 				cache.on('error', error => {
-					errorMessage = error;
+					errorEvent = error;
 				});
 
 				await cache.wrap(key, function_);
 
-				expect(errorMessage).not.toBeUndefined();
+				expect(errorEvent!.error).not.toBeUndefined();
+				expect(errorEvent!.key).toBe(key);
+				expect(errorEvent!.operation).toBe('wrap');
+				expect(errorEvent!.data).toBeUndefined();
 				expect(function_).toHaveBeenCalled();
 			});
 
@@ -344,14 +347,17 @@ describe('caching', () => {
 				const cache = await caching('memory');
 				cache.store.set = vi.fn().mockRejectedValue(error);
 
-				let errorMessage;
+				let errorEvent;
 				cache.on('error', error => {
-					errorMessage = error;
+					errorEvent = error;
 				});
 
 				await cache.wrap(key, function_);
 
-				expect(errorMessage).not.toBeUndefined();
+				expect(errorEvent!.error).not.toBeUndefined();
+				expect(errorEvent!.key).toBe(key);
+				expect(errorEvent!.operation).toBe('wrap');
+				expect(errorEvent!.data).toBe(value);
 			});
 		});
 	});
