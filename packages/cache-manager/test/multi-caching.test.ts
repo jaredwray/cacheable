@@ -1,7 +1,11 @@
 /* eslint-disable max-nested-callbacks */
-import {beforeEach, describe, expect, it, vi,} from 'vitest';
+import {
+	beforeEach, describe, expect, it, vi,
+} from 'vitest';
 import {faker} from '@faker-js/faker';
-import {type Cache, caching, type MemoryCache, type MultiCache, multiCaching, type Store,} from '../src/index.js';
+import {
+	type Cache, caching, type MemoryCache, type MultiCache, multiCaching, type Store,
+} from '../src/index.js';
 import {sleep} from './utils.js';
 
 describe('multiCaching', () => {
