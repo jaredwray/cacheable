@@ -1,15 +1,10 @@
 /* eslint-disable max-nested-callbacks */
 import {
-	describe, expect, it, beforeEach, vi,
+	beforeEach, describe, expect, it, vi,
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {
-	type Cache,
-	caching,
-	type MemoryCache,
-	type MultiCache,
-	multiCaching,
-	type Store,
+	type Cache, caching, type MemoryCache, type MultiCache, multiCaching, type Store,
 } from '../src/index.js';
 import {sleep} from './utils.js';
 
@@ -199,6 +194,7 @@ describe('multiCaching', () => {
 				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 				store: {} as Store,
 				on: empty,
+				removeListener: empty,
 			};
 
 			const setErrorCache: Cache = {
@@ -212,6 +208,7 @@ describe('multiCaching', () => {
 				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 				store: {} as Store,
 				on: empty,
+				removeListener: empty,
 			};
 
 			const cacheEmpty: Cache = {
@@ -223,6 +220,7 @@ describe('multiCaching', () => {
 				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
 				store: {} as Store,
 				on: empty,
+				removeListener: empty,
 			};
 
 			it('should get error', async () => {
@@ -251,38 +249,45 @@ describe('multiCaching', () => {
 
 			it('emits an error event when store.get() fails', async () => {
 				multiCache = multiCaching([getErrorCache, memoryCache]);
-				let errorMessage;
+				let errorEvent;
 				multiCache.on('error', error => {
-					errorMessage = error;
+					errorEvent = error;
 				});
 
 				await multiCache.get(key);
 
-				expect(errorMessage).not.toBeUndefined();
+				expect(errorEvent!.error).not.toBeUndefined();
+				expect(errorEvent!.operation).toBe('get');
+				expect(errorEvent!.key).toBe(key);
 			});
 
 			it('should receive error event on set failure', async () => {
 				multiCache = multiCaching([setErrorCache, memoryCache]);
-				let errorMessage;
+				let errorEvent;
 				multiCache.on('error', error => {
-					errorMessage = error;
+					errorEvent = error;
 				});
 
 				await multiCache.set(key, value);
 
-				expect(errorMessage).not.toBeUndefined();
+				expect(errorEvent!.error).not.toBeUndefined();
+				expect(errorEvent!.key).toBe(key);
+				expect(errorEvent!.data).toBe(value);
+				expect(errorEvent!.operation).toBe('set');
 			});
 
 			it('should receive error event on mget failure', async () => {
 				multiCache = multiCaching([setErrorCache, memoryCache]);
-				let errorMessage;
+				let errorEvent;
 				multiCache.on('error', error => {
-					errorMessage = error;
+					errorEvent = error;
 				});
+				const key2 = value;
+				await multiCache.mget(key, key2);
 
-				await multiCache.mget(key, value);
-
-				expect(errorMessage).not.toBeUndefined();
+				expect(errorEvent!.error).not.toBeUndefined();
+				expect(errorEvent!.keys).toStrictEqual([key, key2]);
+				expect(errorEvent!.operation).toBe('mget');
 			});
 
 			it('should receive error event on get failure during wrap', async () => {
@@ -290,14 +295,17 @@ describe('multiCaching', () => {
 				const error = new Error('store.get() failed');
 				const function_ = vi.fn().mockResolvedValue(value);
 
-				let errorMessage;
+				let errorEvent;
 				multiCache.on('error', error => {
-					errorMessage = error;
+					errorEvent = error;
 				});
 
 				await multiCache.wrap(key, function_);
 
-				expect(errorMessage).not.toBeUndefined();
+				expect(errorEvent!.error).not.toBeUndefined();
+				expect(errorEvent!.operation).toBe('wrap');
+				expect(errorEvent!.key).toBe(key);
+				expect(errorEvent!.data).toBeUndefined();
 			});
 		});
 	});

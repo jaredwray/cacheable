@@ -33,6 +33,10 @@ export interface RedisStore<T extends Clients = RedisClientType> extends Store {
   get client(): T;
 }
 
+export type CustomOptions = {
+  keyPrefix?: string;
+}
+
 export class NoCacheableError implements Error {
   name = 'NoCacheableError';
   constructor(public message: string) {}
@@ -48,29 +52,34 @@ export const avoidNoCacheable = async <T>(p: Promise<T>) => {
 
 const getVal = (value: unknown) => JSON.stringify(value) || '"undefined"';
 
+const getFullKey = (originalKey: string, keyPrefix?: string) => `${keyPrefix? `${keyPrefix}:` : ''}${originalKey}`;
+
 function builder<T extends Clients>(
   redisCache: T,
   name: Name<T>,
   reset: () => Promise<void>,
   keys: (pattern: string) => Promise<string[]>,
-  options?: Config,
+  options?: Config & CustomOptions,
 ) {
   const isCacheable =
     options?.isCacheable || ((value) => value !== undefined && value !== null);
 
   return {
     async get<T>(key: string) {
-      const val = await redisCache.get(key);
+      const val = await redisCache.get(getFullKey(key, options?.keyPrefix));
       if (val === undefined || val === null) return undefined;
       else return JSON.parse(val) as T;
     },
     async set(key, value, ttl) {
+      
       if (!isCacheable(value))
         throw new NoCacheableError(`"${value}" is not a cacheable value`);
-      const t = ttl === undefined ? options?.ttl : ttl;
+      
+        const t = ttl === undefined ? options?.ttl : ttl;
+        
       if (t !== undefined && t !== 0)
-        await redisCache.set(key, getVal(value), { PX: t });
-      else await redisCache.set(key, getVal(value));
+        await redisCache.set(getFullKey(key, options?.keyPrefix), getVal(value), { PX: t });
+      else await redisCache.set(getFullKey(key, options?.keyPrefix), getVal(value));
     },
     async mset(args, ttl) {
       const t = ttl === undefined ? options?.ttl : ttl;
@@ -81,7 +90,8 @@ function builder<T extends Clients>(
             throw new NoCacheableError(
               `"${getVal(value)}" is not a cacheable value`,
             );
-          multi.set(key, getVal(value), { PX: t });
+          
+          multi.set(getFullKey(key, options?.keyPrefix), getVal(value), { PX: t });
         }
         await multi.exec();
       } else
@@ -120,8 +130,9 @@ function builder<T extends Clients>(
   } as RedisStore<T>;
 }
 
+
 // TODO: past instance as option
-export async function redisStore(options?: RedisClientOptions & Config) {
+export async function redisStore(options?: RedisClientOptions & Config & CustomOptions) {
   const redisCache = createClient(options);
   await redisCache.connect();
 
@@ -131,7 +142,7 @@ export async function redisStore(options?: RedisClientOptions & Config) {
 /**
  * redisCache should be connected
  */
-export function redisInsStore(redisCache: RedisClientType, options?: Config) {
+export function redisInsStore(redisCache: RedisClientType, options?: Config & CustomOptions) {
   const reset = async () => {
     await redisCache.flushDb();
   };
