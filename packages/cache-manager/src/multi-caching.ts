@@ -13,6 +13,10 @@ export function multiCaching<Caches extends Cache[]>(
 	caches: Caches,
 ): MultiCache {
 	const eventEmitter = new EventEmitter();
+	for (const cache of caches) {
+		cache.on('error', event => eventEmitter.emit('error', event));
+	}
+
 	const get = async <T>(key: string) => {
 		for (const cache of caches) {
 			try {
