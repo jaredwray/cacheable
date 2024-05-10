@@ -3,6 +3,7 @@ import {
 	beforeEach, describe, expect, it, vi,
 } from 'vitest';
 import {faker} from '@faker-js/faker';
+import EventEmitter from 'eventemitter3';
 import {
 	type Cache, caching, type MemoryCache, type MultiCache, multiCaching, type Store,
 } from '../src/index.js';
@@ -211,6 +212,22 @@ describe('multiCaching', () => {
 				removeListener: empty,
 			};
 
+			const emitter = new EventEmitter();
+			const getErrorOnEmitterCache: Cache = {
+				async get() {
+					emitter.emit('error', {error: new Error('error!'), key, operation: 'get'});
+					return undefined;
+				},
+				set: empty,
+				del: empty,
+				reset: empty,
+				wrap: empty,
+				// eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+				store: {} as Store,
+				on: (type, function_) => emitter.on('error', function_),
+				removeListener: empty,
+			};
+
 			const cacheEmpty: Cache = {
 				get: empty,
 				set: empty,
@@ -306,6 +323,21 @@ describe('multiCaching', () => {
 				expect(errorEvent!.operation).toBe('wrap');
 				expect(errorEvent!.key).toBe(key);
 				expect(errorEvent!.data).toBeUndefined();
+			});
+
+			it('should receive error events from underlying caches', async () => {
+				multiCache = multiCaching([getErrorOnEmitterCache]);
+
+				let errorEvent;
+				multiCache.on('error', error => {
+					errorEvent = error;
+				});
+
+				await multiCache.get(key);
+
+				expect(errorEvent!.error).not.toBeUndefined();
+				expect(errorEvent!.operation).toBe('get');
+				expect(errorEvent!.key).toBe(key);
 			});
 		});
 	});
