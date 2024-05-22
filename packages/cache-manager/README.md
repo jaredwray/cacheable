@@ -104,13 +104,13 @@ As `caching()` requires async functionality to resolve some stores, this is not 
 If you need to create a cache store synchronously, you can instead use `createCache()`:
 
 ```typescript
-import { createCache, memoryStore } from 'node-cache-manager';
+import { createCache, memoryStore } from 'cache-manager';
 
 // Create memory cache synchronously
-const memoryCache = createCache(memoryStore(), {
+const memoryCache = createCache(memoryStore({
   max: 100,
   ttl: 10 * 1000 /*milliseconds*/,
-});
+}));
 
 // Default parameter in function
 function myService(cache = createCache(memoryStore())) {}
