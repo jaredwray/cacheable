@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "5.5.2",
+  "version": "5.5.3",
   "description": "Cache module for Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
     "dist/**/*.d.ts"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "rimraf ./dist && tsc -p tsconfig.build.json",
     "clean": "rimraf ./dist ./coverage ./node_modules ./package-lock.json ./yarn.lock ./pnpm-lock.yaml",
     "test": "xo --fix && vitest run --coverage",
     "test:ci": "xo && vitest run",
