@@ -37,13 +37,13 @@
   ],
   "dependencies": {
     "@redis/bloom": "^1.2.0",
-    "@redis/client": "^1.5.14",
+    "@redis/client": "^1.5.16",
     "@redis/graph": "^1.1.1",
     "@redis/json": "^1.0.6",
     "@redis/search": "^1.1.6",
     "@redis/time-series": "^1.0.5",
     "cache-manager": "^5.5.1",
-    "redis": "^4.6.13"
+    "redis": "^4.6.14"
   },
   "devDependencies": {
     "@types/node": "20.12.7",
