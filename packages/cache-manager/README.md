@@ -88,8 +88,6 @@ console.log(await memoryCache.store.mget('foo', 'foo2'));
 await memoryCache.store.mdel('foo', 'foo2');
 ```
 
-#### [Example Express App Usage](./examples/express/src/index.mts)
-
 #### Custom Stores
 
 You can use your own custom store by creating one with the same API as the built-in memory stores.
