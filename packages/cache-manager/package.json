@@ -15,6 +15,9 @@
     "test:ci": "xo && vitest run",
     "prepare": "pnpm build"
   },
+  "engines": {
+    "node": ">= 18"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/jaredwray/cache-manager.git"
