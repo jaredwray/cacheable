@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "5.5.3",
+  "version": "5.6.0",
   "description": "Cache module for Node.js",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,6 +14,9 @@
     "test": "xo --fix && vitest run --coverage",
     "test:ci": "xo && vitest run",
     "prepare": "pnpm build"
+  },
+  "engines": {
+    "node": ">= 18"
   },
   "repository": {
     "type": "git",
