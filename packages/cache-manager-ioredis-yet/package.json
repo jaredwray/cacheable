@@ -15,7 +15,7 @@
     }
   ],
   "description": "Redis store for node-cache-manager updated",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
