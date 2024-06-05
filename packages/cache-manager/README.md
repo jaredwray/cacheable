@@ -18,6 +18,7 @@ A cache module for nodejs that allows easy wrapping of functions in cache, tiere
   * [Cache Manager Options](#cache-manager-options)
   * [Refresh cache keys in background](#refresh-cache-keys-in-background)
   * [Error Handling](#error-handling)
+  * [Express Middleware](#express-middleware)
   * [Store Engines](#store-engines)
 * [Contribute](#contribute)
 * [License](#license)
@@ -231,6 +232,62 @@ const multicache = await multiCaching([memoryCache, someOtherCache]);
 multicache.on('error', (error) => {
   console.error('Cache error:', error);
 });
+```
+
+## Express Middleware
+
+This example sets up an Express application with a caching mechanism using cache-manager. The cacheMiddleware checks if the response for a request is already cached and returns it if available. If not, it proceeds to the route handler, caches the response, and then returns it. This helps to reduce the load on the server by avoiding repeated processing of the same requests.
+
+```typescript
+// The code imports the necessary modules using ES module syntax:
+import { caching } from 'cache-manager';
+import express from 'express';
+
+// The memory cache is initialized using cache-manager with a maximum of 100 items and a TTL (time-to-live) of 10 seconds:
+const memoryCache = await caching('memory', {
+  max: 100,
+  ttl: 10 /* seconds */
+});
+
+const app = express();
+const port = 3000;
+
+// A middleware function is defined to check the cache before processing the request. If the response is found in the cache, it is returned immediately. If not, the request proceeds to the route handler, and the response is cached before being sent:
+const cacheMiddleware = async (req, res, next) => {
+  const key = req.originalUrl;
+
+  try {
+    const cachedResponse = await memoryCache.get(key);
+    if (cachedResponse) {
+      // Cache hit, return the cached response
+      return res.send(cachedResponse);
+    } else {
+      // Cache miss, proceed to the route handler
+      res.sendResponse = res.send;
+      res.send = async (body) => {
+        // Store the response in cache
+        await memoryCache.set(key, body);
+        res.sendResponse(body);
+      };
+      next();
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+// The cacheMiddleware is applied to the /data route, which simulates a slow database call with a 2-second delay:
+app.get('/data', cacheMiddleware, (req, res) => {
+  // Simulate a slow database call
+  setTimeout(() => {
+    res.send({ data: 'This is some data', timestamp: new Date() });
+  }, 2000); // 2 seconds delay
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+});
+
 ```
 
 ## Store Engines
