@@ -244,7 +244,7 @@ import express from 'express';
 // The memory cache is initialized using cache-manager with a maximum of 100 items and a TTL (time-to-live) of 10 seconds:
 const memoryCache = await caching('memory', {
   max: 100,
-  ttl: 10 /* seconds */
+  ttl: 10 * 1000 /*milliseconds*/
 });
 
 const app = express();
