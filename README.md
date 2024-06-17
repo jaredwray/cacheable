@@ -71,7 +71,10 @@ pnpm install
 
 To run the tests:
 
+You will want to first start the services with docker and then run the tests
+
 ```bash
+pnpm -w test:services:start
 pnpm test
 ```
 
