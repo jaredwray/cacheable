@@ -204,6 +204,16 @@ describe('del', () => {
 		await redisCache.store.client.disconnect();
 		await expect(redisCache.del('foo')).rejects.toBeDefined();
 	});
+	it('should delete when key prefix is set', async () => {
+		const keyPrefix = 'prefix';
+		const key = 'foo77';
+		await redisCache.set(key, 'bar');
+		const redisCachePrefix = await caching(redisStore, { keyPrefix });
+		await redisCachePrefix.set(key, 'bar');
+		await redisCachePrefix.del(key);
+		await expect(redisCachePrefix.get(key)).resolves.toBeUndefined();
+		expect(await redisCache.get(key) === 'bar').toBeTruthy();
+	});
 });
 
 describe('reset', () => {
