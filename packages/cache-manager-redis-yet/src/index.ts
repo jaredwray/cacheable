@@ -114,10 +114,11 @@ function builder<T extends Clients>(
           ),
         ),
     async mdel(...args) {
+      let keys = args.map((key) => getFullKey(key, options?.keyPrefix));
       await redisCache.del(args);
     },
     async del(key) {
-      await redisCache.del(key);
+      await redisCache.del(getFullKey(key, options?.keyPrefix));
     },
     ttl: async (key) => redisCache.pTTL(key),
     keys: (pattern = '*') => keys(pattern),
