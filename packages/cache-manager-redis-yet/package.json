@@ -1,7 +1,7 @@
 {
   "name": "cache-manager-redis-yet",
   "description": "Redis store for node-cache-manager updated",
-  "version": "5.1.1",
+  "version": "5.1.2",
   "license": "MIT",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
