@@ -52,9 +52,9 @@
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
     "@types/lodash.clonedeep": "^4.5.9",
-    "@types/node": "^20.12.12",
-    "@typescript-eslint/eslint-plugin": "^7.10.0",
-    "@typescript-eslint/parser": "^7.10.0",
+    "@types/node": "^20.14.2",
+    "@typescript-eslint/eslint-plugin": "^7.13.0",
+    "@typescript-eslint/parser": "^7.13.0",
     "@vitest/coverage-v8": "^1.6.0",
     "eslint-config-xo-typescript": "^4.0.0",
     "rimraf": "^5.0.7",
