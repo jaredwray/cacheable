@@ -232,6 +232,17 @@ multicache.on('error', (error) => {
 });
 ```
 
+## Using non-blocking set with wrap
+By default, when using `wrap` the value is set in the cache before the function returns. 
+While this behaviour can prevent additional calls to downstream resources, it can also slow down the response time.
+This can be changed by setting the `nonBlockingSet` option to `true`. 
+Doing will make the function return before the value is set in the cache.
+The setting applies to both single and multi caches. 
+
+```typescript
+cache.wrap('key', () => fetchValue(), 1000, 500, {nonBlockingSet: true});
+```
+
 ## Express Middleware
 
 This example sets up an Express application with a caching mechanism using cache-manager. The cacheMiddleware checks if the response for a request is already cached and returns it if available. If not, it proceeds to the route handler, caches the response, and then returns it. This helps to reduce the load on the server by avoiding repeated processing of the same requests.
