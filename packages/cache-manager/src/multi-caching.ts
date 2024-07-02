@@ -91,7 +91,6 @@ export function multiCaching<Caches extends Cache[]>(
 
 			const cacheTtl = typeof ttl === 'function' ? ttl(value) : ttl;
 			await conditionalAwait(async () => set(key, value, cacheTtl, i).then(async () => caches[i].wrap(key, function_, ttl, refreshThreshold)), !options_.nonBlockingSet);
-			
 			return value;
 		},
 		async reset() {
