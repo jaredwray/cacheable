@@ -126,6 +126,42 @@ describe('multiCaching', () => {
 			});
 		});
 
+		describe('wrap() blocking modes', () => {
+			const store: Partial<Store> = {
+				async get<T>(key: string): Promise<T | undefined> {
+					return undefined;
+				},
+				async set(key: string, value: unknown, ttl?: number): Promise<void> {
+					return new Promise(resolve => {
+						setTimeout(resolve, 1000);
+					});
+				},
+			};
+
+			let cache: MultiCache;
+
+			beforeEach(async () => {
+				const slowCache = await caching(store as Store);
+				cache = multiCaching([slowCache]);
+				key = faker.string.sample(20);
+				value = faker.string.sample();
+			});
+
+			it('should block on set when blocking is true', async () => {
+				const start = Date.now();
+				await cache.wrap(key, async () => value, 1000, 0, {nonBlockingSet: false});
+				const duration = Date.now() - start;
+				expect(duration).toBeGreaterThanOrEqual(1000);
+			});
+
+			it('should not block on set when blocking is false', async () => {
+				const start = Date.now();
+				await cache.wrap(key, async () => value, 1000, 0, {nonBlockingSet: true});
+				const duration = Date.now() - start;
+				expect(duration).toBeLessThan(100);
+			});
+		});
+
 		describe('del()', () => {
 			it('should delete data', async () => {
 				await multiCache.set(key, value);
@@ -320,7 +356,7 @@ describe('multiCaching', () => {
 				await multiCache.wrap(key, function_);
 
 				expect(errorEvent!.error).not.toBeUndefined();
-				expect(errorEvent!.operation).toBe('wrap');
+				expect(errorEvent!.operation).toBe('get');
 				expect(errorEvent!.key).toBe(key);
 				expect(errorEvent!.data).toBeUndefined();
 			});

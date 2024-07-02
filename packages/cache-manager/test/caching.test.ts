@@ -7,7 +7,7 @@ import {
 	beforeEach, describe, expect, it, vi,
 } from 'vitest';
 import {
-	caching, type Cache, type MemoryConfig, memoryStore, createCache,
+	caching, type Cache, type MemoryConfig, memoryStore, createCache, type Store,
 } from '../src/index.js';
 import {sleep, disableExistingExceptionListeners} from './utils.js';
 
@@ -336,7 +336,7 @@ describe('caching', () => {
 
 				expect(errorEvent!.error).not.toBeUndefined();
 				expect(errorEvent!.key).toBe(key);
-				expect(errorEvent!.operation).toBe('wrap');
+				expect(errorEvent!.operation).toBe('get');
 				expect(errorEvent!.data).toBeUndefined();
 				expect(function_).toHaveBeenCalled();
 			});
@@ -356,9 +356,42 @@ describe('caching', () => {
 
 				expect(errorEvent!.error).not.toBeUndefined();
 				expect(errorEvent!.key).toBe(key);
-				expect(errorEvent!.operation).toBe('wrap');
+				expect(errorEvent!.operation).toBe('set');
 				expect(errorEvent!.data).toBe(value);
 			});
+		});
+	});
+
+	describe('wrap() blocking modes', () => {
+		const store: Partial<Store> = {
+			async get<T>(key: string): Promise<T | undefined> {
+				return undefined;
+			},
+			async set(key: string, value: unknown, ttl?: number): Promise<void> {
+				return new Promise(resolve => {
+					setTimeout(resolve, 1000);
+				});
+			},
+		};
+
+		beforeEach(async () => {
+			cache = await caching(store as Store);
+			key = faker.string.sample(20);
+			value = faker.string.sample();
+		});
+
+		it('should block on set when blocking is true', async () => {
+			const start = Date.now();
+			await cache.wrap(key, async () => value, 1000, 0, {nonBlockingSet: false});
+			const duration = Date.now() - start;
+			expect(duration).toBeGreaterThanOrEqual(1000);
+		});
+
+		it('should not block on set when blocking is false', async () => {
+			const start = Date.now();
+			await cache.wrap(key, async () => value, 1000, 0, {nonBlockingSet: true});
+			const duration = Date.now() - start;
+			expect(duration).toBeLessThan(100);
 		});
 	});
 
