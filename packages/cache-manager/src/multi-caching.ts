@@ -1,7 +1,8 @@
 import EventEmitter from 'eventemitter3';
 import {
-	type Cache, type Milliseconds, type WrapTTL, type ErrorEvent,
+	type Cache, type Milliseconds, type WrapTTL, type ErrorEvent, type WrapOptions, defaultWrapOptions,
 } from './caching.js';
+import {conditionalAwait} from './utils.js';
 
 export type MultiCache = Omit<Cache, 'store'> &
 Pick<Cache['store'], 'mset' | 'mget' | 'mdel'>;
@@ -36,8 +37,9 @@ export function multiCaching<Caches extends Cache[]>(
 		key: string,
 		data: T,
 		ttl?: Milliseconds | undefined,
+		slice: number = caches.length,
 	) => {
-		await Promise.all(caches.map(async cache => cache.set(key, data, ttl))).catch(error => {
+		await Promise.all(caches.slice(0, slice).map(async cache => cache.set(key, data, ttl))).catch(error => {
 			const errorEvent: ErrorEvent<T> = {
 				error, key, operation: 'set', data,
 			};
@@ -47,7 +49,9 @@ export function multiCaching<Caches extends Cache[]>(
 
 	return {
 		get,
-		set,
+		async set(key, value, ttl) {
+			await set(key, value, ttl);
+		},
 		async del(key) {
 			await Promise.all(caches.map(async cache => cache.del(key))).catch(error => {
 				const errorEvent: ErrorEvent = {error, key, operation: 'del'};
@@ -59,7 +63,9 @@ export function multiCaching<Caches extends Cache[]>(
 			function_: () => Promise<T>,
 			ttl?: WrapTTL<T>,
 			refreshThreshold?: Milliseconds,
+			options: WrapOptions = {},
 		): Promise<T> {
+			const options_ = {...defaultWrapOptions, ...options};
 			let value: T | undefined;
 			let i = 0;
 			for (; i < caches.length; i++) {
@@ -70,7 +76,7 @@ export function multiCaching<Caches extends Cache[]>(
 						break;
 					}
 				} catch (error) {
-					const errorEvent: ErrorEvent<T> = {error, key, operation: 'wrap'};
+					const errorEvent: ErrorEvent<T> = {error, key, operation: 'get'};
 					eventEmitter.emit('error', errorEvent);
 				}
 			}
@@ -78,22 +84,13 @@ export function multiCaching<Caches extends Cache[]>(
 			if (value === undefined) {
 				const result = await function_();
 				const cacheTtl = typeof ttl === 'function' ? ttl(result) : ttl;
-				await set<T>(key, result, cacheTtl);
+				await conditionalAwait(async () => set(key, result, cacheTtl), !options_.nonBlockingSet);
+
 				return result;
 			}
 
 			const cacheTtl = typeof ttl === 'function' ? ttl(value) : ttl;
-			await Promise.all(
-				caches.slice(0, i).map(async cache => cache.set(key, value, cacheTtl)),
-			).then().catch(error => {
-				const errorEvent: ErrorEvent<T> = {
-					error, key, operation: 'wrap', data: value,
-				};
-				eventEmitter.emit('error', errorEvent);
-			});
-
-			await caches[i].wrap(key, function_, ttl, refreshThreshold).then(); // Call wrap for store for internal refreshThreshold logic, see: src/caching.ts caching.wrap
-
+			await conditionalAwait(async () => set(key, value, cacheTtl, i).then(async () => caches[i].wrap(key, function_, ttl, refreshThreshold)), !options_.nonBlockingSet);
 			return value;
 		},
 		async reset() {

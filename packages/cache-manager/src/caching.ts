@@ -3,6 +3,7 @@ import {coalesceAsync} from 'promise-coalesce';
 import {
 	type MemoryCache, type MemoryConfig, type MemoryStore, memoryStore,
 } from './stores/index.js';
+import {conditionalAwait} from './utils.js';
 
 export type Config = {
 	ttl?: Milliseconds;
@@ -45,7 +46,7 @@ export type CachingConfig<T> = MemoryConfig | StoreConfig | FactoryConfig<T>;
 export type WrapTTL<T> = Milliseconds | ((v: T) => Milliseconds);
 
 export type ErrorEvent<T = never> = {
-	operation: 'get' | 'set' | 'del' | 'wrap' | 'reset';
+	operation: 'get' | 'set' | 'del' | 'reset';
 	error: unknown;
 	key?: string;
 	data?: T;
@@ -66,7 +67,15 @@ export type Cache<S extends Store = Store> = {
 	reset: () => Promise<void>;
 	on: <T>(event: 'error', handler: ErrorEventHandler<T>) => void;
 	removeListener: <T>(event: 'error', handler: ErrorEventHandler<T>) => void;
-	wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds): Promise<T>;
+	wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds, options?: WrapOptions): Promise<T>;
+};
+
+export type WrapOptions = {
+	nonBlockingSet?: boolean;
+};
+
+export const defaultWrapOptions: WrapOptions = {
+	nonBlockingSet: false,
 };
 
 export async function caching(
@@ -126,11 +135,13 @@ export function createCache<S extends Store, C extends Config>(
          * const result = await cache.wrap('key', () => Promise.resolve(1));
          *
          */
-		async wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds) {
+		async wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds, options: WrapOptions = {}) {
+			const options_ = {...defaultWrapOptions, ...options};
+
 			const refreshThresholdConfig = refreshThreshold ?? arguments_?.refreshThreshold ?? 0;
 			return coalesceAsync(key, async () => {
 				const value = await store.get<T>(key).catch(error => {
-					const errorEvent: ErrorEvent<T> = {error, key, operation: 'wrap'};
+					const errorEvent: ErrorEvent<T> = {error, key, operation: 'get'};
 					eventEmitter.emit('error', errorEvent);
 				});
 
@@ -138,12 +149,12 @@ export function createCache<S extends Store, C extends Config>(
 					const result = await function_();
 
 					const cacheTtl = typeof ttl === 'function' ? ttl(result) : ttl;
-					await store.set<T>(key, result, cacheTtl).catch(error => {
+					await conditionalAwait(async () => store.set<T>(key, result, cacheTtl).catch(error => {
 						const errorEvent: ErrorEvent<T> = {
-							error, key, operation: 'wrap', data: result,
+							error, key, operation: 'set', data: result,
 						};
 						eventEmitter.emit('error', errorEvent);
-					});
+					}), !options_.nonBlockingSet);
 					return result;
 				}
 
@@ -155,7 +166,7 @@ export function createCache<S extends Store, C extends Config>(
 							.then(async result => store.set<T>(key, result, cacheTtl))
 							.catch(async error => {
 								const errorEvent: ErrorEvent<T> = {
-									error, key, operation: 'wrap', data: value,
+									error, key, operation: 'set', data: value,
 								};
 								eventEmitter.emit('error', errorEvent);
 								eventEmitter.emit('onBackgroundRefreshError', error);
