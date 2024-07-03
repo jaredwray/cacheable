@@ -135,6 +135,7 @@ export function createCache<S extends Store, C extends Config>(
          * const result = await cache.wrap('key', () => Promise.resolve(1));
          *
          */
+		// eslint-disable-next-line max-params
 		async wrap<T>(key: string, function_: () => Promise<T>, ttl?: WrapTTL<T>, refreshThreshold?: Milliseconds, options: WrapOptions = {}) {
 			const options_ = {...defaultWrapOptions, ...options};
 

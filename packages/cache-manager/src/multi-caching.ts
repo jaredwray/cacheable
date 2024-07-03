@@ -58,6 +58,7 @@ export function multiCaching<Caches extends Cache[]>(
 				eventEmitter.emit('error', errorEvent);
 			});
 		},
+		// eslint-disable-next-line max-params
 		async wrap<T>(
 			key: string,
 			function_: () => Promise<T>,
