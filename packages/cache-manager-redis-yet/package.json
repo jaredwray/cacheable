@@ -37,13 +37,13 @@
   ],
   "dependencies": {
     "@redis/bloom": "^1.2.0",
-    "@redis/client": "^1.5.16",
+    "@redis/client": "^1.5.17",
     "@redis/graph": "^1.1.1",
     "@redis/json": "^1.0.6",
     "@redis/search": "^1.1.6",
     "@redis/time-series": "^1.0.5",
     "cache-manager": "^5.7.2",
-    "redis": "^4.6.14"
+    "redis": "^4.6.15"
   },
   "devDependencies": {
     "@types/node": "20.14.10",
@@ -52,7 +52,7 @@
     "@vitest/coverage-v8": "2.0.2",
     "eslint": "9.6.0",
     "lint-staged": "15.2.7",
-    "rimraf": "^5.0.7",
+    "rimraf": "^6.0.1",
     "typescript": "5.5.3",
     "vitest": "2.0.2"
   },
