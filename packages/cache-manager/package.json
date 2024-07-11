@@ -46,7 +46,7 @@
   "dependencies": {
     "eventemitter3": "^5.0.1",
     "lodash.clonedeep": "^4.5.0",
-    "lru-cache": "^10.2.2",
+    "lru-cache": "^11.0.0",
     "promise-coalesce": "^1.1.2"
   },
   "devDependencies": {
