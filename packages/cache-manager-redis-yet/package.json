@@ -62,5 +62,9 @@
   "lint-staged": {
     "*.{ts,js}": "eslint --cache --fix",
     "*.{json,prisma,md,yml}": "prettier --write"
-  }
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "LISCENCE"]
 }
