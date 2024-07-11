@@ -6,7 +6,8 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*.js",
-    "dist/**/*.d.ts"
+    "dist/**/*.d.ts",
+    "LISCENCE"
   ],
   "scripts": {
     "build": "rimraf ./dist && tsc -p tsconfig.build.json",
