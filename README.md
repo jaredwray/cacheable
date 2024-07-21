@@ -54,6 +54,7 @@ To get started you can visit the [cache-manager](/packages/cache-manager/README.
 
 - [@resolid/cache-manager-sqlite](https://github.com/huijiewei/cache-manager-sqlite) (uses [better-sqlite3](https://github.com/WiseLibs/better-sqlite3))
 
+- [node-cache-manager-bun-sqlite](https://github.com/sjdonado/cache-manager-bun-sqlite3)
 
 ## Getting Started with the Mono Repo
 
