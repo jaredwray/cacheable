@@ -42,19 +42,19 @@
     "@redis/json": "^1.0.6",
     "@redis/search": "^1.1.6",
     "@redis/time-series": "^1.0.5",
-    "cache-manager": "^5.7.2",
+    "cache-manager": "^5.7.3",
     "redis": "^4.6.15"
   },
   "devDependencies": {
-    "@types/node": "20.14.10",
-    "@typescript-eslint/eslint-plugin": "7.16.0",
-    "@typescript-eslint/parser": "7.16.0",
-    "@vitest/coverage-v8": "2.0.2",
-    "eslint": "9.6.0",
+    "@types/node": "20.14.12",
+    "@typescript-eslint/eslint-plugin": "7.17.0",
+    "@typescript-eslint/parser": "7.17.0",
+    "@vitest/coverage-v8": "2.0.4",
+    "eslint": "9.7.0",
     "lint-staged": "15.2.7",
     "rimraf": "^6.0.1",
-    "typescript": "5.5.3",
-    "vitest": "2.0.2"
+    "typescript": "5.5.4",
+    "vitest": "2.0.4"
   },
   "engines": {
     "node": ">= 18"
