@@ -2,8 +2,8 @@ import EventEmitter from 'eventemitter3';
 import {coalesceAsync} from 'promise-coalesce';
 import {
 	type MemoryCache, type MemoryConfig, type MemoryStore, memoryStore,
-} from './stores/index.ts';
-import {conditionalAwait} from './utils.ts';
+} from './stores/index.js';
+import {conditionalAwait} from './utils.js';
 
 export type Config = {
 	ttl?: Milliseconds;

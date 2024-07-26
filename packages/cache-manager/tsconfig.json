@@ -11,9 +11,7 @@
     "incremental": true,
     "downlevelIteration": true,
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "emitDeclarationOnly": true,
-    "allowImportingTsExtensions": true
+    "allowSyntheticDefaultImports": true
   },
   "exclude": ["dist"],
   "include": ["src/**/*"]

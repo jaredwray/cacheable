@@ -76,7 +76,8 @@
       "promise/param-names": "off",
       "no-promise-executor-return": "off",
       "@typescript-eslint/only-throw-error": "off",
-      "promise/valid-params": "off"
+      "promise/valid-params": "off",
+      "n/file-extension-in-import": "off"
     }
   }
 }

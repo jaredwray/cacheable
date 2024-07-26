@@ -1,1 +1,1 @@
-export * from './memory.ts';
+export * from './memory.js';
