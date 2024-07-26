@@ -6,8 +6,8 @@ import {faker} from '@faker-js/faker';
 import EventEmitter from 'eventemitter3';
 import {
 	type Cache, caching, type MemoryCache, type MultiCache, multiCaching, type Store,
-} from '../src/index.js';
-import {sleep} from './utils.js';
+} from '../src/index.ts';
+import {sleep} from './utils.ts';
 
 describe('multiCaching', () => {
 	let memoryCache: MemoryCache;

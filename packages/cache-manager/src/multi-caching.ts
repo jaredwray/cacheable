@@ -1,8 +1,8 @@
 import EventEmitter from 'eventemitter3';
 import {
 	type Cache, type Milliseconds, type WrapTTL, type ErrorEvent, type WrapOptions, defaultWrapOptions,
-} from './caching.js';
-import {conditionalAwait} from './utils.js';
+} from './caching.ts';
+import {conditionalAwait} from './utils.ts';
 
 export type MultiCache = Omit<Cache, 'store'> &
 Pick<Cache['store'], 'mset' | 'mget' | 'mdel'>;

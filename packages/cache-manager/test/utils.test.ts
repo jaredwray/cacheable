@@ -1,7 +1,7 @@
 import {
 	describe, vi, it, expect,
 } from 'vitest';
-import {conditionalAwait} from '../src/utils.js';
+import {conditionalAwait} from '../src/utils.ts';
 
 describe('utils', () => {
 	describe('conditionalAwait', () => {

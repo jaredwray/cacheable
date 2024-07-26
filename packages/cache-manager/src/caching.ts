@@ -2,8 +2,8 @@ import EventEmitter from 'eventemitter3';
 import {coalesceAsync} from 'promise-coalesce';
 import {
 	type MemoryCache, type MemoryConfig, type MemoryStore, memoryStore,
-} from './stores/index.js';
-import {conditionalAwait} from './utils.js';
+} from './stores/index.ts';
+import {conditionalAwait} from './utils.ts';
 
 export type Config = {
 	ttl?: Milliseconds;
@@ -174,7 +174,6 @@ export function createCache<S extends Store, C extends Config>(
 								if (arguments_?.onBackgroundRefreshError) {
 									arguments_.onBackgroundRefreshError(error);
 								} else {
-									// eslint-disable-next-line @typescript-eslint/no-throw-literal
 									throw error;
 								}
 							});

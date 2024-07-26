@@ -1,6 +1,6 @@
 import {LRUCache} from 'lru-cache';
 import cloneDeep from 'lodash.clonedeep';
-import {type Config, type Cache, type Store} from '../caching.js';
+import {type Config, type Cache, type Store} from '../caching.ts';
 
 function clone<T>(object: T): T {
 	if (typeof object === 'object' && object !== null) {
