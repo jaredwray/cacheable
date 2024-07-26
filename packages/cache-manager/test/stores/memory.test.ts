@@ -4,8 +4,8 @@ import {
 import {faker} from '@faker-js/faker';
 import {
 	caching, type MemoryCache, type MemoryStore, memoryStore,
-} from '../../src/index.js';
-import {sleep} from '../utils.js';
+} from '../../src/index.ts';
+import {sleep} from '../utils.ts';
 
 describe('memory store', () => {
 	describe('instantiating', () => {

@@ -174,7 +174,6 @@ export function createCache<S extends Store, C extends Config>(
 								if (arguments_?.onBackgroundRefreshError) {
 									arguments_.onBackgroundRefreshError(error);
 								} else {
-									// eslint-disable-next-line @typescript-eslint/no-throw-literal
 									throw error;
 								}
 							});

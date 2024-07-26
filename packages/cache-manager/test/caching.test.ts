@@ -1,15 +1,14 @@
 /* eslint-disable max-nested-callbacks */
-import {afterEach} from 'node:test';
 import process from 'node:process';
 import {faker} from '@faker-js/faker';
 import type promiseCoalesce from 'promise-coalesce';
 import {
-	beforeEach, describe, expect, it, vi,
+	beforeEach, afterEach, describe, expect, it, vi,
 } from 'vitest';
 import {
 	caching, type Cache, type MemoryConfig, memoryStore, createCache, type Store,
-} from '../src/index.js';
-import {sleep, disableExistingExceptionListeners} from './utils.js';
+} from '../src/index.ts';
+import {sleep, disableExistingExceptionListeners} from './utils.ts';
 
 // Allow the module to be mocked so we can assert
 // the old and new behavior for issue #417
@@ -474,7 +473,7 @@ describe('caching', () => {
 		const resolveAfter
 			= (timeout: number, value: number) => async (): Promise<number> =>
 				new Promise(resolve =>
-					// eslint-disable-next-line no-promise-executor-return
+
 					setTimeout(() => {
 						callCount++;
 						resolve(value);

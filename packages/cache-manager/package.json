@@ -54,20 +54,30 @@
     "@faker-js/faker": "^8.4.1",
     "@types/lodash.clonedeep": "^4.5.9",
     "@types/node": "^20.14.10",
-    "@typescript-eslint/eslint-plugin": "^7.16.0",
-    "@typescript-eslint/parser": "^7.16.0",
+    "@typescript-eslint/eslint-plugin": "^7.17.0",
+    "@typescript-eslint/parser": "^7.17.0",
     "@vitest/coverage-v8": "^2.0.2",
-    "eslint-config-xo-typescript": "^4.0.0",
+    "eslint-config-xo-typescript": "^5.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.5.3",
     "vitest": "^2.0.2",
-    "xo": "^0.58.0"
+    "xo": "^0.59.2"
   },
   "xo": {
     "extends": "xo-typescript",
     "extensions": [
       "ts",
       "tsx"
-    ]
+    ],
+    "rules": {
+      "@typescript-eslint/use-unknown-in-catch-callback-variable": "off",
+      "promise/prefer-await-to-then": "off",
+      "no-promise-executor-return promise/param-names": "off",
+      "promise/param-names": "off",
+      "no-promise-executor-return": "off",
+      "@typescript-eslint/only-throw-error": "off",
+      "promise/valid-params": "off",
+      "n/file-extension-in-import": "off"
+    }
   }
 }
