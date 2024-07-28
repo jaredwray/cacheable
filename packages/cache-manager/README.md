@@ -92,9 +92,9 @@ await memoryCache.store.mdel('foo', 'foo2');
 
 You can use your own custom store by creating one with the same API as the built-in memory stores.
 
-- [Example Custom Store lru-cache](./src/stores/memory.ts)
-- [Example Custom Store redis](https://github.com/jaredwray/cache-manager/packages/cache-manager-redis-yet)
-- [Example Custom Store ioredis](https://github.com/jaredwray/cache-manager/packages/cache-manager-ioredis-yet)
+- [Example Custom Store lru-cache](https://github.com/jaredwray/cache-manager/blob/main/packages/cache-manager/src/stores/memory.ts)
+- [Example Custom Store redis](https://github.com/jaredwray/cache-manager/tree/main/packages/cache-manager-redis-yet)
+- [Example Custom Store ioredis](https://github.com/jaredwray/cache-manager/tree/main/packages/cache-manager-ioredis-yet)
 
 #### Create single cache store synchronously
 
