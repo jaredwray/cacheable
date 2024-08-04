@@ -1,26 +1,15 @@
-[<img align="center" src="https://jaredwray.com/images/cacheable_white.svg" alt="keyv">](https://github.com/jaredwray/cacheable)
-
-> Caching for Nodejs based on Keyv
-
-[![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yaml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yaml)
-[![codecov](https://codecov.io/gh/jaredwray/cacheable/branch/master/graph/badge.svg?token=LDLaqe4PsI)](https://codecov.io/gh/jaredwray/cacheable)
-[![npm](https://img.shields.io/npm/dm/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request)
-[![npm](https://img.shields.io/npm/v/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request)
-
-## Packages in this Repository
-
-* [cache-manager](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager): Cache Manager that is used in services such as NestJS and others with robust features such as `wrap` and more.
-* [cache-manager-redis-yet](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-redis-yet): Redis storage adapter for cache-manager
-* [cache-manager-ioredis-yet](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-ioredis-yet): IORedis storage adapter for cache-manager.
-* [cacheable-request](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable-request): Wrap native HTTP requests with RFC compliant cache support
-* [cacheable](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable): Simple caching engine that uses Keyv as the storage provider. It is designed to be simple to use and extend.
-* [website](https://github.com/jaredwray/cacheable/tree/main/packages/website): Website for cacheable.org site and documentation
+---
+title: 'Getting Started Guide'
+order: 1
+---
 
 # How to Use the Cacheable Mono Repo
 
-* [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Our code of conduct
-* [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute to this project
-* [SECURITY.md](SECURITY.md) - Security guidelines and supported versions
+Cacheable has the main package `cacheable-request` under `/packages/request` and its website. In addtion we have a couple of other documents for review:
+
+* [CODE_OF_CONDUCT.md](https://github.com/jaredwray/cacheable/blob/main/CODE_OF_CONDUCT.md) - Our code of conduct
+* [CONTRIBUTING.md](https://github.com/jaredwray/cacheable/blob/main/CONTRIBUTING.md) - How to contribute to this project
+* [SECURITY.md](https://github.com/jaredwray/cacheable/blob/main/SECURITY.md) - Security guidelines and supported versions
 
 ## Open a Pull Request
 
@@ -28,7 +17,7 @@ You can contribute changes to this repo by opening a pull request:
 
 1) After forking this repository to your Git account, make the proposed changes on your forked branch.
 2) Run tests and linting locally.
-	- Run `pnpm i && pnpm test`.
+	- Run `yarn && yarn test`.
 3) Commit your changes and push them to your forked repository.
 4) Navigate to the main `cacheable` repository and select the *Pull Requests* tab.
 5) Click the *New pull request* button, then select the option "Compare across forks"
@@ -51,6 +40,9 @@ Please also refer to our [Code of Conduct](https://github.com/jaredwray/cacheabl
 
 To ask a question, create an issue with the label "question." In the issue description, include the related code and any context that can help us answer your question.
 
-## License
+## Packages in this Repository
 
-[MIT © Jared Wray](LICENSE)
+* [cacheable-request](/docs/request): Simple key-value storage with support for multiple backends
+* [website](https://github.com/jaredwray/cacheable/tree/main/packages/website): Website for cacheable.org site and documentation
+
+There are currently plans for muyltiple other packages to be added to this repository. If you have any ideas for packages that you would like to see added, please open an issue in the main repository.

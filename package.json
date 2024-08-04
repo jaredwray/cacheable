@@ -1,7 +1,7 @@
 {
-  "name": "cache-manager-mono-repo",
+  "name": "cacheable-mono-repo",
   "version": "1.0.0",
-  "description": "Cache Manager Mono Repo",
+  "description": "Cacheable Mono Repo",
   "scripts": {
     "test": "pnpm recursive run test",
     "test:ci": "c8 --reporter=lcov pnpm recursive run test:ci",

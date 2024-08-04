@@ -1,0 +1,88 @@
+{
+	"name": "cacheable-request",
+	"version": "12.0.1",
+	"description": "Wrap native HTTP requests with RFC compliant cache support",
+	"license": "MIT",
+	"repository": "jaredwray/cacheable",
+	"author": "Jared Wray <me@jaredwray.com> (http://jaredwray.com)",
+	"type": "module",
+	"exports": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"engines": {
+		"node": ">=18"
+	},
+	"scripts": {
+		"test": "xo --fix && vitest run --coverage",
+		"test:ci": "xo && vitest run",
+		"prepare": "pnpm run build",
+		"build": "tsc --project tsconfig.build.json",
+		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"
+	},
+	"files": [
+		"dist"
+	],
+	"keywords": [
+		"HTTP",
+		"HTTPS",
+		"cache",
+		"caching",
+		"layer",
+		"cacheable",
+		"RFC 7234",
+		"RFC",
+		"7234",
+		"compliant"
+	],
+	"dependenciesComments": {
+		"@types/http-cache-semantics": "It needs to be in the dependencies list and not devDependencies because otherwise projects that use this one will be getting `Could not find a declaration file for module 'http-cache-semantics'` error when running `tsc`, see https://github.com/jaredwray/cacheable-request/issues/194 for details"
+	},
+	"dependencies": {
+		"@types/http-cache-semantics": "^4.0.4",
+		"get-stream": "^9.0.1",
+		"http-cache-semantics": "^4.1.1",
+		"keyv": "^4.5.4",
+		"mimic-response": "^4.0.0",
+		"normalize-url": "^8.0.1",
+		"responselike": "^3.0.0"
+	},
+	"devDependencies": {
+		"@keyv/sqlite": "^3.6.7",
+		"@types/node": "^20.14.8",
+		"@types/responselike": "^1.0.3",
+		"@types/sqlite3": "^3.1.11",
+		"@vitest/coverage-v8": "^1.6.0",
+		"body-parser": "^1.20.2",
+		"delay": "^6.0.0",
+		"express": "^4.19.2",
+		"pify": "^6.1.0",
+		"rimraf": "^5.0.7",
+		"sqlite3": "^5.1.7",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.5.2",
+		"vitest": "^1.6.0",
+		"xo": "^0.58.0"
+	},
+	"xo": {
+	"rules": {
+			"@typescript-eslint/triple-slash-reference": 0,
+			"@typescript-eslint/no-namespace": 0,
+			"@typescript-eslint/no-unsafe-assignment": 0,
+			"@typescript-eslint/no-unsafe-call": 0,
+			"@typescript-eslint/ban-types": 0,
+			"@typescript-eslint/restrict-template-expressions": 0,
+			"@typescript-eslint/no-unsafe-return": 0,
+			"@typescript-eslint/no-unsafe-argument": 0,
+			"new-cap": 0,
+			"unicorn/no-abusive-eslint-disable": 0,
+			"@typescript-eslint/restrict-plus-operands": 0,
+			"@typescript-eslint/no-implicit-any-catch": 0,
+			"@typescript-eslint/consistent-type-imports": 0,
+			"@typescript-eslint/consistent-type-definitions": 0,
+			"@typescript-eslint/prefer-nullish-coalescing": 0,
+			"n/prefer-global/url": 0,
+			"n/no-deprecated-api": 0,
+			"unicorn/prefer-event-target": 0,
+			"@typescript-eslint/no-unnecessary-type-assertion": 0
+		}
+	}
+}
