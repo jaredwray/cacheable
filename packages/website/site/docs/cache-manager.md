@@ -1,4 +1,9 @@
-[<img align="center" src="https://jaredwray.com/images/cacheable_white.svg" alt="keyv">](https://github.com/jaredwray/cacheable)
+---
+title: 'cache-manager'
+sidebarTitle: 'cache-manager'
+---
+
+
 
 # cache-manager 
 [![codecov](https://codecov.io/gh/jaredwray/cache-manager/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cache-manager)
