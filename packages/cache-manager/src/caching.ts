@@ -109,6 +109,8 @@ export async function caching<S extends Store, T extends Record<string, unknown>
 	return createCache(store, arguments_);
 }
 
+let cacheIndex = 0;
+
 export function createCache(
 	store: MemoryStore,
 	arguments_?: MemoryConfig,
@@ -124,6 +126,7 @@ export function createCache<S extends Store, C extends Config>(
 	arguments_?: C,
 ): Cache<S> {
 	const eventEmitter = new EventEmitter();
+	const coalescePrefix = `cache-manager-index-${cacheIndex++}`;
 
 	return {
 		/**
@@ -140,7 +143,7 @@ export function createCache<S extends Store, C extends Config>(
 			const options_ = {...defaultWrapOptions, ...options};
 
 			const refreshThresholdConfig = refreshThreshold ?? arguments_?.refreshThreshold ?? 0;
-			return coalesceAsync(key, async () => {
+			return coalesceAsync(`${coalescePrefix}:${key}`, async () => {
 				const value = await store.get<T>(key).catch(error => {
 					const errorEvent: ErrorEvent<T> = {error, key, operation: 'get'};
 					eventEmitter.emit('error', errorEvent);
@@ -163,7 +166,7 @@ export function createCache<S extends Store, C extends Config>(
 					const cacheTtl = typeof ttl === 'function' ? ttl(value) : ttl;
 					const remainingTtl = await store.ttl(key);
 					if (remainingTtl !== -1 && remainingTtl < refreshThresholdConfig) {
-						coalesceAsync(`+++${key}`, function_)
+						coalesceAsync(`+++${coalescePrefix}:${key}`, function_)
 							.then(async result => store.set<T>(key, result, cacheTtl))
 							.catch(async error => {
 								const errorEvent: ErrorEvent<T> = {
