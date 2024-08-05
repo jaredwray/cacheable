@@ -2,8 +2,6 @@ name: deploy-website
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
   release:
     types: [released]
 
