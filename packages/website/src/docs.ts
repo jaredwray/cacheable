@@ -5,6 +5,7 @@ async function main() {
     console.log("packages path:" + getRelativePackagePath());
 
     await copyPackages();
+    await copyGettingStarted();
 
 };
 
@@ -16,9 +17,29 @@ async function copyPackages() {
     for (const packageName of packageList) {
         if((filterList.indexOf(packageName) > -1) !== true ) {
             console.log("Adding package: " + packageName);
-            await createDoc(packageName, `${packagesPath}`, `${packagesPath}/website/site/docs/`);
+            await createDoc(packageName, `${packagesPath}`, `${packagesPath}/website/site/docs`);
         }
     };
+}
+
+async function copyGettingStarted() {
+    console.log("Adding Getting Started");
+    const rootPath = getRelativeRootPath();
+    const packagesPath = getRelativePackagePath();
+    const outputPath = `${packagesPath}/website/site/docs`;
+    const originalFileText = await fs.readFile(`${rootPath}/README.md`, "utf8");
+    let newFileText = "---\n";
+    newFileText += `title: 'Getting Started Guilde'\n`;
+    newFileText += `order: 1\n`;
+    //newFileText += `parent: '${parent}'\n`;
+    newFileText += "---\n";
+    newFileText += "\n";
+    newFileText += originalFileText;
+
+    newFileText = cleanDocumentFromImage(newFileText);
+
+    await fs.ensureDir(`${outputPath}`);
+    await fs.writeFile(`${outputPath}/index.md`, newFileText);
 }
 
 function cleanDocumentFromImage(document: string) {
@@ -34,6 +55,16 @@ function getRelativePackagePath() {
 
     //we are in the website folder
     return "../../packages"
+}
+
+function getRelativeRootPath() {
+    if(fs.pathExistsSync("packages")) {
+        //we are in the root
+        return "./";
+    }
+
+    //we are in the website folder
+    return "../../"
 }
 
 async function createDoc(packageName: string, path: string, outputPath: string) {
@@ -52,6 +83,7 @@ async function createDoc(packageName: string, path: string, outputPath: string) 
 
     newFileText = cleanDocumentFromImage(newFileText);
 
+    await fs.ensureDir(`${outputPath}`);
     await fs.writeFile(`${outputPath}/${newFileName}`, newFileText);
 }
 

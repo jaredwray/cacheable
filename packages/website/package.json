@@ -7,8 +7,6 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "test": "echo 'no tests needed'",
-    "test:ci": "echo 'no tests needed'",
     "generate-docs": "ts-node ./src/docs.ts",
     "build": "pnpm generate-docs && docula build",
     "build-serve": "pnpm generate-docs && docula serve",
