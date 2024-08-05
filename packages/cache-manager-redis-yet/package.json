@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jaredwray/cache-manager.git"
+    "url": "https://github.com/jaredwray/cacheable.git"
   },
   "scripts": {
     "build": "rimraf ./dist && tsc -p tsconfig.build.json",

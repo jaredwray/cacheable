@@ -9,3 +9,6 @@ out
 dist
 yarn.lock
 pnpm-lock.yaml
+!packages/website/site/docs/index.md
+packages/website/site/docs/*.md
+packages/cacheable-request/test/testdb.sqlite

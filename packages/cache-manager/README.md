@@ -1,9 +1,9 @@
 [<img align="center" src="https://jaredwray.com/images/cacheable_white.svg" alt="keyv">](https://github.com/jaredwray/cacheable)
 
 # cache-manager 
-[![codecov](https://codecov.io/gh/jaredwray/cache-manager/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cache-manager)
-[![tests](https://github.com/jaredwray/cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/jaredwray/cache-manager/actions/workflows/test.yml)
-[![license](https://img.shields.io/github/license/jaredwray/cache-manager)](https://github.com/jaredwray/cache-manager/blob/main/LICENSE)
+[![codecov](https://codecov.io/gh/jaredwray/cacheable/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cacheable)
+[![tests](https://github.com/jaredwray/cacheable/actions/workflows/test.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
+[![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
 [![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
 ![npm](https://img.shields.io/npm/v/cache-manager)
 
@@ -94,9 +94,9 @@ await memoryCache.store.mdel('foo', 'foo2');
 
 You can use your own custom store by creating one with the same API as the built-in memory stores.
 
-- [Example Custom Store lru-cache](https://github.com/jaredwray/cache-manager/blob/main/packages/cache-manager/src/stores/memory.ts)
-- [Example Custom Store redis](https://github.com/jaredwray/cache-manager/tree/main/packages/cache-manager-redis-yet)
-- [Example Custom Store ioredis](https://github.com/jaredwray/cache-manager/tree/main/packages/cache-manager-ioredis-yet)
+- [Example Custom Store lru-cache](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/src/stores/memory.ts)
+- [Example Custom Store redis](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-redis-yet)
+- [Example Custom Store ioredis](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-ioredis-yet)
 
 #### Create single cache store synchronously
 
@@ -305,9 +305,9 @@ app.listen(port, () => {
 
 ### Official and updated to last version
 
-- [node-cache-manager-redis-yet](https://github.com/jaredwray/cache-manager/packages/cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+- [node-cache-manager-redis-yet](https://github.com/jaredwray/cacheable/packages/cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
 
-- [node-cache-manager-ioredis-yet](https://github.com/jaredwray/cache-manager/packages/cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
+- [node-cache-manager-ioredis-yet](https://github.com/jaredwray/cacheable/packages/cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
 
 ### Third party
 

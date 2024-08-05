@@ -1,12 +1,12 @@
 # Redis store for node cache manager
 
-[![codecov](https://codecov.io/gh/jaredwray/cache-manager/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cache-manager)
-[![tests](https://github.com/jaredwray/cache-manager/actions/workflows/test.yml/badge.svg)](https://github.com/jaredwray/cache-manager/actions/workflows/test.yml)
-[![license](https://img.shields.io/github/license/jaredwray/cache-manager)](https://github.com/jaredwray/cache-manager/blob/main/LICENSE)
+[![codecov](https://codecov.io/gh/jaredwray/cacheable/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cacheable)
+[![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
+[![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
 [![npm](https://img.shields.io/npm/dm/cache-manager-redis-yet)](https://npmjs.com/package/cache-manager-redis-yet)
 ![npm](https://img.shields.io/npm/v/cache-manager-redis-yet)
 
-Redis cache store for [cache-manager](https://github.com/jaredwray/cache-manager).
+Redis cache store for [cache-manager](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager.
 
 ## Installation
 

@@ -1,0 +1,47 @@
+name: deploy-website
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  release:
+    types: [released]
+
+jobs:
+  setup-build-deploy:
+    name: Deploy Website
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # Test
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install PNPM
+      run: npm install -g pnpm
+
+    - name: Install Modules
+      run: pnpm install
+      
+    - name: Build Website
+      run: pnpm build
+
+    - name: Publish to Cloudflare Pages
+      uses: cloudflare/pages-action@1
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: b09b24c345713c704e71dea8bd81f713
+        projectName: cacheableorg
+        branch: main
+        directory: packages/website/dist
+        gitHubToken: ${{ secrets.GH_TOKEN }}
+        wranglerVersion: '3'
