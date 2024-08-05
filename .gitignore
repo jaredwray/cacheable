@@ -9,3 +9,5 @@ out
 dist
 yarn.lock
 pnpm-lock.yaml
+!packages/website/docs/index.md
+packages/website/docs
