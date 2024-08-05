@@ -2,19 +2,21 @@
 
 > Caching for Nodejs based on Keyv
 
-[![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yaml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yaml)
+[![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/jaredwray/cacheable/branch/master/graph/badge.svg?token=LDLaqe4PsI)](https://codecov.io/gh/jaredwray/cacheable)
 [![npm](https://img.shields.io/npm/dm/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request)
-[![npm](https://img.shields.io/npm/v/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request)
 
 ## Packages in this Repository
 
-* [cache-manager](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager): Cache Manager that is used in services such as NestJS and others with robust features such as `wrap` and more.
-* [cache-manager-redis-yet](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-redis-yet): Redis storage adapter for cache-manager
-* [cache-manager-ioredis-yet](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-ioredis-yet): IORedis storage adapter for cache-manager.
-* [cacheable-request](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable-request): Wrap native HTTP requests with RFC compliant cache support
-* [cacheable](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable): Simple caching engine that uses Keyv as the storage provider. It is designed to be simple to use and extend.
-* [website](https://github.com/jaredwray/cacheable/tree/main/packages/website): Website for cacheable.org site and documentation
+| Package | Version | Downloads | Description |
+|-------|---------|---------|---------|
+| [cache-manager](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager) | [![npm](https://img.shields.io/npm/v/cache-manager)](https://www.npmjs.com/package/cache-manager) | [![npm](https://img.shields.io/npm/dm/cache-manager.svg)](https://www.npmjs.com/package/cache-manager) | Cache Manager that is used in services such as NestJS and others with robust features such as `wrap` and more. |
+| [cache-manager-redis-yet](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-redis-yet) | [![npm](https://img.shields.io/npm/v/cache-manager-redis-yet)](https://www.npmjs.com/package/cache-manager-redis-yet) | [![npm](https://img.shields.io/npm/dm/cache-manager-redis-yet.svg)](https://www.npmjs.com/package/cache-manager-redis-yet) | Redis storage adapter for cache-manager |
+| [cache-manager-ioredis-yet](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-ioredis-yet) | [![npm](https://img.shields.io/npm/v/cache-manager-ioredis-yet)](https://www.npmjs.com/package/cache-manager-ioredis-yet) | [![npm](https://img.shields.io/npm/dm/cache-manager-ioredis-yet.svg)](https://www.npmjs.com/package/cache-manager-ioredis-yet) | IORedis storage adapter for cache-manager. |
+| [cacheable-request](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable-request) | [![npm](https://img.shields.io/npm/v/cacheable-request)](https://www.npmjs.com/package/cacheable-request) | [![npm](https://img.shields.io/npm/dm/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request) | Wrap native HTTP requests with RFC compliant cache support |
+| [cacheable](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable) | [![npm](https://img.shields.io/npm/v/cacheable)](https://www.npmjs.com/package/cacheable) | [![npm](https://img.shields.io/npm/dm/cacheable.svg)](https://www.npmjs.com/package/cacheable) | Next generation caching framework built fron the ground up. (currently under development) |
+
+ The website a documentation for https://cacheable.org is included in this repository [here](https://github.com/jaredwray/cacheable/tree/main/packages/website).
 
 # How to Use the Cacheable Mono Repo
 
