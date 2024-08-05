@@ -2,16 +2,16 @@
 
 ## Supported Versions
 
-`cacheable-request` has recently been upgraded with needed security fixes. Please upgrade to the latest version. We upgrade dependent modules on a monthly basis with a minor version release. 
+The following versions of the `cacheable` mono repository are currently being supported with security updates:
 
-## Note :warning: v8.x.x is no longer supported with security fixes. v9.x.x will no longer be supported after 2023 for security fixes.
+Package | Supported Versions
+--- | ---
+`cacheable` | (not supported)
+`cacheable-request` | ^12
+`cache-manager` | ^5
+`cache-manager-redis-yet` | ^2
+`cache-manager-ioredis-yet` | ^5
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 10.x.x   | :white_check_mark: |
-| 9.x.x   | :warning: |
-| 8.x.x   | :x: |
-| < 7.x   | :x:                |
 
 ## Reporting a Vulnerability
 
