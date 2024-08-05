@@ -6,7 +6,7 @@
 [![codecov](https://codecov.io/gh/jaredwray/cacheable/branch/master/graph/badge.svg?token=LDLaqe4PsI)](https://codecov.io/gh/jaredwray/cacheable)
 [![npm](https://img.shields.io/npm/dm/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request)
 
-## Packages in this Repository
+With over `1bn downloads` a year the goal with the `Cacheable Project` is to provide a robust, scalable, and maintained set of caching packages that can be used in various projects. The packages in this repository are:
 
 | Package | Version | Downloads | Description |
 |-------|---------|---------|---------|
