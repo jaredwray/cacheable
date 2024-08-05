@@ -4,8 +4,8 @@
 
 > Wrap native HTTP requests with RFC compliant cache support
 
-[![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yaml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yaml)
 [![codecov](https://codecov.io/gh/jaredwray/cacheable/branch/master/graph/badge.svg?token=LDLaqe4PsI)](https://codecov.io/gh/jaredwray/cacheable)
+[![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
 [![npm](https://img.shields.io/npm/dm/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request)
 [![npm](https://img.shields.io/npm/v/cacheable-request.svg)](https://www.npmjs.com/package/cacheable-request)
 

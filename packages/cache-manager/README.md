@@ -2,7 +2,7 @@
 
 # cache-manager 
 [![codecov](https://codecov.io/gh/jaredwray/cacheable/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cacheable)
-[![tests](https://github.com/jaredwray/cacheable/actions/workflows/test.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
+[![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
 [![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
 [![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
 ![npm](https://img.shields.io/npm/v/cache-manager)
