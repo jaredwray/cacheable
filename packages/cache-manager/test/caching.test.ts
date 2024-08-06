@@ -21,7 +21,7 @@ vi.mock('promise-coalesce', async () => {
 		coalesceAsync: vi
 			.fn()
 			.mockImplementation(async (key: string, function_: () => Promise<unknown>) => {
-				if (key.startsWith('mock_no_coalesce')) {
+				if (key.endsWith('mock_no_coalesce')) {
 					return function_();
 				}
 
@@ -460,6 +460,18 @@ describe('caching', () => {
 					return cache.wrap('refreshThreshold', async () => 3);
 				})(),
 			).resolves.toEqual(1);
+		});
+
+		it('#742', async () => {
+			const cache2 = await caching('memory');
+
+			const [result1, result2] = await Promise.all([
+				cache.wrap('the_same_key', async () => 1),
+				cache2.wrap('the_same_key', async () => 2),
+			]);
+
+			expect(result1).toEqual(1);
+			expect(result2).toEqual(2);
 		});
 	});
 
