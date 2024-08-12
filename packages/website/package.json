@@ -8,10 +8,9 @@
   "private": true,
   "scripts": {
     "generate-docs": "ts-node ./src/docs.ts",
-    "build": "pnpm generate-docs && docula build",
-    "build-serve": "pnpm generate-docs && docula serve",
-    "clean": "rimraf ./dist",
-    "serve": "pnpm generate-docs && docula serve"
+    "website:build": "pnpm generate-docs && docula build",
+    "website:serve": "pnpm generate-docs && docula serve",
+    "clean": "rimraf ./dist"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.1",
