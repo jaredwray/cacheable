@@ -135,7 +135,12 @@ function builder<T extends Clients>(
 // TODO: past instance as option
 export async function redisStore(options?: RedisClientOptions & Config & CustomOptions) {
   const redisCache = createClient(options);
-  await redisCache.connect();
+  try {
+    await redisCache.connect();
+  } catch (e) {
+    console.error("Redis Connection Error: ", e);
+    throw e;
+  }
 
   return redisInsStore(redisCache as RedisClientType, options);
 }
@@ -155,8 +160,12 @@ export function redisInsStore(redisCache: RedisClientType, options?: Config & Cu
 // TODO: coverage
 export async function redisClusterStore(options: RedisClusterOptions & Config) {
   const redisCache = createCluster(options);
-  await redisCache.connect();
-
+  try {
+    await redisCache.connect();
+  } catch (e) {
+    console.error("Redis Connection Error: ", e);
+    throw e;
+  }
   return redisClusterInsStore(redisCache, options);
 }
 
