@@ -43,7 +43,7 @@
     "@redis/search": "^1.1.6",
     "@redis/time-series": "^1.0.5",
     "cache-manager": "^5.7.3",
-    "redis": "^4.6.15"
+    "redis": "^4.7.0"
   },
   "devDependencies": {
     "@types/node": "20.14.12",
