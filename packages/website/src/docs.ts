@@ -29,7 +29,7 @@ async function copyGettingStarted() {
     const outputPath = `${packagesPath}/website/site/docs`;
     const originalFileText = await fs.readFile(`${rootPath}/README.md`, "utf8");
     let newFileText = "---\n";
-    newFileText += `title: 'Getting Started Guilde'\n`;
+    newFileText += `title: 'Getting Started Guide'\n`;
     newFileText += `order: 1\n`;
     //newFileText += `parent: '${parent}'\n`;
     newFileText += "---\n";
