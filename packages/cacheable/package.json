@@ -9,10 +9,10 @@
 	"license": "MIT",
 	"private": false,
 	"scripts": {
-		"build": "tsc -p tsconfig.build.json",
+		"build": "rimraf ./dist && tsc -p tsconfig.build.json",
 		"test": "xo --fix",
 		"test:ci": "xo",
-		"clean": "rm -rf dist && rm -rf node_modules"
+		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
 		"rimraf": "^6.0.1",
@@ -21,7 +21,7 @@
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
-		"hookified": "^0.7.0",
+		"hookified": "^0.7.1",
 		"keyv": "^5.0.1"
 	},
 	"xo": {

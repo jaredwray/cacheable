@@ -10,6 +10,7 @@
 [![npm](https://img.shields.io/npm/v/cacheable)](https://www.npmjs.com/package/cacheable)
 
 `cacheable` is a simple caching engine that uses [Keyv](https://keyv.org) as the storage engine. It is designed to be simple to use and extend. Here are some of the features:
+
 * Simple to use with robust API
 * Not bloated with additional modules
 * Extendable to your own caching engine
