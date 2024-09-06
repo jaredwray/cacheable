@@ -112,7 +112,12 @@ cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
 
 ## Storage Tiering
 
-`cacheable` supports storage tiering with BASE and ACID modes. The default is BASE mode. To set the mode, you can do the following:
+`cacheable` supports storage tiering with modes for Read and Write. By default the modes are set to the following:
+
+* `CacheWriteMode.BASE`
+* `CacheReadMode.FAST_FAILOVER`
+
+You can read more about these modes below. Here is an example of how to use storage tiering:
 
 ```javascript
 import { Cacheable } from 'cacheable';
@@ -139,9 +144,9 @@ In this scenario the primary store in in-memory and the secondary store is Redis
 * `ACID`: This will write to all stores and if any write fails, it will throw an error. (This is the slowest mode but the most resilient)
 
 ### CacheReadMode
-* `ASCENDING_COALESCE`: This is the default mode. It will read from the primary store and then attempt to read from all other stores until it either runs out of stores or finds a value. If it finds a value it will attempt to set it on the other stores that did not have it. (this is the slowest mode but the most resilient)
+* `ASCENDING_COALESCE`: It will read from the primary store and then attempt to read from all other stores until it either runs out of stores or finds a value. If it finds a value it will attempt to set it on the other stores that did not have it. (this is the slowest mode but the most resilient)
 * `PRIMARY_RESPONSE`: This will read from the primary store and then return the first value it finds. (This is the fastest mode but the least resilient)
-* `FAST_FAILOVER`: This is like `ASCENDING_COALESCE` but will stop after the second store. (This is the middle ground between speed and resiliency)
+* `FAST_FAILOVER`: This is the default mode. This is like `ASCENDING_COALESCE` but will stop after the second store. (This is the middle ground between speed and resiliency)
 
 ## API
 
