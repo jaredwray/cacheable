@@ -27,6 +27,16 @@
 npm install cacheable
 ```
 
+## Basic Usage
+
+```javascript
+import { Cacheable } from 'cacheable';
+
+const cacheable = new Cacheable();
+cacheable.set('key', 'value', 1000);
+const value = cacheable.get('key');
+```
+
 ## Extending Your own Caching Engine
 
 ```javascript
