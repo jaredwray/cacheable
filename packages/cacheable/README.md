@@ -110,6 +110,41 @@ cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
 });
 ```
 
+## Storage Tiering
+
+`cacheable` supports storage tiering with BASE and ACID modes. The default is BASE mode. To set the mode, you can do the following:
+
+```javascript
+import { Cacheable } from 'cacheable';
+import Keyv from 'keyv';
+import KeyvRedis from '@keyv/redis';
+
+const cacheOptions = {
+  stores: [
+    new Keyv(), // in-memory as primary
+    new Keyv(KeyvRedis('redis://user:pass@localhost:6379'))
+  ]
+};
+
+const cache = new Cacheable(cacheOptions);
+
+cache.set('key', 'value', 1000);
+const value = cache.get('key');
+```
+
+In this scenario the primary store in in-memory and the secondary store is Redis. The primary store is used for all `set()` and `get()` operations. By default the CacheWriteMode is `BASE` and the CacheReadMode is `FAST_FAILOVER`. You can change these modes by setting the `CacheableOptions` or the `.cacheReadMode` and `.cacheWriteMode` properties. Lets go through the modes:
+
+### CacheWriteMode
+* `BASE`: This is the default mode. This stands for `Basically Available, Soft state, Eventual consistency`. It will write to the primary store and then attempted to write to all other stores. If the write fails to any store, it will not throw an error. (This is the fastest mode but the least resilient)
+* `ACID`: This will write to all stores and if any write fails, it will throw an error. (This is the slowest mode but the most resilient)
+
+### CacheReadMode
+* `ASCENDING_COALESCE`: This is the default mode. It will read from the primary store and then attempt to read from all other stores until it either runs out of stores or finds a value. If it finds a value it will attempt to set it on the other stores that did not have it. (this is the slowest mode but the most resilient)
+* `PRIMARY_RESPONSE`: This will read from the primary store and then return the first value it finds. (This is the fastest mode but the least resilient)
+* `FAST_FAILOVER`: This is like `ASCENDING_COALESCE` but will stop after the second store. (This is the middle ground between speed and resiliency)
+
+```javascript
+
 ## API
 
 * `set(key, value, ttl? | [{string, string, ttl?}])`: Sets a value in the cache.
