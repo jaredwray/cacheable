@@ -43,7 +43,7 @@ async function copyGettingStarted() {
 }
 
 function cleanDocumentFromImage(document: string) {
-    document = document.replace(`[<img align="center" src="https://jaredwray.com/images/cacheable_white.svg" alt="keyv">](https://github.com/jaredwray/cacheable)`, "");
+    document = document.replace(`[<img align="center" src="https://cacheable.org/logo.svg" alt="Cacheable">](https://github.com/jaredwray/cacheable)`, "");
     return document;
 };
 

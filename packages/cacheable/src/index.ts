@@ -3,22 +3,8 @@ import {Hookified} from 'hookified';
 
 type CacheableStatsItem = {
 	key: string;
-	lastAccessed: number;
+	lastAccessed: Date;
 	accessCount: number;
-};
-
-type CacheableStats = {
-	cacheSize: number;
-	currentSize: number;
-	hits: number;
-	misses: number;
-	hitRate: number;
-	averageLoadPenalty: number;
-	loadSuccessCount: number;
-	loadExceptionCount: number;
-	totalLoadTime: number;
-	topHits: CacheableStatsItem[];
-	leastUsed: CacheableStatsItem[];
 };
 
 export enum CacheableHooks {
@@ -50,10 +36,6 @@ export type CacheableOptions = {
 
 export class Cacheable extends Hookified {
 	private _stores: Keyv[] = [new Keyv()];
-	private readonly _stats: CacheableStats = {
-		currentSize: 0, cacheSize: 0, hits: 0, misses: 0, hitRate: 0, averageLoadPenalty: 0, loadSuccessCount: 0, loadExceptionCount: 0, totalLoadTime: 0, topHits: [], leastUsed: [],
-	};
-
 	private _enableStats = false;
 	private _enableOffline = false;
 
@@ -95,10 +77,6 @@ export class Cacheable extends Hookified {
 
 	public set stores(keyv: Keyv[]) {
 		this._stores = keyv;
-	}
-
-	public get stats(): CacheableStats {
-		return this._stats;
 	}
 
 	public async get<T>(key: string): Promise<T | undefined> {

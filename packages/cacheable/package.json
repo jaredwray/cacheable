@@ -23,10 +23,5 @@
 	"dependencies": {
 		"hookified": "^0.7.1",
 		"keyv": "^5.0.1"
-	},
-	"xo": {
-		"rules": {
-			"unicorn/prefer-event-target": "off"
-		}
 	}
 }
