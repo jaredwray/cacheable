@@ -115,10 +115,12 @@ cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
 * `set(key, value, ttl? | [{string, string, ttl?}])`: Sets a value in the cache.
 * `setMany([{key, value, ttl?}])`: Sets multiple values in the cache.
 * `get(key)`: Gets a value from the cache.
-* `has(key)`: Checks if a value exists in the cache.
+* `has(key | [key])`: Checks if a value exists in the cache.
+* `hasMany([keys])`: Checks if multiple values exist in the cache.
 * `getMany([keys])`: Gets multiple values from the cache.
 * `delete(key | [key])`: Deletes a value from the cache.
 * `clear()`: Clears the cache stores.
+* `wrap(function, options)`: Wraps a function in a cache.
 * `disconnect()`: Disconnects from the cache stores.
 * `onHook(hook, callback)`: Sets a hook.
 * `removeHook(hook)`: Removes a hook.

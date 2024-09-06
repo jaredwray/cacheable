@@ -23,7 +23,7 @@ export enum CacheWriteMode {
 
 export enum CacheReadMode {
 	ASCENDING_COALESCE = 'ASCENDING_COALESCE',
-	FIRST_RETURN = 'FIRST_RETURN',
+	FIRST_RESPONSE = 'FIRST_RESPONSE',
 }
 
 export type CacheableOptions = {
