@@ -15,13 +15,12 @@
 		"clean": "rm -rf dist && rm -rf node_modules"
 	},
 	"devDependencies": {
-		"eslint": "^9.9.1",
+		"rimraf": "^6.0.1",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.5.4",
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
-		"eventemitter3": "^5.0.1",
 		"hookified": "^0.7.0",
 		"keyv": "^5.0.1"
 	},
