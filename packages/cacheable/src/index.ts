@@ -36,17 +36,24 @@ export enum CacheableEvents {
 	ERROR = 'error',
 }
 
+export enum CacheableTieringModes {
+	PRIMARY_SECONDARY_FAILOVER = 'primarySecondaryFailover',
+	PRIMARY_SECONDARY = 'primarySecondary',
+	ALL_PRIMARY = 'allPrimary',
+	PRIMARY_ALL_FAILOVER = 'primaryAllFailover',
+}
+
 export type CacheableOptions = {
 	store?: Keyv;
-	offlineMode?: boolean;
 	enableStats?: boolean;
+	enableOffline?: boolean;
 };
 
 export class Cacheable extends Hookified {
 	private _store: Keyv = new Keyv();
 	private readonly _stats: CacheableStats = {currentSize: 0, cacheSize: 0, hits: 0, misses: 0, hitRate: 0, averageLoadPenalty: 0, loadSuccessCount: 0, loadExceptionCount: 0, totalLoadTime: 0, topHits: [], leastUsed: []};
 	private _enableStats = false;
-	private _offlineMode = false;
+	private _enableOffline = false;
 
 	constructor(keyv?: Keyv) {
 		super();
@@ -64,8 +71,8 @@ export class Cacheable extends Hookified {
 		this._enableStats = enabled;
 	}
 
-	public get offlineMode(): boolean {
-		return this._offlineMode;
+	public get enableOffline(): boolean {
+		return this._enableOffline;
 	}
 
 	public get store(): Keyv {
@@ -83,9 +90,9 @@ export class Cacheable extends Hookified {
 	public async get<T>(key: string): Promise<T | undefined> {
 		let result;
 		try {
-			this.hook(CacheableHooks.PRE_GET, key);
+			await this.hook(CacheableHooks.BEFORE_GET_GET, key);
 			result = await this._store.get(key) as T;
-			this.hook(CacheableHooks.POST_GET, key, result);
+			await this.hook(CacheableHooks.AFTER_GET_GET, key, result);
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
@@ -96,9 +103,9 @@ export class Cacheable extends Hookified {
 	public async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
 		let result = false;
 		try {
-			this.hook(CacheableHooks.PRE_SET, key, value, ttl);
+			await this.hook(CacheableHooks.BEFORE_SET, key, value, ttl);
 			result = await this._store.set(key, value, ttl);
-			this.hook(CacheableHooks.POST_SET, key, value, ttl);
+			this.hook(CacheableHooks.AFTER_SET, key, value, ttl);
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
