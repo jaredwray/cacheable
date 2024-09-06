@@ -143,8 +143,6 @@ In this scenario the primary store in in-memory and the secondary store is Redis
 * `PRIMARY_RESPONSE`: This will read from the primary store and then return the first value it finds. (This is the fastest mode but the least resilient)
 * `FAST_FAILOVER`: This is like `ASCENDING_COALESCE` but will stop after the second store. (This is the middle ground between speed and resiliency)
 
-```javascript
-
 ## API
 
 * `set(key, value, ttl? | [{string, string, ttl?}])`: Sets a value in the cache.
