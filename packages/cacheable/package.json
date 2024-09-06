@@ -22,6 +22,7 @@
 	},
 	"dependencies": {
 		"eventemitter3": "^5.0.1",
+		"hookified": "^0.6.0",
 		"keyv": "^5.0.1"
 	},
 	"xo": {
