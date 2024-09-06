@@ -3,6 +3,20 @@ services:
     image: redis
     ports:
       - '6379:6379'
+  redis-cluster:
+    image: redis
+    command: >
+      sh -c "
+      echo 'Starting Redis server...' &&
+      redis-server --port 6380 --cluster-enabled yes &
+      sleep 5 &&
+      echo 'Creating cluster...' &&
+      redis-cli -p 6380 cluster addslotsrange 0 16383 &&
+      echo 'Cluster created.' &&
+      wait
+      "    
+    ports:
+      - '6380:6380'
   redisio:
     image: redis
     ports:

@@ -105,7 +105,7 @@ function builder<T extends Clients>(
     },
     mget: (...args) =>
       redisCache
-        .mGet(args)
+        .mGet(args.map((key) => getFullKey(key, options?.keyPrefix)))
         .then((x) =>
           x.map((x) =>
             x === null || x === undefined
@@ -115,12 +115,12 @@ function builder<T extends Clients>(
         ),
     async mdel(...args) {
       let keys = args.map((key) => getFullKey(key, options?.keyPrefix));
-      await redisCache.del(args);
+      await redisCache.del(keys);
     },
     async del(key) {
       await redisCache.del(getFullKey(key, options?.keyPrefix));
     },
-    ttl: async (key) => redisCache.pTTL(key),
+    ttl: async (key) => redisCache.pTTL(getFullKey(key, options?.keyPrefix)),
     keys: (pattern = '*') => keys(pattern),
     reset,
     isCacheable,
@@ -158,7 +158,7 @@ export function redisInsStore(redisCache: RedisClientType, options?: Config & Cu
 }
 
 // TODO: coverage
-export async function redisClusterStore(options: RedisClusterOptions & Config) {
+export async function redisClusterStore(options: RedisClusterOptions & Config & CustomOptions) {
   const redisCache = createCluster(options);
   try {
     await redisCache.connect();
@@ -175,9 +175,12 @@ export async function redisClusterStore(options: RedisClusterOptions & Config) {
  */
 export function redisClusterInsStore(
   redisCache: RedisClusterType,
-  options: RedisClusterOptions & Config,
+  options: RedisClusterOptions & Config & CustomOptions,
 ) {
   const reset = async () => {
+    if (!redisCache.masters.length) {
+      throw new Error("Redis Connection Error");
+    }
     await Promise.all(
       redisCache.getMasters().map(async (node) => {
         if (node.client) {
@@ -188,8 +191,11 @@ export function redisClusterInsStore(
     );
   };
 
-  const keys = async (pattern: string) =>
-    (
+  const keys = async (pattern: string) => {
+    if (!redisCache.masters.length) {
+      throw new Error("Redis Connection Error");
+    }
+    return (
       await Promise.all(
         redisCache.getMasters().map(async (node) => {
           if (node.client) {
@@ -197,9 +203,10 @@ export function redisClusterInsStore(
             return await client.keys(pattern);
           }
           return [];
-        }),
+        })
       )
     ).flat();
+  };
 
   return builder(redisCache, 'redis-cluster', reset, keys, options);
 }

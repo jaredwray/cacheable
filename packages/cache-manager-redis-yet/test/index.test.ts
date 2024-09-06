@@ -208,11 +208,31 @@ describe('del', () => {
 		const keyPrefix = 'prefix';
 		const key = 'foo77';
 		await redisCache.set(key, 'bar');
-		const redisCachePrefix = await caching(redisStore, { keyPrefix });
+		const redisCachePrefix = await caching(redisStore, {
+			...config,
+			keyPrefix,
+		});
 		await redisCachePrefix.set(key, 'bar');
 		await redisCachePrefix.del(key);
 		await expect(redisCachePrefix.get(key)).resolves.toBeUndefined();
 		expect(await redisCache.get(key) === 'bar').toBeTruthy();
+
+
+		await redisCache.store.mset([
+			["foo", "bar"],
+			["foo2", "bar2"],
+		]);
+		await redisCachePrefix.store.mset([
+			["foo", "bar"],
+			["foo2", "bar2"],
+		]);
+		await redisCachePrefix.store.mdel("foo", "foo2");
+		await expect(redisCachePrefix.store.mget("foo", "foo2")).resolves.toStrictEqual([undefined, undefined]);
+		await expect(redisCache.store.mget("foo", "foo2")).resolves.toStrictEqual([
+			"bar",
+			"bar2",
+		]);
+
 	});
 });
 
@@ -239,6 +259,25 @@ describe('ttl', () => {
 
 	it('should retrieve ttl for an invalid key', () =>
 		expect(redisCache.store.ttl('invalidKey')).resolves.toEqual(-2));
+
+	it('should retrieve ttl when key prefix is set', async () => {
+		const ttl = 1000;
+		const keyPrefix = 'prefix';
+		const key = 'foo77';
+		const redisCachePrefix = await caching(redisStore, {
+			...config,
+			keyPrefix,
+		});
+		await redisCachePrefix.set(key, 'bar', ttl);
+		await expect(redisCachePrefix.store.ttl(key)).resolves.toBeGreaterThanOrEqual(
+			ttl - 10,
+		);
+		await expect(redisCache.get(key)).resolves.toBeUndefined();
+		expect(redisCache.store.ttl(key)).resolves.toEqual(-2)
+		const key2 = 'foo88';
+		await redisCache.set(key2, 'bar', 0);
+		await expect(redisCache.store.ttl(key2)).resolves.toEqual(-1);
+	});
 
 	it('should return an error if there is an error acquiring a connection', async () => {
 		await redisCache.store.client.disconnect();
