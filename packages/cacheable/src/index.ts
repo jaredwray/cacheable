@@ -22,14 +22,14 @@ type CacheableStats = {
 };
 
 export enum CacheableHooks {
-	BEFORE_SET = 'beforeSet',
-	AFTER_SET = 'afterSet',
-	BEFORE_SET_MANY = 'beforeSetMany',
-	AFTER_SET_MANY = 'afterSetMany',
-	BEFORE_GET = 'beforeGet',
-	AFTER_GET = 'afterGet',
-	BEFORE_GET_MANY = 'beforeGetMany',
-	AFTER_GET_MANY = 'afterGetMany',
+	BEFORE_SET = 'BEFORE_SET',
+	AFTER_SET = 'AFTER_SET',
+	BEFORE_SET_MANY = 'BEFORE_SET_MANY',
+	AFTER_SET_MANY = 'AFTER_SET_MANY',
+	BEFORE_GET = 'BEFORE_GET',
+	AFTER_GET = 'AFTER_GET',
+	BEFORE_GET_MANY = 'BEFORE_GET_MANY',
+	AFTER_GET_MANY = 'AFTER_GET_MANY',
 }
 
 export enum CacheableEvents {
@@ -37,20 +37,19 @@ export enum CacheableEvents {
 }
 
 export enum CacheableTieringModes {
-	PRIMARY_WITH_FAILOVER = 'primarySecondary',
-	ACID = 'allPrimary',
-	PRIMARY_ALL_FAILOVER = 'primaryAllFailover',
+	BASE = 'BASE',
+	ACID = 'ACID',
 }
 
 export type CacheableOptions = {
-	store?: Keyv;
+	stores?: Keyv[];
 	enableStats?: boolean;
 	enableOffline?: boolean;
 	nonBlocking?: boolean;
 };
 
 export class Cacheable extends Hookified {
-	private _store: Keyv = new Keyv();
+	private _stores: Keyv[] = [new Keyv()];
 	private readonly _stats: CacheableStats = {
 		currentSize: 0, cacheSize: 0, hits: 0, misses: 0, hitRate: 0, averageLoadPenalty: 0, loadSuccessCount: 0, loadExceptionCount: 0, totalLoadTime: 0, topHits: [], leastUsed: [],
 	};
@@ -58,11 +57,19 @@ export class Cacheable extends Hookified {
 	private _enableStats = false;
 	private _enableOffline = false;
 
-	constructor(keyv?: Keyv) {
+	constructor(options?: CacheableOptions) {
 		super();
 
-		if (keyv) {
-			this._store = keyv;
+		if (options?.stores) {
+			this._stores = options.stores;
+		}
+
+		if (options?.enableStats) {
+			this._enableStats = options.enableStats;
+		}
+
+		if (options?.enableOffline) {
+			this._enableOffline = options.enableOffline;
 		}
 	}
 
@@ -82,12 +89,12 @@ export class Cacheable extends Hookified {
 		this._enableOffline = enabled;
 	}
 
-	public get store(): Keyv {
-		return this._store;
+	public get stores(): Keyv[] {
+		return this._stores;
 	}
 
-	public set store(keyv: Keyv) {
-		this._store = keyv;
+	public set stores(keyv: Keyv[]) {
+		this._stores = keyv;
 	}
 
 	public get stats(): CacheableStats {
@@ -98,7 +105,7 @@ export class Cacheable extends Hookified {
 		let result;
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
-			result = await this._store.get(key) as T;
+			result = await this._stores[0].get(key) as T;
 			await this.hook(CacheableHooks.AFTER_GET, {key, result});
 		} catch (error: unknown) {
 			await this.emit(CacheableEvents.ERROR, error);
@@ -111,7 +118,7 @@ export class Cacheable extends Hookified {
 		let result = false;
 		try {
 			await this.hook(CacheableHooks.BEFORE_SET, {key, value, ttl});
-			result = await this._store.set(key, value, ttl);
+			result = await this._stores[0].set(key, value, ttl);
 			await this.hook(CacheableHooks.AFTER_SET, {key, value, ttl});
 		} catch (error: unknown) {
 			await this.emit(CacheableEvents.ERROR, error);
