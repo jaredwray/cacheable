@@ -1,12 +1,6 @@
 import {Keyv} from 'keyv';
 import {Hookified} from 'hookified';
 
-type CacheableStatsItem = {
-	key: string;
-	lastAccessed: Date;
-	accessCount: number;
-};
-
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
 	AFTER_SET = 'AFTER_SET',
@@ -22,36 +16,40 @@ export enum CacheableEvents {
 	ERROR = 'error',
 }
 
-export enum CacheableTieringModes {
+export enum CacheWriteMode {
 	BASE = 'BASE',
 	ACID = 'ACID',
 }
 
+export enum CacheReadMode {
+	ASCENDING_COALESCE = 'ASCENDING_COALESCE',
+	FIRST_RETURN = 'FIRST_RETURN',
+}
+
 export type CacheableOptions = {
+	store: Keyv;
 	stores?: Keyv[];
 	enableStats?: boolean;
-	enableOffline?: boolean;
 	nonBlocking?: boolean;
 };
 
 export class Cacheable extends Hookified {
 	private _stores: Keyv[] = [new Keyv()];
 	private _enableStats = false;
-	private _enableOffline = false;
 
 	constructor(options?: CacheableOptions) {
 		super();
 
+		if (options?.store) {
+			this._stores = [options.store];
+		}
+
 		if (options?.stores) {
-			this._stores = options.stores;
+			this._stores = this._stores.concat(options?.stores);
 		}
 
 		if (options?.enableStats) {
 			this._enableStats = options.enableStats;
-		}
-
-		if (options?.enableOffline) {
-			this._enableOffline = options.enableOffline;
 		}
 	}
 
@@ -61,14 +59,6 @@ export class Cacheable extends Hookified {
 
 	public set enableStats(enabled: boolean) {
 		this._enableStats = enabled;
-	}
-
-	public get enableOffline(): boolean {
-		return this._enableOffline;
-	}
-
-	public set enableOffline(enabled: boolean) {
-		this._enableOffline = enabled;
 	}
 
 	public get stores(): Keyv[] {

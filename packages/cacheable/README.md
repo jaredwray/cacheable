@@ -15,9 +15,10 @@
 * Not bloated with additional modules
 * Extendable to your own caching engine
 * Scalable and trusted storage engine by Keyv
-* Statistics built in by default
+* Resilient to failures with try/catch
 * Hooks and Events to extend functionality
 * Comprehensive testing and code coverage
+* Tiered Caching with BASE and ACID modes
 * Maintained and supported
 
 ## Getting Started
@@ -62,6 +63,9 @@ import Keyv from 'keyv';
 
 export class MyCache extends Cacheable {
   constructor() {
+  options = {
+    stores: [new Keyv('redis://user:pass@localhost:6379')]
+  };
 	super(new Keyv('redis://user:pass@localhost:6379'));
   }
 }
@@ -77,143 +81,54 @@ export class MyCache extends Cacheable {
   constructor() {
 	super();
 
-	this.store = new Keyv('redis://user:pass@localhost:6379');
+	this.stores[0] = new Keyv('redis://user:pass@localhost:6379'); //set redis instead of in-memory
   }
 }
 ```
-
-## Statistics
-
-To get statistics on your cache, you can do the following:
-
-```javascript
-import { Cacheable } from 'cacheable';
-
-export class MyCache extends Cacheable {
-  constructor() {
-	super();
-  }
-
-  async getStats() {
-	return this.stats.getReport();
-  }
-}
-```
-
-This will generate the following json object:
-
-```json
-{
-  "cacheSize": 100,
-  "currentSize": 80,
-  "hits": 500,
-  "misses": 200,
-  "hitRate": 0.71,
-  "evictions": 50,
-  "averageLoadPenalty": 0.05,
-  "loadSuccessCount": 700,
-  "loadExceptionCount": 10,
-  "totalLoadTime": 3500,
-  "topHits": [
-    {
-      "key": "key1",
-      "value": "value1",
-      "lastAccessed": 1627593600000,
-      "accessCount": 50
-    },
-    {
-      "key": "key2",
-      "value": "value2",
-      "lastAccessed": 1627593600000,
-      "accessCount": 45
-    }
-    // More items...
-  ],
-  "leastUsed": [
-    {
-      "key": "key3",
-      "value": "value3",
-      "lastAccessed": 1627593600000,
-      "accessCount": 5
-    },
-    {
-      "key": "key4",
-      "value": "value4",
-      "lastAccessed": 1627593600000,
-      "accessCount": 4
-    }
-    // More items...
-  ]
-}
-```
-
-* `cacheSize`: The maximum number of items that can be stored in the cache.
-* `currentSize`: The current number of items in the cache.
-hits: The number of cache hits. A cache hit occurs when the requested data is found in the cache.
-* `misses`: The number of cache misses. A cache miss occurs when the requested data is not found in the cache and needs to be loaded.
-* `hitRate`: The ratio of cache hits to the total number of cache lookups. This is a measure of the cache's effectiveness.
-* `evictions`: The number of items that have been evicted from the cache, typically because the cache is full.
-* `averageLoadPenalty`: The average time spent loading new values into the cache, typically measured in milliseconds. This could be calculated as totalLoadTime / (hits + misses).
-* `loadSuccessCount`: The number of times cache loading has succeeded.
-* `loadExceptionCount`: The number of times cache loading has failed due to exceptions.
-* `totalLoadTime`: The total time spent loading new values into the cache, typically measured in milliseconds.
 
 ## Hooks and Events
 
-The following hooks are available for you to extend the functionality of `cacheable`:
+The following hooks are available for you to extend the functionality of `cacheable` via `CacheableHooks` enum:
 
-* `preSet`: This is called before the `set` method is called.
-* `postSet`: This is called after the `set` method is called.
-* `preSetMany`: This is called before the `setMany` method is called.
-* `postSetMany`: This is called after the `setMany` method is called.
-* `preGet`: This is called before the `get` method is called.
-* `postGet`: This is called after the `get` method is called.
-* `preGetMany`: This is called before the `getMany` method is called.
-* `postGetMany`: This is called after the `getMany` method is called.
+* `BEFORE_SET`: This is called before the `set()` method is called.
+* `AFTER_SET`: This is called after the `set()` method is called.
+* `BEFORE_SET_MANY`: This is called before the `setMany()` method is called.
+* `AFTER_SET_MANY`: This is called after the `setMany()` method is called.
+* `BEFORE_GET`: This is called before the `get()` method is called.
+* `AFTER_GET`: This is called after the `get()` method is called.
+* `BEFORE_GET_MANY`: This is called before the `getMany()` method is called.
+* `AFTER_GET_MANY`: This is called after the `getMany()` method is called.
 
 An example of how to use these hooks:
 
 ```javascript
-import { Cacheable } from 'cacheable';
+import { Cacheable, CacheableHooks } from 'cacheable';
 
 const cacheable = new Cacheable();
-cacheable.hooks.setHook('preSet', (key, value) => {
-  console.log(`preSet: ${key} ${value}`);
+cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
+  console.log(`before set: ${data.key} ${data.value}`);
 });
 ```
 
-The following events are available for you to extend the functionality of `cacheable`:
-
-* `set`: This is called when the `set` method is called.
-* `setMany`: This is called when the `setMany` method is called.
-* `get`: This is called when the `get` method is called.
-* `getMany`: This is called when the `getMany` method is called.
-* `clear`: This is called when the `clear` method is called.
-* `has`: This is called when the `has` method is called.
-* `disconnect`: This is called when the `disconnect` method is called.
-* `error`: This is called when an error occurs.
-
 ## API
 
-* `set(key, value, ttl?)`: Sets a value in the cache.
+* `set(key, value, ttl? | [{string, string, ttl?}])`: Sets a value in the cache.
 * `setMany([{key, value, ttl?}])`: Sets multiple values in the cache.
 * `get(key)`: Gets a value from the cache.
 * `has(key)`: Checks if a value exists in the cache.
 * `getMany([keys])`: Gets multiple values from the cache.
-* `delete(key)`: Deletes a value from the cache.
-* `clear()`: Clears the cache.
-* `disconnect()`: Disconnects from the cache.
-* `getStats()`: Gets statistics from the cache.
-* `setHook(hook, callback)`: Sets a hook.
-* `deleteHook(hook)`: Removes a hook.
-* `emitEvent(event, data)`: Emits an event.
+* `delete(key | [key])`: Deletes a value from the cache.
+* `clear()`: Clears the cache stores.
+* `disconnect()`: Disconnects from the cache stores.
+* `onHook(hook, callback)`: Sets a hook.
+* `removeHook(hook)`: Removes a hook.
 * `on(event, callback)`: Listens for an event.
 * `removeListener(event, callback)`: Removes a listener.
-* `store`: The [Keyv](https://keyv.org) storage engine.
+* `stores`: Array of Keyv stores. The top store is the primary store.
 
 ## How to Contribute
 
 You can contribute by forking the repo and submitting a pull request. Please make sure to add tests and update the documentation. To learn more about how to contribute go to our main README [https://github.com/jaredwray/cacheable](https://github.com/jaredwray/cacheable). This will talk about how to `Open a Pull Request`, `Ask a Question`, or `Post an Issue`.
 
 ## License and Copyright
-MIT © Jared Wray - [https://github.com/jaredwray/cacheable/blob/main/LICENSE](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
+[MIT © Jared Wray](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
