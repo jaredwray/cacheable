@@ -79,10 +79,11 @@ export default class NodeCache extends eventemitter {
 
 		const keyValue = this.formatKey(key);
 		const ttlValue = ttl ?? this.options.stdTTL;
-		let expirationTimestamp = 0; // never delete
-		if(ttlValue && ttlValue > 0) {
+		let expirationTimestamp = 0; // Never delete
+		if (ttlValue && ttlValue > 0) {
 			expirationTimestamp = this.getExpirationTimestamp(ttlValue);
 		}
+
 		// Check on max key size
 		if (this.options.maxKeys) {
 			const maxKeys = this.options.maxKeys;
@@ -125,6 +126,7 @@ export default class NodeCache extends eventemitter {
 					if (this.options.deleteOnExpire) {
 						this.del(key);
 					}
+
 					this.addMiss();
 					// Event
 					this.emit('expired', this.formatKey(key), result.value);
@@ -245,7 +247,7 @@ export default class NodeCache extends eventemitter {
 				return 0;
 			}
 
-			return result.ttl;
+			return result.ttl as number;
 		}
 
 		return undefined;
