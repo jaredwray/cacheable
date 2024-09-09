@@ -68,11 +68,13 @@ export default class NodeCache extends eventemitter {
 	// Sets a key value pair. It is possible to define a ttl (in seconds). Returns true on success.
 	public set(key: string | number, value: any, ttl?: number): boolean {
 		// Check on key type
+		/* c8 ignore next 3 */
 		if (typeof key !== 'string' && typeof key !== 'number') {
 			throw this.createError(NodeCacheErrors.EKEYTYPE, key);
 		}
 
 		// Check on ttl type
+		/* c8 ignore next 3 */
 		if (ttl && typeof ttl !== 'number') {
 			throw this.createError(NodeCacheErrors.ETTLTYPE);
 		}
@@ -100,12 +102,14 @@ export default class NodeCache extends eventemitter {
 		// Add the bytes to the stats
 		this._stats.ksize += this.roughSizeOfKey(keyValue);
 		this._stats.vsize += this.roughSizeOfObject(value);
+		this._stats.keys = this.store.size;
 		return true;
 	}
 
 	// Sets multiple key val pairs. It is possible to define a ttl (seconds). Returns true on success.
 	public mset(data: NodeCacheItem[]): boolean {
 		// Check on keys type
+		/* c8 ignore next 3 */
 		if (!Array.isArray(data)) {
 			throw this.createError(NodeCacheErrors.EKEYSTYPE);
 		}
@@ -180,6 +184,10 @@ export default class NodeCache extends eventemitter {
 
 		if (result) {
 			this.del(key);
+			if (this.options.useClones) {
+				return this.clone(result);
+			}
+
 			return result.value;
 		}
 
@@ -203,6 +211,7 @@ export default class NodeCache extends eventemitter {
 			// Remove the bytes from the stats
 			this._stats.ksize -= this.roughSizeOfKey(keyValue);
 			this._stats.vsize -= this.roughSizeOfObject(result.value);
+			this._stats.keys = this.store.size;
 			return 1;
 		}
 
@@ -224,7 +233,7 @@ export default class NodeCache extends eventemitter {
 	public ttl(key: string | number, ttl: number): boolean {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
-			result.ttl = ttl;
+			result.ttl = this.getExpirationTimestamp(ttl);
 			this.store.set(this.formatKey(key), result);
 			return true;
 		}
@@ -273,8 +282,6 @@ export default class NodeCache extends eventemitter {
 	}
 
 	public getStats(): NodeCacheStats {
-		this._stats.keys = this.store.size;
-
 		return this._stats;
 	}
 
