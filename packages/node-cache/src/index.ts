@@ -135,7 +135,7 @@ export default class NodeCache extends eventemitter {
 
 				this.addHit();
 				if (this.options.useClones) {
-					return {...result.value};
+					return this.clone(result.value);
 				}
 
 				return result.value;
@@ -143,7 +143,7 @@ export default class NodeCache extends eventemitter {
 
 			this.addHit();
 			if (this.options.useClones) {
-				return {...result.value};
+				return this.clone(result.value);
 			}
 
 			return result.value;
@@ -390,6 +390,28 @@ export default class NodeCache extends eventemitter {
 		}
 
 		return new Error(error);
+	}
+
+	private isPrimitive(value: any): boolean {
+		const result = false;
+
+		if (value === null || value === undefined) {
+			return true;
+		}
+
+		if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+			return true;
+		}
+
+		return result;
+	}
+
+	private clone(value: any): any {
+		if (this.isPrimitive(value)) {
+			return value;
+		}
+
+		return structuredClone(value);
 	}
 }
 
