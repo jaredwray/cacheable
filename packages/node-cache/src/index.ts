@@ -6,7 +6,6 @@ export type NodeCacheOptions = {
 	checkperiod?: number; // Default is 600
 	useClones?: boolean; // Default is true
 	deleteOnExpire?: boolean; // Default is true
-	enableLegacyCallbacks?: boolean; // Default is false
 	maxKeys?: number; // Default is -1
 };
 
@@ -41,7 +40,6 @@ export default class NodeCache extends eventemitter {
 		checkperiod: 600,
 		useClones: true,
 		deleteOnExpire: true,
-		enableLegacyCallbacks: false,
 		maxKeys: -1,
 	};
 

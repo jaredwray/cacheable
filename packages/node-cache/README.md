@@ -9,7 +9,7 @@
 [![npm](https://img.shields.io/npm/dm/cacheable.svg)](https://www.npmjs.com/package/cacheable)
 [![npm](https://img.shields.io/npm/v/cacheable)](https://www.npmjs.com/package/cacheable)
 
-`@cacheable/node-cache` is compatible with the `node-cache` package with regular maintenance and additional functionality (async/await and storage adapters).
+`@cacheable/node-cache` is compatible with the `node-cache` package with regular maintenance and additional functionality (async/await and storage adapters). The only thing not implemented is the `enableLegacyCallbacks` option and functions. If you need them we are happy to take a PR to add them.
 
 * Fully Compatible with `node-cache` using `{NodeCache}`
 * Async/Await functionality with `{NodeStorageCache}`
