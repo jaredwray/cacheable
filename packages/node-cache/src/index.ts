@@ -188,6 +188,10 @@ export default class NodeCache extends eventemitter {
 		if (result) {
 			const keyValue = this.formatKey(key);
 			this.store.delete(keyValue);
+
+			// Event
+			this.emit('del', keyValue, result.value);
+
 			// Remove the bytes from the stats
 			this._stats.ksize -= this.roughSizeOfKey(keyValue);
 			this._stats.vsize -= this.roughSizeOfObject(result.value);
