@@ -273,6 +273,9 @@ export default class NodeCache extends eventemitter {
 	// Flush the whole data.
 	public flushAll(): void {
 		this.store.clear();
+
+		// Event
+		this.emit('flush');
 	}
 
 	// Flush the stats
@@ -284,6 +287,9 @@ export default class NodeCache extends eventemitter {
 			ksize: 0,
 			vsize: 0,
 		};
+
+		// Event
+		this.emit('flush_stats');
 	}
 
 	// Close the cache. This will clear the interval timeout which is set on check period option.
