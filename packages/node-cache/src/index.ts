@@ -90,6 +90,10 @@ export default class NodeCache extends eventemitter {
 		}
 
 		this.store.set(keyValue, {key: keyValue, value, ttl: ttlValue});
+
+		// Event
+		this.emit('set', keyValue, value, ttlValue);
+
 		// Add the bytes to the stats
 		this._stats.ksize += this.roughSizeOfKey(keyValue);
 		this._stats.vsize += this.roughSizeOfObject(value);
