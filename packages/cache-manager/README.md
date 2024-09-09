@@ -309,7 +309,11 @@ app.listen(port, () => {
 
 - [node-cache-manager-ioredis-yet](https://github.com/jaredwray/cacheable/packages/cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
 
-### Third party
+### Community Additions
+
+- [cache-manager-function](https://github.com/tomerh2001/cache-manager-function) - Cache functions dynamically based on their arguments using cache-manager.
+
+### Third party Storage Adapters
 
 - [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis) (uses [sol-redis-pool](https://github.com/joshuah/sol-redis-pool))
 
@@ -343,4 +347,4 @@ If you would like to contribute to the project, please read how to contribute he
 
 ## License
 
-cache-manager is licensed under the [MIT license](./LICENSE).
+[MIT & (c) Jared Wray](./LICENSE).
