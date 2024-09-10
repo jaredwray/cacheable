@@ -112,16 +112,16 @@ describe('NodeCache', () => {
 	test('should get the ttl / expiration of a key', () => {
 		const cache = new NodeCache({checkperiod: 0});
 		cache.set('foo', 'bar', 10);
-		const firstTtl = cache.getTTL('foo')!;
+		const firstTtl = cache.getTtl('foo')!;
 		expect(firstTtl).toBeDefined();
 		cache.ttl('foo', 15);
-		const secondTtl = cache.getTTL('foo');
+		const secondTtl = cache.getTtl('foo');
 		expect(firstTtl).toBeLessThan(secondTtl!);
 	});
 
-	test('should get undefined when on getTTL()', () => {
+	test('should get undefined when on getTtl()', () => {
 		const cache = new NodeCache({checkperiod: 0});
-		const ttl = cache.getTTL('foo');
+		const ttl = cache.getTtl('foo');
 		expect(ttl).toBe(undefined);
 	});
 
@@ -145,7 +145,7 @@ describe('NodeCache', () => {
 	test('it should return a 0 if there is no ttl set', () => {
 		const cache = new NodeCache({checkperiod: 0});
 		cache.set('foo', 'bar');
-		const ttl = cache.getTTL('foo');
+		const ttl = cache.getTtl('foo');
 		expect(ttl).toBe(0);
 	});
 
