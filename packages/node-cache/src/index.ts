@@ -248,7 +248,7 @@ export default class NodeCache extends eventemitter {
 		0 if this key has no ttl
 		a timestamp in ms representing the time at which the key will expire
 	*/
-	// eslint-disable-next-line @typescript-eslint/naming-convention
+
 	public getTtl(key: string | number): number | undefined {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
