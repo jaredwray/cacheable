@@ -35,5 +35,9 @@
 	"dependencies": {
 		"cacheable": "^0.3.0",
 		"eventemitter3": "^5.0.1"
-	}
+	},
+	"files": [
+		"dist",
+		"license"
+	]
 }
