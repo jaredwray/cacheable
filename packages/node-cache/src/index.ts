@@ -30,9 +30,6 @@ export type NodeCacheStats = {
 	vsize: number; // global value size count in approximately bytes
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export type NodeCacheMGetReturn = Record<string, NodeCacheItem>;
-
 export default class NodeCache extends eventemitter {
 	public readonly options: NodeCacheOptions = {
 		// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -161,8 +158,8 @@ export default class NodeCache extends eventemitter {
 		Gets multiple saved values from the cache. Returns an empty object {} if not found or expired.
 		If the value was found it returns an object with the key value pair.
 	*/
-	public mget(keys: Array<string | number>): NodeCacheMGetReturn | Record<string, unknown> {
-		const result: NodeCacheMGetReturn = {};
+	public mget(keys: Array<string | number>): Record<string, unknown> {
+		const result: Record<string, unknown> = {};
 
 		for (const key of keys) {
 			const value = this.get(key);
@@ -230,10 +227,11 @@ export default class NodeCache extends eventemitter {
 
 	// Redefine the ttl of a key. Returns true if the key has been found and changed.
 	// Otherwise returns false. If the ttl-argument isn't passed the default-TTL will be used.
-	public ttl(key: string | number, ttl: number): boolean {
+	public ttl(key: string | number, ttl?: number): boolean {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
-			result.ttl = this.getExpirationTimestamp(ttl);
+			const ttlValue = ttl ?? this.options.stdTTL!;
+			result.ttl = this.getExpirationTimestamp(ttlValue);
 			this.store.set(this.formatKey(key), result);
 			return true;
 		}
@@ -281,6 +279,7 @@ export default class NodeCache extends eventemitter {
 		return this.store.has(this.formatKey(key));
 	}
 
+	// Gets the stats of the cache.
 	public getStats(): NodeCacheStats {
 		return this._stats;
 	}
@@ -288,7 +287,7 @@ export default class NodeCache extends eventemitter {
 	// Flush the whole data.
 	public flushAll(): void {
 		this.store.clear();
-
+		this.flushStats();
 		// Event
 		this.emit('flush');
 	}
