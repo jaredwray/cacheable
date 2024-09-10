@@ -125,6 +125,16 @@ describe('NodeCache', () => {
 		expect(ttl).toBe(undefined);
 	});
 
+	test('ttl should default to 0 if no ttl is set', () => {
+		const cache = new NodeCache({checkperiod: 0});
+		cache.set('foo', 'bar'); // Set to 10 by stdTTL
+		const ttl = cache.getTtl('foo');
+		expect(ttl).toBe(0);
+		cache.ttl('foo');
+		const ttl2 = cache.getTtl('foo');
+		expect(ttl2).toBeGreaterThan(ttl!);
+	});
+
 	test('should return 0 if there is no key to delete', () => {
 		const cache = new NodeCache({checkperiod: 0});
 		const count = cache.del('foo');
@@ -203,6 +213,7 @@ describe('NodeCache', () => {
 		expect(cache.get('n')).toBe(1);
 		cache.flushAll();
 		expect(cache.keys()).toEqual([]);
+		expect(cache.getStats().keys).toBe(0);
 	});
 
 	test('should throw an error on maxKeys', () => {
