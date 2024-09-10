@@ -76,7 +76,7 @@ export default class NodeCache extends eventemitter {
 		// Check on ttl type
 		/* c8 ignore next 3 */
 		if (ttl && typeof ttl !== 'number') {
-			throw this.createError(NodeCacheErrors.ETTLTYPE);
+			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
 		}
 
 		const keyValue = this.formatKey(key);
@@ -90,7 +90,7 @@ export default class NodeCache extends eventemitter {
 		if (this.options.maxKeys) {
 			const maxKeys = this.options.maxKeys;
 			if (maxKeys > -1 && this.store.size >= maxKeys) {
-				throw this.createError(NodeCacheErrors.ECACHEFULL);
+				throw this.createError(NodeCacheErrors.ECACHEFULL, this.formatKey(key));
 			}
 		}
 
@@ -188,7 +188,7 @@ export default class NodeCache extends eventemitter {
 				return this.clone(result);
 			}
 
-			return result.value;
+			return result;
 		}
 
 		return undefined;
@@ -312,6 +312,11 @@ export default class NodeCache extends eventemitter {
 		this.stopInterval();
 	}
 
+	// Get the interval id
+	public getIntervalId(): number | NodeJS.Timeout {
+		return this.intervalId;
+	}
+
 	private formatKey(key: string | number): string {
 		return key.toString();
 	}
@@ -371,6 +376,8 @@ export default class NodeCache extends eventemitter {
 			this.intervalId = setInterval(() => {
 				this.checkData();
 			}, checkPeriodinSeconds);
+
+			return;
 		}
 
 		this.intervalId = 0;
@@ -387,11 +394,13 @@ export default class NodeCache extends eventemitter {
 	private stopInterval(): void {
 		if (this.intervalId !== 0) {
 			clearInterval(this.intervalId);
+			this.intervalId = 0;
 		}
 	}
 
 	private createError(errorCode: string, key?: string): Error {
 		let error = errorCode;
+		/* c8 ignore next 3 */
 		if (key) {
 			error = error.replace('__key', key);
 		}
@@ -402,6 +411,7 @@ export default class NodeCache extends eventemitter {
 	private isPrimitive(value: any): boolean {
 		const result = false;
 
+		/* c8 ignore next 3 */
 		if (value === null || value === undefined) {
 			return true;
 		}

@@ -64,6 +64,14 @@ describe('NodeCache', () => {
 		expect(cache.get('foo')).toBe(undefined);
 	});
 
+	test('should take a key with useClones set to false', () => {
+		const cache = new NodeCache({checkperiod: 0, useClones: false});
+		cache.set('foo', 'bar');
+		const value = cache.take('foo') as string;
+		expect(value).toBe('bar');
+		expect(cache.get('foo')).toBe(undefined);
+	});
+
 	test('should take a key and be undefined', () => {
 		expect(cache.take('foo')).toBe(undefined);
 	});
@@ -72,6 +80,19 @@ describe('NodeCache', () => {
 		cache.set('foo', 'bar');
 		cache.del('foo');
 		expect(cache.get('foo')).toBe(undefined);
+	});
+
+	test('should use del() to delete multiple keys', () => {
+		const cache = new NodeCache({checkperiod: 0});
+		const list = [
+			{key: 'foo', value: 'bar'},
+			{key: 'baz', value: 'qux'},
+		];
+		cache.mset(list);
+		cache.set('foo2', 'bar1');
+		const resultCount = cache.del(['foo2', 'baz']);
+		expect(resultCount).toBe(2);
+		expect(cache.get('foo')).toBe('bar');
 	});
 
 	test('should delete multiple keys', () => {
@@ -96,6 +117,12 @@ describe('NodeCache', () => {
 		cache.ttl('foo', 15);
 		const secondTtl = cache.getTTL('foo');
 		expect(firstTtl).toBeLessThan(secondTtl!);
+	});
+
+	test('should get undefined when on getTTL()', () => {
+		const cache = new NodeCache({checkperiod: 0});
+		const ttl = cache.getTTL('foo');
+		expect(ttl).toBe(undefined);
 	});
 
 	test('should return 0 if there is no key to delete', () => {
@@ -168,7 +195,12 @@ describe('NodeCache', () => {
 	test('should flush all the keys', () => {
 		const cache = new NodeCache({checkperiod: 0});
 		cache.set('foo', 'bar');
-		cache.set('baz', 'qux');
+		cache.set('baz', true);
+		cache.set('n', 1);
+		cache.set(220, 'value');
+		expect(cache.get('baz')).toBe(true);
+		expect(cache.get(220)).toBe('value');
+		expect(cache.get('n')).toBe(1);
 		cache.flushAll();
 		expect(cache.keys()).toEqual([]);
 	});
@@ -189,5 +221,28 @@ describe('NodeCache', () => {
 		expect(cache.get('baz')).toBe('qux');
 		await sleep(600);
 		expect(cache.get('moo')).toBe(undefined);
+	});
+
+	test('should get the internal id and stop the interval', () => {
+		const cache = new NodeCache();
+		expect(cache.getIntervalId()).toBeDefined();
+		cache.close();
+		expect(cache.getIntervalId()).toBe(0);
+	});
+
+	test('set object as a value in cache', () => {
+		const cache = new NodeCache({checkperiod: 0});
+		const object = {foo: 'bar'};
+		cache.set('foo', object);
+		expect(cache.get('foo')).toEqual(object);
+	});
+
+	test('should check if the cache is expired', async () => {
+		const cache = new NodeCache({checkperiod: 1});
+		cache.set('foo', 'bar', 0.25);
+		expect(cache.get('foo')).toBe('bar');
+		await sleep(1000);
+		expect(cache.get('foo')).toBe(undefined);
+		cache.close();
 	});
 });
