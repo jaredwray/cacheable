@@ -21,9 +21,9 @@ With over `1bn downloads` a year the goal with the `Cacheable Project` is to pro
 
 # How to Use the Cacheable Mono Repo
 
-* [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Our code of conduct
-* [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute to this project
-* [SECURITY.md](SECURITY.md) - Security guidelines and supported versions
+* [CODE_OF_CONDUCT](CODE_OF_CONDUCT.md) - Our code of conduct
+* [CONTRIBUTING](CONTRIBUTING.md) - How to contribute to this project
+* [SECURITY](SECURITY.md) - Security guidelines and supported versions
 
 ## Open a Pull Request
 

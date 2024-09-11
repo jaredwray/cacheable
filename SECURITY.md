@@ -1,17 +1,6 @@
 # Security Policy
 
-## Supported Versions
-
-The following versions of the `cacheable` mono repository are currently being supported with security updates:
-
-Package | Supported Versions
---- | ---
-`cacheable` | (not supported)
-`cacheable-request` | ^12
-`cache-manager` | ^5
-`cache-manager-redis-yet` | ^2
-`cache-manager-ioredis-yet` | ^5
-
+These packages are reviewed for security vulnerabilities and are maintained by the community. If you have a security vulnerability to report please follow the guidelines below.
 
 ## Reporting a Vulnerability
 
