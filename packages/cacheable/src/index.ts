@@ -23,19 +23,24 @@ export enum CacheWriteMode {
 
 export enum CacheReadMode {
 	ASCENDING_COALESCE = 'ASCENDING_COALESCE',
-	PRIMARY_RESPONSE = 'PRIMARY_RESPONSE',
 	FAST_FAILOVER = 'FAST_FAILOVER',
 }
 
+export type CacheableItem = {
+	key: string;
+	value: unknown;
+	ttl?: number;
+};
+
 export type CacheableOptions = {
-	store: Keyv;
+	store?: Keyv;
 	stores?: Keyv[];
 	enableStats?: boolean;
 	nonBlocking?: boolean;
 };
 
 export class Cacheable extends Hookified {
-	private _stores: Keyv[] = [new Keyv()];
+	private readonly _stores: Keyv[] = [new Keyv()];
 	private _enableStats = false;
 
 	constructor(options?: CacheableOptions) {
@@ -46,7 +51,7 @@ export class Cacheable extends Hookified {
 		}
 
 		if (options?.stores) {
-			this._stores = this._stores.concat(options?.stores);
+			this._stores = options?.store ? [options.store, ...options.stores] : options?.stores;
 		}
 
 		if (options?.enableStats) {
@@ -63,11 +68,11 @@ export class Cacheable extends Hookified {
 	}
 
 	public get stores(): Keyv[] {
-		return this._stores;
-	}
+		if (this._stores.length === 0) {
+			this._stores.push(new Keyv());
+		}
 
-	public set stores(keyv: Keyv[]) {
-		this._stores = keyv;
+		return this._stores;
 	}
 
 	public async get<T>(key: string): Promise<T | undefined> {
@@ -94,5 +99,9 @@ export class Cacheable extends Hookified {
 		}
 
 		return result;
+	}
+
+	public async has(key: string): Promise<boolean> {
+		return this._stores[0].has(key);
 	}
 }
