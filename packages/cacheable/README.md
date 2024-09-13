@@ -145,18 +145,18 @@ In this scenario the primary store in in-memory and the secondary store is Redis
 
 ### CacheReadMode
 * `ASCENDING_COALESCE`: It will read from the primary store and then attempt to read from all other stores until it either runs out of stores or finds a value. If it finds a value it will attempt to set it on the other stores that did not have it. (this is the slowest mode but the most resilient)
-* `PRIMARY_RESPONSE`: This will read from the primary store and then return the first value it finds. (This is the fastest mode but the least resilient)
 * `FAST_FAILOVER`: This is the default mode. This is like `ASCENDING_COALESCE` but will stop after the second store. (This is the middle ground between speed and resiliency)
 
 ## API
 
 * `set(key, value, ttl? | [{string, string, ttl?}])`: Sets a value in the cache.
 * `setMany([{key, value, ttl?}])`: Sets multiple values in the cache.
-* `get(key)`: Gets a value from the cache.
+* `get(key | [keys])`: Gets a value from the cache.
+* `getMany([keys])`: Gets multiple values from the cache.
 * `has(key | [key])`: Checks if a value exists in the cache.
 * `hasMany([keys])`: Checks if multiple values exist in the cache.
-* `getMany([keys])`: Gets multiple values from the cache.
 * `delete(key | [key])`: Deletes a value from the cache.
+* `deleteMany([keys])`: Deletes multiple values from the cache.
 * `clear()`: Clears the cache stores.
 * `wrap(function, options)`: Wraps a function in a cache.
 * `disconnect()`: Disconnects from the cache stores.

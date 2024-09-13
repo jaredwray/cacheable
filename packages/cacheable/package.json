@@ -10,14 +10,16 @@
 	"private": false,
 	"scripts": {
 		"build": "rimraf ./dist && tsc -p tsconfig.build.json",
-		"test": "xo --fix",
-		"test:ci": "xo",
+		"test": "xo --fix && vitest run --coverage",
+		"test:ci": "xo && vitest run",
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
+		"@vitest/coverage-v8": "^2.1.1",
 		"rimraf": "^6.0.1",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.5.4",
+		"vitest": "^2.1.1",
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
