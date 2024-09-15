@@ -43,7 +43,7 @@
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
-		"cacheable": "^0.3.0",
+		"cacheable": "^0.8.0",
 		"eventemitter3": "^5.0.1"
 	},
 	"files": [
