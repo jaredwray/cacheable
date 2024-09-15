@@ -2,6 +2,8 @@ import {
 	vi, describe, test, expect,
 } from 'vitest';
 import {Keyv} from 'keyv';
+import KeyvRedis from '@keyv/redis';
+import {LRUCache} from 'lru-cache';
 import {Cacheable, CacheableHooks} from '../src/index.js';
 
 // eslint-disable-next-line no-promise-executor-return
@@ -29,6 +31,29 @@ describe('cacheable options and properties', async () => {
 		expect(cacheable.primary).toBeDefined();
 		cacheable.primary = new Keyv();
 		expect(cacheable.primary).toBeDefined();
+	});
+	test('should be able to set a random cache instance', async () => {
+		const lruOptions = {max: 100};
+		const keyv = new Keyv({store: new LRUCache(lruOptions)});
+		const cacheable = new Cacheable({primary: keyv});
+		expect(cacheable.primary).toBeDefined();
+		expect(cacheable.secondary).toBeUndefined();
+		const setResult = await cacheable.set('key', 'value');
+		expect(setResult).toEqual(true);
+		const getResult = await cacheable.get('key');
+		expect(getResult).toEqual('value');
+	});
+	test('should be able to set KeyvStorageAdapter', async () => {
+		const keyvRedis = new KeyvRedis('redis://localhost:6379');
+		const cacheable = new Cacheable({secondary: keyvRedis});
+		expect(cacheable.secondary).toBeDefined();
+		const setResult = await cacheable.set('key', 'value');
+		expect(setResult).toEqual(true);
+		const getResult = await cacheable.get('key');
+		expect(getResult).toEqual('value');
+		await cacheable.delete('key');
+		const getResult2 = await cacheable.get('key');
+		expect(getResult2).toBeUndefined();
 	});
 });
 

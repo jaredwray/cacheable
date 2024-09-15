@@ -1,6 +1,6 @@
 {
 	"name": "cacheable",
-	"version": "0.3.0",
+	"version": "0.8.0",
 	"description": "Simple Caching Engine using Keyv",
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
@@ -15,7 +15,9 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
+		"@keyv/redis": "^3.0.1",
 		"@vitest/coverage-v8": "^2.1.1",
+		"lru-cache": "^10.4.3",
 		"rimraf": "^6.0.1",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.5.4",

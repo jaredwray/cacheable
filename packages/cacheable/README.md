@@ -19,7 +19,7 @@
 * Hooks and Events to extend functionality
 * Comprehensive testing and code coverage
 * Distributed Caching Sync via Pub/Sub (coming soon)
-* Maintained and supported
+* Maintained and supported regularly
 
 ## Getting Started
 
@@ -43,7 +43,7 @@ This is a basic example where you are only using the in-memory storage engine. T
 
 ```javascript
 import { Cacheable } from 'cacheable';
-import { KeyvRedis } from '@keyv/redis';
+import KeyvRedis from '@keyv/redis';
 
 const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
 const cache = new Cacheable({secondary});
@@ -54,7 +54,7 @@ In this example, the primary store we will use `lru-cache` and the secondary sto
 ```javascript
 import { Cacheable } from 'cacheable';
 import { Keyv } from 'keyv';
-import { KeyvRedis } from '@keyv/redis';
+import KeyvRedis from '@keyv/redis';
 import { LRUCache } from 'lru-cache'
 
 const primary = new Keyv({store: new LRUCache()});
