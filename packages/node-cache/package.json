@@ -2,8 +2,16 @@
 	"name": "@cacheable/node-cache",
 	"version": "0.5.0",
 	"description": "Simple and Maintained fast NodeJS internal caching",
-	"main": "./dist/index.js",
+	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.js"
+		}
+	},
 	"repository": "https://github.com/jaredwray/cacheable.git",
 	"author": "Jared Wray <me@jaredwray.com>",
 	"license": "MIT",
@@ -19,17 +27,19 @@
 		"cacheable-node"
 	],
 	"scripts": {
-		"build": "rimraf ./dist && tsc -p tsconfig.build.json",
+		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
+		"prepare": "pnpm build",
 		"test": "xo --fix && vitest run --coverage",
 		"test:ci": "xo && vitest run",
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
 		"@types/node": "^22.5.4",
-		"@vitest/coverage-v8": "^2.0.5",
+		"@vitest/coverage-v8": "^2.1.1",
 		"rimraf": "^6.0.1",
+		"tsup": "^8.2.4",
 		"typescript": "^5.5.4",
-		"vitest": "^2.0.5",
+		"vitest": "^2.1.1",
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
