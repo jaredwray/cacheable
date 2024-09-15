@@ -19,7 +19,8 @@
 		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"LICENSE"
 	],
 	"keywords": [
 		"HTTP",

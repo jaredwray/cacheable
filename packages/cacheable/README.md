@@ -173,7 +173,6 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
-* `enableStats`: If you want to enable statistics for this instance. Default is `false`.
 * `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
 * `clearStats()`: Clears the statistics for this instance.
 
@@ -182,4 +181,4 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 You can contribute by forking the repo and submitting a pull request. Please make sure to add tests and update the documentation. To learn more about how to contribute go to our main README [https://github.com/jaredwray/cacheable](https://github.com/jaredwray/cacheable). This will talk about how to `Open a Pull Request`, `Ask a Question`, or `Post an Issue`.
 
 ## License and Copyright
-[MIT © Jared Wray](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
+[MIT © Jared Wray](./LICENSE)
