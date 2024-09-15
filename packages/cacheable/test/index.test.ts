@@ -230,11 +230,52 @@ describe('cacheable has method', async () => {
 		const result = await cacheable.has('key');
 		expect(result).toBe(false);
 	});
-	test('should check if key exists and return tru', async () => {
+	test('should check if key exists and return true', async () => {
 		const cacheable = new Cacheable();
 		await cacheable.set('key', 'value');
 		const result = await cacheable.has('key');
 		expect(result).toBe(true);
+	});
+	test('should check if key exists on secondary', async () => {
+		const keyv = new Keyv();
+		await keyv.set('key', 'value');
+		const cacheable = new Cacheable({secondary: keyv});
+		const result = await cacheable.has('key');
+		expect(result).toBe(true);
+	});
+	test('should has many keys', async () => {
+		const cacheable = new Cacheable();
+		await cacheable.set('key1', 'value1');
+		await cacheable.set('key2', 'value2');
+		const result = await cacheable.hasMany(['key1', 'key2', 'key3']);
+		expect(result).toEqual([true, true, false]);
+	});
+	test('should has many keys on secondary', async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({secondary});
+		await cacheable.secondary?.set('key3', 'value3');
+		await cacheable.set('key1', 'value1');
+		await cacheable.set('key2', 'value2');
+		const result = await cacheable.hasMany(['key1', 'key2', 'key3']);
+		expect(result).toEqual([true, true, true]);
+	});
+});
+
+describe('cacheable delete method', async () => {
+	test('should delete a key', async () => {
+		const cacheable = new Cacheable();
+		await cacheable.set('key', 'value');
+		await cacheable.delete('key');
+		const result = await cacheable.get('key');
+		expect(result).toBeUndefined();
+	});
+	test('should delete many keys', async () => {
+		const cacheable = new Cacheable();
+		await cacheable.set('key1', 'value1');
+		await cacheable.set('key2', 'value2');
+		await cacheable.deleteMany(['key1', 'key2']);
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual([undefined, undefined]);
 	});
 });
 

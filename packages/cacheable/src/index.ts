@@ -211,9 +211,21 @@ export class Cacheable extends Hookified {
 	}
 
 	public async hasMany(keys: string[]): Promise<boolean[]> {
-		let result = await this.hasManyKeyv(this._primary, keys);
-		if (!result && this._secondary) {
-			result = await this.hasManyKeyv(this._secondary, keys);
+		const result = await this.hasManyKeyv(this._primary, keys);
+		const missingKeys = [];
+		for (const [i, key] of keys.entries()) {
+			if (!result[i] && this._secondary) {
+				missingKeys.push(key);
+			}
+		}
+
+		if (missingKeys.length > 0 && this._secondary) {
+			const secondary = await this.hasManyKeyv(this._secondary, keys);
+			for (const [i, key] of keys.entries()) {
+				if (!result[i] && secondary[i]) {
+					result[i] = secondary[i];
+				}
+			}
 		}
 
 		return result;
