@@ -26,16 +26,15 @@ export type CacheableItem = {
 export type CacheableOptions = {
 	primary?: Keyv | KeyvStoreAdapter;
 	secondary?: Keyv | KeyvStoreAdapter;
-	enableStats?: boolean;
+	stats?: boolean;
 	nonBlocking?: boolean;
 };
 
 export class Cacheable extends Hookified {
 	private _primary: Keyv = new Keyv();
 	private _secondary: Keyv | undefined;
-	private _enableStats = false;
 	private _nonBlocking = false;
-	private readonly _stats = new CacheableStats();
+	private readonly _stats = new CacheableStats({enabled: false});
 
 	constructor(options?: CacheableOptions) {
 		super();
@@ -52,17 +51,9 @@ export class Cacheable extends Hookified {
 			this._nonBlocking = options.nonBlocking;
 		}
 
-		if (options?.enableStats) {
-			this._enableStats = options.enableStats;
+		if (options?.stats) {
+			this._stats.enabled = options.stats;
 		}
-	}
-
-	public get enableStats(): boolean {
-		return this._enableStats;
-	}
-
-	public set enableStats(enabled: boolean) {
-		this._enableStats = enabled;
 	}
 
 	public get stats(): CacheableStats {
