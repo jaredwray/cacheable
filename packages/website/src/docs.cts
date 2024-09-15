@@ -1,4 +1,4 @@
-import * as fs from "fs-extra";
+import fs from "fs-extra";
 
 async function main() {
 
@@ -11,7 +11,7 @@ async function main() {
 
 async function copyPackages() {
     const packagesPath = getRelativePackagePath();
-    const packageList = await fs.readdir(`${packagesPath}`);
+    const packageList = await fs.promises.readdir(`${packagesPath}`);
     const filterList = ["website", ".DS_Store"];
 
     for (const packageName of packageList) {
