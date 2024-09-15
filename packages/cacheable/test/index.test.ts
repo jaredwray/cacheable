@@ -55,6 +55,18 @@ describe('cacheable options and properties', async () => {
 		const getResult2 = await cacheable.get('key');
 		expect(getResult2).toBeUndefined();
 	});
+	test('should be able to set primary KeyvStorageAdapter', async () => {
+		const keyvRedis = new KeyvRedis('redis://localhost:6379');
+		const cacheable = new Cacheable({primary: keyvRedis});
+		expect(cacheable.primary).toBeDefined();
+		const setResult = await cacheable.set('key', 'value');
+		expect(setResult).toEqual(true);
+		const getResult = await cacheable.get('key');
+		expect(getResult).toEqual('value');
+		await cacheable.delete('key');
+		const getResult2 = await cacheable.get('key');
+		expect(getResult2).toBeUndefined();
+	});
 });
 
 describe('cacheable stats', async () => {
