@@ -147,14 +147,17 @@ export class Cacheable extends Hookified {
 		let result = false;
 		try {
 			await this.hook(CacheableHooks.BEFORE_SET, {key, value, ttl});
-			result = await this._primary.set(key, value, ttl);
+			const promises = [];
+			promises.push(this._primary.set(key, value, ttl));
 			if (this._secondary) {
-				if (this._nonBlocking) {
-					// eslint-disable-next-line @typescript-eslint/no-floating-promises
-					this._secondary.set(key, value, ttl);
-				} else {
-					await this._secondary.set(key, value, ttl);
-				}
+				promises.push(this._secondary.set(key, value, ttl));
+			}
+
+			if (this._nonBlocking) {
+				result = await Promise.race(promises);
+			} else {
+				const results = await Promise.all(promises);
+				result = results[0];
 			}
 
 			await this.hook(CacheableHooks.AFTER_SET, {key, value, ttl});
@@ -260,15 +263,13 @@ export class Cacheable extends Hookified {
 	}
 
 	public async clear(): Promise<void> {
-		await this._primary.clear();
+		const promises = [];
+		promises.push(this._primary.clear());
 		if (this._secondary) {
-			if (this._nonBlocking) {
-				// eslint-disable-next-line @typescript-eslint/no-floating-promises
-				this._secondary.clear();
-			} else {
-				await this._secondary.clear();
-			}
+			promises.push(this._secondary.clear());
 		}
+
+		await (this._nonBlocking ? Promise.race(promises) : Promise.all(promises));
 	}
 
 	public async disconnect(): Promise<void> {
