@@ -272,10 +272,13 @@ export class Cacheable extends Hookified {
 	}
 
 	public async disconnect(): Promise<void> {
-		await this._primary.disconnect();
+		const promises = [];
+		promises.push(this._primary.disconnect());
 		if (this._secondary) {
-			await this._secondary.disconnect();
+			promises.push(this._secondary.disconnect());
 		}
+
+		await (this._nonBlocking ? Promise.race(promises) : Promise.all(promises));
 	}
 
 	private async deleteManyKeyv(keyv: Keyv, keys: string[]): Promise<boolean> {

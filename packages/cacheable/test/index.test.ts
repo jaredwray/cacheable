@@ -333,3 +333,59 @@ describe('cacheable take method', async () => {
 		expect(result2).toEqual([undefined, undefined]);
 	});
 });
+
+describe('cacheable clear method', async () => {
+	test('should clear the cache', async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({secondary});
+		await cacheable.set('key', 'value');
+		await cacheable.clear();
+		const result = await cacheable.get('key');
+		expect(result).toBeUndefined();
+	});
+	test('should clear the cache', async () => {
+		const secondary = new Keyv();
+		const nonBlocking = true;
+		const cacheable = new Cacheable({nonBlocking, secondary});
+		await cacheable.set('key', 'value');
+		await cacheable.clear();
+		const result = await cacheable.get('key');
+		expect(result).toBeUndefined();
+	});
+});
+
+describe('cacheable disconnect method', async () => {
+	test('should disconnect the cache', async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		let primaryDisconnected = false;
+		let secondaryDisconnected = false;
+		vi.spyOn(primary, 'disconnect').mockImplementation(async () => {
+			primaryDisconnected = true;
+		});
+		vi.spyOn(secondary, 'disconnect').mockImplementation(async () => {
+			secondaryDisconnected = true;
+		});
+		const cacheable = new Cacheable({primary, secondary});
+		await cacheable.disconnect();
+		expect(primaryDisconnected).toBe(true);
+		expect(secondaryDisconnected).toBe(true);
+	});
+	test('should disconnect the cache non blocking', async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const nonBlocking = true;
+		let primaryDisconnected = false;
+		let secondaryDisconnected = false;
+		vi.spyOn(primary, 'disconnect').mockImplementation(async () => {
+			primaryDisconnected = true;
+		});
+		vi.spyOn(secondary, 'disconnect').mockImplementation(async () => {
+			secondaryDisconnected = true;
+		});
+		const cacheable = new Cacheable({nonBlocking, primary, secondary});
+		await cacheable.disconnect();
+		expect(primaryDisconnected).toBe(true);
+		expect(secondaryDisconnected).toBe(true);
+	});
+});
