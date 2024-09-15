@@ -12,17 +12,37 @@ describe('cacheable options and properties', async () => {
 		const cacheable = new Cacheable();
 		expect(cacheable).toBeDefined();
 	});
-
-	test('should enable stats on options', async () => {
-		const cacheable = new Cacheable({enableStats: true});
-		expect(cacheable.enableStats).toEqual(true);
+	test('should enable nonBlocking on options', async () => {
+		const cacheable = new Cacheable({nonBlocking: true});
+		expect(cacheable.nonBlocking).toEqual(true);
+		cacheable.nonBlocking = false;
+		expect(cacheable.nonBlocking).toEqual(false);
 	});
+	test('should be able to set the secondary', async () => {
+		const cacheable = new Cacheable({secondary: new Keyv()});
+		expect(cacheable.secondary).toBeDefined();
+		cacheable.secondary = new Keyv();
+		expect(cacheable.secondary).toBeDefined();
+	});
+	test('should be able to set the primary', async () => {
+		const cacheable = new Cacheable({primary: new Keyv()});
+		expect(cacheable.primary).toBeDefined();
+		cacheable.primary = new Keyv();
+		expect(cacheable.primary).toBeDefined();
+	});
+});
 
-	test('should enable stats via property', async () => {
-		const cacheable = new Cacheable({enableStats: false});
-		expect(cacheable.enableStats).toEqual(false);
-		cacheable.enableStats = true;
-		expect(cacheable.enableStats).toEqual(true);
+describe('cacheable stats', async () => {
+	test('should return stats', async () => {
+		const cacheable = new Cacheable();
+		const stats = cacheable.stats;
+		expect(stats.enabled).toBe(false);
+	});
+	test('shoudl be able to enable stats', async () => {
+		const cacheable = new Cacheable({stats: true});
+		expect(cacheable.stats.enabled).toBe(true);
+		cacheable.stats.enabled = false;
+		expect(cacheable.stats.enabled).toBe(false);
 	});
 });
 
@@ -70,6 +90,26 @@ describe('cacheable set method', async () => {
 		await cacheable.set('key', 'value');
 		expect(beforeSet).toBe(true);
 		expect(afterSet).toBe(true);
+	});
+	test('should set the value in a non blocking way', async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({nonBlocking: true, secondary});
+		await cacheable.set('key', 'value');
+		const result = await cacheable.get('key');
+		expect(result).toEqual('value');
+	});
+	test('should set the value on the secondary', async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({secondary});
+		await cacheable.set('key', 'value');
+		const result = await cacheable.get('key');
+		expect(result).toEqual('value');
+	});
+	test('should set many values', async () => {
+		const cacheable = new Cacheable();
+		await cacheable.setMany([{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]);
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual(['value1', 'value2']);
 	});
 });
 
