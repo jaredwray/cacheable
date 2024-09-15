@@ -111,6 +111,34 @@ describe('cacheable set method', async () => {
 		const result = await cacheable.getMany(['key1', 'key2']);
 		expect(result).toEqual(['value1', 'value2']);
 	});
+	test('should set many values on secondary', async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({secondary});
+		await cacheable.setMany([{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]);
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual(['value1', 'value2']);
+	});
+	test('should set many values on secondary non blocking', async () => {
+		const secondary = new Keyv();
+		const nonBlocking = true;
+		const cacheable = new Cacheable({nonBlocking, secondary});
+		await cacheable.setMany([{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]);
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual(['value1', 'value2']);
+	});
+	test('should throw on setMany', async () => {
+		const cacheable = new Cacheable();
+		vi.spyOn(cacheable, 'hook').mockImplementation(async () => {
+			throw new Error('set error');
+		});
+		let result = false;
+		cacheable.on('error', error => {
+			expect(error).toBeDefined();
+			result = true;
+		});
+		await cacheable.setMany([{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]);
+		expect(result).toBe(true);
+	});
 });
 
 describe('cacheable get method', async () => {
