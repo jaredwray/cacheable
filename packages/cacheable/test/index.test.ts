@@ -12,42 +12,6 @@ describe('cacheable options and properties', async () => {
 		const cacheable = new Cacheable();
 		expect(cacheable).toBeDefined();
 	});
-	test('should set store on options', async () => {
-		const store = new Keyv();
-		const cacheable = new Cacheable({store});
-		expect(cacheable.stores[0]).toEqual(store);
-	});
-	test('should set multiple stores on options', async () => {
-		const stores = new Array<Keyv>();
-		stores.push(new Keyv(), new Keyv());
-		const cacheable = new Cacheable({stores});
-		expect(cacheable.stores.length).toEqual(2);
-	});
-
-	test('when you pass in store and stores it concats them', async () => {
-		const store = new Keyv();
-		const stores = new Array<Keyv>();
-		stores.push(new Keyv(), new Keyv());
-		const cacheable = new Cacheable({store, stores});
-		expect(cacheable.stores.length).toEqual(3);
-	});
-
-	test('you can change stores via the property', async () => {
-		const store = new Keyv();
-		const stores = new Array<Keyv>();
-		stores.push(new Keyv(), new Keyv());
-		const cacheable = new Cacheable({store, stores});
-		expect(cacheable.stores.length).toEqual(3);
-		cacheable.stores.pop();
-		expect(cacheable.stores.length).toEqual(2);
-	});
-
-	test('when setting the store property to an empty array it defaults to a new Keyv', async () => {
-		const cacheable = new Cacheable();
-		expect(cacheable.stores.length).toEqual(1);
-		cacheable.stores.pop();
-		expect(cacheable.stores.length).toEqual(1);
-	});
 
 	test('should enable stats on options', async () => {
 		const cacheable = new Cacheable({enableStats: true});
@@ -76,7 +40,7 @@ describe('cacheable set method', async () => {
 		});
 
 		let result = false;
-		const cacheable = new Cacheable({store: keyv});
+		const cacheable = new Cacheable({secondary: keyv});
 		cacheable.on('error', error => {
 			expect(error).toBeDefined();
 			result = true;
@@ -123,7 +87,7 @@ describe('cacheable get method', async () => {
 		});
 
 		let result = false;
-		const cacheable = new Cacheable({store: keyv});
+		const cacheable = new Cacheable({secondary: keyv});
 		cacheable.on('error', error => {
 			expect(error).toBeDefined();
 			result = true;
@@ -148,6 +112,47 @@ describe('cacheable get method', async () => {
 		await cacheable.get('key');
 		expect(beforeGet).toBe(true);
 		expect(afterGet).toBe(true);
+	});
+	test('should get a value from secondary', async () => {
+		const keyv = new Keyv();
+		await keyv.set('key', 'value');
+		const cacheable = new Cacheable({secondary: keyv});
+		const result = await cacheable.get('key');
+		expect(result).toEqual('value');
+	});
+	test('should get many values', async () => {
+		const cacheable = new Cacheable();
+		await cacheable.set('key1', 'value1');
+		await cacheable.set('key2', 'value2');
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual(['value1', 'value2']);
+	});
+	test('should throw on getMany', async () => {
+		const keyv = new Keyv();
+		vi.spyOn(keyv, 'get').mockImplementation(async () => {
+			throw new Error('get error');
+		});
+
+		let result = false;
+		const cacheable = new Cacheable({primary: keyv});
+		cacheable.on('error', error => {
+			expect(error).toBeDefined();
+			result = true;
+		});
+		await cacheable.getMany(['key1', 'key2']);
+		expect(result).toBe(true);
+	});
+	test('should get many values from secondary', async () => {
+		const keyv = new Keyv();
+		const cacheable = new Cacheable({secondary: keyv});
+		await cacheable.secondary?.set('key1', 'value1');
+		await cacheable.secondary?.set('key2', 'value2');
+		const secondaryResult = await cacheable.secondary?.get(['key1', 'key2']);
+		expect(secondaryResult).toEqual(['value1', 'value2']);
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual(['value1', 'value2']);
+		const primaryResult = await cacheable.primary.get('key1');
+		expect(primaryResult).toEqual('value1');
 	});
 });
 
