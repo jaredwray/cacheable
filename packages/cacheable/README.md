@@ -9,17 +9,17 @@
 [![npm](https://img.shields.io/npm/dm/cacheable.svg)](https://www.npmjs.com/package/cacheable)
 [![npm](https://img.shields.io/npm/v/cacheable)](https://www.npmjs.com/package/cacheable)
 
-`cacheable` is a simple caching engine that uses [Keyv](https://keyv.org) as the storage engine. It is designed to be simple to use and extend. Here are some of the features:
+`cacheable` is a high performance layer 1 / layer 2 caching engine that is focused on distributed caching with enterprise features such as `CacheSync`. It is built on top of the robust storage engine [Keyv](https://keyv.org) and provides a simple API to cache and retrieve data.
 
 * Simple to use with robust API
 * Not bloated with additional modules
 * Extendable to your own caching engine
 * Scalable and trusted storage engine by Keyv
-* Resilient to failures with try/catch
+* Resilient to failures with try/catch and offline
 * Hooks and Events to extend functionality
 * Comprehensive testing and code coverage
-* Tiered Caching with BASE and ACID modes
-* Maintained and supported
+* Distributed Caching Sync via Pub/Sub (coming soon)
+* Maintained and supported regularly
 
 ## Getting Started
 
@@ -35,56 +35,34 @@ npm install cacheable
 import { Cacheable } from 'cacheable';
 
 const cacheable = new Cacheable();
-cacheable.set('key', 'value', 1000);
-const value = cacheable.get('key');
+await cacheable.set('key', 'value', 1000);
+const value = await cacheable.get('key');
 ```
 
-## Extending Your own Caching Engine
+This is a basic example where you are only using the in-memory storage engine. To enable layer 1 and layer 2 caching you can use the `secondary` property in the options:
 
 ```javascript
 import { Cacheable } from 'cacheable';
+import KeyvRedis from '@keyv/redis';
 
-export class MyCache extends Cacheable {
-  constructor() {
-	super();
-  }
-}
-```
+const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
+const cache = new Cacheable({secondary});
+``` 
 
-From here you now how the ability to use the `cacheable` API. You can also extend the API to add your own functionality.
-
-## Storage Adapters and Keyv
-
-To set Keyv as the storage engine, you can do the following:
+In this example, the primary store we will use `lru-cache` and the secondary store is Redis. You can also set multiple stores in the options:
 
 ```javascript
 import { Cacheable } from 'cacheable';
-import Keyv from 'keyv';
+import { Keyv } from 'keyv';
+import KeyvRedis from '@keyv/redis';
+import { LRUCache } from 'lru-cache'
 
-export class MyCache extends Cacheable {
-  constructor() {
-  options = {
-    stores: [new Keyv('redis://user:pass@localhost:6379')]
-  };
-	super(new Keyv('redis://user:pass@localhost:6379'));
-  }
-}
+const primary = new Keyv({store: new LRUCache()});
+const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
+const cache = new Cacheable({primary, secondary});
 ```
 
-or you can do it at the property level:
-
-```javascript
-import { Cacheable } from 'cacheable';
-import Keyv from 'keyv';
-
-export class MyCache extends Cacheable {
-  constructor() {
-	super();
-
-	this.stores[0] = new Keyv('redis://user:pass@localhost:6379'); //set redis instead of in-memory
-  }
-}
-```
+This is a more advanced example and not needed for most use cases.
 
 ## Hooks and Events
 
@@ -110,42 +88,66 @@ cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
 });
 ```
 
-## Storage Tiering
+## Storage Tiering and Caching
 
-`cacheable` supports storage tiering with modes for Read and Write. By default the modes are set to the following:
+`cacheable` is built as a layer 1 and layer 2 caching engine by default. The purpose is to have your layer 1 be fast and your layer 2 be more persistent. The primary store is the layer 1 cache and the secondary store is the layer 2 cache. By adding the secondary store you are enabling layer 2 caching. By default the operations are blocking but fault tolerant:
 
-* `CacheWriteMode.BASE`
-* `CacheReadMode.FAST_FAILOVER`
+* `Setting Data`: Sets the value in the primary store and then the secondary store.
+* `Getting Data`: Gets the value from the primary if the value does not exist it will get it from the secondary store and set it in the primary store.
+* `Deleting Data`: Deletes the value from the primary store and secondary store at the same time waiting for both to respond.
+* `Clearing Data`: Clears the primary store and secondary store at the same time waiting for both to respond.
 
-You can read more about these modes below. Here is an example of how to use storage tiering:
+## Non-Blocking Operations
+
+If you want your layer 2 (secondary) store to be non-blocking you can set the `nonBlocking` property to `true` in the options. This will make the secondary store non-blocking and will not wait for the secondary store to respond on `setting data`, `deleting data`, or `clearing data`. This is useful if you want to have a faster response time and not wait for the secondary store to respond.
 
 ```javascript
 import { Cacheable } from 'cacheable';
-import Keyv from 'keyv';
-import KeyvRedis from '@keyv/redis';
+import {KeyvRedis} from '@keyv/redis';
 
-const cacheOptions = {
-  stores: [
-    new Keyv(), // in-memory as primary
-    new Keyv(KeyvRedis('redis://user:pass@localhost:6379'))
-  ]
-};
-
-const cache = new Cacheable(cacheOptions);
-
-cache.set('key', 'value', 1000);
-const value = cache.get('key');
+const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
+const cache = new Cacheable({secondary, nonBlocking: true});
 ```
 
-In this scenario the primary store in in-memory and the secondary store is Redis. The primary store is used for all `set()` and `get()` operations. By default the CacheWriteMode is `BASE` and the CacheReadMode is `FAST_FAILOVER`. You can change these modes by setting the `CacheableOptions` or the `.cacheReadMode` and `.cacheWriteMode` properties. Lets go through the modes:
+## CacheSync - Distributed Updates
 
-### CacheWriteMode
-* `BASE`: This is the default mode. This stands for `Basically Available, Soft state, Eventual consistency`. It will write to the primary store and then attempted to write to all other stores. If the write fails to any store, it will not throw an error. (This is the fastest mode but the least resilient)
-* `ACID`: This will write to all stores and if any write fails, it will throw an error. (This is the slowest mode but the most resilient)
+`cacheable` has a feature called `CacheSync` that is coming soon. This feature will allow you to have distributed caching with Pub/Sub. This will allow you to have multiple instances of `cacheable` running and when a value is set, deleted, or cleared it will update all instances of `cacheable` with the same value. Current plan is to support the following:
 
-### CacheReadMode
-* `ASCENDING_COALESCE`: It will read from the primary store and then attempt to read from all other stores until it either runs out of stores or finds a value. If it finds a value it will attempt to set it on the other stores that did not have it. (this is the slowest mode but the most resilient)
-* `FAST_FAILOVER`: This is the default mode. This is like `ASCENDING_COALESCE` but will stop after the second store. (This is the middle ground between speed and resiliency)
+* [Google Pub/Sub](https://cloud.google.com/pubsub)
+* [AWS SQS](https://aws.amazon.com/sqs)
+* [RabbitMQ](https://www.rabbitmq.com)
+* [Nats](https://nats.io)
+* [Azure Service Bus](https://azure.microsoft.com/en-us/services/service-bus)
+* [Redis Pub/Sub](https://redis.io/topics/pubsub)
+
+This feature should be live by end of year. 
+
+## Cacheable Options
+
+The following options are available for you to configure `cacheable`:
+
+* `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
+* `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
+* `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
+* `enableStats`: If you want to enable statistics for this instance. Default is `false`.
+
+## Cacheable Statistics (Instance Only)
+
+If you want to enable statistics for your instance you can set the `enableStats` property to `true` in the options. This will enable statistics for your instance and you can get the statistics by calling the `stats` property. Here are the following property statistics:
+
+* `hits`: The number of hits in the cache.
+* `misses`: The number of misses in the cache.
+* `sets`: The number of sets in the cache.
+* `deletes`: The number of deletes in the cache.
+* `clears`: The number of clears in the cache.
+* `errors`: The number of errors in the cache.
+* `count`: The number of keys in the cache.
+* `vsize`: The estimated byte size of the values in the cache.
+* `ksize`: The estimated byte size of the keys in the cache.
+
+You can clear the stats by calling the `clearStats()` method.
+
+_This does not enable statistics for your layer 2 cache as that is a distributed cache_.
 
 ## API
 
@@ -155,16 +157,25 @@ In this scenario the primary store in in-memory and the secondary store is Redis
 * `getMany([keys])`: Gets multiple values from the cache.
 * `has(key | [key])`: Checks if a value exists in the cache.
 * `hasMany([keys])`: Checks if multiple values exist in the cache.
+* `take(key)`: Takes a value from the cache and deletes it. (coming soon)
+* `takeMany([keys])`: Takes multiple values from the cache and deletes them. (coming soon)
 * `delete(key | [key])`: Deletes a value from the cache.
 * `deleteMany([keys])`: Deletes multiple values from the cache.
-* `clear()`: Clears the cache stores.
-* `wrap(function, options)`: Wraps a function in a cache.
+* `clear()`: Clears the cache stores. Be careful with this as it will clear both layer 1 and layer 2.
+* `clearPrimary()`: Clears the primary store. (coming soon)
+* `clearSecondary()`: Clears the secondary store. (coming soon)
+* `wrap(function, options)`: Wraps a function in a cache. (coming soon)
 * `disconnect()`: Disconnects from the cache stores.
 * `onHook(hook, callback)`: Sets a hook.
 * `removeHook(hook)`: Removes a hook.
 * `on(event, callback)`: Listens for an event.
 * `removeListener(event, callback)`: Removes a listener.
-* `stores`: Array of Keyv stores. The top store is the primary store.
+* `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
+* `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
+* `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
+* `enableStats`: If you want to enable statistics for this instance. Default is `false`.
+* `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
+* `clearStats()`: Clears the statistics for this instance.
 
 ## How to Contribute
 
