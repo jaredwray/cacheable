@@ -237,3 +237,23 @@ describe('cacheable has method', async () => {
 		expect(result).toBe(true);
 	});
 });
+
+describe('cacheable take method', async () => {
+	test('should take a value', async () => {
+		const cacheable = new Cacheable();
+		await cacheable.set('key', 'value');
+		const result = await cacheable.take('key');
+		expect(result).toEqual('value');
+		const result2 = await cacheable.get('key');
+		expect(result2).toBeUndefined();
+	});
+	test('should take many values', async () => {
+		const cacheable = new Cacheable();
+		await cacheable.set('key1', 'value1');
+		await cacheable.set('key2', 'value2');
+		const result = await cacheable.takeMany(['key1', 'key2']);
+		expect(result).toEqual(['value1', 'value2']);
+		const result2 = await cacheable.getMany(['key1', 'key2']);
+		expect(result2).toEqual([undefined, undefined]);
+	});
+});
