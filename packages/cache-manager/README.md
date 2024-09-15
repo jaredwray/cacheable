@@ -347,4 +347,4 @@ If you would like to contribute to the project, please read how to contribute he
 
 ## License
 
-[MIT & (c) Jared Wray](./LICENSE).
+[MIT © Jared Wray](./LICENSE)

@@ -37,5 +37,9 @@
 	"dependencies": {
 		"hookified": "^0.7.1",
 		"keyv": "^5.0.1"
-	}
+	},
+	"files": [
+		"dist",
+		"LICENSE"
+	]
 }
