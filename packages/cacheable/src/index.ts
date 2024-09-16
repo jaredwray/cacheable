@@ -313,3 +313,5 @@ export class Cacheable extends Hookified {
 		return Promise.all(promises);
 	}
 }
+
+export {CacheableStats} from './stats.js';

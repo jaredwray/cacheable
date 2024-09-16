@@ -19,6 +19,7 @@
 * Hooks and Events to extend functionality
 * Comprehensive testing and code coverage
 * Distributed Caching Sync via Pub/Sub (coming soon)
+* ESM and CommonJS support with TypeScript
 * Maintained and supported regularly
 
 ## Getting Started
@@ -133,7 +134,7 @@ The following options are available for you to configure `cacheable`:
 
 ## Cacheable Statistics (Instance Only)
 
-If you want to enable statistics for your instance you can set the `enableStats` property to `true` in the options. This will enable statistics for your instance and you can get the statistics by calling the `stats` property. Here are the following property statistics:
+If you want to enable statistics for your instance you can set the `.stats.enabled` property to `true` in the options. This will enable statistics for your instance and you can get the statistics by calling the `stats` property. Here are the following property statistics:
 
 * `hits`: The number of hits in the cache.
 * `misses`: The number of misses in the cache.
@@ -145,7 +146,7 @@ If you want to enable statistics for your instance you can set the `enableStats`
 * `vsize`: The estimated byte size of the values in the cache.
 * `ksize`: The estimated byte size of the keys in the cache.
 
-You can clear the stats by calling the `clearStats()` method.
+You can clear / reset the stats by calling the `.stats.reset()` method.
 
 _This does not enable statistics for your layer 2 cache as that is a distributed cache_.
 
@@ -157,13 +158,11 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `getMany([keys])`: Gets multiple values from the cache.
 * `has(key | [key])`: Checks if a value exists in the cache.
 * `hasMany([keys])`: Checks if multiple values exist in the cache.
-* `take(key)`: Takes a value from the cache and deletes it. (coming soon)
-* `takeMany([keys])`: Takes multiple values from the cache and deletes them. (coming soon)
+* `take(key)`: Takes a value from the cache and deletes it.
+* `takeMany([keys])`: Takes multiple values from the cache and deletes them.
 * `delete(key | [key])`: Deletes a value from the cache.
 * `deleteMany([keys])`: Deletes multiple values from the cache.
 * `clear()`: Clears the cache stores. Be careful with this as it will clear both layer 1 and layer 2.
-* `clearPrimary()`: Clears the primary store. (coming soon)
-* `clearSecondary()`: Clears the secondary store. (coming soon)
 * `wrap(function, options)`: Wraps a function in a cache. (coming soon)
 * `disconnect()`: Disconnects from the cache stores.
 * `onHook(hook, callback)`: Sets a hook.
@@ -174,7 +173,6 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
-* `clearStats()`: Clears the statistics for this instance.
 
 ## How to Contribute
 
