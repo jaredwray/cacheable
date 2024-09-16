@@ -157,7 +157,7 @@ export class CacheableStats {
 		this._count++;
 	}
 
-	public descreaseCount(): void {
+	public decreaseCount(): void {
 		if (!this._enabled) {
 			return;
 		}
@@ -215,6 +215,12 @@ export class CacheableStats {
 		this._sets = 0;
 		this._deletes = 0;
 		this._clears = 0;
+		this._vsize = 0;
+		this._ksize = 0;
+		this._count = 0;
+	}
+
+	public resetStoreValues(): void {
 		this._vsize = 0;
 		this._ksize = 0;
 		this._count = 0;
