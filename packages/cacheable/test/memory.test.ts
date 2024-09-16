@@ -24,6 +24,26 @@ describe('CacheableInMemory Options and Properties', () => {
 		cache.set('key4', 'value');
 		expect(cache.size).toBe(5);
 	});
+	test('should be able to get keys', () => {
+		const cache = new CacheableInMemory();
+		cache.set('key', 'value');
+		cache.set('key1', 'value');
+		cache.set('key2', 'value');
+		cache.set('key3', 'value');
+		cache.set('key4', 'value');
+		const keys = Array.from(cache.keys);
+		expect(keys).toContain('key');
+		expect(keys).toContain('key1');
+		expect(keys).toContain('key2');
+		expect(keys).toContain('key3');
+		expect(keys).toContain('key4');
+	});
+	test('should be able to set clone', () => {
+		const cache = new CacheableInMemory({useClone: true});
+		expect(cache.useClone).toBe(true);
+		cache.useClone = false;
+		expect(cache.useClone).toBe(false);
+	});
 });
 
 describe('CacheableInMemory Get', async () => {
@@ -47,6 +67,23 @@ describe('CacheableInMemory Get', async () => {
 		cache.set('key', 'value');
 		await sleep(20);
 		expect(cache.get('key')).toBe(undefined);
+	});
+	test('should be able to get a clone of the value', () => {
+		const cache = new CacheableInMemory();
+		expect(cache.useClone).toBe(true);
+		cache.set('key', {value: 'value'});
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const value = cache.get('key');
+		expect(value).toEqual({value: 'value'});
+	});
+	test('should be able to get the value without cloning', () => {
+		const cache = new CacheableInMemory({useClone: false});
+		expect(cache.useClone).toBe(false);
+		const value = {value: 'value'};
+		cache.set('key', value);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const value2 = cache.get('key');
+		expect(value).toEqual(value2);
 	});
 });
 

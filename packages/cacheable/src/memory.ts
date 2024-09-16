@@ -1,6 +1,7 @@
 
 export type CacheableInMemoryOptions = {
-	ttl: number;
+	ttl?: number;
+	useClone?: boolean;
 };
 
 export type CacheableItem = {
@@ -23,10 +24,15 @@ export class CacheableInMemory {
 	private readonly _hash9 = new Map<string, CacheableItem>();
 
 	private _ttl = 0;
+	private _useClone = true;
 
 	constructor(options?: CacheableInMemoryOptions) {
 		if (options?.ttl) {
 			this._ttl = options.ttl;
+		}
+
+		if (options?.useClone !== undefined) {
+			this._useClone = options.useClone;
 		}
 	}
 
@@ -38,8 +44,20 @@ export class CacheableInMemory {
 		this._ttl = value;
 	}
 
+	public get useClone(): boolean {
+		return this._useClone;
+	}
+
+	public set useClone(value: boolean) {
+		this._useClone = value;
+	}
+
 	public get size(): number {
 		return this._hash0.size + this._hash1.size + this._hash2.size + this._hash3.size + this._hash4.size + this._hash5.size + this._hash6.size + this._hash7.size + this._hash8.size + this._hash9.size;
+	}
+
+	public get keys(): IterableIterator<string> {
+		return this.concatStores().keys();
 	}
 
 	public get(key: string): any {
@@ -54,7 +72,11 @@ export class CacheableInMemory {
 			return undefined;
 		}
 
-		return item.value;
+		if (!this._useClone) {
+			return item.value;
+		}
+
+		return this.clone(item.value);
 	}
 
 	public set(key: string, value: any, ttl?: number): void {
@@ -170,5 +192,33 @@ export class CacheableInMemory {
 				return this._hash0;
 			}
 		}
+	}
+
+	public clone(value: any): any {
+		if (this.isPrimitive(value)) {
+			return value;
+		}
+
+		return structuredClone(value);
+	}
+
+	private isPrimitive(value: any): boolean {
+		const result = false;
+
+		/* c8 ignore next 3 */
+		if (value === null || value === undefined) {
+			return true;
+		}
+
+		if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+			return true;
+		}
+
+		return result;
+	}
+
+	private concatStores(): Map<string, CacheableItem> {
+		const result = new Map([...this._hash0, ...this._hash1, ...this._hash2, ...this._hash3, ...this._hash4, ...this._hash5, ...this._hash6, ...this._hash7, ...this._hash8, ...this._hash9]);
+		return result;
 	}
 }
