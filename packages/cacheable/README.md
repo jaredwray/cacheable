@@ -130,7 +130,7 @@ The following options are available for you to configure `cacheable`:
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
-* `stats`: If you want to enable statistics for this instance. Default is `false`.
+* `stats`: To enable statistics for this instance. Default is `false`.
 
 ## Cacheable Statistics (Instance Only)
 
