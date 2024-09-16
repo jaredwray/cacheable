@@ -389,3 +389,4 @@ export class Cacheable extends Hookified {
 }
 
 export {CacheableStats} from './stats.js';
+export {CacheableInMemory} from './memory.js';

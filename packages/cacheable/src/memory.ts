@@ -6,8 +6,7 @@ export type CacheableInMemoryOptions = {
 export type CacheableItem = {
 	key: string;
 	value: any;
-	ttl?: number;
-	expiration?: number;
+	expires?: number;
 };
 
 export class CacheableInMemory {
@@ -46,7 +45,7 @@ export class CacheableInMemory {
 			return undefined;
 		}
 
-		if (item.expiration && item.expiration && Date.now() > item.expiration) {
+		if (item.expires && item.expires && Date.now() > item.expires) {
 			store.delete(key);
 			return undefined;
 		}
@@ -56,17 +55,16 @@ export class CacheableInMemory {
 
 	public set(key: string, value: any, ttl?: number): void {
 		const store = this.getStore(key);
-		let expiration;
+		let expires;
 		if (ttl !== undefined || this._ttl !== 0) {
-			expiration = Date.now() + (ttl ?? this._ttl);
+			expires = Date.now() + (ttl ?? this._ttl);
 		}
 
 		store.set(key, {
 			key,
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			value,
-			ttl,
-			expiration,
+			expires,
 		});
 	}
 
