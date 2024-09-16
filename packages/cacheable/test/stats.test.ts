@@ -82,7 +82,7 @@ describe('cacheable stats', () => {
 		expect(stats.count).toBe(1);
 		stats.decreaseVSize('foo');
 		stats.decreaseKSize('foo');
-		stats.descreaseCount();
+		stats.decreaseCount();
 		expect(stats.vsize).toBe(0);
 		expect(stats.ksize).toBe(0);
 		expect(stats.count).toBe(0);
@@ -130,7 +130,7 @@ describe('cacheable stats', () => {
 		stats.enabled = false;
 		stats.decreaseKSize('foo');
 		stats.decreaseVSize('foo');
-		stats.descreaseCount();
+		stats.decreaseCount();
 		expect(stats.vsize).toBe(6);
 		expect(stats.ksize).toBe(6);
 		expect(stats.count).toBe(1);

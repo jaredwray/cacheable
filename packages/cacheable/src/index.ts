@@ -109,6 +109,16 @@ export class Cacheable extends Hookified {
 			await this.emit(CacheableEvents.ERROR, error);
 		}
 
+		if (this.stats.enabled) {
+			if (result) {
+				this._stats.incrementHits();
+			} else {
+				this._stats.incrementMisses();
+			}
+
+			this.stats.incrementGets();
+		}
+
 		return result;
 	}
 
@@ -140,6 +150,18 @@ export class Cacheable extends Hookified {
 			await this.emit(CacheableEvents.ERROR, error);
 		}
 
+		if (this.stats.enabled) {
+			for (const item of result) {
+				if (item) {
+					this._stats.incrementHits();
+				} else {
+					this._stats.incrementMisses();
+				}
+			}
+
+			this.stats.incrementGets();
+		}
+
 		return result;
 	}
 
@@ -165,6 +187,13 @@ export class Cacheable extends Hookified {
 			await this.emit(CacheableEvents.ERROR, error);
 		}
 
+		if (this.stats.enabled) {
+			this.stats.incrementKSize(key);
+			this.stats.incrementCount();
+			this.stats.incrementVSize(value);
+			this.stats.incrementSets();
+		}
+
 		return result;
 	}
 
@@ -187,6 +216,14 @@ export class Cacheable extends Hookified {
 			await this.emit(CacheableEvents.ERROR, error);
 		}
 
+		if (this.stats.enabled) {
+			for (const item of items) {
+				this.stats.incrementKSize(item.key);
+				this.stats.incrementCount();
+				this.stats.incrementVSize(item.value);
+			}
+		}
+
 		return result;
 	}
 
@@ -205,12 +242,20 @@ export class Cacheable extends Hookified {
 	}
 
 	public async has(key: string): Promise<boolean> {
-		let result = await this._primary.has(key);
-		if (!result && this._secondary) {
-			result = await this._secondary.has(key);
+		const promises = [];
+		promises.push(this._primary.has(key));
+		if (this._secondary) {
+			promises.push(this._secondary.has(key));
 		}
 
-		return result;
+		const resultAll = await Promise.all(promises);
+		for (const result of resultAll) {
+			if (result) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	public async hasMany(keys: string[]): Promise<boolean[]> {
@@ -235,20 +280,44 @@ export class Cacheable extends Hookified {
 	}
 
 	public async delete(key: string): Promise<boolean> {
-		const result = await this._primary.delete(key);
-		if (this._secondary) {
-			if (this._nonBlocking) {
-				// eslint-disable-next-line @typescript-eslint/no-floating-promises
-				this._secondary.delete(key);
-			} else {
-				await this._secondary.delete(key);
+		let result = false;
+		const promises = [];
+		if (this.stats.enabled) {
+			const statResult = await this._primary.get(key);
+			if (statResult) {
+				this.stats.decreaseKSize(key);
+				this.stats.decreaseVSize(statResult);
+				this.stats.decreaseCount();
+				this.stats.incrementDeletes();
 			}
+		}
+
+		promises.push(this._primary.delete(key));
+		if (this._secondary) {
+			promises.push(this._secondary.delete(key));
+		}
+
+		if (this.nonBlocking) {
+			result = await Promise.race(promises);
+		} else {
+			const resultAll = await Promise.all(promises);
+			result = resultAll[0];
 		}
 
 		return result;
 	}
 
 	public async deleteMany(keys: string[]): Promise<boolean> {
+		if (this.stats.enabled) {
+			const statResult = await this._primary.get(keys);
+			for (const key of keys) {
+				this.stats.decreaseKSize(key);
+				this.stats.decreaseVSize(statResult);
+				this.stats.decreaseCount();
+				this.stats.incrementDeletes();
+			}
+		}
+
 		const result = await this.deleteManyKeyv(this._primary, keys);
 		if (this._secondary) {
 			if (this._nonBlocking) {
@@ -270,6 +339,11 @@ export class Cacheable extends Hookified {
 		}
 
 		await (this._nonBlocking ? Promise.race(promises) : Promise.all(promises));
+
+		if (this.stats.enabled) {
+			this._stats.resetStoreValues();
+			this._stats.incrementClears();
+		}
 	}
 
 	public async disconnect(): Promise<void> {

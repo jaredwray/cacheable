@@ -438,3 +438,64 @@ describe('cacheable disconnect method', async () => {
 		expect(secondaryDisconnected).toBe(true);
 	});
 });
+
+describe('cacheable stats enabled', async () => {
+	test('should increment set stats', async () => {
+		const cacheable = new Cacheable({stats: true});
+		await cacheable.set('key', 'value');
+		expect(cacheable.stats.sets).toBe(1);
+	});
+	test('should increment get stats', async () => {
+		const cacheable = new Cacheable({stats: true});
+		await cacheable.get('key');
+		expect(cacheable.stats.gets).toBe(1);
+		expect(cacheable.stats.misses).toBe(1);
+		expect(cacheable.stats.hits).toBe(0);
+	});
+	test('should increment hit stats on get', async () => {
+		const cacheable = new Cacheable({stats: true});
+		await cacheable.set('key', 'value');
+		await cacheable.get('key');
+		expect(cacheable.stats.hits).toBe(1);
+	});
+	test('should handle get many stats', async () => {
+		const cacheable = new Cacheable({stats: true});
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual([undefined, undefined]);
+		expect(cacheable.stats.gets).toBe(1);
+		expect(cacheable.stats.misses).toBe(2);
+		expect(cacheable.stats.hits).toBe(0);
+		await cacheable.setMany([{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]);
+		const result2 = await cacheable.getMany(['key1', 'key2']);
+		expect(result2).toEqual(['value1', 'value2']);
+		expect(cacheable.stats.gets).toBe(2);
+		expect(cacheable.stats.misses).toBe(2);
+		expect(cacheable.stats.hits).toBe(2);
+	});
+	test('should get stats on delete', async () => {
+		const cacheable = new Cacheable({stats: true});
+		await cacheable.set('key', 'value');
+		await cacheable.delete('key');
+		expect(cacheable.stats.deletes).toBe(1);
+		expect(cacheable.stats.count).toBe(0);
+	});
+	test('should get stats on delete many', async () => {
+		const cacheable = new Cacheable({stats: true});
+		await cacheable.setMany([{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]);
+		await cacheable.deleteMany(['key1', 'key2']);
+		expect(cacheable.stats.deletes).toBe(2);
+		expect(cacheable.stats.count).toBe(0);
+	});
+	test('should get stats on clear', async () => {
+		const cacheable = new Cacheable({stats: true});
+		await cacheable.setMany([{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]);
+		expect(cacheable.stats.count).toBe(2);
+		expect(cacheable.stats.ksize).toBeGreaterThan(0);
+		expect(cacheable.stats.vsize).toBeGreaterThan(0);
+		await cacheable.clear();
+		expect(cacheable.stats.count).toBe(0);
+		expect(cacheable.stats.clears).toBe(1);
+		expect(cacheable.stats.vsize).toBe(0);
+		expect(cacheable.stats.ksize).toBe(0);
+	});
+});
