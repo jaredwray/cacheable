@@ -46,12 +46,21 @@ export class CacheableInMemory {
 			return undefined;
 		}
 
+		if (item.expiration && item.expiration && Date.now() > item.expiration) {
+			store.delete(key);
+			return undefined;
+		}
+
 		return item.value;
 	}
 
 	public set(key: string, value: any, ttl?: number): void {
 		const store = this.getStore(key);
-		const expiration = ttl ? Date.now() + ttl : Date.now() + this._ttl;
+		let expiration;
+		if (ttl !== undefined || this._ttl !== 0) {
+			expiration = Date.now() + (ttl ?? this._ttl);
+		}
+
 		store.set(key, {
 			key,
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -62,19 +71,20 @@ export class CacheableInMemory {
 	}
 
 	public has(key: string): boolean {
-		const store = this.getStore(key);
-		return store.has(key);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const item = this.get(key);
+		return Boolean(item);
 	}
 
 	public take(key: string): any {
-		const store = this.getStore(key);
-		const item = store.get(key) as CacheableItem;
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const item = this.get(key);
 		if (!item) {
 			return undefined;
 		}
 
-		store.delete(key);
-		return item.value;
+		this.delete(key);
+		return item;
 	}
 
 	public delete(key: string): void {

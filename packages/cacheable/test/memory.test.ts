@@ -1,6 +1,9 @@
 import {describe, test, expect} from 'vitest';
 import {CacheableInMemory} from '../src/memory.js';
 
+// eslint-disable-next-line no-promise-executor-return
+const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 describe('CacheableInMemory Options and Properties', () => {
 	test('should have default ttl', () => {
 		const cache = new CacheableInMemory();
@@ -22,6 +25,18 @@ describe('CacheableInMemory Get', async () => {
 	});
 	test('should be able to get undefined value', () => {
 		const cache = new CacheableInMemory();
+		expect(cache.get('key')).toBe(undefined);
+	});
+	test('should not be able to get expired value', async () => {
+		const cache = new CacheableInMemory();
+		cache.set('key', 'value', 1);
+		await sleep(20);
+		expect(cache.get('key')).toBe(undefined);
+	});
+	test('should not be able to get expired value with default ttl', async () => {
+		const cache = new CacheableInMemory({ttl: 1});
+		cache.set('key', 'value');
+		await sleep(20);
 		expect(cache.get('key')).toBe(undefined);
 	});
 });
