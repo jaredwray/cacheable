@@ -1,0 +1,162 @@
+
+export type CacheableInMemoryOptions = {
+	ttl: number;
+};
+
+export type CacheableItem = {
+	key: string;
+	value: any;
+	ttl?: number;
+	expiration?: number;
+};
+
+export class CacheableInMemory {
+	private readonly _hashCache = new Map<string, number>();
+	private readonly _hash0 = new Map<string, CacheableItem>();
+	private readonly _hash1 = new Map<string, CacheableItem>();
+	private readonly _hash2 = new Map<string, CacheableItem>();
+	private readonly _hash3 = new Map<string, CacheableItem>();
+	private readonly _hash4 = new Map<string, CacheableItem>();
+	private readonly _hash5 = new Map<string, CacheableItem>();
+	private readonly _hash6 = new Map<string, CacheableItem>();
+	private readonly _hash7 = new Map<string, CacheableItem>();
+	private readonly _hash8 = new Map<string, CacheableItem>();
+	private readonly _hash9 = new Map<string, CacheableItem>();
+
+	private _ttl = 0;
+
+	constructor(options?: CacheableInMemoryOptions) {
+		if (options?.ttl) {
+			this._ttl = options.ttl;
+		}
+	}
+
+	public get ttl(): number {
+		return this._ttl;
+	}
+
+	public set ttl(value: number) {
+		this._ttl = value;
+	}
+
+	public get(key: string): any {
+		const store = this.getStore(key);
+		const item = store.get(key) as CacheableItem;
+		if (!item) {
+			return undefined;
+		}
+
+		return item.value;
+	}
+
+	public set(key: string, value: any, ttl?: number): void {
+		const store = this.getStore(key);
+		const expiration = ttl ? Date.now() + ttl : Date.now() + this._ttl;
+		store.set(key, {
+			key,
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			value,
+			ttl,
+			expiration,
+		});
+	}
+
+	public has(key: string): boolean {
+		const store = this.getStore(key);
+		return store.has(key);
+	}
+
+	public take(key: string): any {
+		const store = this.getStore(key);
+		const item = store.get(key) as CacheableItem;
+		if (!item) {
+			return undefined;
+		}
+
+		store.delete(key);
+		return item.value;
+	}
+
+	public delete(key: string): void {
+		const store = this.getStore(key);
+		store.delete(key);
+	}
+
+	public clear(): void {
+		this._hash0.clear();
+		this._hash1.clear();
+		this._hash2.clear();
+		this._hash3.clear();
+		this._hash4.clear();
+		this._hash5.clear();
+		this._hash6.clear();
+		this._hash7.clear();
+		this._hash8.clear();
+		this._hash9.clear();
+		this._hashCache.clear();
+	}
+
+	public hashKey(key: string): number {
+		const cacheHashNumber = this._hashCache.get(key)!;
+		if (cacheHashNumber) {
+			return cacheHashNumber;
+		}
+
+		let hash = 0;
+		const primeMultiplier = 31; // Use a prime multiplier for better distribution
+
+		for (let i = 0; i < key.length; i++) {
+			// eslint-disable-next-line unicorn/prefer-code-point
+			hash = (hash * primeMultiplier) + key.charCodeAt(i);
+		}
+
+		const result = Math.abs(hash) % 10; // Return a number between 0 and 9
+		this._hashCache.set(key, result);
+		return result;
+	}
+
+	public getStore(key: string): Map<string, any> {
+		const hashKey = this.hashKey(key);
+		switch (hashKey) {
+			case 1: {
+				return this._hash1;
+			}
+
+			case 2: {
+				return this._hash2;
+			}
+
+			case 3: {
+				return this._hash3;
+			}
+
+			case 4: {
+				return this._hash4;
+			}
+
+			case 5: {
+				return this._hash5;
+			}
+
+			case 6: {
+				return this._hash6;
+			}
+
+			case 7: {
+				return this._hash7;
+			}
+
+			case 8: {
+				return this._hash8;
+			}
+
+			case 9: {
+				return this._hash9;
+			}
+
+			default: {
+				return this._hash0;
+			}
+		}
+	}
+}
