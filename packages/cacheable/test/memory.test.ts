@@ -15,6 +15,15 @@ describe('CacheableInMemory Options and Properties', () => {
 		cache.ttl = 1000;
 		expect(cache.ttl).toBe(1000);
 	});
+	test('should be able to get size', () => {
+		const cache = new CacheableInMemory();
+		cache.set('key', 'value');
+		cache.set('key1', 'value');
+		cache.set('key2', 'value');
+		cache.set('key3', 'value');
+		cache.set('key4', 'value');
+		expect(cache.size).toBe(5);
+	});
 });
 
 describe('CacheableInMemory Get', async () => {

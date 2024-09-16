@@ -38,6 +38,10 @@ export class CacheableInMemory {
 		this._ttl = value;
 	}
 
+	public get size(): number {
+		return this._hash0.size + this._hash1.size + this._hash2.size + this._hash3.size + this._hash4.size + this._hash5.size + this._hash6.size + this._hash7.size + this._hash8.size + this._hash9.size;
+	}
+
 	public get(key: string): any {
 		const store = this.getStore(key);
 		const item = store.get(key) as CacheableItem;
