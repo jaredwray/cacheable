@@ -127,4 +127,17 @@ describe('NodeCacheStore', () => {
 		expect(result1).toBeUndefined();
 		expect(result2).toBeUndefined();
 	});
+	test('should be able to set a key with ttl', async () => {
+		const store = new NodeCacheStore();
+		await store.set('test', 'value', 1000);
+		const result1 = await store.get('test');
+		expect(result1).toBe('value');
+		const result2 = await store.setTtl('test', 1000);
+		expect(result2).toBe(true);
+	});
+	test('should return false if no ttl is set', async () => {
+		const store = new NodeCacheStore();
+		const result1 = await store.setTtl('test', 1000);
+		expect(result1).toBe(false);
+	});
 });

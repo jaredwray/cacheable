@@ -95,6 +95,7 @@ export type NodeCacheStoreOptions = {
 * `del(key: string | number): Promise<boolean>` - Delete a key
 * `mdel(keys: Array<string | number>): Promise<boolean>` - Delete multiple keys
 * `clear(): Promise<void>` - Clear the cache
+* `setTtl(key: string | number, ttl: number): Promise<boolean>` - Set the ttl of a key
 * `stats`: `NodeCacheStats` - Get the stats of the cache
 * `ttl`: `number` - The standard ttl as number in seconds for every generated cache element. 0 = unlimited
 * `primary`: `Keyv` - The primary storage adapter
