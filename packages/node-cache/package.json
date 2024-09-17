@@ -37,13 +37,13 @@
 		"@types/node": "^22.5.5",
 		"@vitest/coverage-v8": "^2.1.1",
 		"rimraf": "^6.0.1",
-		"tsup": "^8.2.4",
+		"tsup": "^8.3.0",
 		"typescript": "^5.6.2",
 		"vitest": "^2.1.1",
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
-		"cacheable": "^0.8.0",
+		"cacheable": "^1.1.0",
 		"eventemitter3": "^5.0.1"
 	},
 	"files": [

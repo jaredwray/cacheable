@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import eventemitter from 'eventemitter3';
+import {CacheableMemory} from 'cacheable';
 
 export type NodeCacheOptions = {
 	stdTTL?: number; // The standard ttl as number in seconds for every generated cache element. 0 = unlimited
@@ -49,6 +50,8 @@ export default class NodeCache extends eventemitter {
 		ksize: 0,
 		vsize: 0,
 	};
+
+	private readonly _cacheable = new CacheableMemory();
 
 	private intervalId: number | NodeJS.Timeout = 0;
 
@@ -136,7 +139,7 @@ export default class NodeCache extends eventemitter {
 
 				this.addHit();
 				if (this.options.useClones) {
-					return this.clone(result.value);
+					return this._cacheable.clone(result.value);
 				}
 
 				return result.value;
@@ -144,7 +147,7 @@ export default class NodeCache extends eventemitter {
 
 			this.addHit();
 			if (this.options.useClones) {
-				return this.clone(result.value);
+				return this._cacheable.clone(result.value);
 			}
 
 			return result.value;
@@ -182,7 +185,7 @@ export default class NodeCache extends eventemitter {
 		if (result) {
 			this.del(key);
 			if (this.options.useClones) {
-				return this.clone(result);
+				return this._cacheable.clone(result);
 			}
 
 			return result;
@@ -405,29 +408,6 @@ export default class NodeCache extends eventemitter {
 		}
 
 		return new Error(error);
-	}
-
-	private isPrimitive(value: any): boolean {
-		const result = false;
-
-		/* c8 ignore next 3 */
-		if (value === null || value === undefined) {
-			return true;
-		}
-
-		if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-			return true;
-		}
-
-		return result;
-	}
-
-	private clone(value: any): any {
-		if (this.isPrimitive(value)) {
-			return value;
-		}
-
-		return structuredClone(value);
 	}
 }
 
