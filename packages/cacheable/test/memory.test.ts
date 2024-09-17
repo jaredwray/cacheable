@@ -1,22 +1,22 @@
 import {describe, test, expect} from 'vitest';
-import {CacheableInMemory} from '../src/memory.js';
+import {CacheableMemory} from '../src/memory.js';
 
 // eslint-disable-next-line no-promise-executor-return
 const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-describe('CacheableInMemory Options and Properties', () => {
+describe('CacheableMemory Options and Properties', () => {
 	test('should have default ttl', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		expect(cache.ttl).toBe(0);
 	});
 	test('should be able to set ttl', () => {
-		const cache = new CacheableInMemory({ttl: 5});
+		const cache = new CacheableMemory({ttl: 5});
 		expect(cache.ttl).toBe(5);
 		cache.ttl = 1000;
 		expect(cache.ttl).toBe(1000);
 	});
 	test('should be able to get size', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.set('key', 'value');
 		cache.set('key1', 'value');
 		cache.set('key2', 'value');
@@ -25,7 +25,7 @@ describe('CacheableInMemory Options and Properties', () => {
 		expect(cache.size).toBe(5);
 	});
 	test('should be able to get keys', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.set('key', 'value');
 		cache.set('key1', 'value');
 		cache.set('key2', 'value');
@@ -39,47 +39,47 @@ describe('CacheableInMemory Options and Properties', () => {
 		expect(keys).toContain('key4');
 	});
 	test('should be able to set clone', () => {
-		const cache = new CacheableInMemory({useClone: true});
+		const cache = new CacheableMemory({useClone: true});
 		expect(cache.useClone).toBe(true);
 		cache.useClone = false;
 		expect(cache.useClone).toBe(false);
 	});
 	test('lruSize should be 0 by default', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		expect(cache.lruSize).toBe(0);
 	});
 	test('should be able to set lruSize', () => {
-		const cache = new CacheableInMemory({lruSize: 15});
+		const cache = new CacheableMemory({lruSize: 15});
 		expect(cache.lruSize).toBe(15);
 		cache.lruSize = 5;
 		expect(cache.lruSize).toBe(5);
 	});
 });
 
-describe('CacheableInMemory Get', async () => {
+describe('CacheableMemory Get', async () => {
 	test('should set and get value', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.set('key', 'value');
 		expect(cache.get('key')).toBe('value');
 	});
 	test('should be able to get undefined value', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		expect(cache.get('key')).toBe(undefined);
 	});
 	test('should not be able to get expired value', async () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.set('key', 'value', 1);
 		await sleep(20);
 		expect(cache.get('key')).toBe(undefined);
 	});
 	test('should not be able to get expired value with default ttl', async () => {
-		const cache = new CacheableInMemory({ttl: 1});
+		const cache = new CacheableMemory({ttl: 1});
 		cache.set('key', 'value');
 		await sleep(20);
 		expect(cache.get('key')).toBe(undefined);
 	});
 	test('should be able to get a clone of the value', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		expect(cache.useClone).toBe(true);
 		cache.set('key', {value: 'value'});
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -87,7 +87,7 @@ describe('CacheableInMemory Get', async () => {
 		expect(value).toEqual({value: 'value'});
 	});
 	test('should be able to get the value without cloning', () => {
-		const cache = new CacheableInMemory({useClone: false});
+		const cache = new CacheableMemory({useClone: false});
 		expect(cache.useClone).toBe(false);
 		const value = {value: 'value'};
 		cache.set('key', value);
@@ -97,48 +97,48 @@ describe('CacheableInMemory Get', async () => {
 	});
 });
 
-describe('CacheableInMemory Has', async () => {
+describe('CacheableMemory Has', async () => {
 	test('should return true if key exists', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.set('key', 'value');
 		expect(cache.has('key')).toBe(true);
 	});
 	test('should return false if key does not exist', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		expect(cache.has('key')).toBe(false);
 	});
 });
 
-describe('CacheableInMemory Take', async () => {
+describe('CacheableMemory Take', async () => {
 	test('should set and take value', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.set('key', 'value');
 		expect(cache.take('key')).toBe('value');
 		expect(cache.get('key')).toBe(undefined);
 	});
 	test('should be able to take undefined value', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		expect(cache.take('key')).toBe(undefined);
 	});
 });
 
-describe('CacheableInMemory Delete', async () => {
+describe('CacheableMemory Delete', async () => {
 	test('should set and delete value', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.set('key', 'value');
 		cache.delete('key');
 		expect(cache.get('key')).toBe(undefined);
 	});
 	test('should be able to delete undefined value', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.delete('key');
 		expect(cache.get('key')).toBe(undefined);
 	});
 });
 
-describe('CacheableInMemory Clear', async () => {
+describe('CacheableMemory Clear', async () => {
 	test('should be able to clear all values', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.set('key1', 'value1');
 		cache.set('foo', 'value2');
 		cache.set('arch', 'value2');
@@ -150,13 +150,13 @@ describe('CacheableInMemory Clear', async () => {
 	});
 });
 
-describe('CacheableInMemory Get Store and Hash Key', async () => {
+describe('CacheableMemory Get Store and Hash Key', async () => {
 	test('should return the same store for the same key', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		expect(cache.getStore('key')).toBe(cache.getStore('key'));
 	});
 	test('should return different stores for different keys starting with A to Z', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		cache.set('d', 'value');
 		expect(cache.getStore('d').get('d')).toBeDefined();
 		cache.set('ad', 'value');
@@ -187,7 +187,7 @@ describe('CacheableInMemory Get Store and Hash Key', async () => {
 		expect(cache.getStore('ice').get('ice')).toBeDefined();
 	});
 	test('hash key should be the correct number', () => {
-		const cache = new CacheableInMemory();
+		const cache = new CacheableMemory();
 		expect(cache.hashKey('apple')).toBe(0);
 		expect(cache.hashKey('carrot')).toBe(1);
 		expect(cache.hashKey('4123')).toBe(2);
@@ -201,9 +201,9 @@ describe('CacheableInMemory Get Store and Hash Key', async () => {
 	});
 });
 
-describe('CacheableInMemory LRU', async () => {
+describe('CacheableMemory LRU', async () => {
 	test('should remove the least recently used item', () => {
-		const cache = new CacheableInMemory({lruSize: 3});
+		const cache = new CacheableMemory({lruSize: 3});
 		cache.set('key1', 'value1');
 		cache.set('key2', 'value2');
 		cache.set('key3', 'value3');
@@ -212,7 +212,7 @@ describe('CacheableInMemory LRU', async () => {
 		expect(cache.size).toBe(3);
 	});
 	test('should remove the least recently used item with default lruSize', () => {
-		const cache = new CacheableInMemory({lruSize: 5});
+		const cache = new CacheableMemory({lruSize: 5});
 		cache.set('key1', 'value1');
 		cache.set('key2', 'value2');
 		cache.set('key3', 'value3');
@@ -230,7 +230,7 @@ describe('CacheableInMemory LRU', async () => {
 		expect(item).toBe('value7');
 	});
 	test('should not do anything if lruSize is 0', () => {
-		const cache = new CacheableInMemory({lruSize: 0});
+		const cache = new CacheableMemory({lruSize: 0});
 		cache.set('key1', 'value1');
 		expect(cache.lruSize).toBe(0);
 		cache.lruMoveToFront('key1');
@@ -238,7 +238,7 @@ describe('CacheableInMemory LRU', async () => {
 		expect(cache.size).toBe(1);
 	});
 	test('should not do the resize on lruSize', () => {
-		const cache = new CacheableInMemory({lruSize: 5});
+		const cache = new CacheableMemory({lruSize: 5});
 		cache.set('key1', 'value1');
 		cache.set('key2', 'value2');
 		cache.set('key3', 'value3');
@@ -246,7 +246,7 @@ describe('CacheableInMemory LRU', async () => {
 		expect(cache.size).toBe(3);
 	});
 	test('should do the resize on lruSize', () => {
-		const cache = new CacheableInMemory({lruSize: 10});
+		const cache = new CacheableMemory({lruSize: 10});
 		cache.set('key1', 'value1');
 		cache.set('key2', 'value2');
 		cache.set('key3', 'value3');

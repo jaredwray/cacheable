@@ -1,6 +1,6 @@
 import {DoublyLinkedList} from '../src/memory-lru.js';
 
-export type CacheableInMemoryOptions = {
+export type CacheableMemoryOptions = {
 	ttl?: number;
 	useClone?: boolean;
 	lruSize?: number;
@@ -12,7 +12,7 @@ export type CacheableItem = {
 	expires?: number;
 };
 
-export class CacheableInMemory {
+export class CacheableMemory {
 	private readonly _hashCache = new Map<string, number>();
 	private readonly _hash0 = new Map<string, CacheableItem>();
 	private readonly _hash1 = new Map<string, CacheableItem>();
@@ -30,7 +30,7 @@ export class CacheableInMemory {
 	private _useClone = true;
 	private _lruSize = 0;
 
-	constructor(options?: CacheableInMemoryOptions) {
+	constructor(options?: CacheableMemoryOptions) {
 		if (options?.ttl) {
 			this._ttl = options.ttl;
 		}

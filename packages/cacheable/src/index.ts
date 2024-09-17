@@ -1,7 +1,7 @@
 import {Keyv, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
 import {CacheableStats} from './stats.js';
-import {CacheableInMemory} from './memory.js';
+import {CacheableMemory} from './memory.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -32,7 +32,7 @@ export type CacheableOptions = {
 };
 
 export class Cacheable extends Hookified {
-	private _primary: Keyv = new Keyv({store: new CacheableInMemory()});
+	private _primary: Keyv = new Keyv({store: new CacheableMemory()});
 	private _secondary: Keyv | undefined;
 	private _nonBlocking = false;
 	private readonly _stats = new CacheableStats({enabled: false});
@@ -390,4 +390,4 @@ export class Cacheable extends Hookified {
 }
 
 export {CacheableStats} from './stats.js';
-export {CacheableInMemory} from './memory.js';
+export {CacheableMemory} from './memory.js';
