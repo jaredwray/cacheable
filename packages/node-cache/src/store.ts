@@ -94,7 +94,7 @@ export class NodeCacheStore {
 	}
 
 	public async get<T>(key: string | number): Promise<T | undefined> {
-		return this._cache.get(key.toString());
+		return this._cache.get<T>(key.toString());
 	}
 
 	public async mget<T>(keys: Array<string | number>): Promise<Record<string, T | undefined>> {
@@ -128,5 +128,13 @@ export class NodeCacheStore {
 		}
 
 		return false;
+	}
+
+	public async take<T>(key: string | number): Promise<T | undefined> {
+		return this._cache.take<T>(key.toString());
+	}
+
+	public async disconnect(): Promise<void> {
+		await this._cache.disconnect();
 	}
 }
