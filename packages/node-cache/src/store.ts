@@ -129,4 +129,8 @@ export class NodeCacheStore {
 
 		return false;
 	}
+
+	public async disconnect(): Promise<void> {
+		await this._cache.disconnect();
+	}
 }

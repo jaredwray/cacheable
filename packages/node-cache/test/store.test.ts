@@ -136,8 +136,12 @@ describe('NodeCacheStore', () => {
 		expect(result2).toBe(true);
 	});
 	test('should return false if no ttl is set', async () => {
-		const store = new NodeCacheStore();
-		const result1 = await store.setTtl('test', 1000);
+		const store = new NodeCacheStore({ttl: 1000});
+		const result1 = await store.setTtl('test');
 		expect(result1).toBe(false);
+	});
+	test('should be able to disconnect', async () => {
+		const store = new NodeCacheStore();
+		await store.disconnect();
 	});
 });
