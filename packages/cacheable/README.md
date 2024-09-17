@@ -15,6 +15,7 @@
 * Not bloated with additional modules
 * Extendable to your own caching engine
 * Scalable and trusted storage engine by Keyv
+* Memory Caching with LRU and Expiration `CacheableInMemory`
 * Resilient to failures with try/catch and offline
 * Hooks and Events to extend functionality
 * Comprehensive testing and code coverage
