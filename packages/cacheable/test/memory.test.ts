@@ -44,6 +44,16 @@ describe('CacheableInMemory Options and Properties', () => {
 		cache.useClone = false;
 		expect(cache.useClone).toBe(false);
 	});
+	test('lruSize should be 0 by default', () => {
+		const cache = new CacheableInMemory();
+		expect(cache.lruSize).toBe(0);
+	});
+	test('should be able to set lruSize', () => {
+		const cache = new CacheableInMemory({lruSize: 15});
+		expect(cache.lruSize).toBe(15);
+		cache.lruSize = 5;
+		expect(cache.lruSize).toBe(5);
+	});
 });
 
 describe('CacheableInMemory Get', async () => {
@@ -188,5 +198,32 @@ describe('CacheableInMemory Get Store and Hash Key', async () => {
 		expect(cache.hashKey('grape')).toBe(7);
 		expect(cache.hashKey('house')).toBe(8);
 		expect(cache.hashKey('banana')).toBe(9);
+	});
+});
+
+describe('CacheableInMemory LRU', async () => {
+	test('should remove the least recently used item', () => {
+		const cache = new CacheableInMemory({lruSize: 3});
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		cache.set('key3', 'value3');
+		expect(cache.size).toBe(3);
+		cache.set('key4', 'value4');
+		expect(cache.size).toBe(3);
+	});
+	test('should remove the least recently used item with default lruSize', () => {
+		const cache = new CacheableInMemory({lruSize: 5});
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		cache.set('key3', 'value3');
+		cache.set('key4', 'value4');
+		cache.set('key5', 'value5');
+		cache.get('key1');
+		cache.get('key2');
+		cache.get('key3');
+		cache.set('key4', 'value4');
+		expect(cache.size).toBe(5);
+		cache.set('key6', 'value6');
+		expect(cache.size).toBe(5);
 	});
 });

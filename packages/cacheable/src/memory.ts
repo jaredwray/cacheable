@@ -1,7 +1,9 @@
+import {DoublyLinkedList} from '../src/memory-lru.js';
 
 export type CacheableInMemoryOptions = {
 	ttl?: number;
 	useClone?: boolean;
+	lruSize?: number;
 };
 
 export type CacheableItem = {
@@ -22,9 +24,11 @@ export class CacheableInMemory {
 	private readonly _hash7 = new Map<string, CacheableItem>();
 	private readonly _hash8 = new Map<string, CacheableItem>();
 	private readonly _hash9 = new Map<string, CacheableItem>();
+	private readonly _lru = new DoublyLinkedList<string>();
 
 	private _ttl = 0;
 	private _useClone = true;
+	private _lruSize = 0;
 
 	constructor(options?: CacheableInMemoryOptions) {
 		if (options?.ttl) {
@@ -33,6 +37,10 @@ export class CacheableInMemory {
 
 		if (options?.useClone !== undefined) {
 			this._useClone = options.useClone;
+		}
+
+		if (options?.lruSize) {
+			this._lruSize = options.lruSize;
 		}
 	}
 
@@ -50,6 +58,15 @@ export class CacheableInMemory {
 
 	public set useClone(value: boolean) {
 		this._useClone = value;
+	}
+
+	public get lruSize(): number {
+		return this._lruSize;
+	}
+
+	public set lruSize(value: number) {
+		this._lruSize = value;
+		this.lruResize();
 	}
 
 	public get size(): number {
@@ -72,6 +89,8 @@ export class CacheableInMemory {
 			return undefined;
 		}
 
+		this.lruMoveToFront(key);
+
 		if (!this._useClone) {
 			return item.value;
 		}
@@ -84,6 +103,21 @@ export class CacheableInMemory {
 		let expires;
 		if (ttl !== undefined || this._ttl !== 0) {
 			expires = Date.now() + (ttl ?? this._ttl);
+		}
+
+		if (this._lruSize > 0) {
+			if (store.has(key)) {
+				this.lruMoveToFront(key);
+			} else {
+				this.lruAddToFront(key);
+				if (this._lru.size > this._lruSize) {
+					const oldestKey = this._lru.getOldest();
+					if (oldestKey) {
+						this._lru.removeOldest();
+						this.delete(oldestKey);
+					}
+				}
+			}
 		}
 
 		store.set(key, {
@@ -220,5 +254,35 @@ export class CacheableInMemory {
 	private concatStores(): Map<string, CacheableItem> {
 		const result = new Map([...this._hash0, ...this._hash1, ...this._hash2, ...this._hash3, ...this._hash4, ...this._hash5, ...this._hash6, ...this._hash7, ...this._hash8, ...this._hash9]);
 		return result;
+	}
+
+	private lruAddToFront(key: string): void {
+		if (this._lruSize === 0) {
+			return;
+		}
+
+		this._lru.addToFront(key);
+	}
+
+	private lruMoveToFront(key: string): void {
+		if (this._lruSize === 0) {
+			return;
+		}
+
+		this._lru.moveToFront(key);
+	}
+
+	private lruResize(): void {
+		if (this._lruSize === 0) {
+			return;
+		}
+
+		while (this._lru.size > this._lruSize) {
+			const oldestKey = this._lru.getOldest();
+			if (oldestKey) {
+				this._lru.removeOldest();
+				this.delete(oldestKey);
+			}
+		}
 	}
 }
