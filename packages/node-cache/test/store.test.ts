@@ -144,4 +144,12 @@ describe('NodeCacheStore', () => {
 		const store = new NodeCacheStore();
 		await store.disconnect();
 	});
+	test('should be able to take a key', async () => {
+		const store = new NodeCacheStore();
+		await store.set('test', 'value');
+		const result1 = await store.take<string>('test');
+		expect(result1).toBe('value');
+		const result2 = await store.get<string>('test');
+		expect(result2).toBeUndefined();
+	});
 });
