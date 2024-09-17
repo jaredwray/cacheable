@@ -364,3 +364,4 @@ export default class NodeCache extends eventemitter {
 	}
 }
 
+export {NodeCacheStore, type NodeCacheStoreOptions} from './store.js';
