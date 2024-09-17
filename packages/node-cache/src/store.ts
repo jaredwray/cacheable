@@ -118,4 +118,15 @@ export class NodeCacheStore {
 	public async clear(): Promise<void> {
 		return this._cache.clear();
 	}
+
+	public async setTtl(key: string | number, ttl?: number): Promise<boolean> {
+		const finalTtl = ttl ?? this._cache.ttl;
+		const item = await this._cache.get(key.toString());
+		if (item) {
+			await this._cache.set(key.toString(), item, finalTtl);
+			return true;
+		}
+
+		return false;
+	}
 }
