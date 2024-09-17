@@ -60,6 +60,46 @@ await cache.get('foo'); // 'bar'
 cache.getStats(); // {hits: 1, misses: 1, keys: 1, ksize: 2, vsize: 3}
 ```
 
+## NodeCacheStore
+
+The `NodeCacheStore` is a class that extends the `NodeCache` and adds the ability to use storage adapters. This is based on the `cacheable` engine and allows you to do layer 1 and layer 2 caching. The storage adapters are based on the [Keyv](https://keyv.org) package. This allows you to use any of the storage adapters that are available.
+
+```javascript
+import {NodeCacheStore} from '@cacheable/node-cache';
+
+const cache = new NodeCacheStore();
+cache.set('foo', 'bar');
+cache.get('foo'); // 'bar'
+```
+
+### NodeCacheStoreOptions
+
+When initializing the cache you can pass in the options below:
+
+```javascript
+export type NodeCacheStoreOptions = {
+	ttl?: number; // The standard ttl as number in seconds for every generated cache element. 0 = unlimited
+	primary?: Keyv; // The primary storage adapter
+	secondary?: Keyv; // The secondary storage adapter
+	maxKeys?: number; // Default is 0 (unlimited). If this is set it will throw and error if you try to set more keys than the max.
+};
+```
+
+### Node Cache Store API
+
+* `set(key: string | number, value: any, ttl?: number): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl)
+* `mset(data: Array<NodeCacheItem>): Promise<boolean>` - Set multiple key value pairs at once
+* `get(key: string | number): Promise<any>` - Get a value from the cache by key
+* `mget(keys: Array<string | number>): Promise<Record<string, unknown>>` - Get multiple values from the cache by keys
+* `del(key: string | number): Promise<boolean>` - Delete a key
+* `mdel(keys: Array<string | number>): Promise<boolean>` - Delete multiple keys
+* `clear(): Promise<void>` - Clear the cache
+* `stats`: `NodeCacheStats` - Get the stats of the cache
+* `ttl`: `number` - The standard ttl as number in seconds for every generated cache element. 0 = unlimited
+* `primary`: `Keyv` - The primary storage adapter
+* `secondary`: `Keyv` - The secondary storage adapter
+* `maxKeys`: `number` - If this is set it will throw and error if you try to set more keys than the max
+
 ## API
 
 ### `constructor(options?: NodeCacheOptions)`

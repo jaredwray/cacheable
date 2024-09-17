@@ -227,7 +227,6 @@ describe('NodeCache', () => {
 		cache.set('foo', 'bar', 100);
 		cache.set('baz', 'qux', 0);
 		cache.set('moo', 'moo', 0.5);
-		console.log(cache.store.get('foo'));
 		expect(cache.get('foo')).toBe('bar');
 		expect(cache.get('baz')).toBe('qux');
 		await sleep(600);
