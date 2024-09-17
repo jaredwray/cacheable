@@ -90,12 +90,14 @@ export type NodeCacheStoreOptions = {
 
 * `set(key: string | number, value: any, ttl?: number): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl)
 * `mset(data: Array<NodeCacheItem>): Promise<boolean>` - Set multiple key value pairs at once
-* `get(key: string | number): Promise<any>` - Get a value from the cache by key
+* `get<T>(key: string | number): Promise<T>` - Get a value from the cache by key
 * `mget(keys: Array<string | number>): Promise<Record<string, unknown>>` - Get multiple values from the cache by keys
+* `take<T>(key: string | number): Promise<T>` - Get a value from the cache by key and delete it
 * `del(key: string | number): Promise<boolean>` - Delete a key
 * `mdel(keys: Array<string | number>): Promise<boolean>` - Delete multiple keys
 * `clear(): Promise<void>` - Clear the cache
 * `setTtl(key: string | number, ttl: number): Promise<boolean>` - Set the ttl of a key
+* `disconnect(): Promise<void>` - Disconnect the storage adapters
 * `stats`: `NodeCacheStats` - Get the stats of the cache
 * `ttl`: `number` - The standard ttl as number in seconds for every generated cache element. 0 = unlimited
 * `primary`: `Keyv` - The primary storage adapter
