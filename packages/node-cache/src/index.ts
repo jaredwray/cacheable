@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import eventemitter from 'eventemitter3';
-import {CacheableMemory} from 'cacheable';
+import {CacheableMemory, CacheableStats} from 'cacheable';
 
 export type NodeCacheOptions = {
 	stdTTL?: number; // The standard ttl as number in seconds for every generated cache element. 0 = unlimited
@@ -43,13 +43,7 @@ export default class NodeCache extends eventemitter {
 
 	public readonly store = new Map<string, any>();
 
-	private _stats: NodeCacheStats = {
-		keys: 0,
-		hits: 0,
-		misses: 0,
-		ksize: 0,
-		vsize: 0,
-	};
+	private _stats: CacheableStats = new CacheableStats({enabled: true});
 
 	private readonly _cacheable = new CacheableMemory();
 
@@ -100,9 +94,9 @@ export default class NodeCache extends eventemitter {
 		this.emit('set', keyValue, value, ttlValue);
 
 		// Add the bytes to the stats
-		this._stats.ksize += this.roughSizeOfKey(keyValue);
-		this._stats.vsize += this.roughSizeOfObject(value);
-		this._stats.keys = this.store.size;
+		this._stats.incrementKSize(keyValue);
+		this._stats.incrementVSize(value);
+		this._stats.setCount(this.store.size);
 		return true;
 	}
 
@@ -131,13 +125,13 @@ export default class NodeCache extends eventemitter {
 						this.del(key);
 					}
 
-					this.addMiss();
+					this._stats.incrementMisses();
 					// Event
 					this.emit('expired', this.formatKey(key), result.value);
 					return undefined;
 				}
 
-				this.addHit();
+				this._stats.incrementHits();
 				if (this.options.useClones) {
 					return this._cacheable.clone(result.value);
 				}
@@ -145,7 +139,7 @@ export default class NodeCache extends eventemitter {
 				return result.value;
 			}
 
-			this.addHit();
+			this._stats.incrementHits();
 			if (this.options.useClones) {
 				return this._cacheable.clone(result.value);
 			}
@@ -153,7 +147,7 @@ export default class NodeCache extends eventemitter {
 			return result.value;
 		}
 
-		this.addMiss();
+		this._stats.incrementMisses();
 		return undefined;
 	}
 
@@ -209,9 +203,9 @@ export default class NodeCache extends eventemitter {
 			this.emit('del', keyValue, result.value);
 
 			// Remove the bytes from the stats
-			this._stats.ksize -= this.roughSizeOfKey(keyValue);
-			this._stats.vsize -= this.roughSizeOfObject(result.value);
-			this._stats.keys = this.store.size;
+			this._stats.decreaseKSize(keyValue);
+			this._stats.decreaseVSize(result.value);
+			this._stats.setCount(this.store.size);
 			return 1;
 		}
 
@@ -284,7 +278,15 @@ export default class NodeCache extends eventemitter {
 
 	// Gets the stats of the cache.
 	public getStats(): NodeCacheStats {
-		return this._stats;
+		const stats = {
+			keys: this._stats.count,
+			hits: this._stats.hits,
+			misses: this._stats.misses,
+			ksize: this._stats.ksize,
+			vsize: this._stats.vsize,
+		};
+
+		return stats;
 	}
 
 	// Flush the whole data.
@@ -297,14 +299,7 @@ export default class NodeCache extends eventemitter {
 
 	// Flush the stats
 	public flushStats(): void {
-		this._stats = {
-			keys: 0,
-			hits: 0,
-			misses: 0,
-			ksize: 0,
-			vsize: 0,
-		};
-
+		this._stats = new CacheableStats({enabled: true});
 		// Event
 		this.emit('flush_stats');
 	}
@@ -328,48 +323,6 @@ export default class NodeCache extends eventemitter {
 		const ttlInMilliseconds = ttlInSeconds * 1000; // Convert TTL to milliseconds
 		const expirationTimestamp = currentTimestamp + ttlInMilliseconds;
 		return expirationTimestamp;
-	}
-
-	private addHit(): void {
-		this._stats.hits++;
-	}
-
-	private addMiss(): void {
-		this._stats.misses++;
-	}
-
-	private roughSizeOfKey(key: string): number {
-		// Keys are strings (UTF-16)
-		return this.formatKey(key).toString().length * 2;
-	}
-
-	private roughSizeOfObject(object: any): number {
-		const objectList: any[] = [];
-		const stack: any[] = [object];
-		let bytes = 0;
-
-		while (stack.length > 0) {
-			const value = stack.pop();
-
-			if (typeof value === 'boolean') {
-				bytes += 4; // Booleans are 4 bytes
-			} else if (typeof value === 'string') {
-				bytes += value.length * 2; // Each character is 2 bytes (UTF-16 encoding)
-			} else if (typeof value === 'number') {
-				bytes += 8; // Numbers are 8 bytes (IEEE 754 format)
-			} else if (typeof value === 'object' && value !== null && !objectList.includes(value)) {
-				objectList.push(value);
-
-				// Estimate object overhead, and then recursively estimate the size of properties
-				// eslint-disable-next-line guard-for-in
-				for (const key in value) {
-					bytes += key.length * 2; // Keys are strings (UTF-16)
-					stack.push(value[key]); // Add values to the stack to compute their size
-				}
-			}
-		}
-
-		return bytes;
 	}
 
 	private startInterval(): void {
