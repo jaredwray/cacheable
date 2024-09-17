@@ -15,6 +15,7 @@
 * Not bloated with additional modules
 * Extendable to your own caching engine
 * Scalable and trusted storage engine by Keyv
+* Memory Caching with LRU and Expiration `CacheableMemory`
 * Resilient to failures with try/catch and offline
 * Hooks and Events to extend functionality
 * Comprehensive testing and code coverage
@@ -173,6 +174,37 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
+
+## CacheableMemory - In-Memory Cache
+
+`cacheable` comes with a built-in in-memory cache called `CacheableMemory`. This is a simple in-memory cache that is used as the primary store for `cacheable`. You can use this as a standalone cache or as a primary store for `cacheable`. Here is an example of how to use `CacheableMemory`:
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+const options = {
+  ttl: 60 * 60 * 1000, // 1 hour
+  useClones: true, // use clones for the values (default is true)
+  lruSize: 1000, // the size of the LRU cache (default is 0 which is unlimited)
+}
+const cache = new CacheableMemory(options);
+await cache.set('key', 'value');
+const value = await cache.get('key'); // value
+```
+
+You can use `CacheableMemory` as a standalone cache or as a primary store for `cacheable`. You can also set the `useClones` property to `false` if you want to use the same reference for the values. This is useful if you are using large objects and want to save memory. The `lruSize` property is the size of the LRU cache and is set to `0` by default which is unlimited. When setting the `lruSize` property it will limit the number of keys in the cache.
+
+This simple in-memory cache uses multiple Map objects and a with `expiration` and `lru` policies if set to manage the in memory cache at scale.
+
+### CacheableMemory API
+
+* `set(key, value, ttl?)`: Sets a value in the cache.
+* `get(key)`: Gets a value from the cache.
+* `has(key)`: Checks if a value exists in the cache.
+* `delete(key)`: Deletes a value from the cache.
+* `clear()`: Clears the cache.
+* `size()`: The number of keys in the cache.
+* `keys()`: The keys in the cache.
+
 
 ## How to Contribute
 
