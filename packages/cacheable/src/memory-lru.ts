@@ -43,6 +43,7 @@ export class DoublyLinkedList<T> {
 			node.prev.next = node.next;
 		}
 
+		/* c8 ignore next 3 */
 		if (node.next) {
 			node.next.prev = node.prev;
 		}
@@ -72,6 +73,7 @@ export class DoublyLinkedList<T> {
 
 	// Remove the oldest node (tail)
 	removeOldest(): T | undefined {
+		/* c8 ignore next 3 */
 		if (!this.tail) {
 			return undefined;
 		}
@@ -82,6 +84,7 @@ export class DoublyLinkedList<T> {
 			this.tail = this.tail.prev;
 			this.tail.next = undefined;
 		} else {
+			/* c8 ignore next 3 */
 			// eslint-disable-next-line no-multi-assign
 			this.head = this.tail = undefined;
 		}

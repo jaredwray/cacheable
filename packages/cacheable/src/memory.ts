@@ -77,7 +77,7 @@ export class CacheableInMemory {
 		return this.concatStores().keys();
 	}
 
-	public get(key: string): any {
+	public get<T>(key: string): any {
 		const store = this.getStore(key);
 		const item = store.get(key) as CacheableItem;
 		if (!item) {
@@ -92,10 +92,10 @@ export class CacheableInMemory {
 		this.lruMoveToFront(key);
 
 		if (!this._useClone) {
-			return item.value;
+			return item.value as T;
 		}
 
-		return this.clone(item.value);
+		return this.clone(item.value) as T;
 	}
 
 	public set(key: string, value: any, ttl?: number): void {
@@ -134,7 +134,7 @@ export class CacheableInMemory {
 		return Boolean(item);
 	}
 
-	public take(key: string): any {
+	public take<T>(key: string): any {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const item = this.get(key);
 		if (!item) {
@@ -142,7 +142,7 @@ export class CacheableInMemory {
 		}
 
 		this.delete(key);
-		return item;
+		return item as T;
 	}
 
 	public delete(key: string): void {
@@ -236,6 +236,36 @@ export class CacheableInMemory {
 		return structuredClone(value);
 	}
 
+	public lruAddToFront(key: string): void {
+		if (this._lruSize === 0) {
+			return;
+		}
+
+		this._lru.addToFront(key);
+	}
+
+	public lruMoveToFront(key: string): void {
+		if (this._lruSize === 0) {
+			return;
+		}
+
+		this._lru.moveToFront(key);
+	}
+
+	public lruResize(): void {
+		if (this._lruSize === 0) {
+			return;
+		}
+
+		while (this._lru.size > this._lruSize) {
+			const oldestKey = this._lru.getOldest();
+			if (oldestKey) {
+				this._lru.removeOldest();
+				this.delete(oldestKey);
+			}
+		}
+	}
+
 	private isPrimitive(value: any): boolean {
 		const result = false;
 
@@ -254,35 +284,5 @@ export class CacheableInMemory {
 	private concatStores(): Map<string, CacheableItem> {
 		const result = new Map([...this._hash0, ...this._hash1, ...this._hash2, ...this._hash3, ...this._hash4, ...this._hash5, ...this._hash6, ...this._hash7, ...this._hash8, ...this._hash9]);
 		return result;
-	}
-
-	private lruAddToFront(key: string): void {
-		if (this._lruSize === 0) {
-			return;
-		}
-
-		this._lru.addToFront(key);
-	}
-
-	private lruMoveToFront(key: string): void {
-		if (this._lruSize === 0) {
-			return;
-		}
-
-		this._lru.moveToFront(key);
-	}
-
-	private lruResize(): void {
-		if (this._lruSize === 0) {
-			return;
-		}
-
-		while (this._lru.size > this._lruSize) {
-			const oldestKey = this._lru.getOldest();
-			if (oldestKey) {
-				this._lru.removeOldest();
-				this.delete(oldestKey);
-			}
-		}
 	}
 }

@@ -224,6 +224,41 @@ describe('CacheableInMemory LRU', async () => {
 		cache.set('key4', 'value4');
 		expect(cache.size).toBe(5);
 		cache.set('key6', 'value6');
+		cache.set('key7', 'value7');
+		expect(cache.size).toBe(5);
+		const item = cache.get('key7') as string;
+		expect(item).toBe('value7');
+	});
+	test('should not do anything if lruSize is 0', () => {
+		const cache = new CacheableInMemory({lruSize: 0});
+		cache.set('key1', 'value1');
+		expect(cache.lruSize).toBe(0);
+		cache.lruMoveToFront('key1');
+		cache.lruAddToFront('key1');
+		expect(cache.size).toBe(1);
+	});
+	test('should not do the resize on lruSize', () => {
+		const cache = new CacheableInMemory({lruSize: 5});
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		cache.set('key3', 'value3');
+		cache.lruSize = 0;
+		expect(cache.size).toBe(3);
+	});
+	test('should do the resize on lruSize', () => {
+		const cache = new CacheableInMemory({lruSize: 10});
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		cache.set('key3', 'value3');
+		cache.set('key4', 'value4');
+		cache.set('key5', 'value5');
+		cache.set('key6', 'value6');
+		cache.set('key7', 'value7');
+		cache.set('key8', 'value8');
+		cache.set('key9', 'value9');
+		cache.set('key10', 'value10');
+		expect(cache.size).toBe(10);
+		cache.lruSize = 5;
 		expect(cache.size).toBe(5);
 	});
 });
