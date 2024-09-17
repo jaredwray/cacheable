@@ -29,12 +29,14 @@ export type CacheableOptions = {
 	secondary?: Keyv | KeyvStoreAdapter;
 	stats?: boolean;
 	nonBlocking?: boolean;
+	ttl?: number;
 };
 
 export class Cacheable extends Hookified {
 	private _primary: Keyv = new Keyv({store: new CacheableMemory()});
 	private _secondary: Keyv | undefined;
 	private _nonBlocking = false;
+	private _ttl?: number;
 	private readonly _stats = new CacheableStats({enabled: false});
 
 	constructor(options?: CacheableOptions) {
@@ -54,6 +56,10 @@ export class Cacheable extends Hookified {
 
 		if (options?.stats) {
 			this._stats.enabled = options.stats;
+		}
+
+		if (options?.ttl) {
+			this._ttl = options.ttl;
 		}
 	}
 
@@ -85,6 +91,14 @@ export class Cacheable extends Hookified {
 		this._nonBlocking = nonBlocking;
 	}
 
+	public get ttl(): number | undefined {
+		return this._ttl;
+	}
+
+	public set ttl(ttl: number | undefined) {
+		this._ttl = ttl;
+	}
+
 	public setPrimary(primary: Keyv | KeyvStoreAdapter): void {
 		this._primary = primary instanceof Keyv ? primary : new Keyv(primary);
 	}
@@ -101,7 +115,7 @@ export class Cacheable extends Hookified {
 			if (!result && this._secondary) {
 				result = await this._secondary.get(key) as T;
 				if (result) {
-					await this._primary.set(key, result);
+					await this._primary.set(key, result, this._ttl);
 				}
 			}
 
@@ -141,7 +155,7 @@ export class Cacheable extends Hookified {
 					if (!result[i] && secondaryResult[i]) {
 						result[i] = secondaryResult[i];
 						// eslint-disable-next-line no-await-in-loop
-						await this._primary.set(key, secondaryResult[i]);
+						await this._primary.set(key, secondaryResult[i], this._ttl);
 					}
 				}
 			}
@@ -168,12 +182,13 @@ export class Cacheable extends Hookified {
 
 	public async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
 		let result = false;
+		const finalTtl = ttl ?? this._ttl;
 		try {
-			await this.hook(CacheableHooks.BEFORE_SET, {key, value, ttl});
+			await this.hook(CacheableHooks.BEFORE_SET, {key, value, finalTtl});
 			const promises = [];
-			promises.push(this._primary.set(key, value, ttl));
+			promises.push(this._primary.set(key, value, finalTtl));
 			if (this._secondary) {
-				promises.push(this._secondary.set(key, value, ttl));
+				promises.push(this._secondary.set(key, value, finalTtl));
 			}
 
 			if (this._nonBlocking) {
@@ -183,7 +198,7 @@ export class Cacheable extends Hookified {
 				result = results[0];
 			}
 
-			await this.hook(CacheableHooks.AFTER_SET, {key, value, ttl});
+			await this.hook(CacheableHooks.AFTER_SET, {key, value, finalTtl});
 		} catch (error: unknown) {
 			await this.emit(CacheableEvents.ERROR, error);
 		}
@@ -371,7 +386,8 @@ export class Cacheable extends Hookified {
 	private async setManyKeyv(keyv: Keyv, items: CacheableItem[]): Promise<boolean> {
 		const promises = [];
 		for (const item of items) {
-			promises.push(keyv.set(item.key, item.value, item.ttl));
+			const finalTtl = item.ttl ?? this._ttl;
+			promises.push(keyv.set(item.key, item.value, finalTtl));
 		}
 
 		await Promise.all(promises);

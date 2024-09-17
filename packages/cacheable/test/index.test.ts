@@ -67,6 +67,12 @@ describe('cacheable options and properties', async () => {
 		const getResult2 = await cacheable.get('key');
 		expect(getResult2).toBeUndefined();
 	});
+	test('should be able to set ttl default', async () => {
+		const cacheable = new Cacheable({ttl: 1000});
+		expect(cacheable.ttl).toEqual(1000);
+		cacheable.ttl = 2000;
+		expect(cacheable.ttl).toEqual(2000);
+	});
 });
 
 describe('cacheable stats', async () => {
@@ -270,6 +276,23 @@ describe('cacheable get method', async () => {
 		expect(result).toEqual(['value1', 'value2']);
 		const primaryResult = await cacheable.primary.get('key1');
 		expect(primaryResult).toEqual('value1');
+	});
+});
+
+describe('cacheable set and get with ttl', async () => {
+	test('should set a value with ttl', async () => {
+		const cacheable = new Cacheable({ttl: 500});
+		await cacheable.set('key', 'value');
+		await sleep(700);
+		const result = await cacheable.get('key');
+		expect(result).toBeUndefined();
+	});
+	test('should set a ttl on parameter', async () => {
+		const cacheable = new Cacheable({ttl: 50});
+		await cacheable.set('key', 'value', 1000);
+		await sleep(100);
+		const result = await cacheable.get('key');
+		expect(result).toEqual('value');
 	});
 });
 
