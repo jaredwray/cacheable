@@ -22,6 +22,7 @@ Note: `NodeCache` is ready and available for use. `NodeCacheStore` is in progres
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
 * [Advanced Usage](#advanced-usage)
+* [NodeCacheStore](#nodecachestore)
 * [API](#api)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
