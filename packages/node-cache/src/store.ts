@@ -72,7 +72,7 @@ export class NodeCacheStore {
 
 	public async set(key: string | number, value: any, ttl?: number): Promise<boolean> {
 		if (this._maxKeys > 0) {
-			console.log(this._cache.stats.count, this._maxKeys);
+			// eslint-disable-next-line unicorn/no-lonely-if
 			if (this._cache.stats.count >= this._maxKeys) {
 				return false;
 			}

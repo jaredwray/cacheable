@@ -38,6 +38,32 @@
 		"hookified": "^0.7.1",
 		"keyv": "^5.0.1"
 	},
+	"keywords": [
+		"cacheable",
+		"high performance",
+		"layer 1 caching",
+		"layer 2 caching",
+		"distributed caching",
+		"Keyv storage engine",
+		"memory caching",
+		"LRU cache",
+		"expiration",
+		"CacheableMemory",
+		"offline support",
+		"distributed sync",
+		"secondary store",
+		"primary store",
+		"non-blocking operations",
+		"cache statistics",
+		"layered caching",
+		"fault tolerant",
+		"scalable cache",
+		"in-memory cache",
+		"distributed cache",
+		"lruSize",
+		"lru",
+		"multi-tier cache"
+	],
 	"files": [
 		"dist",
 		"LICENSE"

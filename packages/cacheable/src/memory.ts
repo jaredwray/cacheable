@@ -1,4 +1,4 @@
-import {DoublyLinkedList} from '../src/memory-lru.js';
+import {DoublyLinkedList} from './memory-lru.js';
 
 export type CacheableMemoryOptions = {
 	ttl?: number;
