@@ -45,6 +45,7 @@ function coalesce<T>(options: {key: string; error?: Error; result?: T}): void {
 
 	for (const callback of dequeue(key)) {
 		if (error) {
+			/* c8 ignore next 3 */
 			callback.reject(error);
 		} else {
 			callback.resolve(result);

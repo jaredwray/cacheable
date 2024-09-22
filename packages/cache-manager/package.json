@@ -25,14 +25,24 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/timphandev/keyv-caching.git"
+    "url": "git+https://github.com/jaredwray/cacheable.git"
   },
   "keywords": [
     "cache",
-    "keyv",
+    "caching",
     "cache manager",
-    "cache store",
-    "caching"
+    "node",
+    "node.js",
+    "in-memory cache",
+    "redis",
+    "memcached",
+    "multi-store cache",
+    "ttl",
+    "caching layer",
+    "cache abstraction",
+    "cache middleware",
+    "cache strategies",
+    "cache wrapper"
   ],
   "authors": [
     {
