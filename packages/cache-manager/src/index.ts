@@ -191,3 +191,5 @@ export const createCache = (options?: CreateCacheOptions) => {
 		off,
 	};
 };
+
+export {KeyvAdapter, type CacheManagerStore} from './keyv-adapter.js';
