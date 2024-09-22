@@ -37,6 +37,17 @@ export const createCache = (options?: CreateCacheOptions) => {
 		return null;
 	};
 
+	const mget = async <T>(keys: string[]) => {
+		const result = [];
+
+		for (const key of keys) {
+			const data = await get<T>(key);
+			result.push(data);
+		}
+
+		return result;
+	};
+
 	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number) => {
 		try {
 			await Promise.all(stores.map(async store => store.set(key, value, ttl ?? options?.ttl)));
@@ -152,6 +163,7 @@ export const createCache = (options?: CreateCacheOptions) => {
 
 	return {
 		get,
+		mget,
 		set: async <T>(key: string, value: T, ttl?: number) => set(stores, key, value, ttl),
 		mset: async <T>(list: Array<{key: string; value: T; ttl?: number}>) => mset(stores, list),
 		del,
