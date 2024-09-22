@@ -88,6 +88,23 @@ export const createCache = (options?: CreateCacheOptions) => {
 		}
 	};
 
+	const mdel = async (keys: string[]) => {
+		try {
+			const promises = [];
+			for (const key of keys) {
+				promises.push(stores.map(async store => store.delete(key)));
+			}
+
+			await Promise.all(promises);
+			eventEmitter.emit('mdel', {keys});
+			return true;
+			/* c8 ignore next 4 */
+		} catch (error) {
+			eventEmitter.emit('mdel', {keys, error});
+			return Promise.reject(error);
+		}
+	};
+
 	const clear = async () => {
 		try {
 			await Promise.all(stores.map(async store => store.clear()));
@@ -167,6 +184,7 @@ export const createCache = (options?: CreateCacheOptions) => {
 		set: async <T>(key: string, value: T, ttl?: number) => set(stores, key, value, ttl),
 		mset: async <T>(list: Array<{key: string; value: T; ttl?: number}>) => mset(stores, list),
 		del,
+		mdel,
 		clear,
 		wrap,
 		on,

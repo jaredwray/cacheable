@@ -5,7 +5,7 @@ import {
 import {faker} from '@faker-js/faker';
 import {createCache} from '../src/index.js';
 
-describe('mget', () => {
+describe('mdel', () => {
 	let keyv: Keyv;
 	let cache: ReturnType<typeof createCache>;
 	let ttl = 500;
@@ -24,8 +24,12 @@ describe('mget', () => {
 
 	it('basic', async () => {
 		await cache.mset(list);
-		const keys = list.map(item => item.key);
-		const values = list.map(item => item.value);
-		await expect(cache.mget(keys)).resolves.toEqual(values);
+		await expect(cache.get(list[0].key)).resolves.toEqual(list[0].value);
+		await expect(cache.get(list[1].key)).resolves.toEqual(list[1].value);
+		await expect(cache.get(list[2].key)).resolves.toEqual(list[2].value);
+		await cache.mdel([list[0].key, list[1].key]);
+		await expect(cache.get(list[0].key)).resolves.toEqual(null);
+		await expect(cache.get(list[1].key)).resolves.toEqual(null);
+		await expect(cache.get(list[2].key)).resolves.toEqual(list[2].value);
 	});
 });
