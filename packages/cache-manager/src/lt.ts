@@ -1,3 +1,3 @@
-export function lt(num1?: number, num2?: number) {
-  return typeof num1 === 'number' && typeof num2 === 'number' ? num1 < num2 : false
+export function lt(number1?: number, number2?: number) {
+	return typeof number1 === 'number' && typeof number2 === 'number' ? number1 < number2 : false;
 }

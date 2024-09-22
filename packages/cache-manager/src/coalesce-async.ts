@@ -1,55 +1,55 @@
 type PromiseCallback<T = any, E = Error> = {
-  resolve: (value: T | PromiseLike<T>) => void
-  reject: (reason: E) => void
-}
+	resolve: (value: T | PromiseLike<T>) => void;
+	reject: (reason: E) => void;
+};
 
-const callbacks = new Map<string, PromiseCallback[]>()
+const callbacks = new Map<string, PromiseCallback[]>();
 
 function hasKey(key: string): boolean {
-  return callbacks.has(key)
+	return callbacks.has(key);
 }
 
 function addKey(key: string): void {
-  callbacks.set(key, [])
+	callbacks.set(key, []);
 }
 
 function removeKey(key: string): void {
-  callbacks.delete(key)
+	callbacks.delete(key);
 }
 
 function addCallbackToKey<T>(key: string, callback: PromiseCallback<T>): void {
-  const stash = getCallbacksByKey<T>(key)
-  stash.push(callback)
-  callbacks.set(key, stash)
+	const stash = getCallbacksByKey<T>(key);
+	stash.push(callback);
+	callbacks.set(key, stash);
 }
 
 function getCallbacksByKey<T>(key: string): Array<PromiseCallback<T>> {
-  return callbacks.get(key) ?? []
+	return callbacks.get(key) ?? [];
 }
 
 async function enqueue<T>(key: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const callback: PromiseCallback<T> = { resolve, reject }
-    addCallbackToKey(key, callback)
-  })
+	return new Promise<T>((resolve, reject) => {
+		const callback: PromiseCallback<T> = {resolve, reject};
+		addCallbackToKey(key, callback);
+	});
 }
 
 function dequeue<T>(key: string): Array<PromiseCallback<T>> {
-  const stash = getCallbacksByKey<T>(key)
-  removeKey(key)
-  return stash
+	const stash = getCallbacksByKey<T>(key);
+	removeKey(key);
+	return stash;
 }
 
-function coalesce<T>(options: { key: string; error?: Error; result?: T }): void {
-  const { key, error, result } = options
+function coalesce<T>(options: {key: string; error?: Error; result?: T}): void {
+	const {key, error, result} = options;
 
-  for (const callback of dequeue(key)) {
-    if (error) {
-      callback.reject(error)
-    } else {
-      callback.resolve(result)
-    }
-  }
+	for (const callback of dequeue(key)) {
+		if (error) {
+			callback.reject(error);
+		} else {
+			callback.resolve(result);
+		}
+	}
 }
 
 /**
@@ -64,26 +64,27 @@ function coalesce<T>(options: { key: string; error?: Error; result?: T }): void 
  * @url https://github.com/douglascayers/promise-coalesce
  */
 export async function coalesceAsync<T>(
-  /**
+	/**
    * Any identifier to group requests together.
    */
-  key: string,
-  /**
+	key: string,
+	/**
    * The function to run.
    */
-  fnc: () => T | PromiseLike<T>
+	fnc: () => T | PromiseLike<T>,
 ): Promise<T> {
-  if (!hasKey(key)) {
-    addKey(key)
-    try {
-      const result = await Promise.resolve(fnc())
-      coalesce({ key, result })
-      return result
-    } catch (error: any) {
-      coalesce({ key, error })
-      throw error
-    }
-  }
+	if (!hasKey(key)) {
+		addKey(key);
+		try {
+			const result = await Promise.resolve(fnc());
+			coalesce({key, result});
+			return result;
+		} catch (error: any) {
+			coalesce({key, error});
+			// eslint-disable-next-line @typescript-eslint/only-throw-error
+			throw error;
+		}
+	}
 
-  return enqueue(key)
+	return enqueue(key);
 }

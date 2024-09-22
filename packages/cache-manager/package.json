@@ -18,7 +18,8 @@
   ],
   "scripts": {
     "clean": "rimraf ./dist ./coverage ./node_modules",
-    "test": "vitest run --coverage",
+    "test": "xo --fix && vitest run --coverage",
+    "test:ci": "xo && vitest run --coverage",
     "build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
     "prepare": "pnpm run build"
   },
@@ -56,5 +57,11 @@
     "typescript": "^5.6.2",
     "vitest": "^2.1.1",
     "xo": "^0.59.3"
+  },
+  "xo": {
+    "rules": {
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off"
+    }
   }
 }
