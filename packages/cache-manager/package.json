@@ -1,80 +1,61 @@
 {
   "name": "cache-manager",
-  "version": "5.7.6",
-  "description": "Cache module for Node.js",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "version": "6.0.0",
+  "description": "Cache module for Node.js build on top of Keyv",
+	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.js"
+		}
+	},
   "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts",
-    "LISCENCE"
+    "dist",
+    "LICENSE"
   ],
   "scripts": {
-    "build": "rimraf ./dist && tsc -p tsconfig.build.json",
-    "clean": "rimraf ./dist ./coverage ./node_modules ./package-lock.json ./yarn.lock ./pnpm-lock.yaml",
-    "test": "xo --fix && vitest run --coverage",
-    "test:ci": "xo && vitest run",
-    "prepare": "pnpm build"
-  },
-  "engines": {
-    "node": ">= 18"
+    "clean": "rimraf ./dist ./coverage ./node_modules",
+    "test": "vitest run --coverage",
+    "build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
+    "prepare": "pnpm run build"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jaredwray/cacheable.git"
+    "url": "git+https://github.com/timphandev/keyv-caching.git"
   },
   "keywords": [
     "cache",
-    "redis",
-    "lru-cache",
-    "memory cache",
-    "multiple cache"
+    "keyv",
+    "cache manager",
+    "cache store",
+    "caching"
   ],
   "authors": [
     {
+      "name": "Tim Phan",
+      "email": "timphan.dev@gmail.com"
+    },
+    {
       "name": "Jared Wray",
       "email": "me@jaredwray.com"
-    },
-    {
-      "name": "Bryan Donovan"
-    },
-    {
-      "name": "Juan Aguilar Santillana",
-      "email": "mhpoin@gmail.com"
     }
   ],
   "license": "MIT",
   "dependencies": {
-    "eventemitter3": "^5.0.1",
-    "lodash.clonedeep": "^4.5.0",
-    "lru-cache": "^11.0.1",
-    "promise-coalesce": "^1.1.2"
+    "keyv": "^5.0.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",
-    "@types/lodash.clonedeep": "^4.5.9",
-    "@types/node": "^22.0.0",
-    "@vitest/coverage-v8": "^2.0.5",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.5.4",
-    "vitest": "^2.0.5",
+    "@types/node": "^20.12.12",
+    "@vitest/coverage-v8": "^2.1.1",
+    "rimraf": "^5.0.7",
+    "tsup": "^8.3.0",
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^7.17.0",
+    "vitest": "^2.1.1",
     "xo": "^0.59.3"
-  },
-  "xo": {
-    "extends": "xo-typescript",
-    "extensions": [
-      "ts",
-      "tsx"
-    ],
-    "rules": {
-      "@typescript-eslint/use-unknown-in-catch-callback-variable": "off",
-      "promise/prefer-await-to-then": "off",
-      "no-promise-executor-return promise/param-names": "off",
-      "promise/param-names": "off",
-      "no-promise-executor-return": "off",
-      "@typescript-eslint/only-throw-error": "off",
-      "promise/valid-params": "off",
-      "n/file-extension-in-import": "off"
-    }
   }
 }
