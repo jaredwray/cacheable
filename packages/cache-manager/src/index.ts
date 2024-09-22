@@ -48,6 +48,24 @@ export const createCache = (options?: CreateCacheOptions) => {
 		}
 	};
 
+	const mset = async <T>(stores: Keyv[], list: Array<{key: string; value: T; ttl?: number}>) => {
+		const items = list.map(({key, value, ttl}) => ({key, value, ttl}));
+		try {
+			const promises = [];
+			for (const item of list) {
+				promises.push(stores.map(async store => store.set(item.key, item.value, item.ttl)));
+			}
+
+			await Promise.all(promises);
+			eventEmitter.emit('mset', {list});
+			return list;
+			/* c8 ignore next 4 */
+		} catch (error) {
+			eventEmitter.emit('mset', {list, error});
+			return Promise.reject(error);
+		}
+	};
+
 	const del = async (key: string) => {
 		try {
 			await Promise.all(stores.map(async store => store.delete(key)));
@@ -135,6 +153,7 @@ export const createCache = (options?: CreateCacheOptions) => {
 	return {
 		get,
 		set: async <T>(key: string, value: T, ttl?: number) => set(stores, key, value, ttl),
+		mset: async <T>(list: Array<{key: string; value: T; ttl?: number}>) => mset(stores, list),
 		del,
 		clear,
 		wrap,
