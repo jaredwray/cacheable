@@ -66,9 +66,7 @@ In addition Keyv supports other storage adapters such as `lru-cache` and `Cachea
 
 ## Quick start
 ```typescript
-import Keyv from 'keyv'
-import KeyvRedis from '@keyv/redis'
-import KeyvSqlite from '@keyv/sqlite'
+import { Keyv } from 'keyv';
 import { createCache } from 'cache-manager';
 
 // Memory store by default
@@ -78,21 +76,34 @@ const cache = createCache()
 const cache = createCache({
   stores: [new Keyv()],
 })
+```
+Here is an example of doing layer 1 and layer 2 caching with the in-memory being `CacheableMemory` from Cacheable and the second layer being `@keyv/redis`:
+
+```ts
+import { Keyv } from 'keyv';
+import { KeyvRedis } from '@keyv/redis';
+import { CacheableMemory } from 'cacheable';
+import { createCache } from 'cache-manager';
 
 // Multiple stores
 const cache = createCache({
   stores: [
-    // Redis store
+    //  High performance in-memory cache with LRU and TTL
+    new Keyv({
+      store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
+    }),
+
+    //  Redis Store
     new Keyv({
       store: new KeyvRedis('redis://user:pass@localhost:6379'),
     }),
-
-    // Sqlite store
-    new Keyv({
-      store: new KeyvSqlite('cache.db'),
-    }),
   ],
 })
+```
+
+Once it is created, you can use the cache object to set, get, delete, and wrap functions in cache.
+
+```ts
 
 // With default ttl and refreshThreshold
 const cache = createCache({
