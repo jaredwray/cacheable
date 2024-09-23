@@ -41,6 +41,7 @@ If you are looking for older documentation you can find it here:
   * [.del](#del)
   * [.clear](#clear)
   * [.refresh](#refresh)
+* [Update on `redis` and `ioredis` Support](#update-on-redis-and-ioredis-support)
 * [Using Legacy Storage Adapters](#using-legacy-storage-adapters)
 * [Contribute](#contribute)
 * [License](#license)
@@ -146,8 +147,8 @@ Here is an example using `lru-cache`:
 
 ```ts
 import { createCache } from 'cache-manager';
-import {Keyv} from 'keyv';
-import {LRU} from 'lru-cache';
+import { Keyv } from 'keyv';
+import { LRU } from 'lru-cache';
 
 const keyv = new Keyv({ store: new LRU({ max: 5000, maxAge: 60000 }) });
 const cache = createCache({ stores: [keyv] });
@@ -361,6 +362,10 @@ cache.on('refresh', ({ key, value, error }) => {
 ```
 
 See unit tests in [`test/events.test.ts`](./test/events.test.ts) for more information.
+
+## Update on `redis` and `ioredis` Support
+
+We will not be supporting `cache-manager-ioredis-yet` or `cache-manager-redis-yet` in the future as we have moved to using `Keyv` as the storage adapter `@keyv/redis`. [Keyv](https://keyv.org/) has a the storage adapter `@keyv/redis` which is a more supported and flexible storage adapter.
 
 ## Using Legacy Storage Adapters
 
