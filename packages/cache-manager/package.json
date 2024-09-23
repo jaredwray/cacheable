@@ -1,7 +1,7 @@
 {
   "name": "cache-manager",
   "version": "6.0.0",
-  "description": "Cache module for Node.js build on top of Keyv",
+  "description": "Cache Manager for Node.js",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -46,12 +46,12 @@
   ],
   "authors": [
     {
-      "name": "Tim Phan",
-      "email": "timphan.dev@gmail.com"
-    },
-    {
       "name": "Jared Wray",
       "email": "me@jaredwray.com"
+    },
+    {
+      "name": "Tim Phan",
+      "email": "timphan.dev@gmail.com"
     }
   ],
   "license": "MIT",
