@@ -7,344 +7,387 @@
 [![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
 ![npm](https://img.shields.io/npm/v/cache-manager)
 
-# Flexible NodeJS cache module
+# Simple and fast NodeJS caching module.
+A cache module for NodeJS that allows easy wrapping of functions in cache, tiered caches, and a consistent interface.
+- Made with Typescript and compatible with [ESModules](https://nodejs.org/docs/latest-v14.x/api/esm.html).
+- Easy way to wrap any function in cache, supports a mechanism to refresh expiring cache keys in background.
+- Tiered caches -- data gets stored in each cache and fetched from the highest priority cache(s) first.
+- Use with any [Keyv](https://keyv.org/)-compatible storage adapter.
+- 100% test coverage via [vitest](https://github.com/vitest-dev/vitest).
 
-A cache module for nodejs that allows easy wrapping of functions in cache, tiered caches, and a consistent interface. This module is now part of the [Cacheable](https://cacheable.org) project.
+We moved to using [Keyv](https://keyv.org/) as the storage adapter which allows for a more supported and flexible storage adapter. These adapters have a larger community and are more actively maintained.
+
+A special thanks to [Tim Phan](https://github.com/timphandev) who tooke `cache-manager` v5 and ported it to [Keyv](https://keyv.org/) which is the foundation of v6. 🎉 Another special thanks to `Doug Ayers` who wrote `promise-coalesce` which was used in v5 and now embedded in v6. 
+
+If you are looking for older documentation you can find it here:
+* [v5](./READMEv5.md)
+* [v4](./READMEv4.md)
 
 ## Table of Contents
-* [Features](#features)
 * [Installation](#installation)
-* [Usage Examples](#usage-examples)
-  * [Single Store](#single-store)
-  * [Multi-Store](#multi-store)
-  * [Cache Manager Options](#cache-manager-options)
-  * [Refresh cache keys in background](#refresh-cache-keys-in-background)
-  * [Error Handling](#error-handling)
-  * [Express Middleware](#express-middleware)
-  * [Store Engines](#store-engines)
+* [Quick start](#quick-start)
+* [Using `CacheableMemory` or `lru-cache` as storage adapter](#using-cacheablememory-or-lru-cache-as-storage-adapter)
+* [Methods](#methods)
+  * [.set](#set)
+  * [.mset](#mset)
+  * [.get](#get)
+  * [.mget](#mget)
+  * [.del](#del)
+  * [.mdel](#mdel)
+  * [.clear](#clear)
+  * [.wrap](#wrap)
+* [Events](#events)
+  * [.set](#set)
+  * [.del](#del)
+  * [.clear](#clear)
+  * [.refresh](#refresh)
+* [Update on `redis` and `ioredis` Support](#update-on-redis-and-ioredis-support)
+* [Using Legacy Storage Adapters](#using-legacy-storage-adapters)
 * [Contribute](#contribute)
 * [License](#license)
 
-## Features
-
-- Made with Typescript and compatible with [ESModules](https://nodejs.org/docs/latest-v14.x/api/esm.html)
-- Easy way to wrap any function in cache.
-- Tiered caches -- data gets stored in each cache and fetched from the highest.
-  priority cache(s) first.
-- Use any cache you want, as long as it has the same API.
-- 100% test coverage via [vitest](https://github.com/vitest-dev/vitest).
-
 ## Installation
 
-    pnpm install cache-manager
-
-## Usage Examples
-
-### Single Store
-
-```typescript
-import { caching } from 'cache-manager';
-
-const memoryCache = await caching('memory', {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-});
-
-const ttl = 5 * 1000; /*milliseconds*/
-await memoryCache.set('foo', 'bar', ttl);
-
-console.log(await memoryCache.get('foo'));
-// >> "bar"
-
-await memoryCache.del('foo');
-
-console.log(await memoryCache.get('foo'));
-// >> undefined
-
-const getUser = (id: string) => new Promise.resolve({ id: id, name: 'Bob' });
-
-const userId = 123;
-const key = 'user_' + userId;
-
-console.log(await memoryCache.wrap(key, () => getUser(userId), ttl));
-// >> { id: 123, name: 'Bob' }
+```sh
+npm install cache-manager
 ```
 
-See unit tests in [`test/caching.test.ts`](./test/caching.test.ts) for more information.
+By default, everything is stored in memory; you can optionally also install a storage adapter; choose one from any of the storage adapters supported by Keyv:
 
-#### Example setting/getting several keys with mset() and mget()
+```sh
+npm install @keyv/redis
+npm install @keyv/memcache
+npm install @keyv/mongo
+npm install @keyv/sqlite
+npm install @keyv/postgres
+npm install @keyv/mysql
+npm install @keyv/etcd
+```
+In addition Keyv supports other storage adapters such as `lru-cache` and `CacheableMemory` from Cacheable (more examples below). Please read [Keyv document](https://keyv.org/docs/) for more information.
 
+## Quick start
 ```typescript
-await memoryCache.store.mset(
-  [
-    ['foo', 'bar'],
-    ['foo2', 'bar2'],
+import { Keyv } from 'keyv';
+import { createCache } from 'cache-manager';
+
+// Memory store by default
+const cache = createCache()
+
+// Single store which is in memory
+const cache = createCache({
+  stores: [new Keyv()],
+})
+```
+Here is an example of doing layer 1 and layer 2 caching with the in-memory being `CacheableMemory` from Cacheable and the second layer being `@keyv/redis`:
+
+```ts
+import { Keyv } from 'keyv';
+import { KeyvRedis } from '@keyv/redis';
+import { CacheableMemory } from 'cacheable';
+import { createCache } from 'cache-manager';
+
+// Multiple stores
+const cache = createCache({
+  stores: [
+    //  High performance in-memory cache with LRU and TTL
+    new Keyv({
+      store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
+    }),
+
+    //  Redis Store
+    new Keyv({
+      store: new KeyvRedis('redis://user:pass@localhost:6379'),
+    }),
   ],
-  ttl,
-);
-
-console.log(await memoryCache.store.mget('foo', 'foo2'));
-// >> ['bar', 'bar2']
-
-// Delete keys with mdel() passing arguments...
-await memoryCache.store.mdel('foo', 'foo2');
+})
 ```
 
-#### Custom Stores
+Once it is created, you can use the cache object to set, get, delete, and wrap functions in cache.
 
-You can use your own custom store by creating one with the same API as the built-in memory stores.
+```ts
 
-- [Example Custom Store lru-cache](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/src/stores/memory.ts)
-- [Example Custom Store redis](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-redis-yet)
-- [Example Custom Store ioredis](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager-ioredis-yet)
+// With default ttl and refreshThreshold
+const cache = createCache({
+  ttl: 10000,
+  refreshThreshold: 3000,
+})
 
-#### Create single cache store synchronously
+await cache.set('foo', 'bar')
+// => bar
 
-As `caching()` requires async functionality to resolve some stores, this is not well-suited to use for default function/constructor parameters etc.
+await cache.get('foo')
+// => bar
 
-If you need to create a cache store synchronously, you can instead use `createCache()`:
+await cache.del('foo')
+// => true
+
+await cache.get('foo')
+// => null
+
+await cache.wrap('key', () => 'value')
+// => value
+```
+
+## Using `CacheableMemory` or `lru-cache` as storage adapter
+
+Because we are using [Keyv](https://keyv.org/), you can use any storage adapter that Keyv supports such as `lru-cache` or `CacheableMemory` from Cacheable. Below is an example of using `CacheableMemory`:
+
+In this example we are using `CacheableMemory` from Cacheable which is a fast in-memory cache that supports LRU and and TTL expiration.
+
+```ts
+import { createCache } from 'cache-manager';
+import {Keyv} from 'keyv';
+import { CacheableMemory } from 'cacheable';
+
+const keyv = new Keyv({ store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }) });
+const cache = createCache({ stores: [keyv] });
+```
+
+Here is an example using `lru-cache`:
+
+```ts
+import { createCache } from 'cache-manager';
+import { Keyv } from 'keyv';
+import { LRU } from 'lru-cache';
+
+const keyv = new Keyv({ store: new LRU({ max: 5000, maxAge: 60000 }) });
+const cache = createCache({ stores: [keyv] });
+```
+
+### Options
+- **stores**?: Keyv[]
+
+    List of Keyv instance. Please refer to the [Keyv document](https://keyv.org/docs/#3.-create-a-new-keyv-instance) for more information.
+- **ttl**?: number - Default time to live in milliseconds.
+
+    The time to live in milliseconds. This is the maximum amount of time that an item can be in the cache before it is removed.
+- **refreshThreshold**?: number - Default refreshThreshold in milliseconds.
+
+    If the remaining TTL is less than **refreshThreshold**, the system will update the value asynchronously in background.
+
+## Methods
+### set
+`set(key, value, [ttl]): Promise<value>`
+
+Sets a key value pair. It is possible to define a ttl (in miliseconds). An error will be throw on any failed
+
+```ts
+await cache.set('key-1', 'value 1')
+
+// expires after 5 seconds
+await cache.set('key 2', 'value 2', 5000)
+```
+See unit tests in [`test/set.test.ts`](./test/set.test.ts) for more information.
+
+### mset
+
+`mset(keys: [ { key, value, ttl } ]): Promise<true>`
+
+Sets multiple key value pairs. It is possible to define a ttl (in miliseconds). An error will be throw on any failed
+
+```ts
+await cache.mset([
+  { key: 'key-1', value: 'value 1' },
+  { key: 'key-2', value: 'value 2', ttl: 5000 },
+]);
+```
+
+### get
+`get(key): Promise<value>`
+
+Gets a saved value from the cache. Returns a null if not found or expired. If the value was found it returns the value.
+
+```ts
+await cache.set('key', 'value')
+
+await cache.get('key')
+// => value
+
+await cache.get('foo')
+// => null
+```
+See unit tests in [`test/get.test.ts`](./test/get.test.ts) for more information.
+
+### mget
+
+`mget(keys: [key]): Promise<value[]>`
+
+Gets multiple saved values from the cache. Returns a null if not found or expired. If the value was found it returns the value.
+
+```ts
+await cache.mset([
+  { key: 'key-1', value: 'value 1' },
+  { key: 'key-2', value: 'value 2' },
+]);
+
+await cache.mget(['key-1', 'key-2', 'key-3'])
+// => ['value 1', 'value 2', null]
+```
+
+### del
+`del(key): Promise<true>`
+
+Delete a key, an error will be throw on any failed.
+
+```ts
+await cache.set('key', 'value')
+
+await cache.get('key')
+// => value
+
+await cache.del('key')
+
+await cache.get('key')
+// => null
+```
+See unit tests in [`test/del.test.ts`](./test/del.test.ts) for more information.
+
+### mdel
+
+`mdel(keys: [key]): Promise<true>`
+
+Delete multiple keys, an error will be throw on any failed.
+
+```ts
+await cache.mset([
+  { key: 'key-1', value: 'value 1' },
+  { key: 'key-2', value: 'value 2' },
+]);
+
+await cache.mdel(['key-1', 'key-2'])
+```
+
+### clear
+`clear(): Promise<true>`
+
+Flush all data, an error will be throw on any failed.
+
+```ts
+await cache.set('key-1', 'value 1')
+await cache.set('key-2', 'value 2')
+
+await cache.get('key-1')
+// => value 1
+await cache.get('key-2')
+// => value 2
+
+await cache.clear()
+
+await cache.get('key-1')
+// => null
+await cache.get('key-2')
+// => null
+```
+See unit tests in [`test/clear.test.ts`](./test/clear.test.ts) for more information.
+
+### wrap
+`wrap(key, fn: async () => value, [ttl], [refreshThreshold]): Promise<value>`
+
+Wraps a function in cache. The first time the function is run, its results are stored in cache so subsequent calls retrieve from cache instead of calling the function.
+
+If `refreshThreshold` is set and the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously. In the meantime, the system will return the old value until expiration.
 
 ```typescript
-import { createCache, memoryStore } from 'cache-manager';
+await cache.wrap('key', () => 1, 5000, 3000)
+// call function then save the result to cache
+// =>  1
 
-// Create memory cache synchronously
-const memoryCache = createCache(memoryStore({
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-}));
+await cache.wrap('key', () => 2, 5000, 3000)
+// return data from cache, function will not be called again
+// => 1
 
-// Default parameter in function
-function myService(cache = createCache(memoryStore())) {}
+// wait 3 seconds
+await sleep(3000)
 
-// Default parameter in class constructor
-const DEFAULT_CACHE = createCache(memoryStore(), { ttl: 60 * 1000 });
-// ...
-class MyService {
-  constructor(private cache = DEFAULT_CACHE) {}
-}
+await cache.wrap('key', () => 2, 5000, 3000)
+// return data from cache, call function in background and save the result to cache
+// =>  1
+
+await cache.wrap('key', () => 3, 5000, 3000)
+// return data from cache, function will not be called
+// =>  2
+
+await cache.wrap('error', () => {
+  throw new Error('failed')
+})
+// => error
 ```
+**NOTES:**
 
-### Multi-Store
-
-```typescript
-import { multiCaching } from 'cache-manager';
-
-const multiCache = multiCaching([memoryCache, someOtherCache]);
-const userId2 = 456;
-const key2 = 'user_' + userId;
-const ttl = 5;
-
-// Sets in all caches.
-await multiCache.set('foo2', 'bar2', ttl);
-
-// Fetches from highest priority cache that has the key.
-console.log(await multiCache.get('foo2'));
-// >> "bar2"
-
-// Delete from all caches
-await multiCache.del('foo2');
-
-// Sets multiple keys in all caches.
-// You can pass as many key, value tuples as you want
-await multiCache.mset(
-  [
-    ['foo', 'bar'],
-    ['foo2', 'bar2'],
-  ],
-  ttl
-);
-
-// mget() fetches from highest priority cache.
-// If the first cache does not return all the keys,
-// the next cache is fetched with the keys that were not found.
-// This is done recursively until either:
-// - all have been found
-// - all caches has been fetched
-console.log(await multiCache.mget('key', 'key2'));
-// >> ['bar', 'bar2']
-
-// Delete keys with mdel() passing arguments...
-await multiCache.mdel('foo', 'foo2');
-```
-
-See unit tests in [`test/multi-caching.test.ts`](./test/multi-caching.test.ts) for more information.
-
-### Cache Manager Options
-
-The `caching` function accepts an options object as the second parameter. The following options are available:
-* ttl: The time to live in milliseconds. This is the maximum amount of time that an item can be in the cache before it is removed.
-* refreshThreshold: discussed in details below.
-* isCacheable: a function to determine whether the value is cacheable or not.
-* onBackgroundRefreshError: a function to handle errors that occur during background refresh.
-
-```typescript
-import { caching } from 'cache-manager';
-
-const memoryCache = await caching('memory', {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-  shouldCloneBeforeSet: false, // this is set true by default (optional)
-});
-```
-
-When creating a memory store, you also get these addition options:
-* max: The maximum number of items that can be stored in the cache. If the cache is full, the least recently used item is removed.
-* shouldCloneBeforeSet: If true, the value will be cloned before being set in the cache. This is set to `true` by default.
-
-### Refresh cache keys in background
-
-Both the `caching` and `multicaching` modules support a mechanism to refresh expiring cache keys in background when using the `wrap` function.  
-This is done by adding a `refreshThreshold` attribute while creating the caching store or passing it to the `wrap` function.
-
-If `refreshThreshold` is set and after retrieving a value from cache the TTL will be checked.  
-If the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously,  
-following same rules as standard fetching. In the meantime, the system will return the old value until expiration.
-
-NOTES:
-
-* In case of multicaching, the store that will be checked for refresh is the one where the key will be found first (highest priority).
+* The store that will be checked for refresh is the one where the key will be found first (highest priority).
 * If the threshold is low and the worker function is slow, the key may expire and you may encounter a racing condition with updating values.
-* The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
-* If no `ttl` is set for the key, the refresh mechanism will not be triggered. For redis, the `ttl` is set to -1 by default.
+* If no `ttl` is set for the key, the refresh mechanism will not be triggered.
 
-For example, pass the refreshThreshold to `caching` like this:
+See unit tests in [`test/wrap.test.ts`](./test/wrap.test.ts) for more information.
 
-```typescript
-const memoryCache = await caching('memory', {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/,
-  refreshThreshold: 3 * 1000 /*milliseconds*/,
-  
-  /* optional, but if not set, background refresh error will be an unhandled
-   * promise rejection, which might crash your node process */
-  onBackgroundRefreshError: (error) => { /* log or otherwise handle error */ }
-});
+## Events
+### set
+Fired when a key has been added or changed.
+
+```ts
+cache.on('set', ({ key, value, error }) => {
+	// ... do something ...
+})
 ```
 
-When a value will be retrieved from Redis with a TTL minor than 3sec, the value will be updated in the background.
+### del
+Fired when a key has been removed manually.
 
-## Error Handling
-
-`multiCaching` now does not throw errors by default. Instead, all errors are evented through the `error` event. Here is an example on how to use it:
-
-```javascript
-const multicache = await multiCaching([memoryCache, someOtherCache]);
-multicache.on('error', (error) => {
-  console.error('Cache error:', error);
-});
+```ts
+cache.on('del', ({ key, error }) => {
+	// ... do something ...
+})
 ```
 
-## Using non-blocking set with wrap
-By default, when using `wrap` the value is set in the cache before the function returns. 
-While this behaviour can prevent additional calls to downstream resources, it can also slow down the response time.
-This can be changed by setting the `nonBlockingSet` option to `true`. 
-Doing will make the function return before the value is set in the cache.
-The setting applies to both single and multi caches. 
+### clear
+Fired when the cache has been flushed.
 
-```typescript
-cache.wrap('key', () => fetchValue(), 1000, 500, {nonBlockingSet: true});
-```
-
-## Express Middleware
-
-This example sets up an Express application with a caching mechanism using cache-manager. The cacheMiddleware checks if the response for a request is already cached and returns it if available. If not, it proceeds to the route handler, caches the response, and then returns it. This helps to reduce the load on the server by avoiding repeated processing of the same requests.
-
-```typescript
-// The code imports the necessary modules using ES module syntax:
-import { caching } from 'cache-manager';
-import express from 'express';
-
-// The memory cache is initialized using cache-manager with a maximum of 100 items and a TTL (time-to-live) of 10 seconds:
-const memoryCache = await caching('memory', {
-  max: 100,
-  ttl: 10 * 1000 /*milliseconds*/
-});
-
-const app = express();
-const port = 3000;
-
-// A middleware function is defined to check the cache before processing the request. If the response is found in the cache, it is returned immediately. If not, the request proceeds to the route handler, and the response is cached before being sent:
-const cacheMiddleware = async (req, res, next) => {
-  const key = req.originalUrl;
-
-  try {
-    const cachedResponse = await memoryCache.get(key);
-    if (cachedResponse) {
-      // Cache hit, return the cached response
-      return res.send(cachedResponse);
-    } else {
-      // Cache miss, proceed to the route handler
-      res.sendResponse = res.send;
-      res.send = async (body) => {
-        // Store the response in cache
-        await memoryCache.set(key, body);
-        res.sendResponse(body);
-      };
-      next();
-    }
-  } catch (err) {
-    next(err);
+```ts
+cache.on('clear', (error) => {
+  if (error) {
+    // ... do something ...
   }
-};
-
-// The cacheMiddleware is applied to the /data route, which simulates a slow database call with a 2-second delay:
-app.get('/data', cacheMiddleware, (req, res) => {
-  // Simulate a slow database call
-  setTimeout(() => {
-    res.send({ data: 'This is some data', timestamp: new Date() });
-  }, 2000); // 2 seconds delay
-});
-
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-});
-
+})
 ```
 
-## Store Engines
+### refresh
+Fired when the cache has been refreshed in the background.
 
-### Official and updated to last version
+```ts
+cache.on('refresh', ({ key, value, error }) => {
+  if (error) {
+    // ... do something ...
+  }
+})
+```
 
-- [node-cache-manager-redis-yet](https://github.com/jaredwray/cacheable/packages/cache-manager-redis-yet) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+See unit tests in [`test/events.test.ts`](./test/events.test.ts) for more information.
 
-- [node-cache-manager-ioredis-yet](https://github.com/jaredwray/cacheable/packages/cache-manager-ioredis-yet) (uses [ioredis](https://github.com/luin/ioredis))
+## Update on `redis` and `ioredis` Support
 
-### Community Additions
+We will not be supporting `cache-manager-ioredis-yet` or `cache-manager-redis-yet` in the future as we have moved to using `Keyv` as the storage adapter `@keyv/redis`. [Keyv](https://keyv.org/) has a the storage adapter `@keyv/redis` which is a more supported and flexible storage adapter.
 
-- [cache-manager-function](https://github.com/tomerh2001/cache-manager-function) - Cache functions dynamically based on their arguments using cache-manager.
+## Using Legacy Storage Adapters
 
-### Third party Storage Adapters
+There are many storage adapters built for `cache-manager` and because of that we wanted to provide a way to use them with `KeyvAdapter`. Below is an example of using `cache-manager-redis-yet`:
 
-- [node-cache-manager-redis](https://github.com/dial-once/node-cache-manager-redis) (uses [sol-redis-pool](https://github.com/joshuah/sol-redis-pool))
+```ts
+import { createCache, KeyvAdapter } from 'cache-manager';
+import { Keyv } from 'keyv';
+import { redisStore } from 'cache-manager-redis-yet';
 
-- [node-cache-manager-redis-store](https://github.com/dabroek/node-cache-manager-redis-store) (uses [node_redis](https://github.com/NodeRedis/node_redis))
+const adapter = new KeyvAdapter( await redisStore() );
+const cache = createCache({
+  stores: [new Keyv({ store: adapter })],
+});
+```
 
-- [node-cache-manager-ioredis](https://github.com/Tirke/node-cache-manager-ioredis) (uses [ioredis](https://github.com/luin/ioredis))
-
-- [node-cache-manager-mongodb](https://github.com/v4l3r10/node-cache-manager-mongodb)
-
-- [node-cache-manager-mongoose](https://github.com/disjunction/node-cache-manager-mongoose)
-
-- [node-cache-manager-fs-binary](https://github.com/sheershoff/node-cache-manager-fs-binary)
-
-- [node-cache-manager-fs-hash](https://github.com/rolandstarke/node-cache-manager-fs-hash)
-
-- [node-cache-manager-hazelcast](https://github.com/marudor/node-cache-manager-hazelcast)
-
-- [node-cache-manager-memcached-store](https://github.com/theogravity/node-cache-manager-memcached-store)
-
-- [node-cache-manager-memory-store](https://github.com/theogravity/node-cache-manager-memory-store)
-
-- [node-cache-manager-couchbase](https://github.com/davidepellegatta/node-cache-manager-couchbase)
-
-- [node-cache-manager-sqlite](https://github.com/maxpert/node-cache-manager-sqlite)
-
-- [@resolid/cache-manager-sqlite](https://github.com/huijiewei/cache-manager-sqlite) (uses [better-sqlite3](https://github.com/WiseLibs/better-sqlite3))
+This adapter will allow you to add in any storage adapter. If there are issues it needs to follow `CacheManagerStore` interface.
 
 ## Contribute
 
-If you would like to contribute to the project, please read how to contribute here [CONTRIBUTING.md](./CONTRIBUTING.md).
+If you would like to contribute to the project, please read how to contribute here [CONTRIBUTING.md](https://github.com/jaredwray/cacheable/blob/main/CONTRIBUTING.md).
 
 ## License
 
-[MIT © Jared Wray](./LICENSE)
+[MIT © Jared Wray ](./LICENSE)

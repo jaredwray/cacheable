@@ -492,7 +492,7 @@ NOTES:
 
 - In case of multicaching, the store that will be checked for refresh is the one where the key will be found first (highest priority).
 - If the threshold is low and the worker function is slow, the key may expire and you may encounter a racing condition with updating values.
-- The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
+- The background refresh mechanism currently does not support providing multiple keys to `wrap` function.
 - The caching store needs to provide the `ttl` method.
 
 For example, pass the refreshThreshold to `caching` like this:
