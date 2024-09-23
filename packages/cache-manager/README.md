@@ -1,9 +1,11 @@
-![Logo](./.github/assets/logo.png)
+[<img align="center" src="https://cacheable.org/logo.svg" alt="Cacheable" />](https://github.com/jaredwray/cacheable)
 
-[![test](https://github.com/timphandev/keyv-caching/actions/workflows/ci.yml/badge.svg)](https://github.com/timphandev/keyv-caching/actions/workflows/ci.yml)
-[![license](https://img.shields.io/github/license/timphandev/keyv-caching)](https://github.com/timphandev/keyv-caching/blob/main/LICENSE)
-[![npm](https://img.shields.io/npm/dm/keyv-caching)](https://npmjs.com/package/keyv-caching)
-![npm](https://img.shields.io/npm/v/keyv-caching)
+# cache-manager 
+[![codecov](https://codecov.io/gh/jaredwray/cacheable/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cacheable)
+[![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
+[![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
+[![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
+![npm](https://img.shields.io/npm/v/cache-manager)
 
 # Simple and fast NodeJS caching module.
 A cache module for NodeJS that allows easy wrapping of functions in cache, tiered caches, and a consistent interface.
@@ -18,8 +20,11 @@ A cache module for NodeJS that allows easy wrapping of functions in cache, tiere
 * [Quick start](#quick-start)
 * [Methods](#methods)
   * [.set](#set)
+  * [.mset](#mset)
   * [.get](#get)
+  * [.mget](#mget)
   * [.del](#del)
+  * [.mdel](#mdel)
   * [.clear](#clear)
   * [.wrap](#wrap)
 * [Events](#events)
@@ -27,40 +32,40 @@ A cache module for NodeJS that allows easy wrapping of functions in cache, tiere
   * [.del](#del)
   * [.clear](#clear)
   * [.refresh](#refresh)
+* [Using Legacy Storage Adapters](#using-legacy-storage-adapters)
 * [Contribute](#contribute)
 * [License](#license)
 
 ## Installation
 
 ```sh
-yarn add keyv-caching
+npm install cache-manager
 ```
 
 By default, everything is stored in memory; you can optionally also install a storage adapter; choose one from any of the storage adapters supported by Keyv:
 
 ```sh
-yarn add @keyv/redis
-yarn add @keyv/memcache
-yarn add @keyv/mongo
-yarn add @keyv/sqlite
-yarn add @keyv/postgres
-yarn add @keyv/mysql
-yarn add @keyv/etcd
+npm install @keyv/redis
+npm install @keyv/memcache
+npm install @keyv/mongo
+npm install @keyv/sqlite
+npm install @keyv/postgres
+npm install @keyv/mysql
+npm install @keyv/etcd
 ```
-
-Please read [Keyv document](https://keyv.org/docs/) for more information.
+In addition Keyv supports other storage adapters such as `lru-cache` and `CacheableMemory` from Cacheable (more examples below). Please read [Keyv document](https://keyv.org/docs/) for more information.
 
 ## Quick start
 ```typescript
 import Keyv from 'keyv'
 import KeyvRedis from '@keyv/redis'
 import KeyvSqlite from '@keyv/sqlite'
-import { createCache } from 'keyv-caching';
+import { createCache } from 'cache-manager';
 
 // Memory store by default
 const cache = createCache()
 
-// Single store
+// Single store which is in memory
 const cache = createCache({
   stores: [new Keyv()],
 })
@@ -126,6 +131,19 @@ await cache.set('key 2', 'value 2', 5000)
 ```
 See unit tests in [`test/set.test.ts`](./test/set.test.ts) for more information.
 
+### mset
+
+`mset(keys: [ { key, value, ttl } ]): Promise<true>`
+
+Sets multiple key value pairs. It is possible to define a ttl (in miliseconds). An error will be throw on any failed
+
+```ts
+await cache.mset([
+  { key: 'key-1', value: 'value 1' },
+  { key: 'key-2', value: 'value 2', ttl: 5000 },
+]);
+```
+
 ### get
 `get(key): Promise<value>`
 
@@ -141,6 +159,22 @@ await cache.get('foo')
 // => null
 ```
 See unit tests in [`test/get.test.ts`](./test/get.test.ts) for more information.
+
+### mget
+
+`mget(keys: [key]): Promise<value[]>`
+
+Gets multiple saved values from the cache. Returns a null if not found or expired. If the value was found it returns the value.
+
+```ts
+await cache.mset([
+  { key: 'key-1', value: 'value 1' },
+  { key: 'key-2', value: 'value 2' },
+]);
+
+await cache.mget(['key-1', 'key-2', 'key-3'])
+// => ['value 1', 'value 2', null]
+```
 
 ### del
 `del(key): Promise<true>`
@@ -159,6 +193,21 @@ await cache.get('key')
 // => null
 ```
 See unit tests in [`test/del.test.ts`](./test/del.test.ts) for more information.
+
+### mdel
+
+`mdel(keys: [key]): Promise<true>`
+
+Delete multiple keys, an error will be throw on any failed.
+
+```ts
+await cache.mset([
+  { key: 'key-1', value: 'value 1' },
+  { key: 'key-2', value: 'value 2' },
+]);
+
+await cache.mdel(['key-1', 'key-2'])
+```
 
 ### clear
 `clear(): Promise<true>`
@@ -266,10 +315,27 @@ cache.on('refresh', ({ key, value, error }) => {
 
 See unit tests in [`test/events.test.ts`](./test/events.test.ts) for more information.
 
+## Using Legacy Storage Adapters
+
+There are many storage adapters built for `cache-manager` and because of that we wanted to provide a way to use them with `KeyvAdapter`. Below is an example of using `cache-manager-redis-yet`:
+
+```ts
+import { createCache, KeyvAdapter } from 'cache-manager';
+import { Keyv } from 'keyv';
+import { redisStore } from 'cache-manager-redis-yet';
+
+const adapter = new KeyvAdapter( await redisStore() );
+const cache = createCache({
+  stores: [new Keyv({ store: adapter })],
+});
+```
+
+This adapter will allow you to add in any storage adapter. If there are issues it needs to follow `CacheManagerStore` interface.
+
 ## Contribute
 
-If you would like to contribute to the project, please read how to contribute here [CONTRIBUTING.md](./CONTRIBUTING.md).
+If you would like to contribute to the project, please read how to contribute here [CONTRIBUTING.md](https://github.com/jaredwray/cacheable/blob/main/CONTRIBUTING.md).
 
 ## License
 
-Released under the [MIT license](./LICENSE).
+[MIT © Jared Wray ](./LICENSE)
