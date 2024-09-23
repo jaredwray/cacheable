@@ -17,11 +17,11 @@ A cache module for NodeJS that allows easy wrapping of functions in cache, tiere
 
 We moved to using [Keyv](https://keyv.org/) as the storage adapter which allows for a more supported and flexible storage adapter. These adapters have a larger community and are more actively maintained.
 
-A special thanks to [Tim Phan](https://github.com/timphandev) who tooke `cache-manager` v5 and ported it to [Keyv](https://keyv.org/) which is the foundation of v6. 🎉 Another special thanks to `Doug Ayers` who wrote `promise-coalesce` which was used in v5 and now embedded in v6. 
+A special thanks to [Tim Phan](https://github.com/timphandev) who tooke `cache-manager` v5 and ported it to [Keyv](https://keyv.org/) which is the foundation of v6. 🎉 Another special thanks to [Doug Ayers](https://github.com/douglascayers) who wrote `promise-coalesce` which was used in v5 and now embedded in v6. 
 
 If you are looking for older documentation you can find it here:
-* [v5](./READMEv5.md)
-* [v4](./READMEv4.md)
+* [v5 Documentation](./READMEv5.md)
+* [v4 Documentation](./READMEv4.md)
 
 ## Table of Contents
 * [Installation](#installation)
