@@ -184,11 +184,12 @@ export class Cacheable extends Hookified {
 		let result = false;
 		const finalTtl = ttl ?? this._ttl;
 		try {
-			await this.hook(CacheableHooks.BEFORE_SET, {key, value, finalTtl});
+			const item = {key, value, ttl: finalTtl};
+			await this.hook(CacheableHooks.BEFORE_SET, item);
 			const promises = [];
-			promises.push(this._primary.set(key, value, finalTtl));
+			promises.push(this._primary.set(item.key, item.value, item.ttl));
 			if (this._secondary) {
-				promises.push(this._secondary.set(key, value, finalTtl));
+				promises.push(this._secondary.set(item.key, item.value, item.ttl));
 			}
 
 			if (this._nonBlocking) {
@@ -198,7 +199,7 @@ export class Cacheable extends Hookified {
 				result = results[0];
 			}
 
-			await this.hook(CacheableHooks.AFTER_SET, {key, value, finalTtl});
+			await this.hook(CacheableHooks.AFTER_SET, item);
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}

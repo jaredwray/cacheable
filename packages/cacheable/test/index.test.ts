@@ -125,8 +125,10 @@ describe('cacheable set method', async () => {
 		cacheable.onHook(CacheableHooks.BEFORE_SET, async item => {
 			beforeSet = true;
 			item.value = 'new value';
+			console.log('BEFORE TRIGGER', item);
 		});
 		cacheable.onHook(CacheableHooks.AFTER_SET, async item => {
+			console.log(item);
 			afterSet = true;
 			expect(item.value).toEqual('new value');
 		});
