@@ -35,8 +35,8 @@
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
-		"hookified": "^0.7.1",
-		"keyv": "^5.0.1"
+		"hookified": "^1.1.0",
+		"keyv": "^5.0.3"
 	},
 	"keywords": [
 		"cacheable",

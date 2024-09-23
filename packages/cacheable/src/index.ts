@@ -121,7 +121,7 @@ export class Cacheable extends Hookified {
 
 			await this.hook(CacheableHooks.AFTER_GET, {key, result});
 		} catch (error: unknown) {
-			await this.emit(CacheableEvents.ERROR, error);
+			this.emit(CacheableEvents.ERROR, error);
 		}
 
 		if (this.stats.enabled) {
@@ -162,7 +162,7 @@ export class Cacheable extends Hookified {
 
 			await this.hook(CacheableHooks.AFTER_GET_MANY, {keys, result});
 		} catch (error: unknown) {
-			await this.emit(CacheableEvents.ERROR, error);
+			this.emit(CacheableEvents.ERROR, error);
 		}
 
 		if (this.stats.enabled) {
@@ -200,7 +200,7 @@ export class Cacheable extends Hookified {
 
 			await this.hook(CacheableHooks.AFTER_SET, {key, value, finalTtl});
 		} catch (error: unknown) {
-			await this.emit(CacheableEvents.ERROR, error);
+			this.emit(CacheableEvents.ERROR, error);
 		}
 
 		if (this.stats.enabled) {
@@ -229,7 +229,7 @@ export class Cacheable extends Hookified {
 
 			await this.hook(CacheableHooks.AFTER_SET_MANY, items);
 		} catch (error: unknown) {
-			await this.emit(CacheableEvents.ERROR, error);
+			this.emit(CacheableEvents.ERROR, error);
 		}
 
 		if (this.stats.enabled) {
