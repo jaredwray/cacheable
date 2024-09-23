@@ -15,9 +15,18 @@ A cache module for NodeJS that allows easy wrapping of functions in cache, tiere
 - Use with any [Keyv](https://keyv.org/)-compatible storage adapter.
 - 100% test coverage via [vitest](https://github.com/vitest-dev/vitest).
 
+We moved to using [Keyv](https://keyv.org/) as the storage adapter which allows for a more supported and flexible storage adapter. These adapters have a larger community and are more actively maintained.
+
+A special thanks to [Tim Phan](https://github.com/timphandev) who tooke `cache-manager` v5 and ported it to [Keyv](https://keyv.org/) which is the foundation of v6. 🎉 Another special thanks to `Doug Ayers` who wrote `promise-coalesce` which was used in v5 and now embedded in v6. 
+
+If you are looking for older documentation you can find it here:
+* [v5](./READMEv5.md)
+* [v4](./READMEv4.md)
+
 ## Table of Contents
 * [Installation](#installation)
 * [Quick start](#quick-start)
+* [Using `CacheableMemory` or `lru-cache` as storage adapter](#using-cacheablememory-or-lru-cache-as-storage-adapter)
 * [Methods](#methods)
   * [.set](#set)
   * [.mset](#mset)
@@ -106,6 +115,33 @@ await cache.get('foo')
 await cache.wrap('key', () => 'value')
 // => value
 ```
+
+## Using `CacheableMemory` or `lru-cache` as storage adapter
+
+Because we are using [Keyv](https://keyv.org/), you can use any storage adapter that Keyv supports such as `lru-cache` or `CacheableMemory` from Cacheable. Below is an example of using `CacheableMemory`:
+
+In this example we are using `CacheableMemory` from Cacheable which is a fast in-memory cache that supports LRU and and TTL expiration.
+
+```ts
+import { createCache } from 'cache-manager';
+import {Keyv} from 'keyv';
+import { CacheableMemory } from 'cacheable';
+
+const keyv = new Keyv({ store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }) });
+const cache = createCache({ stores: [keyv] });
+```
+
+Here is an example using `lru-cache`:
+
+```ts
+import { createCache } from 'cache-manager';
+import {Keyv} from 'keyv';
+import {LRU} from 'lru-cache';
+
+const keyv = new Keyv({ store: new LRU({ max: 5000, maxAge: 60000 }) });
+const cache = createCache({ stores: [keyv] });
+```
+
 ### Options
 - **stores**?: Keyv[]
 
