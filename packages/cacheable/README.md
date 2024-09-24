@@ -132,7 +132,6 @@ The following options are available for you to configure `cacheable`:
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: To enable statistics for this instance. Default is `false`.
-* `checkInterval`: The interval check in milliseconds for the cache. Default is `0` ms. which means it will not check for expired keys.
 
 ## Cacheable Statistics (Instance Only)
 
@@ -171,14 +170,10 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `removeHook(hook)`: Removes a hook.
 * `on(event, callback)`: Listens for an event.
 * `removeListener(event, callback)`: Removes a listener.
-* `checkExpired()`: Checks for expired keys in the cache. This is used by the `checkInterval` property.
-* `startIntervalCheck()`: Starts the interval check for expired keys if `checkInterval` is above 0 ms.
-* `stopIntervalCheck()`: Stops the interval check for expired keys.
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
-* `checkInterval`: The interval check in milliseconds for the cache. Default is `0` ms. which means it will not check for expired keys.
 
 ## CacheableMemory - In-Memory Cache
 
@@ -200,6 +195,15 @@ You can use `CacheableMemory` as a standalone cache or as a primary store for `c
 
 This simple in-memory cache uses multiple Map objects and a with `expiration` and `lru` policies if set to manage the in memory cache at scale.
 
+By default we use lazy expiration deletion which means on `get` and `getMany` type functions we look if it is expired and then delete it. If you want to have a more aggressive expiration policy you can set the `checkInterval` property to a value greater than `0` which will check for expired keys at the interval you set.
+
+### CacheableMemory Options
+
+* `ttl`: The time to live for the cache in milliseconds.
+* `useClones`: If the cache should use clones for the values. Default is `true`.
+* `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
+* `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
+
 ### CacheableMemory API
 
 * `set(key, value, ttl?)`: Sets a value in the cache.
@@ -209,6 +213,9 @@ This simple in-memory cache uses multiple Map objects and a with `expiration` an
 * `clear()`: Clears the cache.
 * `size()`: The number of keys in the cache.
 * `keys()`: The keys in the cache.
+* `checkExpired()`: Checks for expired keys in the cache. This is used by the `checkInterval` property.
+* `startIntervalCheck()`: Starts the interval check for expired keys if `checkInterval` is above 0 ms.
+* `stopIntervalCheck()`: Stops the interval check for expired keys.
 
 
 ## How to Contribute
