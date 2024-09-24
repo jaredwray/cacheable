@@ -4,6 +4,7 @@ export type CacheableMemoryOptions = {
 	ttl?: number;
 	useClone?: boolean;
 	lruSize?: number;
+	checkInterval?: number;
 };
 
 export type CacheableItem = {
@@ -26,9 +27,11 @@ export class CacheableMemory {
 	private readonly _hash9 = new Map<string, CacheableItem>();
 	private readonly _lru = new DoublyLinkedList<string>();
 
-	private _ttl = 0;
-	private _useClone = true;
-	private _lruSize = 0;
+	private _ttl = 0; //turned off by default
+	private _useClone = true; //turned on by default
+	private _lruSize = 0; //turned off by default
+	private _checkInterval = 0; //turned off by default
+	private _interval: NodeJS.Timeout | undefined;
 
 	constructor(options?: CacheableMemoryOptions) {
 		if (options?.ttl) {
@@ -41,6 +44,10 @@ export class CacheableMemory {
 
 		if (options?.lruSize) {
 			this._lruSize = options.lruSize;
+		}
+
+		if (options?.checkInterval) {
+			this._checkInterval = options.checkInterval;
 		}
 	}
 
@@ -67,6 +74,14 @@ export class CacheableMemory {
 	public set lruSize(value: number) {
 		this._lruSize = value;
 		this.lruResize();
+	}
+
+	public get checkInterval(): number {
+		return this._checkInterval;
+	}
+
+	public set checkInterval(value: number) {
+		this._checkInterval = value;
 	}
 
 	public get size(): number {
@@ -265,6 +280,30 @@ export class CacheableMemory {
 			}
 		}
 	}
+
+	public async checkExpiration(): Promise<void> {
+		const stores = this.concatStores();
+		for (const item of stores.values()) {
+			if (item.expires && Date.now() > item.expires) {
+				this.delete(item.key);
+			}
+		}
+	};
+
+	public async startIntervalCheck(): Promise<void> {
+		if(this._checkInterval > 0) {
+			this.stopIntervalCheck();
+			this._interval = setInterval(() => {
+				this.checkExpiration();
+			}, this._checkInterval);
+		}
+	};
+
+	public async stopIntervalCheck(): Promise<void> {
+		if(this._interval) {
+			clearInterval(this._interval);
+		}
+	};
 
 	private isPrimitive(value: any): boolean {
 		const result = false;
