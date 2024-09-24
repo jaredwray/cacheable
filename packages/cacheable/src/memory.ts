@@ -31,7 +31,7 @@ export class CacheableMemory {
 	private _useClone = true; //turned on by default
 	private _lruSize = 0; //turned off by default
 	private _checkInterval = 0; //turned off by default
-	private _interval: NodeJS.Timeout | undefined;
+	private _interval: number | NodeJS.Timeout = 0; //turned off by default
 
 	constructor(options?: CacheableMemoryOptions) {
 		if (options?.ttl) {
