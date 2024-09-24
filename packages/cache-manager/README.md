@@ -20,8 +20,8 @@ We moved to using [Keyv](https://keyv.org/) as the storage adapter which allows 
 A special thanks to [Tim Phan](https://github.com/timphandev) who tooke `cache-manager` v5 and ported it to [Keyv](https://keyv.org/) which is the foundation of v6. 🎉 Another special thanks to [Doug Ayers](https://github.com/douglascayers) who wrote `promise-coalesce` which was used in v5 and now embedded in v6. 
 
 If you are looking for older documentation you can find it here:
-* [v5 Documentation](./READMEv5.md)
-* [v4 Documentation](./READMEv4.md)
+* [v5 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv5.md)
+* [v4 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv4.md)
 
 ## Table of Contents
 * [Installation](#installation)
