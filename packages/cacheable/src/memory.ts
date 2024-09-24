@@ -27,11 +27,11 @@ export class CacheableMemory {
 	private readonly _hash9 = new Map<string, CacheableItem>();
 	private readonly _lru = new DoublyLinkedList<string>();
 
-	private _ttl = 0; //turned off by default
-	private _useClone = true; //turned on by default
-	private _lruSize = 0; //turned off by default
-	private _checkInterval = 0; //turned off by default
-	private _interval: number | NodeJS.Timeout = 0; //turned off by default
+	private _ttl = 0; // Turned off by default
+	private _useClone = true; // Turned on by default
+	private _lruSize = 0; // Turned off by default
+	private _checkInterval = 0; // Turned off by default
+	private _interval: number | NodeJS.Timeout = 0; // Turned off by default
 
 	constructor(options?: CacheableMemoryOptions) {
 		if (options?.ttl) {
@@ -49,6 +49,8 @@ export class CacheableMemory {
 		if (options?.checkInterval) {
 			this._checkInterval = options.checkInterval;
 		}
+
+		this.startIntervalCheck();
 	}
 
 	public get ttl(): number {
@@ -281,29 +283,31 @@ export class CacheableMemory {
 		}
 	}
 
-	public async checkExpiration(): Promise<void> {
+	public checkExpiration() {
 		const stores = this.concatStores();
 		for (const item of stores.values()) {
 			if (item.expires && Date.now() > item.expires) {
 				this.delete(item.key);
 			}
 		}
-	};
+	}
 
-	public async startIntervalCheck(): Promise<void> {
-		if(this._checkInterval > 0) {
-			this.stopIntervalCheck();
+	public startIntervalCheck() {
+		if (this._checkInterval > 0) {
 			this._interval = setInterval(() => {
 				this.checkExpiration();
 			}, this._checkInterval);
 		}
-	};
+	}
 
-	public async stopIntervalCheck(): Promise<void> {
-		if(this._interval) {
+	public stopIntervalCheck() {
+		if (this._interval) {
 			clearInterval(this._interval);
 		}
-	};
+
+		this._interval = 0;
+		this._checkInterval = 0;
+	}
 
 	private isPrimitive(value: any): boolean {
 		const result = false;

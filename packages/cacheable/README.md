@@ -132,6 +132,7 @@ The following options are available for you to configure `cacheable`:
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: To enable statistics for this instance. Default is `false`.
+* `checkInterval`: The interval check in milliseconds for the cache. Default is `0` ms. which means it will not check for expired keys.
 
 ## Cacheable Statistics (Instance Only)
 
@@ -170,10 +171,14 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `removeHook(hook)`: Removes a hook.
 * `on(event, callback)`: Listens for an event.
 * `removeListener(event, callback)`: Removes a listener.
+* `checkExpired()`: Checks for expired keys in the cache. This is used by the `checkInterval` property.
+* `startIntervalCheck()`: Starts the interval check for expired keys if `checkInterval` is above 0 ms.
+* `stopIntervalCheck()`: Stops the interval check for expired keys.
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
+* `checkInterval`: The interval check in milliseconds for the cache. Default is `0` ms. which means it will not check for expired keys.
 
 ## CacheableMemory - In-Memory Cache
 
