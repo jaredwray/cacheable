@@ -262,3 +262,24 @@ describe('CacheableMemory LRU', async () => {
 		expect(cache.size).toBe(5);
 	});
 });
+describe('CacheableMemory checkInterval', () => {
+	test('should be able to set the value', () => {
+		const cache = new CacheableMemory({checkInterval: 1000});
+		expect(cache.checkInterval).toBe(1000);
+		cache.checkInterval = 500;
+		expect(cache.checkInterval).toBe(500);
+		cache.stopIntervalCheck();
+		expect(cache.checkInterval).toBe(0);
+	});
+	test('should be able to check expiration on timed interval', async () => {
+		const cache = new CacheableMemory({checkInterval: 10}); // 10ms
+		cache.set('key1', 'value1', 1);
+		cache.set('key2', 'value2', 1);
+		cache.set('key3', 'value3', 1000);
+		await sleep(20);
+		expect(cache.get('key1')).toBe(undefined);
+		expect(cache.get('key2')).toBe(undefined);
+		expect(cache.get('key3')).toBe('value3');
+		cache.stopIntervalCheck();
+	});
+});

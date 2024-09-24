@@ -4,6 +4,7 @@ export type CacheableMemoryOptions = {
 	ttl?: number;
 	useClone?: boolean;
 	lruSize?: number;
+	checkInterval?: number;
 };
 
 export type CacheableItem = {
@@ -26,9 +27,11 @@ export class CacheableMemory {
 	private readonly _hash9 = new Map<string, CacheableItem>();
 	private readonly _lru = new DoublyLinkedList<string>();
 
-	private _ttl = 0;
-	private _useClone = true;
-	private _lruSize = 0;
+	private _ttl = 0; // Turned off by default
+	private _useClone = true; // Turned on by default
+	private _lruSize = 0; // Turned off by default
+	private _checkInterval = 0; // Turned off by default
+	private _interval: number | NodeJS.Timeout = 0; // Turned off by default
 
 	constructor(options?: CacheableMemoryOptions) {
 		if (options?.ttl) {
@@ -42,6 +45,12 @@ export class CacheableMemory {
 		if (options?.lruSize) {
 			this._lruSize = options.lruSize;
 		}
+
+		if (options?.checkInterval) {
+			this._checkInterval = options.checkInterval;
+		}
+
+		this.startIntervalCheck();
 	}
 
 	public get ttl(): number {
@@ -67,6 +76,14 @@ export class CacheableMemory {
 	public set lruSize(value: number) {
 		this._lruSize = value;
 		this.lruResize();
+	}
+
+	public get checkInterval(): number {
+		return this._checkInterval;
+	}
+
+	public set checkInterval(value: number) {
+		this._checkInterval = value;
 	}
 
 	public get size(): number {
@@ -264,6 +281,32 @@ export class CacheableMemory {
 				this.delete(oldestKey);
 			}
 		}
+	}
+
+	public checkExpiration() {
+		const stores = this.concatStores();
+		for (const item of stores.values()) {
+			if (item.expires && Date.now() > item.expires) {
+				this.delete(item.key);
+			}
+		}
+	}
+
+	public startIntervalCheck() {
+		if (this._checkInterval > 0) {
+			this._interval = setInterval(() => {
+				this.checkExpiration();
+			}, this._checkInterval);
+		}
+	}
+
+	public stopIntervalCheck() {
+		if (this._interval) {
+			clearInterval(this._interval);
+		}
+
+		this._interval = 0;
+		this._checkInterval = 0;
 	}
 
 	private isPrimitive(value: any): boolean {
