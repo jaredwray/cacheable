@@ -155,13 +155,13 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 
 * `set(key, value, ttl? | [{string, string, ttl?}])`: Sets a value in the cache.
 * `setMany([{key, value, ttl?}])`: Sets multiple values in the cache.
-* `get(key | [keys])`: Gets a value from the cache.
+* `get(key)`: Gets a value from the cache.
 * `getMany([keys])`: Gets multiple values from the cache.
-* `has(key | [key])`: Checks if a value exists in the cache.
+* `has(key)`: Checks if a value exists in the cache.
 * `hasMany([keys])`: Checks if multiple values exist in the cache.
 * `take(key)`: Takes a value from the cache and deletes it.
 * `takeMany([keys])`: Takes multiple values from the cache and deletes them.
-* `delete(key | [key])`: Deletes a value from the cache.
+* `delete(key)`: Deletes a value from the cache.
 * `deleteMany([keys])`: Deletes multiple values from the cache.
 * `clear()`: Clears the cache stores. Be careful with this as it will clear both layer 1 and layer 2.
 * `wrap(function, options)`: Wraps a function in a cache. (coming soon)
