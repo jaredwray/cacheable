@@ -12,16 +12,16 @@ A cache module for NodeJS that allows easy wrapping of functions in cache, tiere
 - Made with Typescript and compatible with [ESModules](https://nodejs.org/docs/latest-v14.x/api/esm.html).
 - Easy way to wrap any function in cache, supports a mechanism to refresh expiring cache keys in background.
 - Tiered caches -- data gets stored in each cache and fetched from the highest priority cache(s) first.
-- Use with any [Keyv](https://keyv.org/)-compatible storage adapter.
+- Use with any [Keyv](https://keyv.org/) compatible storage adapter.
 - 100% test coverage via [vitest](https://github.com/vitest-dev/vitest).
 
-We moved to using [Keyv](https://keyv.org/) as the storage adapter which allows for a more supported and flexible storage adapter. These adapters have a larger community and are more actively maintained.
+We moved to using [Keyv](https://keyv.org/) which are more actively maintained and have a larger community.
 
 A special thanks to [Tim Phan](https://github.com/timphandev) who tooke `cache-manager` v5 and ported it to [Keyv](https://keyv.org/) which is the foundation of v6. 🎉 Another special thanks to [Doug Ayers](https://github.com/douglascayers) who wrote `promise-coalesce` which was used in v5 and now embedded in v6. 
 
 If you are looking for older documentation you can find it here:
-* [v5 Documentation](./READMEv5.md)
-* [v4 Documentation](./READMEv4.md)
+* [v5 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv5.md)
+* [v4 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv4.md)
 
 ## Table of Contents
 * [Installation](#installation)
@@ -365,7 +365,7 @@ See unit tests in [`test/events.test.ts`](./test/events.test.ts) for more inform
 
 ## Update on `redis` and `ioredis` Support
 
-We will not be supporting `cache-manager-ioredis-yet` or `cache-manager-redis-yet` in the future as we have moved to using `Keyv` as the storage adapter `@keyv/redis`. [Keyv](https://keyv.org/) has a the storage adapter `@keyv/redis` which is a more supported and flexible storage adapter.
+We will not be supporting `cache-manager-ioredis-yet` or `cache-manager-redis-yet` in the future as we have moved to using `Keyv` as the storage adapter `@keyv/redis`.
 
 ## Using Legacy Storage Adapters
 
