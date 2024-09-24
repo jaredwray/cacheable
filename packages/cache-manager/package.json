@@ -59,10 +59,10 @@
     "keyv": "^5.0.3"
   },
   "devDependencies": {
-    "@faker-js/faker": "^9.0.1",
-    "@types/node": "^22.5.5",
+    "@faker-js/faker": "^9.0.2",
+    "@types/node": "^22.6.1",
     "@vitest/coverage-v8": "^2.1.1",
-    "cache-manager-redis-yet": "^5.1.4",
+    "cache-manager-redis-yet": "^5.1.5",
     "rimraf": "^6.0.1",
     "tsup": "^8.3.0",
     "typescript": "^5.6.2",
