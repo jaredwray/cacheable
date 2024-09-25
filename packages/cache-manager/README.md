@@ -12,6 +12,7 @@ A cache module for NodeJS that allows easy wrapping of functions in cache, tiere
 - Made with Typescript and compatible with [ESModules](https://nodejs.org/docs/latest-v14.x/api/esm.html).
 - Easy way to wrap any function in cache, supports a mechanism to refresh expiring cache keys in background.
 - Tiered caches -- data gets stored in each cache and fetched from the highest priority cache(s) first.
+- `nonBlocking` option that optimizes how the system handles multiple stores.
 - Use with any [Keyv](https://keyv.org/) compatible storage adapter.
 - 100% test coverage via [vitest](https://github.com/vitest-dev/vitest).
 
@@ -27,6 +28,7 @@ If you are looking for older documentation you can find it here:
 * [Installation](#installation)
 * [Quick start](#quick-start)
 * [Using `CacheableMemory` or `lru-cache` as storage adapter](#using-cacheablememory-or-lru-cache-as-storage-adapter)
+* [Options](#options)
 * [Methods](#methods)
   * [.set](#set)
   * [.mset](#mset)
@@ -172,6 +174,7 @@ const cache = createCache({ stores: [keyv] });
     * `get and mget` - will return the first (fastest) value found.
     * `del and mdel` - will not wait for all stores to finish.
     * `clear` - will not wait for all stores to finish.
+    * `wrap` - will do the same as `get` and `set` (return the first value found and not wait for all stores to finish).
 
 ## Methods
 ### set
