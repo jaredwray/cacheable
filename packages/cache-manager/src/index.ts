@@ -30,6 +30,9 @@ export const createCache = (options?: CreateCacheOptions) => {
 
 		if (nonBlocking) {
 			result = await Promise.race(stores.map(async store => store.get<T>(key)));
+			if (result === undefined) {
+				return null;
+			}
 		} else {
 			for (const store of stores) {
 				try {
@@ -97,6 +100,13 @@ export const createCache = (options?: CreateCacheOptions) => {
 
 	const del = async (key: string) => {
 		try {
+			if (nonBlocking) {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				Promise.all(stores.map(async store => store.delete(key)));
+				eventEmitter.emit('del', {key});
+				return true;
+			}
+
 			await Promise.all(stores.map(async store => store.delete(key)));
 			eventEmitter.emit('del', {key});
 			return true;
@@ -113,6 +123,13 @@ export const createCache = (options?: CreateCacheOptions) => {
 				promises.push(stores.map(async store => store.delete(key)));
 			}
 
+			if (nonBlocking) {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				Promise.all(promises);
+				eventEmitter.emit('mdel', {keys});
+				return true;
+			}
+
 			await Promise.all(promises);
 			eventEmitter.emit('mdel', {keys});
 			return true;
@@ -125,6 +142,13 @@ export const createCache = (options?: CreateCacheOptions) => {
 
 	const clear = async () => {
 		try {
+			if (nonBlocking) {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				Promise.all(stores.map(async store => store.clear()));
+				eventEmitter.emit('clear');
+				return true;
+			}
+
 			await Promise.all(stores.map(async store => store.clear()));
 			eventEmitter.emit('clear');
 			return true;
