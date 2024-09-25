@@ -36,4 +36,12 @@ describe('Keyv Cacheable Memory', () => {
 		const value = await keyv.get('key');
 		expect(value).toBe(undefined);
 	});
+	test('should clear keyv cacheable memory', async () => {
+		const keyvCacheableMemory = new KeyvCacheableMemory();
+		const keyv = new Keyv({store: keyvCacheableMemory});
+		await keyv.set('key', 'value');
+		await keyv.clear();
+		const value = await keyv.get('key');
+		expect(value).toBe(undefined);
+	});
 });
