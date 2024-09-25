@@ -39,4 +39,14 @@ describe('get', () => {
 
 		await expect(cache.get(data.key)).resolves.toEqual(null);
 	});
+	it('error on non-blocking enabled', async () => {
+		const secondKeyv = new Keyv();
+		keyv.get = () => {
+			throw new Error('get error');
+		};
+
+		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
+		await cache.set(data.key, data.value);
+		await expect(cache.get(data.key)).resolves.toEqual(null);
+	});
 });

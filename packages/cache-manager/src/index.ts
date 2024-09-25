@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/prefer-promise-reject-errors, unicorn/no-useless-promise-resolve-reject, no-await-in-loop, unicorn/prefer-event-target */
 import EventEmitter from 'node:events';
 import {Keyv} from 'keyv';
+import {T} from '@faker-js/faker/dist/airline-C5Qwd7_q.js';
 import {coalesceAsync} from './coalesce-async.js';
 import {runIfFn} from './run-if-fn.js';
 import {lt} from './lt.js';
@@ -9,6 +10,7 @@ export type CreateCacheOptions = {
 	stores?: Keyv[];
 	ttl?: number;
 	refreshThreshold?: number;
+	nonBlocking?: boolean;
 };
 
 export type Events = {
@@ -21,20 +23,36 @@ export type Events = {
 export const createCache = (options?: CreateCacheOptions) => {
 	const eventEmitter = new EventEmitter();
 	const stores = options?.stores?.length ? options.stores : [new Keyv()];
+	const nonBlocking = options?.nonBlocking ?? false;
 
 	const get = async <T>(key: string) => {
-		for (const store of stores) {
+		let result = null;
+
+		if (nonBlocking) {
 			try {
-				const data = await store.get(key);
-				if (data !== undefined) {
-					return data as T;
+				result = await Promise.race(stores.map(async store => store.get<T>(key)));
+				if (result === undefined) {
+					return null;
 				}
-			} catch {
-				//
+			} catch (error) {
+				eventEmitter.emit('get', {key, error});
+			}
+		} else {
+			for (const store of stores) {
+				try {
+					const cacheValue = await store.get<T>(key);
+					if (cacheValue !== undefined) {
+						result = cacheValue;
+						eventEmitter.emit('get', {key, value: result});
+						break;
+					}
+				} catch (error) {
+					eventEmitter.emit('get', {key, error});
+				}
 			}
 		}
 
-		return null;
+		return result as T;
 	};
 
 	const mget = async <T>(keys: string[]) => {
@@ -45,11 +63,18 @@ export const createCache = (options?: CreateCacheOptions) => {
 			result.push(data);
 		}
 
-		return result;
+		return result as [T];
 	};
 
 	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number) => {
 		try {
+			if (nonBlocking) {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				Promise.all(stores.map(async store => store.set(key, value, ttl ?? options?.ttl)));
+				eventEmitter.emit('set', {key, value});
+				return value;
+			}
+
 			await Promise.all(stores.map(async store => store.set(key, value, ttl ?? options?.ttl)));
 			eventEmitter.emit('set', {key, value});
 			return value;
@@ -79,6 +104,13 @@ export const createCache = (options?: CreateCacheOptions) => {
 
 	const del = async (key: string) => {
 		try {
+			if (nonBlocking) {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				Promise.all(stores.map(async store => store.delete(key)));
+				eventEmitter.emit('del', {key});
+				return true;
+			}
+
 			await Promise.all(stores.map(async store => store.delete(key)));
 			eventEmitter.emit('del', {key});
 			return true;
@@ -95,6 +127,13 @@ export const createCache = (options?: CreateCacheOptions) => {
 				promises.push(stores.map(async store => store.delete(key)));
 			}
 
+			if (nonBlocking) {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				Promise.all(promises);
+				eventEmitter.emit('mdel', {keys});
+				return true;
+			}
+
 			await Promise.all(promises);
 			eventEmitter.emit('mdel', {keys});
 			return true;
@@ -107,6 +146,13 @@ export const createCache = (options?: CreateCacheOptions) => {
 
 	const clear = async () => {
 		try {
+			if (nonBlocking) {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				Promise.all(stores.map(async store => store.clear()));
+				eventEmitter.emit('clear');
+				return true;
+			}
+
 			await Promise.all(stores.map(async store => store.clear()));
 			eventEmitter.emit('clear');
 			return true;

@@ -5,6 +5,7 @@ import {
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {createCache} from '../src/index.js';
+import {sleep} from './sleep.js';
 
 describe('clear', () => {
 	let keyv: Keyv;
@@ -31,6 +32,17 @@ describe('clear', () => {
 		for (const index of array) {
 			await expect(cache.get(data.key + index)).resolves.toBeNull();
 		}
+	});
+
+	it('clear should be non-blocking', async () => {
+		const secondKeyv = new Keyv();
+		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
+		await cache.set(data.key, data.value);
+		expect(await secondKeyv.get(data.key)).toBe(data.value);
+		await cache.clear();
+		await sleep(200);
+		await expect(cache.get(data.key)).resolves.toBeNull();
+		await expect(secondKeyv.get(data.key)).resolves.toBeUndefined();
 	});
 
 	it('error', async () => {

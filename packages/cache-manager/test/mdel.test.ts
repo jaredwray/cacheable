@@ -4,6 +4,7 @@ import {
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {createCache} from '../src/index.js';
+import {sleep} from './sleep.js';
 
 describe('mdel', () => {
 	let keyv: Keyv;
@@ -31,5 +32,15 @@ describe('mdel', () => {
 		await expect(cache.get(list[0].key)).resolves.toEqual(null);
 		await expect(cache.get(list[1].key)).resolves.toEqual(null);
 		await expect(cache.get(list[2].key)).resolves.toEqual(list[2].value);
+	});
+	it('should be non-blocking', async () => {
+		const secondKeyv = new Keyv();
+		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
+		await cache.mset(list);
+		await cache.mdel(list.map(({key}) => key));
+		await sleep(200);
+		await expect(cache.get(list[0].key)).resolves.toBeNull();
+		await expect(cache.get(list[1].key)).resolves.toBeNull();
+		await expect(cache.get(list[2].key)).resolves.toBeNull();
 	});
 });

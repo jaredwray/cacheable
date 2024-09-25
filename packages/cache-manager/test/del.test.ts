@@ -4,6 +4,7 @@ import {
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {createCache} from '../src/index.js';
+import {sleep} from './sleep.js';
 
 describe('del', () => {
 	let keyv: Keyv;
@@ -34,5 +35,13 @@ describe('del', () => {
 		};
 
 		await expect(cache.del(data.key)).rejects.toThrowError(error);
+	});
+	it('del should be non-blocking', async () => {
+		const secondKeyv = new Keyv();
+		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
+		await cache.set(data.key, data.value);
+		await cache.del(data.key);
+		await sleep(200);
+		await expect(cache.get(data.key)).resolves.toBeNull();
 	});
 });

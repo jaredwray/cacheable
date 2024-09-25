@@ -165,6 +165,14 @@ const cache = createCache({ stores: [keyv] });
 
     If the remaining TTL is less than **refreshThreshold**, the system will update the value asynchronously in background.
 
+- **nonBlocking**?: boolean - Default false
+
+    If set to true, the system will not block when multiple stores are used. Here is how it affects tye type of functions:
+    * `set and mset` - will not wait for all stores to finish.
+    * `get and mget` - will return the first (fastest) value found.
+    * `del and mdel` - will not wait for all stores to finish.
+    * `clear` - will not wait for all stores to finish.
+
 ## Methods
 ### set
 `set(key, value, [ttl]): Promise<value>`

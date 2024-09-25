@@ -4,6 +4,7 @@ import {
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {createCache} from '../src/index.js';
+import {sleep} from './sleep.js';
 
 describe('set', () => {
 	let keyv: Keyv;
@@ -33,5 +34,12 @@ describe('set', () => {
 
 		await expect(cache.set(data.key, data.value)).rejects.toThrowError(error);
 		await expect(cache.get(data.key)).resolves.toEqual(null);
+	});
+	it('set should be non-blocking', async () => {
+		const secondKeyv = new Keyv();
+		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
+		await cache.set(data.key, data.value);
+		await sleep(300);
+		await expect(cache.get(data.key)).resolves.toEqual(data.value);
 	});
 });
