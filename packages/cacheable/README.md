@@ -9,7 +9,7 @@
 [![npm](https://img.shields.io/npm/dm/cacheable.svg)](https://www.npmjs.com/package/cacheable)
 [![npm](https://img.shields.io/npm/v/cacheable)](https://www.npmjs.com/package/cacheable)
 
-`cacheable` is a high performance layer 1 / layer 2 caching engine that is focused on distributed caching with enterprise features such as `CacheSync`. It is built on top of the robust storage engine [Keyv](https://keyv.org) and provides a simple API to cache and retrieve data.
+`cacheable` is a high performance layer 1 / layer 2 caching engine that is focused on distributed caching with enterprise features such as `CacheSync` (coming soon). It is built on top of the robust storage engine [Keyv](https://keyv.org) and provides a simple API to cache and retrieve data.
 
 * Simple to use with robust API
 * Not bloated with additional modules
@@ -25,7 +25,7 @@
 
 ## Getting Started
 
-`cacheable` is primarily used as an extension to you caching engine with a robust storage backend [Keyv](https://keyv.org), Memonization, Hooks, Events, and Statistics.
+`cacheable` is primarily used as an extension to you caching engine with a robust storage backend [Keyv](https://keyv.org), Memonization (Wrap), Hooks, Events, and Statistics.
 
 ```bash
 npm install cacheable
@@ -115,7 +115,6 @@ const cache = new Cacheable({secondary, nonBlocking: true});
 
 `cacheable` has a feature called `CacheSync` that is coming soon. This feature will allow you to have distributed caching with Pub/Sub. This will allow you to have multiple instances of `cacheable` running and when a value is set, deleted, or cleared it will update all instances of `cacheable` with the same value. Current plan is to support the following:
 
-* [Google Pub/Sub](https://cloud.google.com/pubsub)
 * [AWS SQS](https://aws.amazon.com/sqs)
 * [RabbitMQ](https://www.rabbitmq.com)
 * [Nats](https://nats.io)
@@ -153,7 +152,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 
 ## API
 
-* `set(key, value, ttl? | [{string, string, ttl?}])`: Sets a value in the cache.
+* `set(key, value, ttl?)`: Sets a value in the cache.
 * `setMany([{key, value, ttl?}])`: Sets multiple values in the cache.
 * `get(key)`: Gets a value from the cache.
 * `getMany([keys])`: Gets multiple values from the cache.
@@ -187,8 +186,8 @@ const options = {
   lruSize: 1000, // the size of the LRU cache (default is 0 which is unlimited)
 }
 const cache = new CacheableMemory(options);
-await cache.set('key', 'value');
-const value = await cache.get('key'); // value
+cache.set('key', 'value');
+const value = cache.get('key'); // value
 ```
 
 You can use `CacheableMemory` as a standalone cache or as a primary store for `cacheable`. You can also set the `useClones` property to `false` if you want to use the same reference for the values. This is useful if you are using large objects and want to save memory. The `lruSize` property is the size of the LRU cache and is set to `0` by default which is unlimited. When setting the `lruSize` property it will limit the number of keys in the cache.
