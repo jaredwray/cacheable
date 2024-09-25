@@ -172,6 +172,7 @@ const cache = createCache({ stores: [keyv] });
     * `get and mget` - will return the first (fastest) value found.
     * `del and mdel` - will not wait for all stores to finish.
     * `clear` - will not wait for all stores to finish.
+    * `wrap` - will do the same as `get` and `set` (return the first value found and not wait for all stores to finish).
 
 ## Methods
 ### set
