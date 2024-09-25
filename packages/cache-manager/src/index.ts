@@ -29,9 +29,13 @@ export const createCache = (options?: CreateCacheOptions) => {
 		let result = null;
 
 		if (nonBlocking) {
-			result = await Promise.race(stores.map(async store => store.get<T>(key)));
-			if (result === undefined) {
-				return null;
+			try {
+				result = await Promise.race(stores.map(async store => store.get<T>(key)));
+				if (result === undefined) {
+					return null;
+				}
+			} catch (error) {
+				eventEmitter.emit('get', {key, error});
 			}
 		} else {
 			for (const store of stores) {
@@ -42,8 +46,8 @@ export const createCache = (options?: CreateCacheOptions) => {
 						eventEmitter.emit('get', {key, value: result});
 						break;
 					}
-				} catch {
-					// Do nothing
+				} catch (error) {
+					eventEmitter.emit('get', {key, error});
 				}
 			}
 		}
