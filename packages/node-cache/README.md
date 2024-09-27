@@ -79,7 +79,7 @@ When initializing the cache you can pass in the options below:
 
 ```javascript
 export type NodeCacheStoreOptions = {
-	ttl?: number; // The standard ttl as number in seconds for every generated cache element. 0 = unlimited
+	ttl?: number; // The standard ttl as number in milliseconds for every generated cache element. 0 = unlimited
 	primary?: Keyv; // The primary storage adapter
 	secondary?: Keyv; // The secondary storage adapter
 	maxKeys?: number; // Default is 0 (unlimited). If this is set it will throw and error if you try to set more keys than the max.
