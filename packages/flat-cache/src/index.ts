@@ -51,13 +51,24 @@ export class FlatCache {
 	}
 
 	/**
-	 * Sets a key to a given value
+	 * Legacy set key method. This method will be deprecated in the future
 	 * @method setKey
 	 * @param key {string} the key to set
 	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
 	 */
 	public setKey(key: string, value: any) {
 		this._cache.set(key, value);
+	}
+
+	/**
+	 * Sets a key to a given value
+	 * @method set
+	 * @param key {string} the key to set
+	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
+	 * @param [ttl] {number} the time to live in milliseconds
+	 */
+	public set(key: string, value: any, ttl?: number) {
+		this._cache.set(key, value, ttl);
 	}
 
 	/**
