@@ -86,6 +86,8 @@ export type NodeCacheStoreOptions = {
 };
 ```
 
+Note: the `ttl` is now in milliseconds and not seconds like `stdTTL` in `NodeCache`.
+
 ### Node Cache Store API
 
 * `set(key: string | number, value: any, ttl?: number): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl)
