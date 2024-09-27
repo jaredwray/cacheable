@@ -94,6 +94,10 @@ export class CacheableMemory {
 		return this.concatStores().keys();
 	}
 
+	public get items(): IterableIterator<CacheableItem> {
+		return this.concatStores().values();
+	}
+
 	public get<T>(key: string): any {
 		const store = this.getStore(key);
 		const item = store.get(key) as CacheableItem;
