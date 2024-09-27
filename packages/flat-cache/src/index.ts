@@ -1,13 +1,84 @@
 import {CacheableMemory} from 'cacheable';
 
+export type FlatCacheOptions = {
+	ttl?: number;
+	useClone?: boolean;
+	lruSize?: number;
+	expirationInterval?: number;
+	persistInterval?: number;
+	cacheDir?: string;
+};
+
 export class FlatCache {
 	private readonly _cache = new CacheableMemory();
-	constructor() {
-		this._cache = new CacheableMemory();
+	private _cacheDir = '.cache';
+	private _persistInterval = 0;
+	constructor(options?: FlatCacheOptions) {
+		if (options) {
+			this._cache = new CacheableMemory({
+				ttl: options.ttl,
+				useClone: options.useClone,
+				lruSize: options.lruSize,
+				checkInterval: options.expirationInterval,
+			});
+		}
+
+		if (options?.cacheDir) {
+			this._cacheDir = options.cacheDir;
+		}
+
+		if (options?.persistInterval) {
+			this._persistInterval = options.persistInterval;
+		}
 	}
 
+	/**
+	 * The cache object
+	 * @property cache
+	 * @type {CacheableMemory}
+	 */
 	public get cache() {
 		return this._cache;
+	}
+
+	/**
+	 * The cache directory
+	 * @property cacheDir
+	 * @type {String}
+	 * @default '.cache'
+	 */
+	public get cacheDir() {
+		return this._cacheDir;
+	}
+
+	/**
+	 * Set the cache directory
+	 * @property cacheDir
+	 * @type {String}
+	 * @default '.cache'
+	 */
+	public set cacheDir(value: string) {
+		this._cacheDir = value;
+	}
+
+	/**
+	 * The interval to persist the cache to disk. 0 means no timed persistence
+	 * @property persistInterval
+	 * @type {Number}
+	 * @default 0
+	 */
+	public get persistInterval() {
+		return this._persistInterval;
+	}
+
+	/**
+	 * Set the interval to persist the cache to disk. 0 means no timed persistence
+	 * @property persistInterval
+	 * @type {Number}
+	 * @default 0
+	 */
+	public set persistInterval(value: number) {
+		this._persistInterval = value;
 	}
 
 	/**
@@ -46,6 +117,20 @@ export class FlatCache {
 		return result;
 	}
 
+	/**
+	 * Returns an array with all the items in the cache { key, value, ttl }
+	 * @method items
+	 * @returns {Array}
+	 */
+	public get items() {
+		return Array.from(this._cache.items);
+	}
+
+	/**
+	 * Returns an array with all the keys in the cache
+	 * @method keys
+	 * @returns {Array}
+	 */
 	public keys() {
 		return Array.from(this._cache.keys);
 	}
