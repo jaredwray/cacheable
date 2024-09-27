@@ -3,7 +3,7 @@ import {Keyv} from 'keyv';
 import {type NodeCacheItem} from 'index.js';
 
 export type NodeCacheStoreOptions = {
-	ttl?: number;
+	ttl?: number; // in milliseconds
 	maxKeys?: number;
 	primary?: Keyv;
 	secondary?: Keyv;
