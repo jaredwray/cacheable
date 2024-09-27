@@ -36,4 +36,10 @@ describe('flat-cache', () => {
 		cache.removeKey('foo');
 		expect(cache.getKey('foo')).toBeUndefined();
 	});
+	test('should delete key', () => {
+		const cache = new FlatCache();
+		cache.set('foo', 'bar');
+		cache.delete('foo');
+		expect(cache.get('foo')).toBeUndefined();
+	});
 });

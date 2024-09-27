@@ -72,11 +72,20 @@ export class FlatCache {
 	}
 
 	/**
-	 * Remove a given key from the cache
+	 * (Legacy) Remove a given key from the cache. This method will be deprecated in the future
 	 * @method removeKey
 	 * @param key {String} the key to remove from the object
 	 */
 	public removeKey(key: string) {
+		this._cache.delete(key);
+	}
+
+	/**
+	 * Remove a given key from the cache
+	 * @method delete
+	 * @param key {String} the key to remove from the object
+	 */
+	public delete(key: string) {
 		this._cache.delete(key);
 	}
 
