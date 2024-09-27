@@ -14,7 +14,7 @@ describe('flat-cache', () => {
 	test('should set key', () => {
 		const cache = new FlatCache();
 		cache.setKey('foo', 'bar');
-		expect(cache.all()).toContain('foo');
+		expect(cache.all().foo).toBe('bar');
 	});
 	test('should remove key', () => {
 		const cache = new FlatCache();

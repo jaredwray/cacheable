@@ -36,11 +36,18 @@ export class FlatCache {
 	 * @returns {*}
 	 */
 	public all() {
-		return this._cache.keys;
+		const result: Record<string, any> = {};
+		const items = Array.from(this._cache.items);
+		for (const item of items) {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			result[item.key] = item.value;
+		}
+
+		return result;
 	}
 
 	public keys() {
-		return this._cache.keys;
+		return Array.from(this._cache.keys);
 	}
 
 	/**
