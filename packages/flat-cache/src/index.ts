@@ -51,7 +51,7 @@ export class FlatCache {
 	}
 
 	/**
-	 * Legacy set key method. This method will be deprecated in the future
+	 * (Legacy) set key method. This method will be deprecated in the future
 	 * @method setKey
 	 * @param key {string} the key to set
 	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
@@ -81,12 +81,22 @@ export class FlatCache {
 	}
 
 	/**
-	* Return the value of the provided key
+	* (Legacy) Return the value of the provided key. This method will be deprecated in the future
 	* @method getKey<T>
 	* @param key {String} the name of the key to retrieve
 	* @returns {*} at T the value from the key
 	*/
 	public getKey<T>(key: string) {
+		return this.get<T>(key);
+	}
+
+	/**
+	 * Return the value of the provided key
+	 * @method get<T>
+	 * @param key {String} the name of the key to retrieve
+	 * @returns {*} at T the value from the key
+	 */
+	public get<T>(key: string) {
 		return this._cache.get(key) as T;
 	}
 

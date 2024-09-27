@@ -25,6 +25,11 @@ describe('flat-cache', () => {
 		await sleep(20);
 		expect(cache.getKey('foo')).toBe(undefined);
 	});
+	test('should get a key', () => {
+		const cache = new FlatCache();
+		cache.set('foo', 'bar');
+		expect(cache.get<string>('foo')).toBe('bar');
+	});
 	test('should remove key', () => {
 		const cache = new FlatCache();
 		cache.setKey('foo', 'bar');
