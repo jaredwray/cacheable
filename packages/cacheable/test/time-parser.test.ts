@@ -42,4 +42,8 @@ describe('parse to time', () => {
 	test('send in string', () => {
 		expect(parseToTime('10s')).toBeGreaterThan(Date.now());
 	});
+
+	test('send in nothing', () => {
+		expect(parseToTime()).toBeDefined();
+	});
 });

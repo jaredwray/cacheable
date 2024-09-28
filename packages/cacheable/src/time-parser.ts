@@ -1,6 +1,10 @@
 
-export const parseToMilliseconds = (shorthand: string | number): number => {
+export const parseToMilliseconds = (shorthand?: string | number): number | undefined => {
 	let milliseconds: number;
+
+	if (shorthand === undefined) {
+		return undefined;
+	}
 
 	if (typeof shorthand === 'number') {
 		milliseconds = shorthand;
@@ -64,10 +68,14 @@ export const parseToMilliseconds = (shorthand: string | number): number => {
 	return milliseconds;
 };
 
-export const parseToTime = (time: string | number, fromDate?: Date): number => {
+export const parseToTime = (time?: string | number, fromDate?: Date): number => {
 	fromDate ||= new Date();
 
 	const milliseconds = parseToMilliseconds(time);
+	if (milliseconds === undefined) {
+		return fromDate.getTime();
+	}
+
 	return fromDate.getTime() + milliseconds;
 };
 

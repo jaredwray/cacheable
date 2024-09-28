@@ -1,5 +1,6 @@
 import {Keyv, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
+import {parseToMilliseconds} from './time-parser.js';
 import {KeyvCacheableMemory} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 
@@ -115,7 +116,8 @@ export class Cacheable extends Hookified {
 			if (!result && this._secondary) {
 				result = await this._secondary.get(key) as T;
 				if (result) {
-					await this._primary.set(key, result, this._ttl);
+					const finalTtl = parseToMilliseconds(this._ttl);
+					await this._primary.set(key, result, finalTtl);
 				}
 			}
 
@@ -154,8 +156,10 @@ export class Cacheable extends Hookified {
 				for (const [i, key] of keys.entries()) {
 					if (!result[i] && secondaryResult[i]) {
 						result[i] = secondaryResult[i];
+
+						const finalTtl = parseToMilliseconds(this._ttl);
 						// eslint-disable-next-line no-await-in-loop
-						await this._primary.set(key, secondaryResult[i], this._ttl);
+						await this._primary.set(key, secondaryResult[i], finalTtl);
 					}
 				}
 			}
@@ -182,14 +186,14 @@ export class Cacheable extends Hookified {
 
 	public async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
 		let result = false;
-		const finalTtl = ttl ?? this._ttl;
+		const finalTtl = parseToMilliseconds(ttl ?? this._ttl);
 		try {
 			const item = {key, value, ttl: finalTtl};
 			await this.hook(CacheableHooks.BEFORE_SET, item);
 			const promises = [];
-			promises.push(this._primary.set(item.key, item.value, item.ttl));
+			promises.push(this._primary.set(item.key, item.value, parseToMilliseconds(item.ttl)));
 			if (this._secondary) {
-				promises.push(this._secondary.set(item.key, item.value, item.ttl));
+				promises.push(this._secondary.set(item.key, item.value, parseToMilliseconds(item.ttl)));
 			}
 
 			if (this._nonBlocking) {
@@ -387,7 +391,7 @@ export class Cacheable extends Hookified {
 	private async setManyKeyv(keyv: Keyv, items: CacheableItem[]): Promise<boolean> {
 		const promises = [];
 		for (const item of items) {
-			const finalTtl = item.ttl ?? this._ttl;
+			const finalTtl = parseToMilliseconds(item.ttl ?? this._ttl);
 			promises.push(keyv.set(item.key, item.value, finalTtl));
 		}
 

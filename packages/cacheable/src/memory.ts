@@ -124,17 +124,10 @@ export class CacheableMemory {
 		const store = this.getStore(key);
 		let expires;
 		if (ttl !== undefined || this._ttl !== undefined) {
-			let finalTtl;
-			if (ttl !== undefined) {
-				finalTtl = ttl;
-			}
-
-			if (finalTtl === undefined) {
-				finalTtl = this._ttl;
-			}
+			const finalTtl = parseToTime(ttl ?? this._ttl);
 
 			if (finalTtl !== undefined) {
-				expires = parseToTime(finalTtl);
+				expires = finalTtl;
 			}
 		}
 
