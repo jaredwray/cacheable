@@ -131,6 +131,15 @@ export class CacheableMemory {
 		return item;
 	}
 
+	public getManyRaw(keys: string[]): Array<CacheableStoreItem | undefined> {
+		const result = new Array<CacheableStoreItem | undefined>();
+		for (const key of keys) {
+			result.push(this.getRaw(key));
+		}
+
+		return result;
+	}
+
 	public set(key: string, value: any, ttl?: number | string): void {
 		const store = this.getStore(key);
 		let expires;

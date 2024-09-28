@@ -4,6 +4,14 @@ import {CacheableMemory, CacheableItem} from '../src/memory.js';
 // eslint-disable-next-line no-promise-executor-return
 const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+const cacheItemList = [
+	{key: 'key', value: 'value'},
+	{key: 'key1', value: {foo: 'bar'}},
+	{key: 'key2', value: 123, ttl: 10},
+	{key: 'key3', value: [1, 2, 3]},
+	{key: 'key4', value: 'value4', ttl: '5m'},
+];
+
 describe('CacheableMemory Options and Properties', () => {
 	test('should have default ttl', () => {
 		const cache = new CacheableMemory();
@@ -153,6 +161,16 @@ describe('CacheableMemory getRaw', async () => {
 		cache.set('key', 'value', 1);
 		await sleep(20);
 		expect(cache.getRaw('key')).toBe(undefined);
+	});
+	test('should be able to get many raw values', () => {
+		const cache = new CacheableMemory();
+		cache.setMany(cacheItemList);
+		const result = cache.getManyRaw(['key', 'key1', 'key2', 'key3', 'key4']);
+		expect(result[0]?.value).toBe('value');
+		expect(result[1]?.value).toEqual({foo: 'bar'});
+		expect(result[2]?.value).toBe(123);
+		expect(result[3]?.value).toEqual([1, 2, 3]);
+		expect(result[4]?.value).toBe('value4');
 	});
 });
 
