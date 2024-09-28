@@ -1,17 +1,22 @@
+import path from 'node:path';
+import fs from 'node:fs';
 import {CacheableMemory} from 'cacheable';
+import {parse, stringify} from 'flatted';
 
 export type FlatCacheOptions = {
-	ttl?: number;
+	ttl?: number | string;
 	useClone?: boolean;
 	lruSize?: number;
 	expirationInterval?: number;
 	persistInterval?: number;
 	cacheDir?: string;
+	cacheId?: string;
 };
 
 export class FlatCache {
 	private readonly _cache = new CacheableMemory();
 	private _cacheDir = '.cache';
+	private _cacheId = 'cache1';
 	private _persistInterval = 0;
 	constructor(options?: FlatCacheOptions) {
 		if (options) {
@@ -25,6 +30,10 @@ export class FlatCache {
 
 		if (options?.cacheDir) {
 			this._cacheDir = options.cacheDir;
+		}
+
+		if (options?.cacheId) {
+			this._cacheId = options.cacheId;
 		}
 
 		if (options?.persistInterval) {
@@ -59,6 +68,26 @@ export class FlatCache {
 	 */
 	public set cacheDir(value: string) {
 		this._cacheDir = value;
+	}
+
+	/**
+	 * The cache id
+	 * @property cacheId
+	 * @type {String}
+	 * @default 'cache1'
+	 */
+	public get cacheId() {
+		return this._cacheId;
+	}
+
+	/**
+	 * Set the cache id
+	 * @property cacheId
+	 * @type {String}
+	 * @default 'cache1'
+	 */
+	public set cacheId(value: string) {
+		this._cacheId = value;
 	}
 
 	/**
@@ -127,6 +156,24 @@ export class FlatCache {
 	}
 
 	/**
+	 * Returns the path to the file where the cache is persisted
+	 * @method cacheFilePath
+	 * @returns {String}
+	 */
+	public get cacheFilePath() {
+		return path.resolve(`${this._cacheDir}/${this._cacheId}`);
+	}
+
+	/**
+	 * Returns the path to the cache directory
+	 * @method cacheDirPath
+	 * @returns {String}
+	 */
+	public get cacheDirPath() {
+		return path.resolve(this._cacheDir);
+	}
+
+	/**
 	 * Returns an array with all the keys in the cache
 	 * @method keys
 	 * @returns {Array}
@@ -141,8 +188,8 @@ export class FlatCache {
 	 * @param key {string} the key to set
 	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
 	 */
-	public setKey(key: string, value: any) {
-		this._cache.set(key, value);
+	public setKey(key: string, value: any, ttl?: number | string) {
+		this._cache.set(key, value, ttl);
 	}
 
 	/**
@@ -152,7 +199,7 @@ export class FlatCache {
 	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
 	 * @param [ttl] {number} the time to live in milliseconds
 	 */
-	public set(key: string, value: any, ttl?: number) {
+	public set(key: string, value: any, ttl?: number | string) {
 		this._cache.set(key, value, ttl);
 	}
 
@@ -197,11 +244,21 @@ export class FlatCache {
 	/**
 	 * Save the state of the cache identified by the docId to disk
 	 * as a JSON structure
-	 * @param [noPrune=false] {Boolean} whether to remove from cache the non visited cache entries
 	 * @method save
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	public save(noPrune = false) {}
+
+	public save() {
+		const filePath = this.cacheFilePath;
+		const items = this.all();
+		const data = stringify(items);
+
+		// Ensure the directory exists
+		if (!fs.existsSync(this._cacheDir)) {
+			fs.mkdirSync(this._cacheDir, {recursive: true});
+		}
+
+		fs.writeFileSync(filePath, data);
+	}
 
 	/**
 	 * Remove the file where the cache is persisted
@@ -215,7 +272,10 @@ export class FlatCache {
 	 * Destroy the file cache and cache content.
 	 * @method destroy
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	public destroy() {}
+
+	public destroy() {
+		this._cache.clear();
+		fs.rmSync(this.cacheDirPath, {recursive: true, force: true});
+	}
 }
 

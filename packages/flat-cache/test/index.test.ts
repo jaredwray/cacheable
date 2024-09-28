@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import {describe, test, expect} from 'vitest';
 import {FlatCache} from '../src/index.js';
 
@@ -25,10 +26,17 @@ describe('flat-cache', () => {
 		await sleep(20);
 		expect(cache.getKey('foo')).toBe(undefined);
 	});
-	test('should get a key', () => {
+	test('should set a key with a ttl', async () => {
 		const cache = new FlatCache();
-		cache.set('foo', 'bar');
-		expect(cache.get<string>('foo')).toBe('bar');
+		cache.set('foo', 'bar', 10);
+		await sleep(20);
+		expect(cache.getKey('foo')).toBe(undefined);
+	});
+	test('should get a key with string ttl', async () => {
+		const cache = new FlatCache();
+		cache.set('foo', 'bar', '20ms');
+		await sleep(30);
+		expect(cache.get<string>('foo')).toBe(undefined);
 	});
 	test('should remove key', () => {
 		const cache = new FlatCache();
@@ -68,5 +76,46 @@ describe('flat-cache', () => {
 		expect(cache.items[0].value).toEqual('bar');
 		expect(cache.items[1].value).toEqual('foo');
 		expect(cache.items[2].value).toEqual('baz');
+	});
+	test('cache id to default', () => {
+		const cache = new FlatCache();
+		expect(cache.cacheId).toBe('cache1');
+		cache.cacheId = 'cache2';
+		expect(cache.cacheId).toBe('cache2');
+	});
+	test('destroy should remove the directory, file, and memory cache', () => {
+		const cache = new FlatCache();
+		cache.set('foo', 'bar');
+		cache.save();
+		cache.destroy();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(false);
+		expect(fs.existsSync(cache.cacheDirPath)).toBe(false);
+		expect(cache.cache.get('foo')).toBeUndefined();
+	});
+});
+
+describe('flat-cache file cache', () => {
+	test('should be able to see the cache path', () => {
+		const cache = new FlatCache();
+		expect(cache.cacheFilePath).toContain('.cache/cache1');
+	});
+	test('save the cache', () => {
+		const cache = new FlatCache();
+		cache.setKey('foo', 'bar');
+		cache.setKey('bar', {foo: 'bar'});
+		cache.setKey('baz', [1, 2, 3]);
+		cache.setKey('qux', 123);
+		cache.save();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+	test('do a custome cache path and cache id', () => {
+		const cache = new FlatCache({cacheDir: '.cachefoo', cacheId: 'cache2'});
+		expect(cache.cacheFilePath).toContain('.cachefoo/cache2');
+		cache.setKey('bar', {foo: 'bar'});
+		cache.setKey('baz', [1, 2, 3]);
+		cache.save();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
 	});
 });

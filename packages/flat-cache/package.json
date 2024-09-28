@@ -43,7 +43,8 @@
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
-		"cacheable": "^1.6.1"
+		"cacheable": "^1.7.1",
+		"flatted": "^3.3.1"
 	},
 	"files": [
 		"dist",
