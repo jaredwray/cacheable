@@ -1,7 +1,8 @@
 import {DoublyLinkedList} from './memory-lru.js';
+import {shorthandToTime} from './shorthand-time.js';
 
 export type CacheableMemoryOptions = {
-	ttl?: number;
+	ttl?: number | string;
 	useClone?: boolean;
 	lruSize?: number;
 	checkInterval?: number;
@@ -27,7 +28,7 @@ export class CacheableMemory {
 	private readonly _hash9 = new Map<string, CacheableItem>();
 	private readonly _lru = new DoublyLinkedList<string>();
 
-	private _ttl = 0; // Turned off by default
+	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
 	private _lruSize = 0; // Turned off by default
 	private _checkInterval = 0; // Turned off by default
@@ -35,7 +36,7 @@ export class CacheableMemory {
 
 	constructor(options?: CacheableMemoryOptions) {
 		if (options?.ttl) {
-			this._ttl = options.ttl;
+			this.setTtl(options.ttl);
 		}
 
 		if (options?.useClone !== undefined) {
@@ -53,12 +54,12 @@ export class CacheableMemory {
 		this.startIntervalCheck();
 	}
 
-	public get ttl(): number {
+	public get ttl(): number | string | undefined {
 		return this._ttl;
 	}
 
-	public set ttl(value: number) {
-		this._ttl = value;
+	public set ttl(value: number | string | undefined) {
+		this.setTtl(value);
 	}
 
 	public get useClone(): boolean {
@@ -119,11 +120,31 @@ export class CacheableMemory {
 		return this.clone(item.value) as T;
 	}
 
-	public set(key: string, value: any, ttl?: number): void {
+	public getRaw(key: string): CacheableItem | undefined {
+		const store = this.getStore(key);
+		const item = store.get(key) as CacheableItem;
+		if (!item) {
+			return undefined;
+		}
+
+		if (item.expires && item.expires && Date.now() > item.expires) {
+			store.delete(key);
+			return undefined;
+		}
+
+		this.lruMoveToFront(key);
+		return item;
+	}
+
+	public set(key: string, value: any, ttl?: number | string): void {
 		const store = this.getStore(key);
 		let expires;
-		if (ttl !== undefined || this._ttl !== 0) {
-			expires = Date.now() + (ttl ?? this._ttl);
+		if (ttl !== undefined || this._ttl !== undefined) {
+			const finalTtl = shorthandToTime(ttl ?? this._ttl);
+
+			if (finalTtl !== undefined) {
+				expires = finalTtl;
+			}
 		}
 
 		if (this._lruSize > 0) {
@@ -331,5 +352,15 @@ export class CacheableMemory {
 	private concatStores(): Map<string, CacheableItem> {
 		const result = new Map([...this._hash0, ...this._hash1, ...this._hash2, ...this._hash3, ...this._hash4, ...this._hash5, ...this._hash6, ...this._hash7, ...this._hash8, ...this._hash9]);
 		return result;
+	}
+
+	private setTtl(ttl: number | string | undefined): void {
+		if (typeof ttl === 'string' || ttl === undefined) {
+			this._ttl = ttl;
+		} else if (ttl > 0) {
+			this._ttl = ttl;
+		} else {
+			this._ttl = undefined;
+		}
 	}
 }

@@ -7,13 +7,21 @@ const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, m
 describe('CacheableMemory Options and Properties', () => {
 	test('should have default ttl', () => {
 		const cache = new CacheableMemory();
-		expect(cache.ttl).toBe(0);
+		expect(cache.ttl).toBe(undefined);
 	});
 	test('should be able to set ttl', () => {
 		const cache = new CacheableMemory({ttl: 5});
 		expect(cache.ttl).toBe(5);
 		cache.ttl = 1000;
 		expect(cache.ttl).toBe(1000);
+	});
+	test('should handle negative ttl as undefined', () => {
+		const cache = new CacheableMemory({ttl: -1});
+		expect(cache.ttl).toBe(undefined);
+		cache.ttl = '1s';
+		expect(cache.ttl).toBe('1s');
+		cache.ttl = undefined;
+		expect(cache.ttl).toBe(undefined);
 	});
 	test('should be able to get size', () => {
 		const cache = new CacheableMemory();
@@ -37,6 +45,20 @@ describe('CacheableMemory Options and Properties', () => {
 		expect(keys).toContain('key2');
 		expect(keys).toContain('key3');
 		expect(keys).toContain('key4');
+	});
+	test('should be able to get values', () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value');
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		cache.set('key3', 'value3');
+		cache.set('key4', 'value4');
+		const values = Array.from(cache.items);
+		expect(values[0].value).toBe('value3');
+		expect(values[1].value).toBe('value4');
+		expect(values[2].value).toBe('value1');
+		expect(values[3].value).toBe('value');
+		expect(values[4].value).toBe('value2');
 	});
 	test('should be able to set clone', () => {
 		const cache = new CacheableMemory({useClone: true});
@@ -94,6 +116,24 @@ describe('CacheableMemory Get', async () => {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const value2 = cache.get('key');
 		expect(value).toEqual(value2);
+	});
+});
+
+describe('CacheableMemory getRaw', async () => {
+	test('should set and get raw value', () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value');
+		expect(cache.getRaw('key')?.value).toBe('value');
+	});
+	test('should be able to get undefined raw value', () => {
+		const cache = new CacheableMemory();
+		expect(cache.getRaw('key')).toBe(undefined);
+	});
+	test('should not be able to get expired raw value', async () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value', 1);
+		await sleep(20);
+		expect(cache.getRaw('key')).toBe(undefined);
 	});
 });
 
@@ -281,5 +321,40 @@ describe('CacheableMemory checkInterval', () => {
 		expect(cache.get('key2')).toBe(undefined);
 		expect(cache.get('key3')).toBe('value3');
 		cache.stopIntervalCheck();
+	});
+});
+
+describe('Cacheable Memory ttl parsing', () => {
+	test('send in a number on ttl', () => {
+		const cache = new CacheableMemory({ttl: 1000});
+		expect(cache.ttl).toBe(1000);
+	});
+	test('send in 30s string on ttl', async () => {
+		const cache = new CacheableMemory({ttl: '30ms'});
+		expect(cache.ttl).toBe('30ms');
+		cache.set('key', 'value');
+		await sleep(40);
+		expect(cache.get('key')).toBe(undefined);
+	});
+	test('send in 1m string on ttl', async () => {
+		const cache = new CacheableMemory();
+		expect(cache.ttl).toBe(undefined);
+		cache.set('key', 'value', '1m');
+		expect(cache.getRaw('key')?.expires).toBeGreaterThan(Date.now());
+	});
+	test('send in 1h string on ttl', async () => {
+		const cache = new CacheableMemory();
+		expect(cache.ttl).toBe(undefined);
+		const datePlus45 = Date.now() + (45 * 60 * 1000);
+		cache.set('key', 'value', '1h');
+		expect(cache.getRaw('key')?.expires).toBeGreaterThan(datePlus45);
+	});
+
+	test('have number on default ttl and parse string on set', async () => {
+		const cache = new CacheableMemory({ttl: 1000});
+		expect(cache.ttl).toBe(1000);
+		const datePlus45 = Date.now() + (45 * 60 * 1000);
+		cache.set('key', 'value', '1h');
+		expect(cache.getRaw('key')?.expires).toBeGreaterThan(datePlus45);
 	});
 });

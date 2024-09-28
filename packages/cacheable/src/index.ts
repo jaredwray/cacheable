@@ -1,5 +1,6 @@
 import {Keyv, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
+import {shorthandToMilliseconds} from './shorthand-time.js';
 import {KeyvCacheableMemory} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 
@@ -21,7 +22,7 @@ export enum CacheableEvents {
 export type CacheableItem = {
 	key: string;
 	value: unknown;
-	ttl?: number;
+	ttl?: number | string;
 };
 
 export type CacheableOptions = {
@@ -29,14 +30,14 @@ export type CacheableOptions = {
 	secondary?: Keyv | KeyvStoreAdapter;
 	stats?: boolean;
 	nonBlocking?: boolean;
-	ttl?: number;
+	ttl?: number | string;
 };
 
 export class Cacheable extends Hookified {
 	private _primary: Keyv = new Keyv({store: new KeyvCacheableMemory()});
 	private _secondary: Keyv | undefined;
 	private _nonBlocking = false;
-	private _ttl?: number;
+	private _ttl?: number | string;
 	private readonly _stats = new CacheableStats({enabled: false});
 
 	constructor(options?: CacheableOptions) {
@@ -59,7 +60,7 @@ export class Cacheable extends Hookified {
 		}
 
 		if (options?.ttl) {
-			this._ttl = options.ttl;
+			this.setTtl(options.ttl);
 		}
 	}
 
@@ -91,12 +92,12 @@ export class Cacheable extends Hookified {
 		this._nonBlocking = nonBlocking;
 	}
 
-	public get ttl(): number | undefined {
+	public get ttl(): number | string | undefined {
 		return this._ttl;
 	}
 
-	public set ttl(ttl: number | undefined) {
-		this._ttl = ttl;
+	public set ttl(ttl: number | string | undefined) {
+		this.setTtl(ttl);
 	}
 
 	public setPrimary(primary: Keyv | KeyvStoreAdapter): void {
@@ -115,7 +116,8 @@ export class Cacheable extends Hookified {
 			if (!result && this._secondary) {
 				result = await this._secondary.get(key) as T;
 				if (result) {
-					await this._primary.set(key, result, this._ttl);
+					const finalTtl = shorthandToMilliseconds(this._ttl);
+					await this._primary.set(key, result, finalTtl);
 				}
 			}
 
@@ -154,8 +156,10 @@ export class Cacheable extends Hookified {
 				for (const [i, key] of keys.entries()) {
 					if (!result[i] && secondaryResult[i]) {
 						result[i] = secondaryResult[i];
+
+						const finalTtl = shorthandToMilliseconds(this._ttl);
 						// eslint-disable-next-line no-await-in-loop
-						await this._primary.set(key, secondaryResult[i], this._ttl);
+						await this._primary.set(key, secondaryResult[i], finalTtl);
 					}
 				}
 			}
@@ -182,7 +186,7 @@ export class Cacheable extends Hookified {
 
 	public async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
 		let result = false;
-		const finalTtl = ttl ?? this._ttl;
+		const finalTtl = shorthandToMilliseconds(ttl ?? this._ttl);
 		try {
 			const item = {key, value, ttl: finalTtl};
 			await this.hook(CacheableHooks.BEFORE_SET, item);
@@ -387,7 +391,7 @@ export class Cacheable extends Hookified {
 	private async setManyKeyv(keyv: Keyv, items: CacheableItem[]): Promise<boolean> {
 		const promises = [];
 		for (const item of items) {
-			const finalTtl = item.ttl ?? this._ttl;
+			const finalTtl = shorthandToMilliseconds(item.ttl ?? this._ttl);
 			promises.push(keyv.set(item.key, item.value, finalTtl));
 		}
 
@@ -404,8 +408,19 @@ export class Cacheable extends Hookified {
 
 		return Promise.all(promises);
 	}
+
+	private setTtl(ttl: number | string | undefined): void {
+		if (typeof ttl === 'string' || ttl === undefined) {
+			this._ttl = ttl;
+		} else if (ttl > 0) {
+			this._ttl = ttl;
+		} else {
+			this._ttl = undefined;
+		}
+	}
 }
 
 export {CacheableStats} from './stats.js';
 export {CacheableMemory} from './memory.js';
 export {KeyvCacheableMemory} from './keyv-memory.js';
+export {shorthandToMilliseconds, shorthandToTime} from './shorthand-time.js';

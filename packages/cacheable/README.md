@@ -19,9 +19,25 @@
 * Resilient to failures with try/catch and offline
 * Hooks and Events to extend functionality
 * Comprehensive testing and code coverage
+* Shorthand for ttl in milliseconds `(1m = 60000) (1h = 3600000) (1d = 86400000)`
 * Distributed Caching Sync via Pub/Sub (coming soon)
 * ESM and CommonJS support with TypeScript
 * Maintained and supported regularly
+
+## Table of Contents
+* [Getting Started](#getting-started)
+* [Basic Usage](#basic-usage)
+* [Hooks and Events](#hooks-and-events)
+* [Storage Tiering and Caching](#storage-tiering-and-caching)
+* [Shorthand for Time to Live (ttl)](#shorthand-for-time-to-live-ttl)
+* [Non-Blocking Operations](#non-blocking-operations)
+* [CacheSync - Distributed Updates](#cachesync---distributed-updates)
+* [Cacheable Options](#cacheable-options)
+* [Cacheable Statistics (Instance Only)](#cacheable-statistics-instance-only)
+* [API](#api)
+* [CacheableMemory - In-Memory Cache](#cacheablememory---in-memory-cache)
+* [How to Contribute](#how-to-contribute)
+* [License and Copyright](#license-and-copyright)
 
 ## Getting Started
 
@@ -99,6 +115,44 @@ cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
 * `Deleting Data`: Deletes the value from the primary store and secondary store at the same time waiting for both to respond.
 * `Clearing Data`: Clears the primary store and secondary store at the same time waiting for both to respond.
 
+# Shorthand for Time to Live (ttl)
+
+By default `Cacheable` and `CacheableMemory` the `ttl` is in milliseconds but you can use shorthand for the time to live. Here are the following shorthand values:
+
+* `ms`: Milliseconds such as (1ms = 1)
+* `s`: Seconds such as (1s = 1000)
+* `m`: Minutes such as (1m = 60000)
+* `h` or `hr`: Hours such as (1h = 3600000)
+* `d`: Days such as (1d = 86400000)
+
+Here is an example of how to use the shorthand for the `ttl`:
+
+```javascript
+import { Cacheable } from 'cacheable';
+const cache = new Cacheable({ ttl: '15m' }); //sets the default ttl to 15 minutes (900000 ms)
+cache.set('key', 'value', '1h'); //sets the ttl to 1 hour (3600000 ms) and overrides the default
+```
+
+if you want to disable the `ttl` you can set it to `0` or `undefined`:
+
+```javascript
+import { Cacheable } from 'cacheable';
+const cache = new Cacheable({ ttl: 0 }); //sets the default ttl to 0 which is disabled
+cache.set('key', 'value', 0); //sets the ttl to 0 which is disabled
+```
+
+If you set the ttl to anything below `0` or `undefined` it will disable the ttl for the cache and the value that returns will be `undefined`. With no ttl set the value will be stored `indefinitely`.
+
+```javascript
+import { Cacheable } from 'cacheable';
+const cache = new Cacheable({ ttl: 0 }); //sets the default ttl to 0 which is disabled
+console.log(cache.ttl); // undefined
+cache.ttl = '1h'; // sets the default ttl to 1 hour (3600000 ms)
+console.log(cache.ttl); // '1h'
+cache.ttl = -1; // sets the default ttl to 0 which is disabled
+console.log(cache.ttl); // undefined
+```
+
 ## Non-Blocking Operations
 
 If you want your layer 2 (secondary) store to be non-blocking you can set the `nonBlocking` property to `true` in the options. This will make the secondary store non-blocking and will not wait for the secondary store to respond on `setting data`, `deleting data`, or `clearing data`. This is useful if you want to have a faster response time and not wait for the secondary store to respond.
@@ -131,6 +185,7 @@ The following options are available for you to configure `cacheable`:
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: To enable statistics for this instance. Default is `false`.
+* `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
 
 ## Cacheable Statistics (Instance Only)
 
@@ -181,7 +236,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 ```javascript
 import { CacheableMemory } from 'cacheable';
 const options = {
-  ttl: 60 * 60 * 1000, // 1 hour
+  ttl: '1h', // 1 hour
   useClones: true, // use clones for the values (default is true)
   lruSize: 1000, // the size of the LRU cache (default is 0 which is unlimited)
 }
@@ -198,7 +253,7 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 
 ### CacheableMemory Options
 
-* `ttl`: The time to live for the cache in milliseconds.
+* `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.
 * `useClones`: If the cache should use clones for the values. Default is `true`.
 * `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
@@ -212,7 +267,7 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 * `clear()`: Clears the cache.
 * `size()`: The number of keys in the cache.
 * `keys()`: The keys in the cache.
-* `items()`: The items in the cache as `{ key, value, expiration }`.
+* `items()`: The items in the cache as `{ key, value, expires? }`.
 * `checkExpired()`: Checks for expired keys in the cache. This is used by the `checkInterval` property.
 * `startIntervalCheck()`: Starts the interval check for expired keys if `checkInterval` is above 0 ms.
 * `stopIntervalCheck()`: Stops the interval check for expired keys.
