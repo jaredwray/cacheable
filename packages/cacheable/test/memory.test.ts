@@ -208,6 +208,18 @@ describe('CacheableMemory Take', async () => {
 		const cache = new CacheableMemory();
 		expect(cache.take('key')).toBe(undefined);
 	});
+	test('should be able to take many values', () => {
+		const cache = new CacheableMemory();
+		cache.setMany(cacheItemList);
+		const result = cache.takeMany(['key', 'key1']);
+		expect(result[0]).toBe('value');
+		expect(result[1]).toEqual({foo: 'bar'});
+		expect(cache.get('key')).toBe(undefined);
+		expect(cache.get('key1')).toBe(undefined);
+		expect(cache.get('key2')).toBe(123);
+		expect(cache.get('key3')).toEqual([1, 2, 3]);
+		expect(cache.get('key4')).toBe('value4');
+	});
 });
 
 describe('CacheableMemory Delete', async () => {

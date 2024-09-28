@@ -206,6 +206,15 @@ export class CacheableMemory {
 		return item as T;
 	}
 
+	public takeMany<T>(keys: string[]): any[] {
+		const result = new Array<any>();
+		for (const key of keys) {
+			result.push(this.take(key) as T);
+		}
+
+		return result;
+	}
+
 	public delete(key: string): void {
 		const store = this.getStore(key);
 		store.delete(key);
