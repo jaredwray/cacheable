@@ -115,6 +115,15 @@ export class CacheableMemory {
 		return this.clone(item.value) as T;
 	}
 
+	public getMany<T>(keys: string[]): any[] {
+		const result = new Array<any>();
+		for (const key of keys) {
+			result.push(this.get(key) as T);
+		}
+
+		return result;
+	}
+
 	public getRaw(key: string): CacheableStoreItem | undefined {
 		const store = this.getStore(key);
 		const item = store.get(key) as CacheableStoreItem;

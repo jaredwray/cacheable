@@ -144,6 +144,17 @@ describe('CacheableMemory Get', async () => {
 		const value2 = cache.get('key');
 		expect(value).toEqual(value2);
 	});
+	test('should be able to get many values', async () => {
+		const cache = new CacheableMemory();
+		cache.setMany(cacheItemList);
+		await sleep(20);
+		const result = cache.getMany(['key', 'key1', 'key2', 'key3', 'key4']);
+		expect(result[0]).toBe('value');
+		expect(result[1]).toEqual({foo: 'bar'});
+		expect(result[2]).toBe(undefined);
+		expect(result[3]).toEqual([1, 2, 3]);
+		expect(result[4]).toBe('value4');
+	});
 });
 
 describe('CacheableMemory getRaw', async () => {
