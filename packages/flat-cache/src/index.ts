@@ -18,6 +18,7 @@ export class FlatCache {
 	private _cacheDir = '.cache';
 	private _cacheId = 'cache1';
 	private _persistInterval = 0;
+	private _persistTimer: NodeJS.Timeout | undefined;
 	constructor(options?: FlatCacheOptions) {
 		if (options) {
 			this._cache = new CacheableMemory({
@@ -38,6 +39,7 @@ export class FlatCache {
 
 		if (options?.persistInterval) {
 			this._persistInterval = options.persistInterval;
+			this.startAutoPersist();
 		}
 	}
 
@@ -113,22 +115,35 @@ export class FlatCache {
 	/**
 	 * Load a cache identified by the given Id. If the element does not exists, then initialize an empty
 	 * cache storage. If specified `cacheDir` will be used as the directory to persist the data to. If omitted
-	 * then the cache module directory `./cache` will be used instead
+	 * then the cache module directory `.cacheDir` will be used instead
 	 *
 	 * @method load
 	 * @param docId {String} the id of the cache, would also be used as the name of the file cache
 	 * @param [cacheDir] {String} directory for the cache entry
 	 */
-	// eslint-disable-next-line unicorn/prevent-abbreviations, @typescript-eslint/no-empty-function
-	public load(documentId: string, cacheDir?: string) {}
+	// eslint-disable-next-line unicorn/prevent-abbreviations
+	public load(documentId: string, cacheDir?: string) {
+		const filePath = path.resolve(`${cacheDir ?? this._cacheDir}/${documentId}`);
+		this.loadFile(filePath);
+	}
 
 	/**
 	 * Load the cache from the provided file
 	 * @method loadFile
 	 * @param  {String} pathToFile the path to the file containing the info for the cache
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	public loadFile(pathToFile: string) {}
+
+	public loadFile(pathToFile: string) {
+		if (fs.existsSync(pathToFile)) {
+			const data = fs.readFileSync(pathToFile, 'utf8');
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			const items = parse(data);
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+			for (const key of Object.keys(items)) {
+				this._cache.set(key, items[key]);
+			}
+		}
+	}
 
 	/**
 	 * Returns the entire persisted object
@@ -246,7 +261,6 @@ export class FlatCache {
 	 * as a JSON structure
 	 * @method save
 	 */
-
 	public save() {
 		const filePath = this.cacheFilePath;
 		const items = this.all();
@@ -265,7 +279,6 @@ export class FlatCache {
 	 * @method removeCacheFile
 	 * @return {Boolean} true or false if the file was successfully deleted
 	 */
-
 	public removeCacheFile() {
 		if (fs.existsSync(this.cacheFilePath)) {
 			fs.rmSync(this.cacheFilePath);
@@ -279,10 +292,38 @@ export class FlatCache {
 	 * Destroy the file cache and cache content.
 	 * @method destroy
 	 */
-
 	public destroy() {
 		this._cache.clear();
+		this.stopAutoPersist();
 		fs.rmSync(this.cacheDirPath, {recursive: true, force: true});
+	}
+
+	/**
+	 * Start the auto persist interval
+	 * @method startAutoPersist
+	 */
+	public startAutoPersist() {
+		if (this._persistInterval > 0) {
+			if (this._persistTimer) {
+				clearInterval(this._persistTimer);
+				this._persistTimer = undefined;
+			}
+
+			this._persistTimer = setInterval(() => {
+				this.save();
+			}, this._persistInterval);
+		}
+	}
+
+	/**
+	 * Stop the auto persist interval
+	 * @method stopAutoPersist
+	 */
+	public stopAutoPersist() {
+		if (this._persistTimer) {
+			clearInterval(this._persistTimer);
+			this._persistTimer = undefined;
+		}
 	}
 }
 

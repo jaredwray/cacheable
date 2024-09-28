@@ -130,4 +130,52 @@ describe('flat-cache file cache', () => {
 		const cache = new FlatCache();
 		expect(cache.removeCacheFile()).toBe(false);
 	});
+	test('auto save the cache', async () => {
+		const cache = new FlatCache({
+			cacheDir: '.cachefoo2',
+			cacheId: 'cache3',
+			persistInterval: 100,
+		});
+		cache.setKey('foo', 'bar');
+		cache.startAutoPersist();
+		await sleep(200);
+		cache.stopAutoPersist();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+});
+
+describe('flat-cache load from persisted cache', () => {
+	test('should load the cache from the file', () => {
+		// eslint-disable-next-line unicorn/prevent-abbreviations
+		const cacheDir = '.cachefoo3';
+		const cacheId = 'cache4';
+		const firstCache = new FlatCache({cacheDir, cacheId});
+		firstCache.setKey('foo', 'bar');
+		firstCache.setKey('bar', {foo: 'bar'});
+		firstCache.setKey('baz', [1, 2, 3]);
+		firstCache.save();
+		const secondCache = new FlatCache();
+		secondCache.load(cacheId, cacheDir);
+		expect(secondCache.getKey('foo')).toBe('bar');
+		expect(secondCache.getKey('bar')).toEqual({foo: 'bar'});
+		expect(secondCache.getKey('baz')).toEqual([1, 2, 3]);
+		firstCache.destroy();
+	});
+	test('should load the cache from the file', () => {
+		// eslint-disable-next-line unicorn/prevent-abbreviations
+		const cacheDir = '.cachefoo3';
+		const cacheId = 'cache4';
+		const firstCache = new FlatCache({cacheDir, cacheId});
+		firstCache.setKey('foo', 'bar');
+		firstCache.setKey('bar', {foo: 'bar'});
+		firstCache.setKey('baz', [1, 2, 3]);
+		firstCache.save();
+		const secondCache = new FlatCache({cacheDir});
+		secondCache.load(cacheId);
+		expect(secondCache.getKey('foo')).toBe('bar');
+		expect(secondCache.getKey('bar')).toEqual({foo: 'bar'});
+		expect(secondCache.getKey('baz')).toEqual([1, 2, 3]);
+		firstCache.destroy();
+	});
 });
