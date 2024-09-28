@@ -21,7 +21,6 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 	async get<Value>(key: string): Promise<StoredData<Value> | undefined> {
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const result = this._cache.get(key);
-		console.log('result', result);
 		if (result) {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 			return result;
