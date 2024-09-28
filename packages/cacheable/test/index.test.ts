@@ -528,3 +528,46 @@ describe('cacheable stats enabled', async () => {
 		expect(cacheable.stats.ksize).toBe(0);
 	});
 });
+
+describe('cacheable ttl parsing', async () => {
+	test('set the default ttl', async () => {
+		const cacheable = new Cacheable({ttl: '2ms'});
+		expect(cacheable.ttl).toEqual('2ms');
+		await cacheable.set('key', 'value');
+		await sleep(3);
+		const result = await cacheable.get('key');
+		expect(result).toBeUndefined();
+	});
+	test('set the default ttl with number', async () => {
+		const cacheable = new Cacheable({ttl: 2});
+		expect(cacheable.ttl).toEqual(2);
+		await cacheable.set('key', 'value');
+		const firstResult = await cacheable.get('key');
+		expect(firstResult).toEqual('value');
+		await sleep(3);
+		const result = await cacheable.get('key');
+		expect(result).toBeUndefined();
+	});
+
+	test('setMany without ttl', async () => {
+		const cacheable = new Cacheable({ttl: 2});
+		const list = [{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}];
+		await cacheable.setMany(list);
+		const firstResult = await cacheable.getMany(['key1', 'key2']);
+		expect(firstResult).toEqual(['value1', 'value2']);
+		await sleep(3);
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual([undefined, undefined]);
+	});
+
+	test('setMany with ttl', async () => {
+		const cacheable = new Cacheable({ttl: 2});
+		const list = [{key: 'key1', value: 'value1', ttl: '30s'}, {key: 'key2', value: 'value2'}];
+		await cacheable.setMany(list);
+		const firstResult = await cacheable.getMany(['key1', 'key2']);
+		expect(firstResult).toEqual(['value1', 'value2']);
+		await sleep(3);
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual(['value1', undefined]);
+	});
+});
