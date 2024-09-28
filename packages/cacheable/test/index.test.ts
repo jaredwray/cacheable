@@ -534,7 +534,9 @@ describe('cacheable ttl parsing', async () => {
 		const cacheable = new Cacheable({ttl: '2ms'});
 		expect(cacheable.ttl).toEqual('2ms');
 		await cacheable.set('key', 'value');
-		await sleep(3);
+		const firstResult = await cacheable.get('key');
+		expect(firstResult).toEqual('value');
+		await sleep(5);
 		const result = await cacheable.get('key');
 		expect(result).toBeUndefined();
 	});
@@ -569,5 +571,16 @@ describe('cacheable ttl parsing', async () => {
 		await sleep(3);
 		const result = await cacheable.getMany(['key1', 'key2']);
 		expect(result).toEqual(['value1', undefined]);
+	});
+
+	test('setMany with ttl number', async () => {
+		const cacheable = new Cacheable({ttl: 2});
+		const list = [{key: 'key1', value: 'value1', ttl: 30}, {key: 'key2', value: 'value2', ttl: '1h'}];
+		await cacheable.setMany(list);
+		const firstResult = await cacheable.getMany(['key1', 'key2']);
+		expect(firstResult).toEqual(['value1', 'value2']);
+		await sleep(35);
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual([undefined, 'value2']);
 	});
 });

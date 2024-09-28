@@ -27,10 +27,16 @@ describe('time parser', () => {
 		expect(parseToMilliseconds('1d')).toBe(86_400_000);
 	});
 	test('send in string with unsupported unit', () => {
-		expect(() => parseToMilliseconds('1z')).toThrowError('Unsupported time format: "1z". Use \'ms\', \'s\', \'m\', \'h\', or \'d\'.');
+		expect(() => parseToMilliseconds('1z')).toThrowError('Unsupported time format: "1z". Use \'ms\', \'s\', \'m\', \'h\', \'hr\', or \'d\'.');
 	});
 	test('send in string with number', () => {
 		expect(parseToMilliseconds('1000')).toBe(1000);
+	});
+	test('send in string with number and decimal', () => {
+		expect(parseToMilliseconds('1.5h')).toBe(5_400_000);
+	});
+	test('send in string with number and decimal', () => {
+		expect(parseToMilliseconds('1.5hr')).toBe(5_400_000);
 	});
 });
 

@@ -14,11 +14,11 @@ export const parseToMilliseconds = (shorthand?: string | number): number | undef
 		// Check if the string is purely numeric
 		if (Number.isNaN(Number(shorthand))) {
 			// Use a case-insensitive regex that supports decimals and 'ms' unit
-			const match = /^([\d.]+)\s*(ms|s|m|h|d)$/i.exec(shorthand);
+			const match = /^([\d.]+)\s*(ms|s|m|h|hr|d)$/i.exec(shorthand);
 
 			if (!match) {
 				throw new Error(
-					`Unsupported time format: "${shorthand}". Use 'ms', 's', 'm', 'h', or 'd'.`,
+					`Unsupported time format: "${shorthand}". Use 'ms', 's', 'm', 'h', 'hr', or 'd'.`,
 				);
 			}
 
@@ -43,6 +43,11 @@ export const parseToMilliseconds = (shorthand?: string | number): number | undef
 				}
 
 				case 'h': {
+					milliseconds = numericValue * 1000 * 60 * 60;
+					break;
+				}
+
+				case 'hr': {
 					milliseconds = numericValue * 1000 * 60 * 60;
 					break;
 				}
