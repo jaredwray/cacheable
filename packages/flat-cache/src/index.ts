@@ -257,6 +257,14 @@ export class FlatCache {
 	}
 
 	/**
+	 * Clear the cache
+	 * @method clear
+	 */
+	public clear() {
+		this._cache.clear();
+	}
+
+	/**
 	 * Save the state of the cache identified by the docId to disk
 	 * as a JSON structure
 	 * @method save
@@ -286,10 +294,6 @@ export class FlatCache {
 		}
 
 		return false;
-	}
-
-	public clearAll() {
-		this._cache.clear();
 	}
 
 	/**
@@ -336,4 +340,3 @@ export class FlatCache {
 		}
 	}
 }
-

@@ -92,13 +92,11 @@ describe('flat-cache', () => {
 		expect(cache.cache.get('foo')).toBeUndefined();
 		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
 	});
-	test('clear all should remove all items from the cache', () => {
+	test('should clear the cache', () => {
 		const cache = new FlatCache();
 		cache.set('foo', 'bar');
-		cache.set('bar', 'baz');
-		cache.set('baz', 'foo');
-		cache.clearAll();
-		expect(cache.all()).toEqual({});
+		cache.clear();
+		expect(cache.cache.size).toBe(0);
 	});
 });
 
