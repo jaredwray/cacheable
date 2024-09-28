@@ -22,7 +22,7 @@ export enum CacheableEvents {
 export type CacheableItem = {
 	key: string;
 	value: unknown;
-	ttl?: number;
+	ttl?: number | string;
 };
 
 export type CacheableOptions = {
@@ -191,9 +191,9 @@ export class Cacheable extends Hookified {
 			const item = {key, value, ttl: finalTtl};
 			await this.hook(CacheableHooks.BEFORE_SET, item);
 			const promises = [];
-			promises.push(this._primary.set(item.key, item.value, parseToMilliseconds(item.ttl)));
+			promises.push(this._primary.set(item.key, item.value, item.ttl));
 			if (this._secondary) {
-				promises.push(this._secondary.set(item.key, item.value, parseToMilliseconds(item.ttl)));
+				promises.push(this._secondary.set(item.key, item.value, item.ttl));
 			}
 
 			if (this._nonBlocking) {
@@ -413,3 +413,4 @@ export class Cacheable extends Hookified {
 export {CacheableStats} from './stats.js';
 export {CacheableMemory} from './memory.js';
 export {KeyvCacheableMemory} from './keyv-memory.js';
+export {parseToMilliseconds, parseToTime} from './time-parser.js';

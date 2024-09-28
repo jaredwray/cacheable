@@ -73,6 +73,12 @@ describe('cacheable options and properties', async () => {
 		cacheable.ttl = 2000;
 		expect(cacheable.ttl).toEqual(2000);
 	});
+	test('should be able to set ttl on options', async () => {
+		const cacheable = new Cacheable({ttl: '10ms'});
+		expect(cacheable.ttl).toEqual('10ms');
+		cacheable.ttl = 2000;
+		expect(cacheable.ttl).toEqual(2000);
+	});
 });
 
 describe('cacheable stats', async () => {
