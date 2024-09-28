@@ -222,6 +222,16 @@ describe('CacheableMemory Delete', async () => {
 		cache.delete('key');
 		expect(cache.get('key')).toBe(undefined);
 	});
+	test('should be able to delete many values', () => {
+		const cache = new CacheableMemory();
+		cache.setMany(cacheItemList);
+		cache.deleteMany(['key', 'key1', 'key2', 'key3', 'key4']);
+		expect(cache.get('key')).toBe(undefined);
+		expect(cache.get('key1')).toBe(undefined);
+		expect(cache.get('key2')).toBe(undefined);
+		expect(cache.get('key3')).toBe(undefined);
+		expect(cache.get('key4')).toBe(undefined);
+	});
 });
 
 describe('CacheableMemory Clear', async () => {

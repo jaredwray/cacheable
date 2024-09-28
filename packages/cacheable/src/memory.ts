@@ -211,6 +211,12 @@ export class CacheableMemory {
 		store.delete(key);
 	}
 
+	public deleteMany(keys: string[]): void {
+		for (const key of keys) {
+			this.delete(key);
+		}
+	}
+
 	public clear(): void {
 		this._hash0.clear();
 		this._hash1.clear();
