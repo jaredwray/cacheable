@@ -38,6 +38,20 @@ describe('CacheableMemory Options and Properties', () => {
 		expect(keys).toContain('key3');
 		expect(keys).toContain('key4');
 	});
+	test('should be able to get values', () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value');
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		cache.set('key3', 'value3');
+		cache.set('key4', 'value4');
+		const values = Array.from(cache.items);
+		expect(values[0].value).toBe('value3');
+		expect(values[1].value).toBe('value4');
+		expect(values[2].value).toBe('value1');
+		expect(values[3].value).toBe('value');
+		expect(values[4].value).toBe('value2');
+	});
 	test('should be able to set clone', () => {
 		const cache = new CacheableMemory({useClone: true});
 		expect(cache.useClone).toBe(true);
