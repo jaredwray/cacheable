@@ -288,14 +288,24 @@ export class FlatCache {
 		return false;
 	}
 
+	public clearAll() {
+		this._cache.clear();
+	}
+
 	/**
-	 * Destroy the file cache and cache content.
+	 * Destroy the cache. This will remove the directory, file, and memory cache
 	 * @method destroy
+	 * @param [includeCacheDir=false] {Boolean} if true, the cache directory will be removed
+	 * @return {undefined}
 	 */
-	public destroy() {
+	public destroy(includeCacheDirectory = false) {
 		this._cache.clear();
 		this.stopAutoPersist();
-		fs.rmSync(this.cacheDirPath, {recursive: true, force: true});
+		if (includeCacheDirectory) {
+			fs.rmSync(this.cacheDirPath, {recursive: true, force: true});
+		} else {
+			fs.rmSync(this.cacheFilePath, {recursive: true, force: true});
+		}
 	}
 
 	/**
