@@ -118,4 +118,16 @@ describe('flat-cache file cache', () => {
 		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
 		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
 	});
+	test('should be able to delete the file cache', () => {
+		const cache = new FlatCache();
+		cache.setKey('foo', 'bar');
+		cache.save();
+		cache.removeCacheFile();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(false);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+	test('should return false to delete the file cache', () => {
+		const cache = new FlatCache();
+		expect(cache.removeCacheFile()).toBe(false);
+	});
 });

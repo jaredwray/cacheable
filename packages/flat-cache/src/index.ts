@@ -265,8 +265,15 @@ export class FlatCache {
 	 * @method removeCacheFile
 	 * @return {Boolean} true or false if the file was successfully deleted
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	public removeCacheFile() {}
+
+	public removeCacheFile() {
+		if (fs.existsSync(this.cacheFilePath)) {
+			fs.rmSync(this.cacheFilePath);
+			return true;
+		}
+
+		return false;
+	}
 
 	/**
 	 * Destroy the file cache and cache content.
