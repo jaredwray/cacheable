@@ -1,6 +1,6 @@
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
-import {type CacheableStoreItem} from './cacheable-item-types.js';
+import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
 
 export type CacheableMemoryOptions = {
 	ttl?: number | string;
@@ -163,6 +163,12 @@ export class CacheableMemory {
 			value,
 			expires,
 		});
+	}
+
+	public setMany(items: CacheableItem[]): void {
+		for (const item of items) {
+			this.set(item.key, item.value, item.ttl);
+		}
 	}
 
 	public has(key: string): boolean {
@@ -360,4 +366,4 @@ export class CacheableMemory {
 	}
 }
 
-export type {CacheableStoreItem} from './cacheable-item-types.js';
+export type {CacheableItem, CacheableStoreItem} from './cacheable-item-types.js';

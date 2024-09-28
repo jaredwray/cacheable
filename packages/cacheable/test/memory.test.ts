@@ -1,5 +1,5 @@
 import {describe, test, expect} from 'vitest';
-import {CacheableMemory} from '../src/memory.js';
+import {CacheableMemory, CacheableItem} from '../src/memory.js';
 
 // eslint-disable-next-line no-promise-executor-return
 const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -75,6 +75,25 @@ describe('CacheableMemory Options and Properties', () => {
 		expect(cache.lruSize).toBe(15);
 		cache.lruSize = 5;
 		expect(cache.lruSize).toBe(5);
+	});
+});
+
+describe('CacheableMemory Set', async () => {
+	test('should set many values', async () => {
+		const cache = new CacheableMemory();
+		const list = [
+			{key: 'key', value: 'value'},
+			{key: 'key1', value: {foo: 'bar'}},
+			{key: 'key2', value: 123, ttl: 10},
+			{key: 'key3', value: [1, 2, 3]},
+		];
+		cache.setMany(list);
+		expect(cache.get('key')).toBe('value');
+		expect(cache.get('key1')).toEqual({foo: 'bar'});
+		expect(cache.get('key2')).toBe(123);
+		expect(cache.get('key3')).toEqual([1, 2, 3]);
+		await sleep(20);
+		expect(cache.get('key2')).toBe(undefined);
 	});
 });
 
