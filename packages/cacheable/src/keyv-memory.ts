@@ -29,12 +29,27 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 		return undefined;
 	}
 
-	set(key: string, value: any, ttl?: number) {
+	async getMany<Value>(keys: string[]): Promise<Array<StoredData<Value | undefined>>> {
+		const result = this._cache.getMany(keys);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+		return result;
+	}
+
+	async set(key: string, value: any, ttl?: number): Promise<void> {
 		this._cache.set(key, value, ttl);
+	}
+
+	async setMany(values: Array<{key: string; value: any; ttl?: number}>): Promise<void> {
+		this._cache.setMany(values);
 	}
 
 	async delete(key: string): Promise<boolean> {
 		this._cache.delete(key);
+		return true;
+	}
+
+	async deleteMany?(key: string[]): Promise<boolean> {
+		this._cache.deleteMany(key);
 		return true;
 	}
 
@@ -44,24 +59,6 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 
 	async has?(key: string): Promise<boolean> {
 		return this._cache.has(key);
-	}
-
-	async getMany?<Value>(keys: string[]): Promise<Array<StoredData<Value | undefined>>> {
-		const result = [];
-		for (const key of keys) {
-			result.push(this._cache.get(key));
-		}
-
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
-		return result;
-	}
-
-	async deleteMany?(key: string[]): Promise<boolean> {
-		for (const k of key) {
-			this._cache.delete(k);
-		}
-
-		return true;
 	}
 
 	on(event: string, listener: (...arguments_: any[]) => void): this {
