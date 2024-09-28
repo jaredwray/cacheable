@@ -1,6 +1,6 @@
 {
 	"name": "@cacheable/node-cache",
-	"version": "1.2.1",
+	"version": "1.3.0",
 	"description": "Simple and Maintained fast NodeJS internal caching",
 	"type": "module",
 	"main": "./dist/index.cjs",
