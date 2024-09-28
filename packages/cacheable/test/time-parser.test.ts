@@ -1,9 +1,12 @@
 import {describe, test, expect} from 'vitest';
-import {parseToMilliseconds} from '../src/time-parser.js';
+import {parseToMilliseconds, parseToTime} from '../src/time-parser.js';
 
 describe('time parser', () => {
 	test('send in number', () => {
 		expect(parseToMilliseconds(1000)).toBe(1000);
+	});
+	test('send in string with milliseconds', () => {
+		expect(parseToMilliseconds('1ms')).toBe(1);
 	});
 	test('send in string', () => {
 		expect(parseToMilliseconds('1s')).toBe(1000);
@@ -25,5 +28,18 @@ describe('time parser', () => {
 	});
 	test('send in string with unsupported unit', () => {
 		expect(() => parseToMilliseconds('1z')).toThrowError('Unsupported time format: "1z". Use \'ms\', \'s\', \'m\', \'h\', or \'d\'.');
+	});
+	test('send in string with number', () => {
+		expect(parseToMilliseconds('1000')).toBe(1000);
+	});
+});
+
+describe('parse to time', () => {
+	test('send in number', () => {
+		expect(parseToTime(1000)).toBeGreaterThan(Date.now());
+	});
+
+	test('send in string', () => {
+		expect(parseToTime('10s')).toBeGreaterThan(Date.now());
 	});
 });

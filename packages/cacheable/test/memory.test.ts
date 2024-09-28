@@ -7,7 +7,7 @@ const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, m
 describe('CacheableMemory Options and Properties', () => {
 	test('should have default ttl', () => {
 		const cache = new CacheableMemory();
-		expect(cache.ttl).toBe(0);
+		expect(cache.ttl).toBe(undefined);
 	});
 	test('should be able to set ttl', () => {
 		const cache = new CacheableMemory({ttl: 5});

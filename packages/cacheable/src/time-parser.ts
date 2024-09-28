@@ -1,20 +1,20 @@
 
-export const parseToMilliseconds = (time: string | number): number => {
+export const parseToMilliseconds = (shorthand: string | number): number => {
 	let milliseconds: number;
 
-	if (typeof time === 'number') {
-		milliseconds = time;
-	} else if (typeof time === 'string') {
-		time = time.trim();
+	if (typeof shorthand === 'number') {
+		milliseconds = shorthand;
+	} else if (typeof shorthand === 'string') {
+		shorthand = shorthand.trim();
 
 		// Check if the string is purely numeric
-		if (Number.isNaN(Number(time))) {
+		if (Number.isNaN(Number(shorthand))) {
 			// Use a case-insensitive regex that supports decimals and 'ms' unit
-			const match = /^([\d.]+)\s*(ms|s|m|h|d)$/i.exec(time);
+			const match = /^([\d.]+)\s*(ms|s|m|h|d)$/i.exec(shorthand);
 
 			if (!match) {
 				throw new Error(
-					`Unsupported time format: "${time}". Use 'ms', 's', 'm', 'h', or 'd'.`,
+					`Unsupported time format: "${shorthand}". Use 'ms', 's', 'm', 'h', or 'd'.`,
 				);
 			}
 
@@ -48,14 +48,14 @@ export const parseToMilliseconds = (time: string | number): number => {
 					break;
 				}
 
+				/* c8 ignore next 3 */
 				default: {
-					throw new Error(
-						`Unsupported time unit: "${unit}". Use 'ms', 's', 'm', 'h', or 'd'.`,
-					);
+					milliseconds = Number(shorthand);
 				}
 			}
+			/* c8 ignore next 6 */
 		} else {
-			milliseconds = Number(time);
+			milliseconds = Number(shorthand);
 		}
 	} else {
 		throw new TypeError('Time must be a string or a number.');

@@ -29,14 +29,14 @@ export type CacheableOptions = {
 	secondary?: Keyv | KeyvStoreAdapter;
 	stats?: boolean;
 	nonBlocking?: boolean;
-	ttl?: number;
+	ttl?: number | string;
 };
 
 export class Cacheable extends Hookified {
 	private _primary: Keyv = new Keyv({store: new KeyvCacheableMemory()});
 	private _secondary: Keyv | undefined;
 	private _nonBlocking = false;
-	private _ttl?: number;
+	private _ttl?: number | string;
 	private readonly _stats = new CacheableStats({enabled: false});
 
 	constructor(options?: CacheableOptions) {
@@ -91,11 +91,11 @@ export class Cacheable extends Hookified {
 		this._nonBlocking = nonBlocking;
 	}
 
-	public get ttl(): number | undefined {
+	public get ttl(): number | string | undefined {
 		return this._ttl;
 	}
 
-	public set ttl(ttl: number | undefined) {
+	public set ttl(ttl: number | string | undefined) {
 		this._ttl = ttl;
 	}
 
