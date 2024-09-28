@@ -262,12 +262,13 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 
 * `set(key, value, ttl?)`: Sets a value in the cache.
 * `get(key)`: Gets a value from the cache.
+* `getRaw(key)`: Gets a value from the cache as `CacheableStoreItem`.
 * `has(key)`: Checks if a value exists in the cache.
 * `delete(key)`: Deletes a value from the cache.
 * `clear()`: Clears the cache.
 * `size()`: The number of keys in the cache.
 * `keys()`: The keys in the cache.
-* `items()`: The items in the cache as `{ key, value, expires? }`.
+* `items()`: The items in the cache as `CacheableStoreItem` example `{ key, value, expires? }`.
 * `checkExpired()`: Checks for expired keys in the cache. This is used by the `checkInterval` property.
 * `startIntervalCheck()`: Starts the interval check for expired keys if `checkInterval` is above 0 ms.
 * `stopIntervalCheck()`: Stops the interval check for expired keys.

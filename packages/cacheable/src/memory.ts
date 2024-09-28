@@ -1,5 +1,6 @@
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
+import {type CacheableStoreItem} from './cacheable-item-types.js';
 
 export type CacheableMemoryOptions = {
 	ttl?: number | string;
@@ -8,24 +9,18 @@ export type CacheableMemoryOptions = {
 	checkInterval?: number;
 };
 
-export type CacheableItem = {
-	key: string;
-	value: any;
-	expires?: number;
-};
-
 export class CacheableMemory {
 	private readonly _hashCache = new Map<string, number>();
-	private readonly _hash0 = new Map<string, CacheableItem>();
-	private readonly _hash1 = new Map<string, CacheableItem>();
-	private readonly _hash2 = new Map<string, CacheableItem>();
-	private readonly _hash3 = new Map<string, CacheableItem>();
-	private readonly _hash4 = new Map<string, CacheableItem>();
-	private readonly _hash5 = new Map<string, CacheableItem>();
-	private readonly _hash6 = new Map<string, CacheableItem>();
-	private readonly _hash7 = new Map<string, CacheableItem>();
-	private readonly _hash8 = new Map<string, CacheableItem>();
-	private readonly _hash9 = new Map<string, CacheableItem>();
+	private readonly _hash0 = new Map<string, CacheableStoreItem>();
+	private readonly _hash1 = new Map<string, CacheableStoreItem>();
+	private readonly _hash2 = new Map<string, CacheableStoreItem>();
+	private readonly _hash3 = new Map<string, CacheableStoreItem>();
+	private readonly _hash4 = new Map<string, CacheableStoreItem>();
+	private readonly _hash5 = new Map<string, CacheableStoreItem>();
+	private readonly _hash6 = new Map<string, CacheableStoreItem>();
+	private readonly _hash7 = new Map<string, CacheableStoreItem>();
+	private readonly _hash8 = new Map<string, CacheableStoreItem>();
+	private readonly _hash9 = new Map<string, CacheableStoreItem>();
 	private readonly _lru = new DoublyLinkedList<string>();
 
 	private _ttl: number | string | undefined; // Turned off by default
@@ -95,13 +90,13 @@ export class CacheableMemory {
 		return this.concatStores().keys();
 	}
 
-	public get items(): IterableIterator<CacheableItem> {
+	public get items(): IterableIterator<CacheableStoreItem> {
 		return this.concatStores().values();
 	}
 
 	public get<T>(key: string): any {
 		const store = this.getStore(key);
-		const item = store.get(key) as CacheableItem;
+		const item = store.get(key) as CacheableStoreItem;
 		if (!item) {
 			return undefined;
 		}
@@ -120,9 +115,9 @@ export class CacheableMemory {
 		return this.clone(item.value) as T;
 	}
 
-	public getRaw(key: string): CacheableItem | undefined {
+	public getRaw(key: string): CacheableStoreItem | undefined {
 		const store = this.getStore(key);
-		const item = store.get(key) as CacheableItem;
+		const item = store.get(key) as CacheableStoreItem;
 		if (!item) {
 			return undefined;
 		}
@@ -349,7 +344,7 @@ export class CacheableMemory {
 		return result;
 	}
 
-	private concatStores(): Map<string, CacheableItem> {
+	private concatStores(): Map<string, CacheableStoreItem> {
 		const result = new Map([...this._hash0, ...this._hash1, ...this._hash2, ...this._hash3, ...this._hash4, ...this._hash5, ...this._hash6, ...this._hash7, ...this._hash8, ...this._hash9]);
 		return result;
 	}
@@ -364,3 +359,5 @@ export class CacheableMemory {
 		}
 	}
 }
+
+export type {CacheableStoreItem} from './cacheable-item-types.js';
