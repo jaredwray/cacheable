@@ -15,6 +15,14 @@ describe('CacheableMemory Options and Properties', () => {
 		cache.ttl = 1000;
 		expect(cache.ttl).toBe(1000);
 	});
+	test('should handle negative ttl as undefined', () => {
+		const cache = new CacheableMemory({ttl: -1});
+		expect(cache.ttl).toBe(undefined);
+		cache.ttl = '1s';
+		expect(cache.ttl).toBe('1s');
+		cache.ttl = undefined;
+		expect(cache.ttl).toBe(undefined);
+	});
 	test('should be able to get size', () => {
 		const cache = new CacheableMemory();
 		cache.set('key', 'value');

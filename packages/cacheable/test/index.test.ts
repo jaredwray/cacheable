@@ -79,6 +79,16 @@ describe('cacheable options and properties', async () => {
 		cacheable.ttl = 2000;
 		expect(cacheable.ttl).toEqual(2000);
 	});
+	test('setting the ttl to undefined or 0 should turn off the ttl', async () => {
+		const cacheable = new Cacheable({ttl: 1000});
+		expect(cacheable.ttl).toEqual(1000);
+		cacheable.ttl = undefined;
+		expect(cacheable.ttl).toBeUndefined();
+		cacheable.ttl = '1h';
+		expect(cacheable.ttl).toEqual('1h');
+		cacheable.ttl = 0;
+		expect(cacheable.ttl).toEqual(undefined);
+	});
 });
 
 describe('cacheable stats', async () => {

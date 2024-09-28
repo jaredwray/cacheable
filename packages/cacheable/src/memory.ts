@@ -1,5 +1,5 @@
 import {DoublyLinkedList} from './memory-lru.js';
-import {parseToTime} from './time-parser.js';
+import {shorthandToTime} from './shorthand-time.js';
 
 export type CacheableMemoryOptions = {
 	ttl?: number | string;
@@ -36,7 +36,7 @@ export class CacheableMemory {
 
 	constructor(options?: CacheableMemoryOptions) {
 		if (options?.ttl) {
-			this._ttl = options.ttl;
+			this.setTtl(options.ttl);
 		}
 
 		if (options?.useClone !== undefined) {
@@ -59,7 +59,7 @@ export class CacheableMemory {
 	}
 
 	public set ttl(value: number | string | undefined) {
-		this._ttl = value;
+		this.setTtl(value);
 	}
 
 	public get useClone(): boolean {
@@ -140,7 +140,7 @@ export class CacheableMemory {
 		const store = this.getStore(key);
 		let expires;
 		if (ttl !== undefined || this._ttl !== undefined) {
-			const finalTtl = parseToTime(ttl ?? this._ttl);
+			const finalTtl = shorthandToTime(ttl ?? this._ttl);
 
 			if (finalTtl !== undefined) {
 				expires = finalTtl;
@@ -352,5 +352,15 @@ export class CacheableMemory {
 	private concatStores(): Map<string, CacheableItem> {
 		const result = new Map([...this._hash0, ...this._hash1, ...this._hash2, ...this._hash3, ...this._hash4, ...this._hash5, ...this._hash6, ...this._hash7, ...this._hash8, ...this._hash9]);
 		return result;
+	}
+
+	private setTtl(ttl: number | string | undefined): void {
+		if (typeof ttl === 'string' || ttl === undefined) {
+			this._ttl = ttl;
+		} else if (ttl > 0) {
+			this._ttl = ttl;
+		} else {
+			this._ttl = undefined;
+		}
 	}
 }
