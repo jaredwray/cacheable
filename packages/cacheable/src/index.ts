@@ -3,6 +3,7 @@ import {Hookified} from 'hookified';
 import {shorthandToMilliseconds} from './shorthand-time.js';
 import {KeyvCacheableMemory} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
+import {type CacheableItem} from './cacheable-item-types.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -18,12 +19,6 @@ export enum CacheableHooks {
 export enum CacheableEvents {
 	ERROR = 'error',
 }
-
-export type CacheableItem = {
-	key: string;
-	value: unknown;
-	ttl?: number | string;
-};
 
 export type CacheableOptions = {
 	primary?: Keyv | KeyvStoreAdapter;
@@ -424,3 +419,4 @@ export {CacheableStats} from './stats.js';
 export {CacheableMemory} from './memory.js';
 export {KeyvCacheableMemory} from './keyv-memory.js';
 export {shorthandToMilliseconds, shorthandToTime} from './shorthand-time.js';
+export type {CacheableItem} from './cacheable-item-types.js';

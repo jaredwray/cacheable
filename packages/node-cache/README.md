@@ -86,7 +86,13 @@ export type NodeCacheStoreOptions = {
 };
 ```
 
-Note: the `ttl` is now in milliseconds and not seconds like `stdTTL` in `NodeCache`.
+Note: the `ttl` is now in milliseconds and not seconds like `stdTTL` in `NodeCache`. You can learn more about using shorthand also in the [cacheable documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cacheable/README.md#shorthand-for-time-to-live-ttl). as it is fulling supported. Here is an example:
+
+```javascript
+const cache = new NodeCacheStore({ttl: 60000 }); // 1 minute as it defaults to milliseconds
+cache.set('foo', 'bar', '1h'); // 1 hour
+cache.set('longfoo', 'bar', '1d'); // 1 day
+```
 
 ### Node Cache Store API
 
@@ -101,7 +107,7 @@ Note: the `ttl` is now in milliseconds and not seconds like `stdTTL` in `NodeCac
 * `setTtl(key: string | number, ttl: number): Promise<boolean>` - Set the ttl of a key
 * `disconnect(): Promise<void>` - Disconnect the storage adapters
 * `stats`: `NodeCacheStats` - Get the stats of the cache
-* `ttl`: `number` - The standard ttl as number in seconds for every generated cache element. 0 = unlimited
+* `ttl`: `number` | `string` - The standard ttl as number in seconds for every generated cache element. `< 0` or `undefined` = unlimited
 * `primary`: `Keyv` - The primary storage adapter
 * `secondary`: `Keyv` - The secondary storage adapter
 * `maxKeys`: `number` - If this is set it will throw and error if you try to set more keys than the max

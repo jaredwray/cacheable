@@ -1,8 +1,16 @@
 import {describe, test, expect} from 'vitest';
-import {CacheableMemory} from '../src/memory.js';
+import {CacheableMemory, CacheableItem} from '../src/memory.js';
 
 // eslint-disable-next-line no-promise-executor-return
 const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const cacheItemList = [
+	{key: 'key', value: 'value'},
+	{key: 'key1', value: {foo: 'bar'}},
+	{key: 'key2', value: 123, ttl: 10},
+	{key: 'key3', value: [1, 2, 3]},
+	{key: 'key4', value: 'value4', ttl: '5m'},
+];
 
 describe('CacheableMemory Options and Properties', () => {
 	test('should have default ttl', () => {
@@ -78,6 +86,25 @@ describe('CacheableMemory Options and Properties', () => {
 	});
 });
 
+describe('CacheableMemory Set', async () => {
+	test('should set many values', async () => {
+		const cache = new CacheableMemory();
+		const list = [
+			{key: 'key', value: 'value'},
+			{key: 'key1', value: {foo: 'bar'}},
+			{key: 'key2', value: 123, ttl: 10},
+			{key: 'key3', value: [1, 2, 3]},
+		];
+		cache.setMany(list);
+		expect(cache.get('key')).toBe('value');
+		expect(cache.get('key1')).toEqual({foo: 'bar'});
+		expect(cache.get('key2')).toBe(123);
+		expect(cache.get('key3')).toEqual([1, 2, 3]);
+		await sleep(20);
+		expect(cache.get('key2')).toBe(undefined);
+	});
+});
+
 describe('CacheableMemory Get', async () => {
 	test('should set and get value', () => {
 		const cache = new CacheableMemory();
@@ -117,6 +144,17 @@ describe('CacheableMemory Get', async () => {
 		const value2 = cache.get('key');
 		expect(value).toEqual(value2);
 	});
+	test('should be able to get many values', async () => {
+		const cache = new CacheableMemory();
+		cache.setMany(cacheItemList);
+		await sleep(20);
+		const result = cache.getMany(['key', 'key1', 'key2', 'key3', 'key4']);
+		expect(result[0]).toBe('value');
+		expect(result[1]).toEqual({foo: 'bar'});
+		expect(result[2]).toBe(undefined);
+		expect(result[3]).toEqual([1, 2, 3]);
+		expect(result[4]).toBe('value4');
+	});
 });
 
 describe('CacheableMemory getRaw', async () => {
@@ -134,6 +172,16 @@ describe('CacheableMemory getRaw', async () => {
 		cache.set('key', 'value', 1);
 		await sleep(20);
 		expect(cache.getRaw('key')).toBe(undefined);
+	});
+	test('should be able to get many raw values', () => {
+		const cache = new CacheableMemory();
+		cache.setMany(cacheItemList);
+		const result = cache.getManyRaw(['key', 'key1', 'key2', 'key3', 'key4']);
+		expect(result[0]?.value).toBe('value');
+		expect(result[1]?.value).toEqual({foo: 'bar'});
+		expect(result[2]?.value).toBe(123);
+		expect(result[3]?.value).toEqual([1, 2, 3]);
+		expect(result[4]?.value).toBe('value4');
 	});
 });
 
@@ -160,6 +208,18 @@ describe('CacheableMemory Take', async () => {
 		const cache = new CacheableMemory();
 		expect(cache.take('key')).toBe(undefined);
 	});
+	test('should be able to take many values', () => {
+		const cache = new CacheableMemory();
+		cache.setMany(cacheItemList);
+		const result = cache.takeMany(['key', 'key1']);
+		expect(result[0]).toBe('value');
+		expect(result[1]).toEqual({foo: 'bar'});
+		expect(cache.get('key')).toBe(undefined);
+		expect(cache.get('key1')).toBe(undefined);
+		expect(cache.get('key2')).toBe(123);
+		expect(cache.get('key3')).toEqual([1, 2, 3]);
+		expect(cache.get('key4')).toBe('value4');
+	});
 });
 
 describe('CacheableMemory Delete', async () => {
@@ -173,6 +233,16 @@ describe('CacheableMemory Delete', async () => {
 		const cache = new CacheableMemory();
 		cache.delete('key');
 		expect(cache.get('key')).toBe(undefined);
+	});
+	test('should be able to delete many values', () => {
+		const cache = new CacheableMemory();
+		cache.setMany(cacheItemList);
+		cache.deleteMany(['key', 'key1', 'key2', 'key3', 'key4']);
+		expect(cache.get('key')).toBe(undefined);
+		expect(cache.get('key1')).toBe(undefined);
+		expect(cache.get('key2')).toBe(undefined);
+		expect(cache.get('key3')).toBe(undefined);
+		expect(cache.get('key4')).toBe(undefined);
 	});
 });
 

@@ -578,7 +578,7 @@ describe('cacheable ttl parsing', async () => {
 		await cacheable.setMany(list);
 		const firstResult = await cacheable.getMany(['key1', 'key2']);
 		expect(firstResult).toEqual(['value1', 'value2']);
-		await sleep(3);
+		await sleep(5);
 		const result = await cacheable.getMany(['key1', 'key2']);
 		expect(result).toEqual(['value1', undefined]);
 	});

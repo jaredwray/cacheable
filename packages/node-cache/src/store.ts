@@ -3,7 +3,7 @@ import {Keyv} from 'keyv';
 import {type NodeCacheItem} from 'index.js';
 
 export type NodeCacheStoreOptions = {
-	ttl?: number; // In milliseconds. This is a breaking change from the original NodeCache.
+	ttl?: number | string; // In milliseconds. This is a breaking change from the original NodeCache.
 	maxKeys?: number;
 	primary?: Keyv;
 	secondary?: Keyv;
@@ -35,11 +35,11 @@ export class NodeCacheStore {
 		return this._cache;
 	}
 
-	public get ttl(): number | undefined {
+	public get ttl(): number | string | undefined {
 		return this._cache.ttl;
 	}
 
-	public set ttl(ttl: number | undefined) {
+	public set ttl(ttl: number | string | undefined) {
 		this._cache.ttl = ttl;
 	}
 
@@ -78,9 +78,7 @@ export class NodeCacheStore {
 			}
 		}
 
-		const finalTtl = ttl ?? this._cache.ttl;
-
-		await this._cache.set(key.toString(), value, finalTtl);
+		await this._cache.set(key.toString(), value, ttl);
 		return true;
 	}
 
@@ -120,10 +118,9 @@ export class NodeCacheStore {
 	}
 
 	public async setTtl(key: string | number, ttl?: number): Promise<boolean> {
-		const finalTtl = ttl ?? this._cache.ttl;
 		const item = await this._cache.get(key.toString());
 		if (item) {
-			await this._cache.set(key.toString(), item, finalTtl);
+			await this._cache.set(key.toString(), item, ttl);
 			return true;
 		}
 
