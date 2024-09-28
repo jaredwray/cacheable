@@ -111,6 +111,24 @@ describe('CacheableMemory Get', async () => {
 	});
 });
 
+describe('CacheableMemory getRaw', async () => {
+	test('should set and get raw value', () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value');
+		expect(cache.getRaw('key')?.value).toBe('value');
+	});
+	test('should be able to get undefined raw value', () => {
+		const cache = new CacheableMemory();
+		expect(cache.getRaw('key')).toBe(undefined);
+	});
+	test('should not be able to get expired raw value', async () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value', 1);
+		await sleep(20);
+		expect(cache.getRaw('key')).toBe(undefined);
+	});
+});
+
 describe('CacheableMemory Has', async () => {
 	test('should return true if key exists', () => {
 		const cache = new CacheableMemory();
@@ -295,5 +313,40 @@ describe('CacheableMemory checkInterval', () => {
 		expect(cache.get('key2')).toBe(undefined);
 		expect(cache.get('key3')).toBe('value3');
 		cache.stopIntervalCheck();
+	});
+});
+
+describe('Cacheable Memory ttl parsing', () => {
+	test('send in a number on ttl', () => {
+		const cache = new CacheableMemory({ttl: 1000});
+		expect(cache.ttl).toBe(1000);
+	});
+	test('send in 30s string on ttl', async () => {
+		const cache = new CacheableMemory({ttl: '30ms'});
+		expect(cache.ttl).toBe('30ms');
+		cache.set('key', 'value');
+		await sleep(40);
+		expect(cache.get('key')).toBe(undefined);
+	});
+	test('send in 1m string on ttl', async () => {
+		const cache = new CacheableMemory();
+		expect(cache.ttl).toBe(undefined);
+		cache.set('key', 'value', '1m');
+		expect(cache.getRaw('key')?.expires).toBeGreaterThan(Date.now());
+	});
+	test('send in 1h string on ttl', async () => {
+		const cache = new CacheableMemory();
+		expect(cache.ttl).toBe(undefined);
+		const datePlus45 = Date.now() + (45 * 60 * 1000);
+		cache.set('key', 'value', '1h');
+		expect(cache.getRaw('key')?.expires).toBeGreaterThan(datePlus45);
+	});
+
+	test('have number on default ttl and parse string on set', async () => {
+		const cache = new CacheableMemory({ttl: 1000});
+		expect(cache.ttl).toBe(1000);
+		const datePlus45 = Date.now() + (45 * 60 * 1000);
+		cache.set('key', 'value', '1h');
+		expect(cache.getRaw('key')?.expires).toBeGreaterThan(datePlus45);
 	});
 });

@@ -120,6 +120,22 @@ export class CacheableMemory {
 		return this.clone(item.value) as T;
 	}
 
+	public getRaw(key: string): CacheableItem | undefined {
+		const store = this.getStore(key);
+		const item = store.get(key) as CacheableItem;
+		if (!item) {
+			return undefined;
+		}
+
+		if (item.expires && item.expires && Date.now() > item.expires) {
+			store.delete(key);
+			return undefined;
+		}
+
+		this.lruMoveToFront(key);
+		return item;
+	}
+
 	public set(key: string, value: any, ttl?: number | string): void {
 		const store = this.getStore(key);
 		let expires;
