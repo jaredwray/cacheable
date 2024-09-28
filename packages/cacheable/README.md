@@ -261,10 +261,16 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 ### CacheableMemory API
 
 * `set(key, value, ttl?)`: Sets a value in the cache.
+* `setMany([{key, value, ttl?}])`: Sets multiple values in the cache from `CachableItem`.
 * `get(key)`: Gets a value from the cache.
+* `getMany([keys])`: Gets multiple values from the cache.
 * `getRaw(key)`: Gets a value from the cache as `CacheableStoreItem`.
+* `getManyRaw([keys])`: Gets multiple values from the cache as `CacheableStoreItem`.
 * `has(key)`: Checks if a value exists in the cache.
 * `delete(key)`: Deletes a value from the cache.
+* `deleteMany([keys])`: Deletes multiple values from the cache.
+* `take(key)`: Takes a value from the cache and deletes it.
+* `takeMany([keys])`: Takes multiple values from the cache and deletes them.
 * `clear()`: Clears the cache.
 * `size()`: The number of keys in the cache.
 * `keys()`: The keys in the cache.
