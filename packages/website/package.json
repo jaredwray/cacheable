@@ -8,8 +8,8 @@
   "private": true,
   "scripts": {
     "generate-docs": "ts-node ./src/docs.cts",
-    "website:build": "pnpm generate-docs && docula build",
-    "website:serve": "pnpm generate-docs && docula serve",
+    "website:build": "rimraf ./site/docs && pnpm generate-docs && docula build",
+    "website:serve": "rimraf ./site/docs && pnpm generate-docs && docula serve",
     "clean": "rimraf ./dist"
   },
   "devDependencies": {
