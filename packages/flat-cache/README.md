@@ -18,6 +18,65 @@
 - Only saves the data to disk if the data has changed even when using `persistInterval` or calling `save()`
 - Uses `flatted` to parse and stringify the data by default but can be overridden
 
+# Installation
+```bash
+npm install flat-cache
+```
+
+# Getting Started
+```javascript
+import { FlatCache } from 'flat-cache';
+const cache = new FlatCache();
+cache.setKey('key', 'value');
+cache.save(); // Saves the data to disk
+```
+
+lets add it with `ttl`, `lruSize`, and `persistInterval`
+```javascript
+import { FlatCache } from 'flat-cache';
+const cache = new FlatCache({
+  ttl: 60 * 60 * 1000 , // 1 hour
+  lruSize: 10000, // 10,000 items
+  expirationInterval: 5 * 1000 * 60, // 5 minutes
+  persistInterval: 5 * 1000 * 60, // 5 minutes
+});
+cache.setKey('key', 'value');
+```
+
+This will save the data to disk every 5 minutes and will remove any data that has not been accessed in 1 hour or if the cache has more than 10,000 items.
+
+# FlatCache Options
+- `ttl` - The time to live for the cache in milliseconds. Default is `0` which means no expiration
+- `lruSize` - The number of items to keep in the cache. Default is `0` which means no limit
+- `useClone` - If `true` it will clone the data before returning it. Default is `false`
+- `expirationInterval` - The interval to check for expired items in the cache. Default is `0` which means no expiration
+- `persistInterval` - The interval to save the data to disk. Default is `0` which means no persistence
+- `cacheDir` - The directory to save the cache files. Default is `./cache`
+- `cacheId` - The id of the cache. Default is `cache1`
+
+# API
+
+- `cache` - The in-memory cache as a `CacheableMemory` instance
+- `cacheDir` - The directory to save the cache files
+- `cacheId` - The id of the cache
+- `cacheFilePath` - The full path to the cache file
+- `cacheDirPath` - The full path to the cache directory
+- `persistInterval` - The interval to save the data to disk
+- `load(cacheId: string, cacheDir?: string)` - Loads the data from disk
+- `loadFile(pathToFile: string)` - Loads the data from disk
+- `all()` - Gets all the data in the cache
+- `items()` - Gets all the items in the cache
+- `keys()` - Gets all the keys in the cache
+- `setKey(key: string, value: any, ttl?: string | number)` - (legacy) Sets the key/value pair in the cache
+- `set(key: string, value: any, ttl?: string | number)` - Sets the key/value pair in the cache
+- `getKey<T>(key: string)` - Gets the value for the key or the default value
+- `get<T>(key: string)` - Gets the value for the key or the default value
+- `removeKey(key: string)` - Removes the key from the cache
+- `delete(key: string)` - Removes the key from the cache
+- `clear()` - Clears the cache
+- `save()` - Saves the data to disk
+- `destroy()` - Destroys the cache and remove files
+
 # How to Contribute
 
 You can contribute by forking the repo and submitting a pull request. Please make sure to add tests and update the documentation. To learn more about how to contribute go to our main README [https://github.com/jaredwray/cacheable](https://github.com/jaredwray/cacheable). This will talk about how to `Open a Pull Request`, `Ask a Question`, or `Post an Issue`.
