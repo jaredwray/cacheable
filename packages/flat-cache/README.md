@@ -13,10 +13,12 @@
 - A simple key/value storage using files to persist the data
 - Uses a in-memory cache (via `CacheableMemory`) as the primary storage and then persists the data to disk
 - Automatically saves the data to disk via `persistInterval` setting. Off By Default
+- Uses `expirationInterval` to check for expired items in the cache. If it is not set it will do a lazy check on `get` or `getKey`
 - Easily Loads the data from disk and into memory with `load` or `loadFile`
 - Uses `ttl` and `lruSize` to manage the cache and persist the data
 - Only saves the data to disk if the data has changed even when using `persistInterval` or calling `save()`
 - Uses `flatted` to parse and stringify the data by default but can be overridden using `parse` and `stringify` in options
+- ESM and CommonJS support with TypeScript typings and maintained regularly!
 
 # Table of Contents
 - [Installation](#installation)
