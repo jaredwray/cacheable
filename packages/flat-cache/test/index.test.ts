@@ -1,5 +1,8 @@
+import fs from 'node:fs';
 import {describe, test, expect} from 'vitest';
-import {FlatCache} from '../src/index.js';
+import {
+	FlatCache, create, createFromFile, clearAll, clearCacheById,
+} from '../src/index.js';
 
 // eslint-disable-next-line no-promise-executor-return
 const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -25,10 +28,17 @@ describe('flat-cache', () => {
 		await sleep(20);
 		expect(cache.getKey('foo')).toBe(undefined);
 	});
-	test('should get a key', () => {
+	test('should set a key with a ttl', async () => {
 		const cache = new FlatCache();
-		cache.set('foo', 'bar');
-		expect(cache.get<string>('foo')).toBe('bar');
+		cache.set('foo', 'bar', 10);
+		await sleep(20);
+		expect(cache.getKey('foo')).toBe(undefined);
+	});
+	test('should get a key with string ttl', async () => {
+		const cache = new FlatCache();
+		cache.set('foo', 'bar', '20ms');
+		await sleep(30);
+		expect(cache.get<string>('foo')).toBe(undefined);
 	});
 	test('should remove key', () => {
 		const cache = new FlatCache();
@@ -68,5 +78,153 @@ describe('flat-cache', () => {
 		expect(cache.items[0].value).toEqual('bar');
 		expect(cache.items[1].value).toEqual('foo');
 		expect(cache.items[2].value).toEqual('baz');
+	});
+	test('cache id to default', () => {
+		const cache = new FlatCache();
+		expect(cache.cacheId).toBe('cache1');
+		cache.cacheId = 'cache2';
+		expect(cache.cacheId).toBe('cache2');
+	});
+	test('destroy should remove the directory, file, and memory cache', () => {
+		const cache = new FlatCache();
+		cache.set('foo', 'bar');
+		cache.save();
+		cache.destroy();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(false);
+		expect(cache.cache.get('foo')).toBeUndefined();
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+	test('should clear the cache', () => {
+		const cache = new FlatCache();
+		cache.set('foo', 'bar');
+		cache.clear();
+		expect(cache.cache.size).toBe(0);
+	});
+});
+
+describe('flat-cache file cache', () => {
+	test('should be able to see the cache path', () => {
+		const cache = new FlatCache();
+		expect(cache.cacheFilePath).toContain('.cache/cache1');
+	});
+	test('save the cache', () => {
+		const cache = new FlatCache();
+		cache.setKey('foo', 'bar');
+		cache.setKey('bar', {foo: 'bar'});
+		cache.setKey('baz', [1, 2, 3]);
+		cache.setKey('qux', 123);
+		cache.save();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+	test('do a custome cache path and cache id', () => {
+		const cache = new FlatCache({cacheDir: '.cachefoo', cacheId: 'cache2'});
+		expect(cache.cacheFilePath).toContain('.cachefoo/cache2');
+		cache.setKey('bar', {foo: 'bar'});
+		cache.setKey('baz', [1, 2, 3]);
+		cache.save();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+	test('should be able to delete the file cache', () => {
+		const cache = new FlatCache();
+		cache.setKey('foo', 'bar');
+		cache.save();
+		cache.removeCacheFile();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(false);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+	test('should return false to delete the file cache', () => {
+		const cache = new FlatCache();
+		expect(cache.removeCacheFile()).toBe(false);
+	});
+	test('auto save the cache', async () => {
+		const cache = new FlatCache({
+			cacheDir: '.cachefoo2',
+			cacheId: 'cache3',
+			persistInterval: 100,
+		});
+		cache.setKey('foo', 'bar');
+		cache.startAutoPersist();
+		await sleep(200);
+		cache.stopAutoPersist();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+});
+
+describe('flat-cache load from persisted cache', () => {
+	test('should load the cache from the file', () => {
+		// eslint-disable-next-line unicorn/prevent-abbreviations
+		const cacheDir = '.cachefoo3';
+		const cacheId = 'cache4';
+		const firstCache = new FlatCache({cacheDir, cacheId});
+		firstCache.setKey('foo', 'bar');
+		firstCache.setKey('bar', {foo: 'bar'});
+		firstCache.setKey('baz', [1, 2, 3]);
+		firstCache.save();
+		const secondCache = new FlatCache();
+		secondCache.load(cacheId, cacheDir);
+		expect(secondCache.getKey('foo')).toBe('bar');
+		expect(secondCache.getKey('bar')).toEqual({foo: 'bar'});
+		expect(secondCache.getKey('baz')).toEqual([1, 2, 3]);
+		firstCache.destroy();
+	});
+	test('should load the cache from the file', () => {
+		// eslint-disable-next-line unicorn/prevent-abbreviations
+		const cacheDir = '.cachefoo3';
+		const cacheId = 'cache4';
+		const firstCache = new FlatCache({cacheDir, cacheId});
+		firstCache.setKey('foo', 'bar');
+		firstCache.setKey('bar', {foo: 'bar'});
+		firstCache.setKey('baz', [1, 2, 3]);
+		firstCache.save();
+		const secondCache = new FlatCache({cacheDir});
+		secondCache.load(cacheId);
+		expect(secondCache.getKey('foo')).toBe('bar');
+		expect(secondCache.getKey('bar')).toEqual({foo: 'bar'});
+		expect(secondCache.getKey('baz')).toEqual([1, 2, 3]);
+		firstCache.destroy(true);
+	});
+});
+
+describe('flat-cache exported functions', () => {
+	test('should create a new cache', () => {
+		const cache = create('cache5');
+		expect(cache.cacheId).toBe('cache5');
+	});
+	test('should create a new cache with directory', () => {
+		const cache = create('cache5', '.cachefoo5');
+		expect(cache.cacheId).toBe('cache5');
+		expect(cache.cacheDir).toBe('.cachefoo5');
+	});
+	test('should create a new cache from file', () => {
+		const firstCache = new FlatCache({cacheDir: '.cachefoo4', cacheId: 'cache6'});
+		firstCache.setKey('foo', 'bar');
+		firstCache.setKey('bar', {foo: 'bar'});
+		firstCache.setKey('baz', [1, 2, 3]);
+		firstCache.save();
+		const filePath = firstCache.cacheFilePath;
+		const cache = createFromFile(filePath);
+		expect(cache.getKey('foo')).toBe('bar');
+		expect(cache.getKey('bar')).toEqual({foo: 'bar'});
+		expect(cache.getKey('baz')).toEqual([1, 2, 3]);
+		fs.rmSync(firstCache.cacheDirPath, {recursive: true, force: true});
+	});
+	test('should clear all caches', () => {
+		const cache1 = create('cache1');
+		const cache2 = create('cache2');
+		clearAll();
+		expect(cache1.cache.size).toBe(0);
+		expect(cache2.cache.size).toBe(0);
+		expect(fs.existsSync(cache1.cacheFilePath)).toBe(false);
+		expect(fs.existsSync(cache2.cacheFilePath)).toBe(false);
+	});
+	test('should clear cache by id', () => {
+		const cache1 = create('cache1');
+		const cache2 = create('cache2');
+		clearCacheById('cache1');
+		expect(cache1.cache.size).toBe(0);
+		expect(fs.existsSync(cache1.cacheFilePath)).toBe(false);
 	});
 });

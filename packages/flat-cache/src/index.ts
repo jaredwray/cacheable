@@ -1,18 +1,24 @@
+import path from 'node:path';
+import fs from 'node:fs';
 import {CacheableMemory} from 'cacheable';
+import {parse, stringify} from 'flatted';
 
 export type FlatCacheOptions = {
-	ttl?: number;
+	ttl?: number | string;
 	useClone?: boolean;
 	lruSize?: number;
 	expirationInterval?: number;
 	persistInterval?: number;
 	cacheDir?: string;
+	cacheId?: string;
 };
 
 export class FlatCache {
 	private readonly _cache = new CacheableMemory();
 	private _cacheDir = '.cache';
+	private _cacheId = 'cache1';
 	private _persistInterval = 0;
+	private _persistTimer: NodeJS.Timeout | undefined;
 	constructor(options?: FlatCacheOptions) {
 		if (options) {
 			this._cache = new CacheableMemory({
@@ -27,8 +33,13 @@ export class FlatCache {
 			this._cacheDir = options.cacheDir;
 		}
 
+		if (options?.cacheId) {
+			this._cacheId = options.cacheId;
+		}
+
 		if (options?.persistInterval) {
 			this._persistInterval = options.persistInterval;
+			this.startAutoPersist();
 		}
 	}
 
@@ -62,6 +73,26 @@ export class FlatCache {
 	}
 
 	/**
+	 * The cache id
+	 * @property cacheId
+	 * @type {String}
+	 * @default 'cache1'
+	 */
+	public get cacheId() {
+		return this._cacheId;
+	}
+
+	/**
+	 * Set the cache id
+	 * @property cacheId
+	 * @type {String}
+	 * @default 'cache1'
+	 */
+	public set cacheId(value: string) {
+		this._cacheId = value;
+	}
+
+	/**
 	 * The interval to persist the cache to disk. 0 means no timed persistence
 	 * @property persistInterval
 	 * @type {Number}
@@ -84,22 +115,35 @@ export class FlatCache {
 	/**
 	 * Load a cache identified by the given Id. If the element does not exists, then initialize an empty
 	 * cache storage. If specified `cacheDir` will be used as the directory to persist the data to. If omitted
-	 * then the cache module directory `./cache` will be used instead
+	 * then the cache module directory `.cacheDir` will be used instead
 	 *
 	 * @method load
 	 * @param docId {String} the id of the cache, would also be used as the name of the file cache
 	 * @param [cacheDir] {String} directory for the cache entry
 	 */
-	// eslint-disable-next-line unicorn/prevent-abbreviations, @typescript-eslint/no-empty-function
-	public load(documentId: string, cacheDir?: string) {}
+	// eslint-disable-next-line unicorn/prevent-abbreviations
+	public load(documentId: string, cacheDir?: string) {
+		const filePath = path.resolve(`${cacheDir ?? this._cacheDir}/${documentId}`);
+		this.loadFile(filePath);
+	}
 
 	/**
 	 * Load the cache from the provided file
 	 * @method loadFile
 	 * @param  {String} pathToFile the path to the file containing the info for the cache
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	public loadFile(pathToFile: string) {}
+
+	public loadFile(pathToFile: string) {
+		if (fs.existsSync(pathToFile)) {
+			const data = fs.readFileSync(pathToFile, 'utf8');
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			const items = parse(data);
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+			for (const key of Object.keys(items)) {
+				this._cache.set(key, items[key]);
+			}
+		}
+	}
 
 	/**
 	 * Returns the entire persisted object
@@ -127,6 +171,24 @@ export class FlatCache {
 	}
 
 	/**
+	 * Returns the path to the file where the cache is persisted
+	 * @method cacheFilePath
+	 * @returns {String}
+	 */
+	public get cacheFilePath() {
+		return path.resolve(`${this._cacheDir}/${this._cacheId}`);
+	}
+
+	/**
+	 * Returns the path to the cache directory
+	 * @method cacheDirPath
+	 * @returns {String}
+	 */
+	public get cacheDirPath() {
+		return path.resolve(this._cacheDir);
+	}
+
+	/**
 	 * Returns an array with all the keys in the cache
 	 * @method keys
 	 * @returns {Array}
@@ -141,8 +203,8 @@ export class FlatCache {
 	 * @param key {string} the key to set
 	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
 	 */
-	public setKey(key: string, value: any) {
-		this._cache.set(key, value);
+	public setKey(key: string, value: any, ttl?: number | string) {
+		this._cache.set(key, value, ttl);
 	}
 
 	/**
@@ -152,7 +214,7 @@ export class FlatCache {
 	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
 	 * @param [ttl] {number} the time to live in milliseconds
 	 */
-	public set(key: string, value: any, ttl?: number) {
+	public set(key: string, value: any, ttl?: number | string) {
 		this._cache.set(key, value, ttl);
 	}
 
@@ -195,27 +257,140 @@ export class FlatCache {
 	}
 
 	/**
+	 * Clear the cache
+	 * @method clear
+	 */
+	public clear() {
+		this._cache.clear();
+	}
+
+	/**
 	 * Save the state of the cache identified by the docId to disk
 	 * as a JSON structure
-	 * @param [noPrune=false] {Boolean} whether to remove from cache the non visited cache entries
 	 * @method save
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	public save(noPrune = false) {}
+	public save() {
+		const filePath = this.cacheFilePath;
+		const items = this.all();
+		const data = stringify(items);
+
+		// Ensure the directory exists
+		if (!fs.existsSync(this._cacheDir)) {
+			fs.mkdirSync(this._cacheDir, {recursive: true});
+		}
+
+		fs.writeFileSync(filePath, data);
+	}
 
 	/**
 	 * Remove the file where the cache is persisted
 	 * @method removeCacheFile
 	 * @return {Boolean} true or false if the file was successfully deleted
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	public removeCacheFile() {}
+	public removeCacheFile() {
+		if (fs.existsSync(this.cacheFilePath)) {
+			fs.rmSync(this.cacheFilePath);
+			return true;
+		}
+
+		return false;
+	}
 
 	/**
-	 * Destroy the file cache and cache content.
+	 * Destroy the cache. This will remove the directory, file, and memory cache
 	 * @method destroy
+	 * @param [includeCacheDir=false] {Boolean} if true, the cache directory will be removed
+	 * @return {undefined}
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	public destroy() {}
+	public destroy(includeCacheDirectory = false) {
+		this._cache.clear();
+		this.stopAutoPersist();
+		if (includeCacheDirectory) {
+			fs.rmSync(this.cacheDirPath, {recursive: true, force: true});
+		} else {
+			fs.rmSync(this.cacheFilePath, {recursive: true, force: true});
+		}
+	}
+
+	/**
+	 * Start the auto persist interval
+	 * @method startAutoPersist
+	 */
+	public startAutoPersist() {
+		if (this._persistInterval > 0) {
+			if (this._persistTimer) {
+				clearInterval(this._persistTimer);
+				this._persistTimer = undefined;
+			}
+
+			this._persistTimer = setInterval(() => {
+				this.save();
+			}, this._persistInterval);
+		}
+	}
+
+	/**
+	 * Stop the auto persist interval
+	 * @method stopAutoPersist
+	 */
+	public stopAutoPersist() {
+		if (this._persistTimer) {
+			clearInterval(this._persistTimer);
+			this._persistTimer = undefined;
+		}
+	}
 }
 
+/**
+ * Load a cache identified by the given Id. If the element does not exists, then initialize an empty
+ * cache storage.
+ *
+ * @method create
+ * @param docId {String} the id of the cache, would also be used as the name of the file cache
+ * @param cacheDirectory {String} directory for the cache entry
+ * @param options {FlatCacheOptions} options for the cache
+ * @returns {cache} cache instance
+ */
+export function create(documentId: string, cacheDirectory?: string, options?: FlatCacheOptions) {
+	const cache = new FlatCache(options);
+	cache.cacheId = documentId;
+	if (cacheDirectory) {
+		cache.cacheDir = cacheDirectory;
+	}
+
+	cache.load(documentId, cacheDirectory);
+	return cache;
+}
+
+/**
+ * Load a cache from the provided file
+ * @method createFromFile
+ * @param  {String} filePath the path to the file containing the info for the cache
+ * @param options {FlatCacheOptions} options for the cache
+ * @returns {cache} cache instance
+ */
+export function createFromFile(filePath: string, options?: FlatCacheOptions) {
+	const cache = new FlatCache(options);
+	cache.loadFile(filePath);
+	return cache;
+}
+
+/**
+ * Clear the cache identified by the given Id
+ * @method clearCacheById
+ * @param cacheId {String} the id of the cache
+ * @param cacheDirectory {String} directory for the cache entry
+ */
+export function clearCacheById(cacheId: string, cacheDirectory?: string) {
+	const cache = new FlatCache({cacheId, cacheDir: cacheDirectory});
+	cache.destroy();
+}
+
+/**
+ * Clear the cache directory
+ * @method clearAll
+ * @param cacheDir {String} directory for the cache entry
+ */
+export function clearAll(cacheDirectory?: string) {
+	fs.rmSync(cacheDirectory ?? '.cache', {recursive: true, force: true});
+}

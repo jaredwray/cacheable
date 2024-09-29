@@ -85,6 +85,7 @@ export class NodeCacheStore {
 	public async mset(list: NodeCacheItem[]): Promise<void> {
 		const items = new Array<CacheableItem>();
 		for (const item of list) {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			items.push({key: item.key.toString(), value: item.value, ttl: item.ttl});
 		}
 
