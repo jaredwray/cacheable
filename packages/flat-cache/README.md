@@ -130,6 +130,29 @@ In version 6 we attempted to keep as much as the functionality as possible which
 - `save(force? boolean)` - Saves the data to disk. If `force` is `true` it will save even if `changesSinceLastSave` is `false`
 - `destroy()` - Destroys the cache and remove files
 
+# Events (FlatCacheEvents)
+
+Events have been added since v6 to allow for more control and visibility into the cache. Here are the events that are available:
+
+- `on(event: 'save', listener: () => void)` - Emitted when the cache is saved
+- `on(event: 'load', listener: () => void)` - Emitted when the cache is loaded
+- `on(event: 'delete', listener: (key: string) => void)` - Emitted when the cache is changed
+- `on(event: 'clear', listener: () => void)` - Emitted when the cache is cleared
+- `on(event: 'destroy', listener: () => void)` - Emitted when the cache is destroyed
+- `on(event: 'error', listener: (error: Error) => void)` - Emitted when there is an error
+
+Here is an example of how to use the `error` events:
+
+```javascript
+import { FlatCache, FlatCacheEvents } from 'flat-cache';
+const cache = new FlatCache();
+cache.on(FlatCacheEvents.error, (error) => {
+  console.error(error);
+});
+```
+
+`FlatCacheEvents` is an enum that contains the event names for the `on` method. You do not have to use it but makes it easier to know what events are available.
+
 # How to Contribute
 
 You can contribute by forking the repo and submitting a pull request. Please make sure to add tests and update the documentation. To learn more about how to contribute go to our main README [https://github.com/jaredwray/cacheable](https://github.com/jaredwray/cacheable). This will talk about how to `Open a Pull Request`, `Ask a Question`, or `Post an Issue`.
