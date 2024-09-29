@@ -100,6 +100,19 @@ describe('flat-cache', () => {
 		cache.clear();
 		expect(cache.cache.size).toBe(0);
 	});
+	test('should not save to disk if no changes', () => {
+		const cache = new FlatCache();
+		cache.set('foo', 'bar');
+		expect(cache.changesSinceLastSave).toBe(true);
+		cache.save();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+		expect(cache.changesSinceLastSave).toBe(false);
+		cache.save(true);
+		expect(cache.changesSinceLastSave).toBe(false);
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
 });
 
 describe('flat-cache file cache', () => {
@@ -113,6 +126,7 @@ describe('flat-cache file cache', () => {
 		cache.setKey('bar', {foo: 'bar'});
 		cache.setKey('baz', [1, 2, 3]);
 		cache.setKey('qux', 123);
+		expect(cache.changesSinceLastSave).toBe(true);
 		cache.save();
 		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
 		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
@@ -190,11 +204,11 @@ describe('flat-cache load from persisted cache', () => {
 
 describe('flat-cache exported functions', () => {
 	test('should create a new cache', () => {
-		const cache = create('cache5');
+		const cache = create({cacheId: 'cache5'});
 		expect(cache.cacheId).toBe('cache5');
 	});
 	test('should create a new cache with directory', () => {
-		const cache = create('cache5', '.cachefoo5');
+		const cache = create({cacheDir: '.cachefoo5', cacheId: 'cache5'});
 		expect(cache.cacheId).toBe('cache5');
 		expect(cache.cacheDir).toBe('.cachefoo5');
 	});
@@ -212,8 +226,8 @@ describe('flat-cache exported functions', () => {
 		fs.rmSync(firstCache.cacheDirPath, {recursive: true, force: true});
 	});
 	test('should clear all caches', () => {
-		const cache1 = create('cache1');
-		const cache2 = create('cache2');
+		const cache1 = create({cacheId: 'cache1'});
+		const cache2 = create({cacheId: 'cache2'});
 		clearAll();
 		expect(cache1.cache.size).toBe(0);
 		expect(cache2.cache.size).toBe(0);
@@ -221,8 +235,8 @@ describe('flat-cache exported functions', () => {
 		expect(fs.existsSync(cache2.cacheFilePath)).toBe(false);
 	});
 	test('should clear cache by id', () => {
-		const cache1 = create('cache1');
-		const cache2 = create('cache2');
+		const cache1 = create({cacheId: 'cache1'});
+		const cache2 = create({cacheId: 'cache2'});
 		clearCacheById('cache1');
 		expect(cache1.cache.size).toBe(0);
 		expect(fs.existsSync(cache1.cacheFilePath)).toBe(false);

@@ -19,6 +19,7 @@ export class FlatCache {
 	private _cacheId = 'cache1';
 	private _persistInterval = 0;
 	private _persistTimer: NodeJS.Timeout | undefined;
+	private _changesSinceLastSave = false;
 	constructor(options?: FlatCacheOptions) {
 		if (options) {
 			this._cache = new CacheableMemory({
@@ -93,6 +94,16 @@ export class FlatCache {
 	}
 
 	/**
+	 * The flag to indicate if there are changes since the last save
+	 * @property changesSinceLastSave
+	 * @type {Boolean}
+	 * @default false
+	 */
+	public get changesSinceLastSave() {
+		return this._changesSinceLastSave;
+	}
+
+	/**
 	 * The interval to persist the cache to disk. 0 means no timed persistence
 	 * @property persistInterval
 	 * @type {Number}
@@ -118,12 +129,12 @@ export class FlatCache {
 	 * then the cache module directory `.cacheDir` will be used instead
 	 *
 	 * @method load
-	 * @param docId {String} the id of the cache, would also be used as the name of the file cache
-	 * @param [cacheDir] {String} directory for the cache entry
+	 * @param cacheId {String} the id of the cache, would also be used as the name of the file cache
+	 * @param cacheDir {String} directory for the cache entry
 	 */
 	// eslint-disable-next-line unicorn/prevent-abbreviations
-	public load(documentId: string, cacheDir?: string) {
-		const filePath = path.resolve(`${cacheDir ?? this._cacheDir}/${documentId}`);
+	public load(cacheId?: string, cacheDir?: string) {
+		const filePath = path.resolve(`${cacheDir ?? this._cacheDir}/${cacheId ?? this._cacheId}`);
 		this.loadFile(filePath);
 	}
 
@@ -142,6 +153,8 @@ export class FlatCache {
 			for (const key of Object.keys(items)) {
 				this._cache.set(key, items[key]);
 			}
+
+			this._changesSinceLastSave = true;
 		}
 	}
 
@@ -204,7 +217,7 @@ export class FlatCache {
 	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
 	 */
 	public setKey(key: string, value: any, ttl?: number | string) {
-		this._cache.set(key, value, ttl);
+		this.set(key, value, ttl);
 	}
 
 	/**
@@ -216,6 +229,7 @@ export class FlatCache {
 	 */
 	public set(key: string, value: any, ttl?: number | string) {
 		this._cache.set(key, value, ttl);
+		this._changesSinceLastSave = true;
 	}
 
 	/**
@@ -224,7 +238,7 @@ export class FlatCache {
 	 * @param key {String} the key to remove from the object
 	 */
 	public removeKey(key: string) {
-		this._cache.delete(key);
+		this.delete(key);
 	}
 
 	/**
@@ -234,6 +248,7 @@ export class FlatCache {
 	 */
 	public delete(key: string) {
 		this._cache.delete(key);
+		this._changesSinceLastSave = true;
 	}
 
 	/**
@@ -257,11 +272,13 @@ export class FlatCache {
 	}
 
 	/**
-	 * Clear the cache
+	 * Clear the cache and save the state to disk
 	 * @method clear
 	 */
 	public clear() {
 		this._cache.clear();
+		this._changesSinceLastSave = true;
+		this.save();
 	}
 
 	/**
@@ -269,17 +286,20 @@ export class FlatCache {
 	 * as a JSON structure
 	 * @method save
 	 */
-	public save() {
-		const filePath = this.cacheFilePath;
-		const items = this.all();
-		const data = stringify(items);
+	public save(force = false) {
+		if (this._changesSinceLastSave || force) {
+			const filePath = this.cacheFilePath;
+			const items = this.all();
+			const data = stringify(items);
 
-		// Ensure the directory exists
-		if (!fs.existsSync(this._cacheDir)) {
-			fs.mkdirSync(this._cacheDir, {recursive: true});
+			// Ensure the directory exists
+			if (!fs.existsSync(this._cacheDir)) {
+				fs.mkdirSync(this._cacheDir, {recursive: true});
+			}
+
+			fs.writeFileSync(filePath, data);
+			this._changesSinceLastSave = false;
 		}
-
-		fs.writeFileSync(filePath, data);
 	}
 
 	/**
@@ -310,6 +330,8 @@ export class FlatCache {
 		} else {
 			fs.rmSync(this.cacheFilePath, {recursive: true, force: true});
 		}
+
+		this._changesSinceLastSave = false;
 	}
 
 	/**
@@ -351,14 +373,9 @@ export class FlatCache {
  * @param options {FlatCacheOptions} options for the cache
  * @returns {cache} cache instance
  */
-export function create(documentId: string, cacheDirectory?: string, options?: FlatCacheOptions) {
+export function create(options?: FlatCacheOptions) {
 	const cache = new FlatCache(options);
-	cache.cacheId = documentId;
-	if (cacheDirectory) {
-		cache.cacheDir = cacheDirectory;
-	}
-
-	cache.load(documentId, cacheDirectory);
+	cache.load();
 	return cache;
 }
 
