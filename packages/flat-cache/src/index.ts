@@ -340,3 +340,57 @@ export class FlatCache {
 		}
 	}
 }
+
+/**
+ * Load a cache identified by the given Id. If the element does not exists, then initialize an empty
+ * cache storage.
+ *
+ * @method create
+ * @param docId {String} the id of the cache, would also be used as the name of the file cache
+ * @param cacheDirectory {String} directory for the cache entry
+ * @param options {FlatCacheOptions} options for the cache
+ * @returns {cache} cache instance
+ */
+export function create(documentId: string, cacheDirectory?: string, options?: FlatCacheOptions) {
+	const cache = new FlatCache(options);
+	cache.cacheId = documentId;
+	if (cacheDirectory) {
+		cache.cacheDir = cacheDirectory;
+	}
+
+	cache.load(documentId, cacheDirectory);
+	return cache;
+}
+
+/**
+ * Load a cache from the provided file
+ * @method createFromFile
+ * @param  {String} filePath the path to the file containing the info for the cache
+ * @param options {FlatCacheOptions} options for the cache
+ * @returns {cache} cache instance
+ */
+export function createFromFile(filePath: string, options?: FlatCacheOptions) {
+	const cache = new FlatCache(options);
+	cache.loadFile(filePath);
+	return cache;
+}
+
+/**
+ * Clear the cache identified by the given Id
+ * @method clearCacheById
+ * @param cacheId {String} the id of the cache
+ * @param cacheDirectory {String} directory for the cache entry
+ */
+export function clearCacheById(cacheId: string, cacheDirectory?: string) {
+	const cache = new FlatCache({cacheId, cacheDir: cacheDirectory});
+	cache.destroy();
+}
+
+/**
+ * Clear the cache directory
+ * @method clearAll
+ * @param cacheDir {String} directory for the cache entry
+ */
+export function clearAll(cacheDirectory?: string) {
+	fs.rmSync(cacheDirectory ?? '.cache', {recursive: true, force: true});
+}

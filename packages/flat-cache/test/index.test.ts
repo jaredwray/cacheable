@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import {describe, test, expect} from 'vitest';
-import {FlatCache} from '../src/index.js';
+import {
+	FlatCache, create, createFromFile, clearAll, clearCacheById,
+} from '../src/index.js';
 
 // eslint-disable-next-line no-promise-executor-return
 const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -183,5 +185,24 @@ describe('flat-cache load from persisted cache', () => {
 		expect(secondCache.getKey('bar')).toEqual({foo: 'bar'});
 		expect(secondCache.getKey('baz')).toEqual([1, 2, 3]);
 		firstCache.destroy(true);
+	});
+});
+
+describe('flat-cache exported functions', () => {
+	test('should create a new cache', () => {
+		const cache = create('cache5');
+		expect(cache.cacheId).toBe('cache5');
+	});
+	test('should create a new cache from file', () => {
+		const firstCache = new FlatCache({cacheDir: '.cachefoo4', cacheId: 'cache6'});
+		firstCache.setKey('foo', 'bar');
+		firstCache.setKey('bar', {foo: 'bar'});
+		firstCache.setKey('baz', [1, 2, 3]);
+		firstCache.save();
+		const filePath = firstCache.cacheFilePath;
+		const cache = createFromFile(filePath);
+		expect(cache.getKey('foo')).toBe('bar');
+		expect(cache.getKey('bar')).toEqual({foo: 'bar'});
+		expect(cache.getKey('baz')).toEqual([1, 2, 3]);
 	});
 });
