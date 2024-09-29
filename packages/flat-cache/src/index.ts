@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import {CacheableMemory} from 'cacheable';
 import {parse, stringify} from 'flatted';
+import {Hookified} from 'hookified';
 
 export type FlatCacheOptions = {
 	ttl?: number | string;
@@ -13,7 +14,17 @@ export type FlatCacheOptions = {
 	cacheId?: string;
 };
 
-export class FlatCache {
+export enum FlatCacheEvents {
+	SAVE = 'save',
+	LOAD = 'load',
+	DELETE = 'delete',
+	CLEAR = 'clear',
+	DESTROY = 'destroy',
+	ERROR = 'error',
+	EXPIRED = 'expired',
+}
+
+export class FlatCache extends Hookified {
 	private readonly _cache = new CacheableMemory();
 	private _cacheDir = '.cache';
 	private _cacheId = 'cache1';
@@ -21,6 +32,7 @@ export class FlatCache {
 	private _persistTimer: NodeJS.Timeout | undefined;
 	private _changesSinceLastSave = false;
 	constructor(options?: FlatCacheOptions) {
+		super();
 		if (options) {
 			this._cache = new CacheableMemory({
 				ttl: options.ttl,
@@ -134,8 +146,14 @@ export class FlatCache {
 	 */
 	// eslint-disable-next-line unicorn/prevent-abbreviations
 	public load(cacheId?: string, cacheDir?: string) {
-		const filePath = path.resolve(`${cacheDir ?? this._cacheDir}/${cacheId ?? this._cacheId}`);
-		this.loadFile(filePath);
+		try {
+			const filePath = path.resolve(`${cacheDir ?? this._cacheDir}/${cacheId ?? this._cacheId}`);
+			this.loadFile(filePath);
+			this.emit(FlatCacheEvents.LOAD);
+		/* c8 ignore next 4 */
+		} catch (error) {
+			this.emit(FlatCacheEvents.ERROR, error);
+		}
 	}
 
 	/**
@@ -249,6 +267,7 @@ export class FlatCache {
 	public delete(key: string) {
 		this._cache.delete(key);
 		this._changesSinceLastSave = true;
+		this.emit(FlatCacheEvents.DELETE, key);
 	}
 
 	/**
@@ -276,9 +295,15 @@ export class FlatCache {
 	 * @method clear
 	 */
 	public clear() {
-		this._cache.clear();
-		this._changesSinceLastSave = true;
-		this.save();
+		try {
+			this._cache.clear();
+			this._changesSinceLastSave = true;
+			this.save();
+			this.emit(FlatCacheEvents.CLEAR);
+		/* c8 ignore next 4 */
+		} catch (error) {
+			this.emit(FlatCacheEvents.ERROR, error);
+		}
 	}
 
 	/**
@@ -287,18 +312,24 @@ export class FlatCache {
 	 * @method save
 	 */
 	public save(force = false) {
-		if (this._changesSinceLastSave || force) {
-			const filePath = this.cacheFilePath;
-			const items = this.all();
-			const data = stringify(items);
+		try {
+			if (this._changesSinceLastSave || force) {
+				const filePath = this.cacheFilePath;
+				const items = this.all();
+				const data = stringify(items);
 
-			// Ensure the directory exists
-			if (!fs.existsSync(this._cacheDir)) {
-				fs.mkdirSync(this._cacheDir, {recursive: true});
+				// Ensure the directory exists
+				if (!fs.existsSync(this._cacheDir)) {
+					fs.mkdirSync(this._cacheDir, {recursive: true});
+				}
+
+				fs.writeFileSync(filePath, data);
+				this._changesSinceLastSave = false;
+				this.emit(FlatCacheEvents.SAVE);
 			}
-
-			fs.writeFileSync(filePath, data);
-			this._changesSinceLastSave = false;
+		/* c8 ignore next 4 */
+		} catch (error) {
+			this.emit(FlatCacheEvents.ERROR, error);
 		}
 	}
 
@@ -308,9 +339,14 @@ export class FlatCache {
 	 * @return {Boolean} true or false if the file was successfully deleted
 	 */
 	public removeCacheFile() {
-		if (fs.existsSync(this.cacheFilePath)) {
-			fs.rmSync(this.cacheFilePath);
-			return true;
+		try {
+			if (fs.existsSync(this.cacheFilePath)) {
+				fs.rmSync(this.cacheFilePath);
+				return true;
+			}
+		/* c8 ignore next 4 */
+		} catch (error) {
+			this.emit(FlatCacheEvents.ERROR, error);
 		}
 
 		return false;
@@ -323,15 +359,21 @@ export class FlatCache {
 	 * @return {undefined}
 	 */
 	public destroy(includeCacheDirectory = false) {
-		this._cache.clear();
-		this.stopAutoPersist();
-		if (includeCacheDirectory) {
-			fs.rmSync(this.cacheDirPath, {recursive: true, force: true});
-		} else {
-			fs.rmSync(this.cacheFilePath, {recursive: true, force: true});
-		}
+		try {
+			this._cache.clear();
+			this.stopAutoPersist();
+			if (includeCacheDirectory) {
+				fs.rmSync(this.cacheDirPath, {recursive: true, force: true});
+			} else {
+				fs.rmSync(this.cacheFilePath, {recursive: true, force: true});
+			}
 
-		this._changesSinceLastSave = false;
+			this._changesSinceLastSave = false;
+			this.emit(FlatCacheEvents.DESTROY);
+		/* c8 ignore next 4 */
+		} catch (error) {
+			this.emit(FlatCacheEvents.ERROR, error);
+		}
 	}
 
 	/**
