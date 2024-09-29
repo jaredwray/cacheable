@@ -6,7 +6,7 @@ async function main() {
 
     await copyPackages();
     await copyGettingStarted();
-
+    await copyCacheableSymbol();
 };
 
 async function copyPackages() {
@@ -20,6 +20,14 @@ async function copyPackages() {
             await createDoc(packageName, `${packagesPath}`, `${packagesPath}/website/site/docs`);
         }
     };
+}
+
+async function copyCacheableSymbol() {
+    const rootPath = getRelativeRootPath();
+    const packagesPath = getRelativePackagePath();
+    const outputPath = `${packagesPath}/website/dist`;
+    await fs.ensureDir(`${outputPath}`);
+    await fs.copy(`${packagesPath}/website/site/symbol.svg`, `${outputPath}/symbol.svg`);
 }
 
 async function copyGettingStarted() {
@@ -44,6 +52,7 @@ async function copyGettingStarted() {
 
 function cleanDocumentFromImage(document: string) {
     document = document.replace(`[<img align="center" src="https://cacheable.org/logo.svg" alt="Cacheable">](https://github.com/jaredwray/cacheable)`, "");
+    document = document.replace(`[<img align="center" src="https://cacheable.org/symbol.svg" alt="Cacheable">](https://github.com/jaredwray/cacheable)`, "");
     return document;
 };
 
