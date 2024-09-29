@@ -193,6 +193,11 @@ describe('flat-cache exported functions', () => {
 		const cache = create('cache5');
 		expect(cache.cacheId).toBe('cache5');
 	});
+	test('should create a new cache with directory', () => {
+		const cache = create('cache5', '.cachefoo5');
+		expect(cache.cacheId).toBe('cache5');
+		expect(cache.cacheDir).toBe('.cachefoo5');
+	});
 	test('should create a new cache from file', () => {
 		const firstCache = new FlatCache({cacheDir: '.cachefoo4', cacheId: 'cache6'});
 		firstCache.setKey('foo', 'bar');
@@ -204,5 +209,22 @@ describe('flat-cache exported functions', () => {
 		expect(cache.getKey('foo')).toBe('bar');
 		expect(cache.getKey('bar')).toEqual({foo: 'bar'});
 		expect(cache.getKey('baz')).toEqual([1, 2, 3]);
+		fs.rmSync(firstCache.cacheDirPath, {recursive: true, force: true});
+	});
+	test('should clear all caches', () => {
+		const cache1 = create('cache1');
+		const cache2 = create('cache2');
+		clearAll();
+		expect(cache1.cache.size).toBe(0);
+		expect(cache2.cache.size).toBe(0);
+		expect(fs.existsSync(cache1.cacheFilePath)).toBe(false);
+		expect(fs.existsSync(cache2.cacheFilePath)).toBe(false);
+	});
+	test('should clear cache by id', () => {
+		const cache1 = create('cache1');
+		const cache2 = create('cache2');
+		clearCacheById('cache1');
+		expect(cache1.cache.size).toBe(0);
+		expect(fs.existsSync(cache1.cacheFilePath)).toBe(false);
 	});
 });
