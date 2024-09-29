@@ -18,6 +18,18 @@
 - Only saves the data to disk if the data has changed even when using `persistInterval` or calling `save()`
 - Uses `flatted` to parse and stringify the data by default but can be overridden using `parse` and `stringify` in options
 
+# Table of Contents
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Breaking Changes from v5 to v6](#breaking-changes-from-v5-to-v6)
+- [Global Functions](#global-functions)
+- [FlatCache Options (FlatCacheOptions)](#flatcache-options-flatcacheoptions)
+- [API](#api)
+- [Events (FlatCacheEvents)](#events-flatcacheevents)
+- [Parse and Stringify for File Caching](#parse-and-stringify-for-file-caching)
+- [How to Contribute](#how-to-contribute)
+- [License and Copyright](#license-and-copyright)
+
 # Installation
 ```bash
 npm install flat-cache
