@@ -12,6 +12,8 @@ export type FlatCacheOptions = {
 	persistInterval?: number;
 	cacheDir?: string;
 	cacheId?: string;
+	parse?: (data: string) => any;
+	stringify?: (data: any) => string;
 };
 
 export enum FlatCacheEvents {
@@ -31,6 +33,8 @@ export class FlatCache extends Hookified {
 	private _persistInterval = 0;
 	private _persistTimer: NodeJS.Timeout | undefined;
 	private _changesSinceLastSave = false;
+	private readonly _parse = parse;
+	private readonly _stringify = stringify;
 	constructor(options?: FlatCacheOptions) {
 		super();
 		if (options) {
@@ -53,6 +57,14 @@ export class FlatCache extends Hookified {
 		if (options?.persistInterval) {
 			this._persistInterval = options.persistInterval;
 			this.startAutoPersist();
+		}
+
+		if (options?.parse) {
+			this._parse = options.parse;
+		}
+
+		if (options?.stringify) {
+			this._stringify = options.stringify;
 		}
 	}
 
@@ -166,7 +178,7 @@ export class FlatCache extends Hookified {
 		if (fs.existsSync(pathToFile)) {
 			const data = fs.readFileSync(pathToFile, 'utf8');
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			const items = parse(data);
+			const items = this._parse(data);
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			for (const key of Object.keys(items)) {
 				this._cache.set(key, items[key]);
@@ -316,7 +328,7 @@ export class FlatCache extends Hookified {
 			if (this._changesSinceLastSave || force) {
 				const filePath = this.cacheFilePath;
 				const items = this.all();
-				const data = stringify(items);
+				const data = this._stringify(items);
 
 				// Ensure the directory exists
 				if (!fs.existsSync(this._cacheDir)) {

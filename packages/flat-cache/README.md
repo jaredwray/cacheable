@@ -16,7 +16,7 @@
 - Easily Loads the data from disk and into memory with `load` or `loadFile`
 - Uses `ttl` and `lruSize` to manage the cache and persist the data
 - Only saves the data to disk if the data has changed even when using `persistInterval` or calling `save()`
-- Uses `flatted` to parse and stringify the data by default but can be overridden
+- Uses `flatted` to parse and stringify the data by default but can be overridden using `parse` and `stringify` in options
 
 # Installation
 ```bash
@@ -98,13 +98,15 @@ In version 6 we attempted to keep as much as the functionality as possible which
 
 
 # FlatCache Options (FlatCacheOptions)
-- `ttl` - The time to live for the cache in milliseconds. Default is `0` which means no expiration
-- `lruSize` - The number of items to keep in the cache. Default is `0` which means no limit
-- `useClone` - If `true` it will clone the data before returning it. Default is `false`
-- `expirationInterval` - The interval to check for expired items in the cache. Default is `0` which means no expiration
-- `persistInterval` - The interval to save the data to disk. Default is `0` which means no persistence
-- `cacheDir` - The directory to save the cache files. Default is `./cache`
-- `cacheId` - The id of the cache. Default is `cache1`
+- `ttl?` - The time to live for the cache in milliseconds. Default is `0` which means no expiration
+- `lruSize?` - The number of items to keep in the cache. Default is `0` which means no limit
+- `useClone?` - If `true` it will clone the data before returning it. Default is `false`
+- `expirationInterval?` - The interval to check for expired items in the cache. Default is `0` which means no expiration
+- `persistInterval?` - The interval to save the data to disk. Default is `0` which means no persistence
+- `cacheDir?` - The directory to save the cache files. Default is `./cache`
+- `cacheId?` - The id of the cache. Default is `cache1`
+- `parse?` - The function to parse the data. Default is `flatted.parse`
+- `stringify?` - The function to stringify the data. Default is `flatted.stringify`
 
 # API
 
@@ -152,6 +154,22 @@ cache.on(FlatCacheEvents.error, (error) => {
 ```
 
 `FlatCacheEvents` is an enum that contains the event names for the `on` method. You do not have to use it but makes it easier to know what events are available.
+
+# Parse and Stringify for File Caching
+
+By default `flat-cache` uses `flatted` to parse and stringify the data. This is to allow for more complex data structures to be saved to disk. If you want to override this you can pass in your own `parse` and `stringify` functions. Here is an example:
+
+```javascript
+import { FlatCache } from 'flat-cache';
+const cache = new FlatCache({
+  parse: JSON.parse,
+  stringify: JSON.stringify,
+});
+```
+
+This will use `JSON.parse` and `JSON.stringify` to parse and stringify the data. This is useful if you want to use a different library or have a custom way of parsing and stringifying the data.
+
+**NOTE: This could cause issues if you are trying to load data that was saved with a different parser or stringifier.** 
 
 # How to Contribute
 

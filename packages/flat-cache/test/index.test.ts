@@ -242,3 +242,24 @@ describe('flat-cache exported functions', () => {
 		expect(fs.existsSync(cache1.cacheFilePath)).toBe(false);
 	});
 });
+
+describe('flat-cache with JSON', () => {
+	test('should be able to set and get via JSON parse and stringify methods', () => {
+		const options = {
+			parse: JSON.parse,
+			stringify: JSON.stringify,
+		};
+		const cache = new FlatCache(options);
+		cache.set('foo', {bar: 'baz'});
+		cache.set('bar', [1, 2, 3]);
+		expect(cache.get('foo')).toEqual({bar: 'baz'});
+		expect(cache.get('bar')).toEqual([1, 2, 3]);
+		cache.save();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		const cache2 = new FlatCache(options);
+		cache2.load();
+		expect(cache2.get('foo')).toEqual({bar: 'baz'});
+		expect(cache2.get('bar')).toEqual([1, 2, 3]);
+		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+});
