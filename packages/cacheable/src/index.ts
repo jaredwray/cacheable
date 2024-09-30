@@ -420,3 +420,6 @@ export {CacheableMemory} from './memory.js';
 export {KeyvCacheableMemory} from './keyv-memory.js';
 export {shorthandToMilliseconds, shorthandToTime} from './shorthand-time.js';
 export type {CacheableItem} from './cacheable-item-types.js';
+export {
+	type KeyvStoreAdapter, type KeyvOptions, KeyvHooks, Keyv,
+} from 'keyv';
