@@ -12,7 +12,7 @@ export type NodeCacheOptions = {
 
 export type NodeCacheItem = {
 	key: string | number;
-	value: any;
+	value: unknown;
 	ttl?: number;
 };
 
@@ -116,7 +116,7 @@ export default class NodeCache extends eventemitter {
 	}
 
 	// Gets a saved value from the cache. Returns a undefined if not found or expired. If the value was found it returns the value.
-	public get(key: string | number): any {
+	public get<T>(key: string | number): any {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
 			if (result.ttl > 0) {
@@ -136,7 +136,7 @@ export default class NodeCache extends eventemitter {
 					return this._cacheable.clone(result.value);
 				}
 
-				return result.value;
+				return result.value as T;
 			}
 
 			this._stats.incrementHits();
@@ -144,7 +144,7 @@ export default class NodeCache extends eventemitter {
 				return this._cacheable.clone(result.value);
 			}
 
-			return result.value;
+			return result.value as T;
 		}
 
 		this._stats.incrementMisses();
@@ -155,13 +155,13 @@ export default class NodeCache extends eventemitter {
 		Gets multiple saved values from the cache. Returns an empty object {} if not found or expired.
 		If the value was found it returns an object with the key value pair.
 	*/
-	public mget(keys: Array<string | number>): Record<string, unknown> {
+	public mget<T>(keys: Array<string | number>): Record<string, unknown> {
 		const result: Record<string, unknown> = {};
 
 		for (const key of keys) {
 			const value = this.get(key);
 			if (value) {
-				result[this.formatKey(key)] = value;
+				result[this.formatKey(key)] = value as T;
 			}
 		}
 
