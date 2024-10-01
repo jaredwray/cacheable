@@ -594,3 +594,11 @@ describe('cacheable ttl parsing', async () => {
 		expect(result).toEqual([undefined, 'value2']);
 	});
 });
+
+describe('cacheable hash method', async () => {
+	test('should hash an object', async () => {
+		const cacheable = new Cacheable();
+		const result = cacheable.hash({foo: 'bar'});
+		expect(result).toEqual('7a38bf81f383f69433ad6e900d35b3e2385593f76a7b7ab5d4355b8ba41ee24b');
+	});
+});

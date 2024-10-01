@@ -1,6 +1,7 @@
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
 import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
+import {hash} from './hash.js';
 
 export type CacheableMemoryOptions = {
 	ttl?: number | string;
@@ -366,6 +367,10 @@ export class CacheableMemory {
 
 		this._interval = 0;
 		this._checkInterval = 0;
+	}
+
+	public hash(object: any, algorithm = 'sha256'): string {
+		return hash(object, algorithm);
 	}
 
 	private isPrimitive(value: any): boolean {

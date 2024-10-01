@@ -224,6 +224,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `removeHook(hook)`: Removes a hook.
 * `on(event, callback)`: Listens for an event.
 * `removeListener(event, callback)`: Removes a listener.
+* `hash(object: any, algorithm = 'sha256'): string`: Hashes an object with the algorithm. Default is `sha256`.
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
@@ -278,6 +279,7 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 * `checkExpired()`: Checks for expired keys in the cache. This is used by the `checkInterval` property.
 * `startIntervalCheck()`: Starts the interval check for expired keys if `checkInterval` is above 0 ms.
 * `stopIntervalCheck()`: Stops the interval check for expired keys.
+* `hash(object: any, algorithm = 'sha256'): string`: Hashes an object with the algorithm. Default is `sha256`.
 
 
 ## How to Contribute
