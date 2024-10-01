@@ -85,7 +85,6 @@ export class NodeCacheStore {
 	public async mset(list: NodeCacheItem[]): Promise<void> {
 		const items = new Array<CacheableItem>();
 		for (const item of list) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			items.push({key: item.key.toString(), value: item.value, ttl: item.ttl});
 		}
 
@@ -100,7 +99,7 @@ export class NodeCacheStore {
 		const result: Record<string, T | undefined> = {};
 		for (const key of keys) {
 			// eslint-disable-next-line no-await-in-loop
-			result[key.toString()] = await this._cache.get(key.toString());
+			result[key.toString()] = await this._cache.get<T>(key.toString());
 		}
 
 		return result;
