@@ -12,7 +12,7 @@ export type NodeCacheOptions = {
 
 export type NodeCacheItem = {
 	key: string | number;
-	value: any;
+	value: unknown;
 	ttl?: number;
 };
 
