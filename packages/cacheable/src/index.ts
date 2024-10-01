@@ -4,6 +4,7 @@ import {shorthandToMilliseconds} from './shorthand-time.js';
 import {KeyvCacheableMemory} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
+import {hash} from './hash.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -370,6 +371,10 @@ export class Cacheable extends Hookified {
 		}
 
 		await (this._nonBlocking ? Promise.race(promises) : Promise.all(promises));
+	}
+
+	public hash(object: any, algorithm = 'sha256'): string {
+		return hash(object, algorithm);
 	}
 
 	private async deleteManyKeyv(keyv: Keyv, keys: string[]): Promise<boolean> {
