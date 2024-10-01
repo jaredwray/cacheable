@@ -1,10 +1,12 @@
 import {Keyv, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
 import {shorthandToMilliseconds} from './shorthand-time.js';
+import {CacheableMemory} from './memory.js';
 import {KeyvCacheableMemory} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
+import { wrap } from './wrap.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -35,6 +37,7 @@ export class Cacheable extends Hookified {
 	private _nonBlocking = false;
 	private _ttl?: number | string;
 	private readonly _stats = new CacheableStats({enabled: false});
+	private _memoryWrapCache = new CacheableMemory();
 
 	constructor(options?: CacheableOptions) {
 		super();
@@ -371,6 +374,18 @@ export class Cacheable extends Hookified {
 		}
 
 		await (this._nonBlocking ? Promise.race(promises) : Promise.all(promises));
+	}
+
+	public wrap<T>(fn: (...args: any[]) => T, options: {ttl?: number; key?: string} = {}): (...args: any[]) => T {
+
+		const wrapOptions = {
+			ttl: options.ttl, 
+			key: options.key, 
+			cache: this, 
+			memoryCache: this._memoryWrapCache
+		};
+
+		return wrap(fn, wrapOptions);
 	}
 
 	public hash(object: any, algorithm = 'sha256'): string {
