@@ -1,8 +1,6 @@
 import {describe, test, expect} from 'vitest';
-import {CacheableMemory, CacheableItem} from '../src/memory.js';
-
-// eslint-disable-next-line no-promise-executor-return
-const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import {CacheableMemory} from '../src/memory.js';
+import {sleep} from './sleep.js';
 
 const cacheItemList = [
 	{key: 'key', value: 'value'},
@@ -131,7 +129,7 @@ describe('CacheableMemory Get', async () => {
 		const cache = new CacheableMemory();
 		expect(cache.useClone).toBe(true);
 		cache.set('key', {value: 'value'});
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 		const value = cache.get('key');
 		expect(value).toEqual({value: 'value'});
 	});
@@ -140,7 +138,7 @@ describe('CacheableMemory Get', async () => {
 		expect(cache.useClone).toBe(false);
 		const value = {value: 'value'};
 		cache.set('key', value);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 		const value2 = cache.get('key');
 		expect(value).toEqual(value2);
 	});
@@ -336,7 +334,7 @@ describe('CacheableMemory LRU', async () => {
 		cache.set('key6', 'value6');
 		cache.set('key7', 'value7');
 		expect(cache.size).toBe(5);
-		const item = cache.get('key7') as string;
+		const item = cache.get('key7')!;
 		expect(item).toBe('value7');
 	});
 	test('should not do anything if lruSize is 0', () => {
@@ -434,5 +432,26 @@ describe('cacheable hash method', async () => {
 		const cacheable = new CacheableMemory();
 		const result = cacheable.hash({foo: 'bar'});
 		expect(result).toEqual('7a38bf81f383f69433ad6e900d35b3e2385593f76a7b7ab5d4355b8ba41ee24b');
+	});
+});
+
+describe('cacheable wrap', async () => {
+	test('should wrap method with key and ttl', async () => {
+		const cacheable = new CacheableMemory();
+		const syncFunction = (value: number) => Math.random() * value;
+		const options = {
+			key: 'cacheKey',
+			ttl: 10,
+		};
+
+		const wrapped = cacheable.wrap(syncFunction, options);
+		const result = wrapped(1);
+		const result2 = wrapped(1);
+		expect(result).toBe(result2);
+		const cacheResult1 = cacheable.get<number>('cacheKey');
+		expect(cacheResult1).toBe(result);
+		await sleep(20);
+		const cacheResult2 = cacheable.get<number>('cacheKey');
+		expect(cacheResult2).toBeUndefined();
 	});
 });

@@ -5,6 +5,7 @@ import {KeyvCacheableMemory} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
+import {wrap} from './wrap.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -180,7 +181,7 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
-	public async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
+	public async set<T>(key: string, value: T, ttl?: number | string): Promise<boolean> {
 		let result = false;
 		const finalTtl = shorthandToMilliseconds(ttl ?? this._ttl);
 		try {
@@ -373,6 +374,16 @@ export class Cacheable extends Hookified {
 		await (this._nonBlocking ? Promise.race(promises) : Promise.all(promises));
 	}
 
+	public wrap<T>(function_: (...arguments_: any[]) => T, options: {ttl?: number; key?: string} = {}): (...arguments_: any[]) => T {
+		const wrapOptions = {
+			ttl: options.ttl,
+			key: options.key,
+			cache: this,
+		};
+
+		return wrap<T>(function_, wrapOptions);
+	}
+
 	public hash(object: any, algorithm = 'sha256'): string {
 		return hash(object, algorithm);
 	}
@@ -428,3 +439,6 @@ export type {CacheableItem} from './cacheable-item-types.js';
 export {
 	type KeyvStoreAdapter, type KeyvOptions, KeyvHooks, Keyv,
 } from 'keyv';
+export {
+	wrap, wrapSync, type WrapOptions, type WrapSyncOptions,
+} from './wrap.js';
