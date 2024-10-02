@@ -13,15 +13,16 @@
 
 * Simple to use with robust API
 * Not bloated with additional modules
-* Extendable to your own caching engine
 * Scalable and trusted storage engine by Keyv
 * Memory Caching with LRU and Expiration `CacheableMemory`
 * Resilient to failures with try/catch and offline
+* Wrap / Memoization for Sync and Async Functions
 * Hooks and Events to extend functionality
-* Comprehensive testing and code coverage
 * Shorthand for ttl in milliseconds `(1m = 60000) (1h = 3600000) (1d = 86400000)`
+* Non-blocking operations for layer 2 caching
 * Distributed Caching Sync via Pub/Sub (coming soon)
-* ESM and CommonJS support with TypeScript
+* Comprehensive testing and code coverage
+* ESM and CommonJS support with Typescript
 * Maintained and supported regularly
 
 ## Table of Contents
