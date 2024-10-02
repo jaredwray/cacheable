@@ -1,4 +1,5 @@
 import {type KeyvStoreAdapter, type StoredData} from 'keyv';
+import {V} from 'vitest/dist/chunks/environment.C5eAp3K6.js';
 import {CacheableMemory, type CacheableMemoryOptions} from './memory.js';
 
 export class KeyvCacheableMemory implements KeyvStoreAdapter {
@@ -19,10 +20,8 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 	}
 
 	async get<Value>(key: string): Promise<StoredData<Value> | undefined> {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const result = this._cache.get(key);
+		const result = this._cache.get<Value>(key);
 		if (result) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 			return result;
 		}
 
@@ -30,8 +29,8 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 	}
 
 	async getMany<Value>(keys: string[]): Promise<Array<StoredData<Value | undefined>>> {
-		const result = this._cache.getMany(keys);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+		const result = this._cache.getMany<Value>(keys);
+
 		return result;
 	}
 
