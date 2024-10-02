@@ -13,15 +13,16 @@
 
 * Simple to use with robust API
 * Not bloated with additional modules
-* Extendable to your own caching engine
 * Scalable and trusted storage engine by Keyv
 * Memory Caching with LRU and Expiration `CacheableMemory`
 * Resilient to failures with try/catch and offline
+* Wrap / Memoization for Sync and Async Functions
 * Hooks and Events to extend functionality
-* Comprehensive testing and code coverage
 * Shorthand for ttl in milliseconds `(1m = 60000) (1h = 3600000) (1d = 86400000)`
+* Non-blocking operations for layer 2 caching
 * Distributed Caching Sync via Pub/Sub (coming soon)
-* ESM and CommonJS support with TypeScript
+* Comprehensive testing and code coverage
+* ESM and CommonJS support with Typescript
 * Maintained and supported regularly
 
 ## Table of Contents
@@ -34,8 +35,10 @@
 * [CacheSync - Distributed Updates](#cachesync---distributed-updates)
 * [Cacheable Options](#cacheable-options)
 * [Cacheable Statistics (Instance Only)](#cacheable-statistics-instance-only)
-* [API](#api)
+* [Cacheable API](#api)
 * [CacheableMemory - In-Memory Cache](#cacheablememory---in-memory-cache)
+* [CacheableMemory Options](#cacheablememory-options)
+* [CacheableMemory API](#cacheablememory-api)
 * [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
@@ -295,6 +298,8 @@ const asyncFunction = async (value: number) => {
 
 const cache = new Cacheable();
 const wrappedFunction = cache.wrap(asyncFunction, { ttl: '1h' });
+console.log(await wrappedFunction(2)); // 4
+console.log(await wrappedFunction(2)); // 4 from cache
 ```
 
 In this example we are wrapping an `async` function in a cache with a `ttl` of `1 hour`. This will cache the result of the function for `1 hour` and then expire the value. You can also wrap a `sync` function in a cache:
@@ -306,10 +311,13 @@ const syncFunction = (value: number) => {
 };
 
 const cache = new CacheableMemory();
-const wrappedFunction = cache.wrap(syncFunction, { ttl: '1h' });
+const wrappedFunction = cache.wrap(syncFunction, { ttl: '1h', key: 'syncFunction' });
+console.log(wrappedFunction(2)); // 4
+console.log(wrappedFunction(2)); // 4 from cache
+console.log(cache.get('syncFunction')); // 4
 ```
 
-In this example we are wrapping a `sync` function in a cache with a `ttl` of `1 hour`. This will cache the result of the function for `1 hour` and then expire the value.
+In this example we are wrapping a `sync` function in a cache with a `ttl` of `1 hour`. This will cache the result of the function for `1 hour` and then expire the value. You can also set the `key` property in the `wrap()` options to set a custom key for the cache.
 
 ## How to Contribute
 
