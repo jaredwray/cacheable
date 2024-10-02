@@ -1,26 +1,21 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
-	describe, it, expect, vi,
+	describe, it, expect,
 } from 'vitest';
 import {Cacheable, CacheableMemory} from '../src/index.js';
-import {wrap, type WrapOptions} from '../src/wrap.js';
+import {
+	wrap, wrapSync, type WrapOptions, type WrapSyncOptions,
+} from '../src/wrap.js';
+import {sleep} from './sleep.js';
 
 describe('wrap function', () => {
 	it('should cache asynchronous function results', async () => {
-		// Mock cache and async function
 		const asyncFunction = async (a: number, b: number) => a + b;
 		const cache = new Cacheable();
-		cache.hash = vi.fn(() => 'cacheKey');
-		cache.get = vi.fn(async () => undefined);
-		cache.set = vi.fn();
-
-		const memoryCache = new CacheableMemory();
-		memoryCache.get = vi.fn(() => undefined);
-		memoryCache.set = vi.fn();
 
 		const options: WrapOptions = {
+			key: 'cacheKey',
 			cache,
-			memoryCache, // Not used in async case
 		};
 
 		// Wrap the async function
@@ -31,98 +26,110 @@ describe('wrap function', () => {
 
 		// Expectations
 		expect(result).toBe(3);
-		expect(cache.hash).toHaveBeenCalledWith([1, 2]);
-		expect(cache.get).toHaveBeenCalledWith('cacheKey');
-		expect(cache.set).toHaveBeenCalledWith('cacheKey', 3, undefined);
+		const cacheResult = await cache.get('cacheKey');
+		expect(cacheResult).toBe(3);
 	});
 
-	it('should return cached async value if it exists', async () => {
+	it('should return cached async value with hash', async () => {
 		// Mock cache and async function
 		const asyncFunction = async (value: number) => Math.random() * value;
 		const cache = new Cacheable();
-		cache.hash = vi.fn(() => 'cacheKey');
-		cache.get = vi.fn(async () => undefined);
-		cache.set = vi.fn();
-
-		const memoryCache = new CacheableMemory();
-		memoryCache.get = vi.fn(() => undefined);
-		memoryCache.set = vi.fn();
 
 		const options: WrapOptions = {
 			cache,
-			memoryCache, // Not used in async case
 		};
 
 		// Wrap the async function
 		const wrapped = wrap(asyncFunction, options);
 
 		// Call the wrapped function
-		const result = await wrapped();
-		const result2 = await wrapped();
+		const result = await wrapped(12);
+		const result2 = await wrapped(12);
 		// Expectations
 		expect(result).toBe(result2);
-		expect(cache.get).toHaveBeenCalledWith('cacheKey');
-		expect(cache.set).toHaveBeenCalled();
 	});
-/*
-	It('should cache synchronous function results', () => {
+
+	it('should cache synchronous function results', () => {
 		// Mock cache and sync function
-		const syncFunction = vi.fn((a: number, b: number) => a + b);
-		const cache = new Cacheable();
-		cache.hash = vi.fn(() => 'cacheKey');
-		cache.get = vi.fn(async () => undefined);
-		cache.set = vi.fn();
-
-		const memoryCache = new CacheableMemory();
-		memoryCache.get = vi.fn(() => undefined);
-		memoryCache.set = vi.fn();
-
-		const options: WrapOptions = {
+		const syncFunction = (value: number) => Math.random() * value;
+		const cache = new CacheableMemory();
+		const options: WrapSyncOptions = {
 			cache,
-			memoryCache,
+			key: 'cacheKey',
 		};
 
 		// Wrap the sync function
-		const wrapped = wrap(syncFunction, options);
+		const wrapped = wrapSync(syncFunction, options);
 
 		// Call the wrapped function
 		const result = wrapped(1, 2);
+		const result2 = wrapped(1, 2);
 
 		// Expectations
-		expect(result).toBe(3);
-		expect(memoryCache.get).toHaveBeenCalledWith('cacheKey');
-		expect(memoryCache.set).toHaveBeenCalledWith('cacheKey', 3, undefined);
-		expect(syncFunction).toHaveBeenCalledTimes(1);
+		expect(result).toBe(result2);
+		const cacheResult = cache.get('cacheKey');
+		expect(cacheResult).toBe(result);
 	});
 
-	it('should return cached sync value if it exists', () => {
+	it('should cache synchronous function results with hash', () => {
 		// Mock cache and sync function
-		const syncFunction = vi.fn(() => 0);
-		const cache = new Cacheable();
-		cache.hash = vi.fn(() => 'cacheKey');
-		cache.get = vi.fn(async () => undefined);
-		cache.set = vi.fn();
-
-		const memoryCache = new CacheableMemory();
-		memoryCache.get = vi.fn(() => undefined);
-		memoryCache.set = vi.fn();
-
-		const options: WrapOptions = {
-			cache, // Not used in sync case
-			memoryCache,
+		const syncFunction = (value: number) => Math.random() * value;
+		const cache = new CacheableMemory();
+		const options: WrapSyncOptions = {
+			cache,
 		};
 
 		// Wrap the sync function
-		const wrapped = wrap(syncFunction, options);
+		const wrapped = wrapSync(syncFunction, options);
 
 		// Call the wrapped function
-		const result = wrapped();
+		const result = wrapped(1, 2);
+		const result2 = wrapped(1, 2);
 
 		// Expectations
-		expect(result).toBe(42);
-		expect(memoryCache.get).toHaveBeenCalledWith('cacheKey');
-		expect(memoryCache.set).not.toHaveBeenCalled();
-		expect(syncFunction).not.toHaveBeenCalled();
+		expect(result).toBe(result2);
 	});
-*/
+
+	it('should cache synchronous function results with key and ttl', async () => {
+		// Mock cache and sync function
+		const syncFunction = (value: number) => Math.random() * value;
+		const cache = new CacheableMemory();
+		const options: WrapSyncOptions = {
+			cache,
+			ttl: 10,
+			key: 'cacheKey',
+		};
+
+		// Wrap the sync function
+		const wrapped = wrapSync(syncFunction, options);
+
+		// Call the wrapped function
+		const result = wrapped(1, 2);
+		const result2 = wrapped(1, 2);
+
+		// Expectations
+		expect(result).toBe(result2);
+		await sleep(30);
+		const cacheResult = cache.get('cacheKey');
+		expect(cacheResult).toBe(undefined);
+	});
+
+	it('should cache synchronous function results with complex args', async () => {
+		// Mock cache and sync function
+		const syncFunction = (value: number, person: {first: string; last: string; meta: any}) => Math.random() * value;
+		const cache = new CacheableMemory();
+		const options: WrapSyncOptions = {
+			cache,
+		};
+
+		// Wrap the sync function
+		const wrapped = wrapSync(syncFunction, options);
+
+		// Call the wrapped function
+		const result = wrapped(1, {first: 'John', last: 'Doe', meta: {age: 30}});
+		const result2 = wrapped(1, {first: 'John', last: 'Doe', meta: {age: 30}});
+
+		// Expectations
+		expect(result).toBe(result2);
+	});
 });

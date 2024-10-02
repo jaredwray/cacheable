@@ -1,8 +1,6 @@
 import {describe, test, expect} from 'vitest';
-import {CacheableMemory, CacheableItem} from '../src/memory.js';
-
-// eslint-disable-next-line no-promise-executor-return
-const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import {CacheableMemory} from '../src/memory.js';
+import {sleep} from './sleep.js';
 
 const cacheItemList = [
 	{key: 'key', value: 'value'},
@@ -434,5 +432,28 @@ describe('cacheable hash method', async () => {
 		const cacheable = new CacheableMemory();
 		const result = cacheable.hash({foo: 'bar'});
 		expect(result).toEqual('7a38bf81f383f69433ad6e900d35b3e2385593f76a7b7ab5d4355b8ba41ee24b');
+	});
+});
+
+describe('cacheable wrap', async () => {
+	test('should wrap method with key and ttl', async () => {
+		const cacheable = new CacheableMemory();
+		const syncFunction = (value: number) => Math.random() * value;
+		const options = {
+			key: 'cacheKey',
+			ttl: 10,
+		};
+
+		const wrapped = cacheable.wrap(syncFunction, options);
+		const result = wrapped(1);
+		const result2 = wrapped(1);
+		expect(result).toBe(result2);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const cacheResult1 = cacheable.get('cacheKey');
+		expect(cacheResult1).toBe(result);
+		await sleep(20);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const cacheResult2 = cacheable.get('cacheKey');
+		expect(cacheResult2).toBeUndefined();
 	});
 });

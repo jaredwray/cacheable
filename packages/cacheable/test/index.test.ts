@@ -5,9 +5,7 @@ import {Keyv} from 'keyv';
 import KeyvRedis from '@keyv/redis';
 import {LRUCache} from 'lru-cache';
 import {Cacheable, CacheableHooks} from '../src/index.js';
-
-// eslint-disable-next-line no-promise-executor-return
-const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import {sleep} from './sleep.js';
 
 describe('cacheable options and properties', async () => {
 	test('should be able to instantiate', async () => {
@@ -600,5 +598,26 @@ describe('cacheable hash method', async () => {
 		const cacheable = new Cacheable();
 		const result = cacheable.hash({foo: 'bar'});
 		expect(result).toEqual('7a38bf81f383f69433ad6e900d35b3e2385593f76a7b7ab5d4355b8ba41ee24b');
+	});
+});
+
+describe('cacheable wrap', async () => {
+	test('should wrap method with key and ttl', async () => {
+		const cacheable = new Cacheable();
+		const asyncFunction = async (value: number) => Math.random() * value;
+		const options = {
+			key: 'cacheKey',
+			ttl: 10,
+		};
+
+		const wrapped = cacheable.wrap(asyncFunction, options);
+		const result = await wrapped(1);
+		const result2 = await wrapped(1);
+		expect(result).toBe(result2);
+		const cacheResult1 = await cacheable.get('cacheKey');
+		expect(cacheResult1).toBe(result);
+		await sleep(20);
+		const cacheResult2 = await cacheable.get('cacheKey');
+		expect(cacheResult2).toBeUndefined();
 	});
 });

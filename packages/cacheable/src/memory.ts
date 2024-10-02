@@ -1,3 +1,4 @@
+import {wrapSync} from './wrap.js';
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
 import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
@@ -371,6 +372,16 @@ export class CacheableMemory {
 
 	public hash(object: any, algorithm = 'sha256'): string {
 		return hash(object, algorithm);
+	}
+
+	public wrap<T>(function_: (...arguments_: any[]) => T, options: {ttl?: number; key?: string} = {}): (...arguments_: any[]) => T {
+		const wrapOptions = {
+			ttl: options.ttl,
+			key: options.key,
+			cache: this,
+		};
+
+		return wrapSync<T>(function_, wrapOptions);
 	}
 
 	private isPrimitive(value: any): boolean {
