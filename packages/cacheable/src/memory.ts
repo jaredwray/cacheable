@@ -96,7 +96,7 @@ export class CacheableMemory {
 		return this.concatStores().values();
 	}
 
-	public get<T>(key: string): any {
+	public get<T>(key: string): T | undefined {
 		const store = this.getStore(key);
 		const item = store.get(key) as CacheableStoreItem;
 		if (!item) {
@@ -117,8 +117,8 @@ export class CacheableMemory {
 		return this.clone(item.value) as T;
 	}
 
-	public getMany<T>(keys: string[]): any[] {
-		const result = new Array<any>();
+	public getMany<T>(keys: string[]): T[] {
+		const result = new Array<T>();
 		for (const key of keys) {
 			result.push(this.get(key) as T);
 		}
@@ -192,13 +192,11 @@ export class CacheableMemory {
 	}
 
 	public has(key: string): boolean {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const item = this.get(key);
 		return Boolean(item);
 	}
 
 	public take<T>(key: string): any {
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		const item = this.get(key);
 		if (!item) {
 			return undefined;

@@ -129,7 +129,7 @@ describe('CacheableMemory Get', async () => {
 		const cache = new CacheableMemory();
 		expect(cache.useClone).toBe(true);
 		cache.set('key', {value: 'value'});
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 		const value = cache.get('key');
 		expect(value).toEqual({value: 'value'});
 	});
@@ -138,7 +138,7 @@ describe('CacheableMemory Get', async () => {
 		expect(cache.useClone).toBe(false);
 		const value = {value: 'value'};
 		cache.set('key', value);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
 		const value2 = cache.get('key');
 		expect(value).toEqual(value2);
 	});
@@ -334,7 +334,7 @@ describe('CacheableMemory LRU', async () => {
 		cache.set('key6', 'value6');
 		cache.set('key7', 'value7');
 		expect(cache.size).toBe(5);
-		const item = cache.get('key7') as string;
+		const item = cache.get('key7')!;
 		expect(item).toBe('value7');
 	});
 	test('should not do anything if lruSize is 0', () => {
@@ -448,12 +448,10 @@ describe('cacheable wrap', async () => {
 		const result = wrapped(1);
 		const result2 = wrapped(1);
 		expect(result).toBe(result2);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const cacheResult1 = cacheable.get('cacheKey');
+		const cacheResult1 = cacheable.get<number>('cacheKey');
 		expect(cacheResult1).toBe(result);
 		await sleep(20);
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const cacheResult2 = cacheable.get('cacheKey');
+		const cacheResult2 = cacheable.get<number>('cacheKey');
 		expect(cacheResult2).toBeUndefined();
 	});
 });
