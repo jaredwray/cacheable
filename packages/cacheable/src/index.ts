@@ -6,7 +6,7 @@ import {KeyvCacheableMemory} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
-import { wrap } from './wrap.js';
+import {wrap} from './wrap.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -37,7 +37,7 @@ export class Cacheable extends Hookified {
 	private _nonBlocking = false;
 	private _ttl?: number | string;
 	private readonly _stats = new CacheableStats({enabled: false});
-	private _memoryWrapCache = new CacheableMemory();
+	private readonly _memoryWrapCache = new CacheableMemory();
 
 	constructor(options?: CacheableOptions) {
 		super();
@@ -376,16 +376,15 @@ export class Cacheable extends Hookified {
 		await (this._nonBlocking ? Promise.race(promises) : Promise.all(promises));
 	}
 
-	public wrap<T>(fn: (...args: any[]) => T, options: {ttl?: number; key?: string} = {}): (...args: any[]) => T {
-
+	public wrap<T>(function_: (...arguments_: any[]) => T, options: {ttl?: number; key?: string} = {}): (...arguments_: any[]) => T {
 		const wrapOptions = {
-			ttl: options.ttl, 
-			key: options.key, 
-			cache: this, 
-			memoryCache: this._memoryWrapCache
+			ttl: options.ttl,
+			key: options.key,
+			cache: this,
+			memoryCache: this._memoryWrapCache,
 		};
 
-		return wrap(fn, wrapOptions);
+		return wrap<T>(function_, wrapOptions);
 	}
 
 	public hash(object: any, algorithm = 'sha256'): string {
