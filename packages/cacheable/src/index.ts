@@ -181,7 +181,7 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
-	public async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
+	public async set<T>(key: string, value: T, ttl?: number | string): Promise<boolean> {
 		let result = false;
 		const finalTtl = shorthandToMilliseconds(ttl ?? this._ttl);
 		try {
@@ -439,3 +439,6 @@ export type {CacheableItem} from './cacheable-item-types.js';
 export {
 	type KeyvStoreAdapter, type KeyvOptions, KeyvHooks, Keyv,
 } from 'keyv';
+export {
+	wrap, wrapSync, type WrapOptions, type WrapSyncOptions,
+} from './wrap.js';

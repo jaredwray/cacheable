@@ -132,4 +132,28 @@ describe('wrap function', () => {
 		// Expectations
 		expect(result).toBe(result2);
 	});
+
+	it('should cache synchronous function results with complex args and shorthand ttl', async () => {
+		// Mock cache and sync function
+		const syncFunction = (value: number, person: {first: string; last: string; meta: any}) => Math.random() * value;
+		const cache = new CacheableMemory();
+		const options: WrapSyncOptions = {
+			cache,
+			ttl: '1s',
+			key: 'cacheKey',
+		};
+
+		// Wrap the sync function
+		const wrapped = wrapSync(syncFunction, options);
+
+		// Call the wrapped function
+		const result = wrapped(1, {first: 'John', last: 'Doe', meta: {age: 30}});
+		const result2 = wrapped(1, {first: 'John', last: 'Doe', meta: {age: 30}});
+
+		// Expectations
+		expect(result).toBe(result2);
+		await sleep(2500);
+		const cacheResult = cache.get('cacheKey');
+		expect(cacheResult).toBe(undefined);
+	});
 });

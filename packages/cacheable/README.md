@@ -36,6 +36,7 @@
 * [Cacheable Statistics (Instance Only)](#cacheable-statistics-instance-only)
 * [API](#api)
 * [CacheableMemory - In-Memory Cache](#cacheablememory---in-memory-cache)
+* [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -218,7 +219,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `delete(key)`: Deletes a value from the cache.
 * `deleteMany([keys])`: Deletes multiple values from the cache.
 * `clear()`: Clears the cache stores. Be careful with this as it will clear both layer 1 and layer 2.
-* `wrap(function, options)`: Wraps a function in a cache. (coming soon)
+* `wrap(function, WrapOptions)`: Wraps an `async` function in a cache.
 * `disconnect()`: Disconnects from the cache stores.
 * `onHook(hook, callback)`: Sets a hook.
 * `removeHook(hook)`: Removes a hook.
@@ -272,6 +273,7 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 * `deleteMany([keys])`: Deletes multiple values from the cache.
 * `take(key)`: Takes a value from the cache and deletes it.
 * `takeMany([keys])`: Takes multiple values from the cache and deletes them.
+* `wrap(function, WrapSyncOptions)`: Wraps a `sync` function in a cache.
 * `clear()`: Clears the cache.
 * `size()`: The number of keys in the cache.
 * `keys()`: The keys in the cache.
@@ -281,6 +283,33 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 * `stopIntervalCheck()`: Stops the interval check for expired keys.
 * `hash(object: any, algorithm = 'sha256'): string`: Hashes an object with the algorithm. Default is `sha256`.
 
+## Wrap / Memoization for Sync and Async Functions
+
+`Cacheable` and `CacheableMemory` has a feature called `wrap` that allows you to wrap a function in a cache. This is useful for memoization and caching the results of a function. You can wrap a `sync` or `async` function in a cache. Here is an example of how to use the `wrap` function:
+
+```javascript
+import { Cacheable } from 'cacheable';
+const asyncFunction = async (value: number) => {
+  return value * 2;
+};
+
+const cache = new Cacheable();
+const wrappedFunction = cache.wrap(asyncFunction, { ttl: '1h' });
+```
+
+In this example we are wrapping an `async` function in a cache with a `ttl` of `1 hour`. This will cache the result of the function for `1 hour` and then expire the value. You can also wrap a `sync` function in a cache:
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+const syncFunction = (value: number) => {
+  return value * 2;
+};
+
+const cache = new CacheableMemory();
+const wrappedFunction = cache.wrap(syncFunction, { ttl: '1h' });
+```
+
+In this example we are wrapping a `sync` function in a cache with a `ttl` of `1 hour`. This will cache the result of the function for `1 hour` and then expire the value.
 
 ## How to Contribute
 

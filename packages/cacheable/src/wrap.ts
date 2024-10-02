@@ -1,13 +1,13 @@
 import {type Cacheable, type CacheableMemory} from './index.js';
 
 export type WrapOptions = {
-	ttl?: number;
+	ttl?: number | string;
 	key?: string;
 	cache: Cacheable;
 };
 
 export type WrapSyncOptions = {
-	ttl?: number;
+	ttl?: number | string;
 	key?: string;
 	cache: CacheableMemory;
 };
@@ -20,7 +20,7 @@ export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): A
 	return function (...arguments_: any[]) {
 		const cacheKey = key ?? cache.hash(arguments_);
 
-		let value = cache.get(cacheKey) as T | undefined;
+		let value = cache.get(cacheKey);
 
 		if (value === undefined) {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
