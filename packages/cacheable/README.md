@@ -36,6 +36,8 @@
 * [Cacheable Statistics (Instance Only)](#cacheable-statistics-instance-only)
 * [Cacheable API](#api)
 * [CacheableMemory - In-Memory Cache](#cacheablememory---in-memory-cache)
+* [CacheableMemory Options](#cacheablememory-options)
+* [CacheableMemory API](#cacheablememory-api)
 * [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
