@@ -6,6 +6,13 @@ export type FileEntryCacheOptions = {
 	cache?: FlatCacheOptions;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+export default class FileEntryDefaultExport {
+	public static create(): FileEntryCache {
+		return new FileEntryCache();
+	}
+}
+
 export class FileEntryCache {
 	private _cache: FlatCache = new FlatCache();
 	private _useCheckSum = false;

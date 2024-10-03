@@ -1,5 +1,5 @@
 import {describe, test, expect} from 'vitest';
-import {FileEntryCache} from '../src/index.js';
+import defaultFileEntryCache, {FileEntryCache} from '../src/index.js';
 
 // eslint-disable-next-line no-promise-executor-return
 const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -34,5 +34,10 @@ describe('file-entry-cache with options', () => {
 		expect(fileEntryCache.currentWorkingDirectory).toBe('test');
 		fileEntryCache.currentWorkingDirectory = 'test2';
 		expect(fileEntryCache.currentWorkingDirectory).toBe('test2');
+	});
+
+	test('create should initialize a file-entry-cache', () => {
+		const fileEntryCache = defaultFileEntryCache.create();
+		expect(fileEntryCache).toBeDefined();
 	});
 });
