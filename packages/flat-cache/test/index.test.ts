@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import {describe, test, expect} from 'vitest';
-import {
+import defaultFlatCache, {
 	FlatCache, create, createFromFile, clearAll, clearCacheById,
 } from '../src/index.js';
 
@@ -261,5 +261,12 @@ describe('flat-cache with JSON', () => {
 		expect(cache2.get('foo')).toEqual({bar: 'baz'});
 		expect(cache2.get('bar')).toEqual([1, 2, 3]);
 		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
+	});
+});
+
+describe('flat cache as a default export for create', () => {
+	test('should create a new cache', () => {
+		const cache = defaultFlatCache.create({cacheId: 'cache5'});
+		expect(cache.cacheId).toBe('cache5');
 	});
 });
