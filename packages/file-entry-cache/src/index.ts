@@ -6,11 +6,13 @@ export type FileEntryCacheOptions = {
 	cache?: FlatCacheOptions;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-export default class FileEntryDefaultExport {
-	public static create(): FileEntryCache {
-		return new FileEntryCache();
-	}
+export function create(): FileEntryCache {
+	return new FileEntryCache();
+}
+
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class, unicorn/no-static-only-class
+export default class FileEntryDefault {
+	static create = create;
 }
 
 export class FileEntryCache {
