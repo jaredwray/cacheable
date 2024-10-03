@@ -9,6 +9,7 @@ export type FileEntryCacheOptions = {
 export class FileEntryCache {
 	private _cache: FlatCache = new FlatCache();
 	private _useCheckSum = false;
+	private _currentWorkingDirectory: string | undefined;
 
 	constructor(options?: FileEntryCacheOptions) {
 		if (options?.cache) {
@@ -17,6 +18,10 @@ export class FileEntryCache {
 
 		if (options?.useCheckSum) {
 			this._useCheckSum = options.useCheckSum;
+		}
+
+		if (options?.currentWorkingDirectory) {
+			this._currentWorkingDirectory = options.currentWorkingDirectory;
 		}
 	}
 
@@ -34,5 +39,13 @@ export class FileEntryCache {
 
 	public set useCheckSum(value: boolean) {
 		this._useCheckSum = value;
+	}
+
+	public get currentWorkingDirectory(): string | undefined {
+		return this._currentWorkingDirectory;
+	}
+
+	public set currentWorkingDirectory(value: string | undefined) {
+		this._currentWorkingDirectory = value;
 	}
 }

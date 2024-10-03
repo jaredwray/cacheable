@@ -28,4 +28,11 @@ describe('file-entry-cache with options', () => {
 		fileEntryCache.useCheckSum = false;
 		expect(fileEntryCache.useCheckSum).toBe(false);
 	});
+
+	test('should be able to get and set currentWorkingDirectory', () => {
+		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: 'test'});
+		expect(fileEntryCache.currentWorkingDirectory).toBe('test');
+		fileEntryCache.currentWorkingDirectory = 'test2';
+		expect(fileEntryCache.currentWorkingDirectory).toBe('test2');
+	});
 });
