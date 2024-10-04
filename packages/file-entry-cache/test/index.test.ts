@@ -41,7 +41,7 @@ describe('file-entry-cache with options', () => {
 	});
 
 	test('create should initialize a file-entry-cache', () => {
-		const fileEntryCache = defaultFileEntryCache.create();
+		const fileEntryCache = defaultFileEntryCache.create('test1');
 		expect(fileEntryCache).toBeDefined();
 	});
 });

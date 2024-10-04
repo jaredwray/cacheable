@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import {FlatCache, type FlatCacheOptions} from 'flat-cache';
+import {FlatCache, createFromFile as createFlatCacheFile, type FlatCacheOptions} from 'flat-cache';
 
 export type FileEntryCacheOptions = {
 	currentWorkingDirectory?: string;
@@ -29,13 +29,28 @@ export type AnalyzedFiles = {
 	notChangedFiles: string[];
 };
 
-export function create(): FileEntryCache {
-	return new FileEntryCache();
+export function createFromFile(filePath: string, useCheckSum?: boolean, currentWorkingDirectory?: string): FileEntryCache {
+	const fname = path.basename(filePath);
+	const directory = path.dirname(filePath);
+	return create(fname, directory, useCheckSum, currentWorkingDirectory);
+}
+
+export function create(cacheId: string, cacheDirectory?: string, useCheckSum?: boolean, currentWorkingDirectory?: string): FileEntryCache {
+	const options: FileEntryCacheOptions = {
+		currentWorkingDirectory,
+		useCheckSum,
+		cache: {
+			cacheId,
+			cacheDir: cacheDirectory,
+		},
+	};
+	return new FileEntryCache(options);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class, unicorn/no-static-only-class
 export default class FileEntryDefault {
 	static create = create;
+	static createFromFile = createFromFile;
 }
 
 export class FileEntryCache {
@@ -45,7 +60,12 @@ export class FileEntryCache {
 
 	constructor(options?: FileEntryCacheOptions) {
 		if (options?.cache) {
-			this._cache = new FlatCache(options.cache);
+			if (!options.cache.cacheDir && options.cache.cacheId) {
+				const path = options.cache.cacheDir + '/' + options.cache.cacheId;
+				this._cache = fs.existsSync(path) ? createFlatCacheFile(path, options.cache) : new FlatCache(options.cache);
+			} else {
+				this._cache = new FlatCache(options.cache);
+			}
 		}
 
 		if (options?.useCheckSum) {
