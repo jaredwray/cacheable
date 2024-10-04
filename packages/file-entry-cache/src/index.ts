@@ -18,11 +18,7 @@ export type FileDescriptor = {
 	key: string;
 	changed?: boolean;
 	hash?: string;
-	meta?: {
-		size?: number;
-		mtime?: number;
-		data?: unknown;
-	};
+	meta?: any;
 	notFound?: boolean;
 	err?: Error;
 };
@@ -149,6 +145,14 @@ export class FileEntryCache {
 	 * @method reconcile
 	 */
 	public reconcile(): void {
+		const items = this._cache.items;
+		for (const item of items) {
+			const fileDescriptor = this.getFileDescriptor(item.key);
+			if (fileDescriptor.notFound) {
+				this._cache.removeKey(item.key);
+			}
+		}
+
 		this._cache.save();
 	}
 
@@ -219,22 +223,24 @@ export class FileEntryCache {
 			}
 		}
 
-		// Check if the file is in the cache
-		const cacheFileDescriptor = this._cache.getKey<FileDescriptor>(result.key);
-		// If the file is not in the cache, add it
-		if (!cacheFileDescriptor) {
-			result.changed = true;
-			this._cache.setKey(result.key, result);
-			return result;
-		}
+		if (!result.notFound && !result.err) {
+			// Check if the file is in the cache
+			const cacheFileDescriptor = this._cache.getKey<FileDescriptor>(result.key);
+			// If the file is not in the cache, add it
+			if (!cacheFileDescriptor) {
+				result.changed = true;
+				this._cache.setKey(result.key, result);
+				return result;
+			}
 
-		// If the file is in the cache, check if the file has changed
-		if (useCheckSumValue && cacheFileDescriptor.hash !== result.hash) {
-			result.changed = true;
-			this._cache.setKey(result.key, result);
-		} else if (cacheFileDescriptor.meta?.mtime !== result.meta?.mtime || cacheFileDescriptor.meta?.size !== result.meta?.size) {
-			result.changed = true;
-			this._cache.setKey(result.key, result);
+			// If the file is in the cache, check if the file has changed
+			if (useCheckSumValue && cacheFileDescriptor.hash !== result.hash) {
+				result.changed = true;
+				this._cache.setKey(result.key, result);
+			} else if (cacheFileDescriptor.meta?.mtime !== result.meta?.mtime || cacheFileDescriptor.meta?.size !== result.meta?.size) {
+				result.changed = true;
+				this._cache.setKey(result.key, result);
+			}
 		}
 
 		return result;

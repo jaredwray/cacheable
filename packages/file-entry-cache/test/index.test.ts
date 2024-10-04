@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-	describe, test, expect, beforeAll, afterAll,
+	describe, test, expect, beforeAll, afterAll, beforeEach, afterEach,
 } from 'vitest';
-import defaultFileEntryCache, {FileEntryCache} from '../src/index.js';
+import defaultFileEntryCache, {FileEntryCache, type FileEntryCacheOptions} from '../src/index.js';
 
 // eslint-disable-next-line no-promise-executor-return
 const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -343,5 +343,70 @@ describe('file-entry-cache - normalizeEntries()', () => {
 		expect(entries[0].changed).toBe(true);
 		expect(entries[1].key).toBe('test2.txt');
 		expect(entries[1].changed).toBe(false);
+	});
+});
+
+describe('file-entry-cache - reconcile()', () => {
+	const fileCacheName = '.cacheReconcile';
+	beforeEach(() => {
+		// Generate files for testing
+		fs.mkdirSync(path.resolve(`./${fileCacheName}`));
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'test');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test2.txt`), 'test sdfljsdlfjsdflsj');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test3.txt`), 'test3');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test4.txt`), 'test4');
+	});
+
+	afterEach(() => {
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
+	});
+
+	test('should reconcile the cache', () => {
+		const options: FileEntryCacheOptions = {
+			currentWorkingDirectory: `./${fileCacheName}`,
+			cache: {
+				cacheId: 'test1',
+				cacheDir: './.cacheReconcile',
+			},
+		};
+		const fileEntryCache = new FileEntryCache(options);
+		const fileEntry1 = fileEntryCache.getFileDescriptor('test1.txt');
+		fileEntry1.meta.result = {foo: 'bar'};
+		fileEntryCache.getFileDescriptor('test2.txt');
+		fileEntryCache.getFileDescriptor('test3.txt');
+		fileEntryCache.reconcile();
+		const cacheFileContent = fs.readFileSync(fileEntryCache.cache.cacheFilePath, 'utf8');
+		expect(cacheFileContent).toContain('test2.txt');
+		expect(cacheFileContent).toContain('test3.txt');
+		expect(cacheFileContent).toContain('{"foo":"11"}');
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
+	});
+
+	test('should reconcile with deleted files', () => {
+		const options: FileEntryCacheOptions = {
+			currentWorkingDirectory: `./${fileCacheName}`,
+			cache: {
+				cacheId: 'test1',
+				cacheDir: './.cacheReconcile',
+			},
+		};
+		const fileEntryCache = new FileEntryCache(options);
+		fileEntryCache.getFileDescriptor('test1.txt');
+		fileEntryCache.getFileDescriptor('test2.txt');
+		fileEntryCache.getFileDescriptor('test3.txt');
+		fileEntryCache.getFileDescriptor('test4.txt');
+		const testFile4 = path.resolve(`./${fileCacheName}/test4.txt`);
+		fs.unlinkSync(testFile4);
+
+		fileEntryCache.reconcile();
+
+		console.log(fileEntryCache.cache.all());
+
+		const cacheFileContent = fs.readFileSync(fileEntryCache.cache.cacheFilePath, 'utf8');
+		expect(cacheFileContent).toContain('test1.txt');
+		expect(cacheFileContent).toContain('test2.txt');
+		expect(cacheFileContent).toContain('test3.txt');
+		expect(cacheFileContent).not.toContain('test4.txt');
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
 	});
 });
