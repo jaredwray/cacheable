@@ -2,7 +2,6 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {FlatCache, createFromFile as createFlatCacheFile, type FlatCacheOptions} from 'flat-cache';
-import {aB} from 'vitest/dist/chunks/reporters.WnPwkmgA';
 
 export type FileEntryCacheOptions = {
 	currentWorkingDirectory?: string;
