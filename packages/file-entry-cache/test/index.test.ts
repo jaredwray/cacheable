@@ -591,3 +591,75 @@ describe('getFileDescriptorsByPath()', () => {
 		expect(fileDescriptors[0].key).toBe('test1.txt');
 	});
 });
+
+describe('renameAbsolutePathKeys()', () => {
+	const fileCacheName = 'filesRAPK';
+	beforeEach(() => {
+		// Generate files for testing
+		fs.mkdirSync(path.resolve(`./${fileCacheName}`));
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'test');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test2.txt`), 'test sdfljsdlfjsdflsj');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test3.txt`), 'test3');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test4.txt`), 'test4');
+	});
+
+	afterEach(() => {
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
+	});
+
+	test('should handle rename of absolute paths', () => {
+		const fileEntryCache = new FileEntryCache();
+		const file1 = path.resolve(`./${fileCacheName}/test1.txt`);
+		const file2 = path.resolve(`./${fileCacheName}/test2.txt`);
+		const file3 = path.resolve(`./${fileCacheName}/test3.txt`);
+		fileEntryCache.getFileDescriptor(file1);
+		fileEntryCache.getFileDescriptor(file2);
+		fileEntryCache.getFileDescriptor(file3);
+		const keys = fileEntryCache.cache.keys();
+		expect(keys.length).toBe(3);
+		expect(keys[0]).toBe(file1);
+		expect(keys[1]).toBe(file2);
+		expect(keys[2]).toBe(file3);
+		const oldFileCacheNamePath = path.resolve(`./${fileCacheName}`);
+		const newFileCacheNamePath = path.resolve(`${fileCacheName}-new`);
+		fileEntryCache.renameAbsolutePathKeys(oldFileCacheNamePath, newFileCacheNamePath);
+		const newKeys = fileEntryCache.cache.keys();
+		expect(newKeys.length).toBe(3);
+		expect(newKeys[0]).toBe(`${newFileCacheNamePath}/test1.txt`);
+		expect(newKeys[1]).toBe(`${newFileCacheNamePath}/test2.txt`);
+		expect(newKeys[2]).toBe(`${newFileCacheNamePath}/test3.txt`);
+	});
+
+	test('should handle rename of absolute paths with reconcile', () => {
+		const fileEntryCache = new FileEntryCache();
+		const file1 = path.resolve(`./${fileCacheName}/test1.txt`);
+		const file2 = path.resolve(`./${fileCacheName}/test2.txt`);
+		const file3 = path.resolve(`./${fileCacheName}/test3.txt`);
+		fileEntryCache.getFileDescriptor(file1);
+		fileEntryCache.getFileDescriptor(file2);
+		fileEntryCache.getFileDescriptor(file3);
+		const keys = fileEntryCache.cache.keys();
+		expect(keys.length).toBe(3);
+		expect(keys[0]).toBe(file1);
+		expect(keys[1]).toBe(file2);
+		expect(keys[2]).toBe(file3);
+		const oldFileCacheNamePath = path.resolve(`./${fileCacheName}`);
+		const newFileCacheNamePath = path.resolve(`${fileCacheName}-new`);
+		fs.renameSync(oldFileCacheNamePath, newFileCacheNamePath);
+		fileEntryCache.renameAbsolutePathKeys(oldFileCacheNamePath, newFileCacheNamePath);
+		const newKeys = fileEntryCache.cache.keys();
+		expect(newKeys.length).toBe(3);
+		expect(newKeys[0]).toBe(`${newFileCacheNamePath}/test1.txt`);
+		expect(newKeys[1]).toBe(`${newFileCacheNamePath}/test2.txt`);
+		expect(newKeys[2]).toBe(`${newFileCacheNamePath}/test3.txt`);
+		fileEntryCache.reconcile();
+		// Should show not changed as it is just a folder rename
+		const fileEntry1 = fileEntryCache.getFileDescriptor(`${newFileCacheNamePath}/test1.txt`);
+		expect(fileEntry1.changed).toBe(false);
+
+		const fileEntry2 = fileEntryCache.getFileDescriptor(`${newFileCacheNamePath}/test2.txt`);
+		expect(fileEntry2.changed).toBe(false);
+
+		fs.rmSync(newFileCacheNamePath, {recursive: true, force: true});
+	});
+});

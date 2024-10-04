@@ -382,4 +382,22 @@ export class FileEntryCache {
 
 		return filePath;
 	}
+
+	/**
+	 * Rename the absolute path keys. This is used when a directory is changed or renamed.
+	 * @method renameAbsolutePathKeys
+	 * @param oldPath - The old path to rename
+	 * @param newPath - The new path to rename to
+	 */
+	public renameAbsolutePathKeys(oldPath: string, newPath: string): void {
+		const keys = this._cache.keys();
+		for (const key of keys) {
+			if (key.startsWith(oldPath)) {
+				const newKey = key.replace(oldPath, newPath);
+				const meta = this._cache.getKey(key);
+				this._cache.removeKey(key);
+				this._cache.setKey(newKey, meta);
+			}
+		}
+	}
 }
