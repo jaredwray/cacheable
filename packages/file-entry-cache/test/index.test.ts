@@ -1,5 +1,8 @@
 import fs from 'node:fs';
-import {describe, test, expect} from 'vitest';
+import path from 'node:path';
+import {
+	describe, test, expect, beforeAll, afterAll,
+} from 'vitest';
 import defaultFileEntryCache, {FileEntryCache} from '../src/index.js';
 
 // eslint-disable-next-line no-promise-executor-return
@@ -115,5 +118,149 @@ describe('file-entry-cache - removeCacheFile()', () => {
 		expect(fs.existsSync(fileEntryCache.cache.cacheFilePath)).toBe(false);
 		// Clean up
 		fs.rmSync(fileEntryCache.cache.cacheDirPath, {recursive: true, force: true});
+	});
+});
+
+describe('file-entry-cache - getFileDescriptor()', () => {
+	beforeAll(() => {
+		// Generate files for testing
+		fs.mkdirSync(path.resolve('./.cacheGFD'));
+		fs.writeFileSync(path.resolve('./.cacheGFD/test1.txt'), 'test');
+		fs.writeFileSync(path.resolve('./.cacheGFD/test2.txt'), 'test sdfljsdlfjsdflsj');
+		fs.writeFileSync(path.resolve('./.cacheGFD/test3.txt'), 'test3');
+	});
+
+	afterAll(() => {
+		fs.rmSync(path.resolve('./.cacheGFD'), {recursive: true, force: true});
+	});
+
+	test('should return non-existent file descriptor', () => {
+		const fileEntryCache = new FileEntryCache();
+		const fileDescriptor = fileEntryCache.getFileDescriptor('non-existent-file');
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe('non-existent-file');
+		expect(fileDescriptor.err).toBeDefined();
+		expect(fileDescriptor.notFound).toBe(true);
+		expect(fileDescriptor.meta).to.not.toBeDefined();
+		expect(fileDescriptor.hash).to.not.toBeDefined();
+	});
+
+	test('should return a file descriptor', () => {
+		const fileEntryCache = new FileEntryCache();
+		const testFile1 = path.resolve('./.cacheGFD/test1.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.meta).toBeDefined();
+		expect(fileDescriptor.meta?.size).toBe(4);
+		expect(fileDescriptor.hash).to.not.toBeDefined();
+	});
+
+	test('should return a file descriptor with checksum', () => {
+		const fileEntryCache = new FileEntryCache();
+		const testFile1 = path.resolve('./.cacheGFD/test2.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1, {useCheckSum: true});
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.hash).toBeDefined();
+	});
+
+	test('should return a file descriptor with global useCheckSum', () => {
+		const fileEntryCache = new FileEntryCache({useCheckSum: true});
+		const testFile1 = path.resolve('./.cacheGFD/test2.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.hash).toBeDefined();
+	});
+
+	test('should return a file descriptor with checksum and error', () => {
+		const fileEntryCache = new FileEntryCache();
+		const testFile1 = path.resolve('./.cacheGFD/test2.txt');
+		fs.chmodSync(testFile1, 0o000);
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1, {useCheckSum: true});
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.hash).to.not.toBeDefined();
+		expect(fileDescriptor.err).toBeDefined();
+		expect(fileDescriptor.notFound).toBe(true);
+	});
+
+	test('should return that the file has not changed', () => {
+		const fileEntryCache = new FileEntryCache();
+		const testFile1 = path.resolve('./.cacheGFD/test3.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.changed).toBe(true);
+
+		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor2).toBeDefined();
+		expect(fileDescriptor2.key).toBe(testFile1);
+		expect(fileDescriptor2.changed).toBe(false);
+	});
+
+	test('should return that the file has changed', () => {
+		const fileEntryCache = new FileEntryCache();
+		const testFile1 = path.resolve('./.cacheGFD/test3.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.changed).toBe(true);
+
+		fs.writeFileSync(testFile1, 'test4');
+		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor2).toBeDefined();
+		expect(fileDescriptor2.key).toBe(testFile1);
+		expect(fileDescriptor2.changed).toBe(true);
+	});
+
+	test('should return that the file has changed', () => {
+		const fileEntryCache = new FileEntryCache({useCheckSum: true});
+		const testFile1 = path.resolve('./.cacheGFD/test3.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.changed).toBe(true);
+		fs.writeFileSync(testFile1, 'testified');
+		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor2).toBeDefined();
+		expect(fileDescriptor2.key).toBe(testFile1);
+		expect(fileDescriptor2.changed).toBe(true);
+	});
+
+	test('should return that the file has changed with time', () => {
+		const fileEntryCache = new FileEntryCache({useCheckSum: true});
+		const testFile1 = path.resolve('./.cacheGFD/test1.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.changed).toBe(true);
+		fs.writeFileSync(testFile1, 'test');
+		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor2).toBeDefined();
+		expect(fileDescriptor2.key).toBe(testFile1);
+		expect(fileDescriptor2.changed).toBe(true);
+		expect(fileEntryCache.cache.get(testFile1)).toEqual(fileDescriptor2);
+	});
+
+	test('should work with currentWorkingDirectory', () => {
+		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: './.cacheGFD'});
+		const fileDescriptor = fileEntryCache.getFileDescriptor('/test1.txt');
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe('/test1.txt');
+		expect(fileDescriptor.meta?.size).toBe(4);
+		expect(fileDescriptor.isRelative).toBe(true);
+		expect(fileDescriptor.changed).toBe(true);
+	});
+
+	test('should not use currentWorkingDirectory', () => {
+		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: './.cacheGFD'});
+		const testFile1 = path.resolve('./.cacheGFD/test1.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1, {useCurrentWorkingDirectory: false});
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.isRelative).toBeUndefined();
+		expect(fileDescriptor.changed).toBe(true);
 	});
 });
