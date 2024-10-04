@@ -17,7 +17,6 @@ export type GetFileDescriptorOptions = {
 export type FileDescriptor = {
 	key: string;
 	changed?: boolean;
-	hash?: string;
 	meta?: any;
 	notFound?: boolean;
 	err?: Error;
@@ -191,7 +190,7 @@ export class FileEntryCache {
 	public hasFileChanged(filePath: string): boolean {
 		let result = false;
 		const fileDescriptor = this.getFileDescriptor(filePath);
-		if (!fileDescriptor.notFound && fileDescriptor.changed) {
+		if ((!fileDescriptor.err || !fileDescriptor.notFound) && fileDescriptor.changed) {
 			result = true;
 		}
 
@@ -230,8 +229,7 @@ export class FileEntryCache {
 			result.meta.mtime = fstat.mtime.getTime();
 		} catch (error) {
 			this.removeEntry(filePath);
-			result.notFound = true;
-			result.err = error as Error;
+			return {key: result.key, err: error as Error, notFound: true};
 		}
 
 		const useCheckSumValue = options?.useCheckSum ?? this._useCheckSum;
@@ -240,12 +238,12 @@ export class FileEntryCache {
 		if (useCheckSumValue) {
 			try {
 				const buffer = fs.readFileSync(filePath);
-				result.hash = this.getHash(buffer);
+				result.meta ||= {};
+				result.meta.hash = this.getHash(buffer);
 			} catch (error) {
 				// If there is an error, remove the file from the cache
 				this.removeEntry(filePath);
-				result.notFound = true;
-				result.err = error as Error;
+				return {key: result.key, err: error as Error, notFound: true};
 			}
 		}
 
@@ -260,7 +258,7 @@ export class FileEntryCache {
 			}
 
 			// If the file is in the cache, check if the file has changed
-			if (useCheckSumValue && cacheFileDescriptor.hash !== result.hash) {
+			if (useCheckSumValue && cacheFileDescriptor.meta.hash !== result.meta.hash) {
 				result.changed = true;
 				this._cache.setKey(result.key, result);
 			} else if (cacheFileDescriptor.meta?.mtime !== result.meta?.mtime || cacheFileDescriptor.meta?.size !== result.meta?.size) {

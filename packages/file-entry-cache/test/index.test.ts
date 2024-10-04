@@ -143,7 +143,6 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		expect(fileDescriptor.err).toBeDefined();
 		expect(fileDescriptor.notFound).toBe(true);
 		expect(fileDescriptor.meta).to.not.toBeDefined();
-		expect(fileDescriptor.hash).to.not.toBeDefined();
 	});
 
 	test('should return a file descriptor', () => {
@@ -154,7 +153,7 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		expect(fileDescriptor.key).toBe(testFile1);
 		expect(fileDescriptor.meta).toBeDefined();
 		expect(fileDescriptor.meta?.size).toBe(4);
-		expect(fileDescriptor.hash).to.not.toBeDefined();
+		expect(fileDescriptor.meta.hash).to.not.toBeDefined();
 	});
 
 	test('should return a file descriptor with checksum', () => {
@@ -163,7 +162,7 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1, {useCheckSum: true});
 		expect(fileDescriptor).toBeDefined();
 		expect(fileDescriptor.key).toBe(testFile1);
-		expect(fileDescriptor.hash).toBeDefined();
+		expect(fileDescriptor.meta.hash).toBeDefined();
 	});
 
 	test('should return a file descriptor with global useCheckSum', () => {
@@ -172,7 +171,7 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
 		expect(fileDescriptor).toBeDefined();
 		expect(fileDescriptor.key).toBe(testFile1);
-		expect(fileDescriptor.hash).toBeDefined();
+		expect(fileDescriptor.meta.hash).toBeDefined();
 	});
 
 	test('should return a file descriptor with checksum and error', () => {
@@ -182,7 +181,6 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1, {useCheckSum: true});
 		expect(fileDescriptor).toBeDefined();
 		expect(fileDescriptor.key).toBe(testFile1);
-		expect(fileDescriptor.hash).to.not.toBeDefined();
 		expect(fileDescriptor.err).toBeDefined();
 		expect(fileDescriptor.notFound).toBe(true);
 	});
@@ -399,8 +397,6 @@ describe('file-entry-cache - reconcile()', () => {
 		fs.unlinkSync(testFile4);
 
 		fileEntryCache.reconcile();
-
-		console.log(fileEntryCache.cache.all());
 
 		const cacheFileContent = fs.readFileSync(fileEntryCache.cache.cacheFilePath, 'utf8');
 		expect(cacheFileContent).toContain('test1.txt');
