@@ -416,6 +416,13 @@ export class FlatCache extends Hookified {
 		}
 	}
 }
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class, unicorn/no-static-only-class
+export default class FlatCacheDefault {
+	static create = create;
+	static createFromFile = createFromFile;
+	static clearCacheById = clearCacheById;
+	static clearAll = clearAll;
+}
 
 /**
  * Load a cache identified by the given Id. If the element does not exists, then initialize an empty

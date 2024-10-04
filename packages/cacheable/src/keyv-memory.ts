@@ -1,5 +1,4 @@
 import {type KeyvStoreAdapter, type StoredData} from 'keyv';
-import {V} from 'vitest/dist/chunks/environment.C5eAp3K6.js';
 import {CacheableMemory, type CacheableMemoryOptions} from './memory.js';
 
 export class KeyvCacheableMemory implements KeyvStoreAdapter {
