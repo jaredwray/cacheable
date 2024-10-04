@@ -462,3 +462,45 @@ describe('file-entry-cache - analyzeFiles()', () => {
 		expect(analyzedFiles2.notFoundFiles.length).toBe(1);
 	});
 });
+
+describe('file-entry-cache - getUpdatedFiles()', () => {
+	const fileCacheName = 'getUpdatedFiles';
+	beforeEach(() => {
+		// Generate files for testing
+		fs.mkdirSync(path.resolve(`./${fileCacheName}`));
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'test');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test2.txt`), 'test sdfljsdlfjsdflsj');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test3.txt`), 'test3');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test4.txt`), 'test4');
+	});
+
+	afterEach(() => {
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
+	});
+
+	test('should return empty array on get updated files', () => {
+		const options: FileEntryCacheOptions = {
+			currentWorkingDirectory: `./${fileCacheName}`,
+		};
+		const fileEntryCache = new FileEntryCache(options);
+		const files = ['test1.txt', 'test2.txt', 'test3.txt', 'test4.txt'];
+		const updatedFiles = fileEntryCache.getUpdatedFiles(files);
+		expect(updatedFiles).toEqual(['test1.txt', 'test2.txt', 'test3.txt', 'test4.txt']);
+		const updatedFiles2 = fileEntryCache.getUpdatedFiles(files);
+		expect(updatedFiles2).toEqual([]);
+	});
+
+	test('should return updated files if one is updated', () => {
+		const options: FileEntryCacheOptions = {
+			currentWorkingDirectory: `./${fileCacheName}`,
+		};
+		const fileEntryCache = new FileEntryCache(options);
+		const files = ['test1.txt', 'test2.txt', 'test3.txt', 'test4.txt'];
+		const updatedFiles = fileEntryCache.getUpdatedFiles(files);
+		expect(updatedFiles).toEqual(['test1.txt', 'test2.txt', 'test3.txt', 'test4.txt']);
+		const testFile4 = path.resolve(`./${fileCacheName}/test4.txt`);
+		fs.writeFileSync(testFile4, 'test5booosdkfjsldfkjsldkjfls');
+		const updatedFiles2 = fileEntryCache.getUpdatedFiles(files);
+		expect(updatedFiles2).toEqual(['test4.txt']);
+	});
+});

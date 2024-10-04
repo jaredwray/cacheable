@@ -288,4 +288,23 @@ export class FileEntryCache {
 
 		return result;
 	}
+
+	/**
+	 * Get the updated files
+	 * @method getUpdatedFiles
+	 * @param files - The files to get the updated files for
+	 * @returns {string[]} The updated files
+	 */
+	public getUpdatedFiles(files: string[]): string[] {
+		const result = new Array<string>();
+
+		const fileDescriptors = this.normalizeEntries(files);
+		for (const fileDescriptor of fileDescriptors) {
+			if (fileDescriptor.changed) {
+				result.push(fileDescriptor.key);
+			}
+		}
+
+		return result;
+	}
 }
