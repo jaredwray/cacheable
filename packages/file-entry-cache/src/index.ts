@@ -259,7 +259,12 @@ export class FileEntryCache {
 			}
 		} catch (error) {
 			this.removeEntry(filePath);
-			return {key: result.key, err: error as Error, notFound: true};
+			let notFound = false;
+			if ((error as Error).message.includes('ENOENT')) {
+				notFound = true;
+			}
+
+			return {key: result.key, err: error as Error, notFound};
 		}
 
 		// Check if the file is in the cache

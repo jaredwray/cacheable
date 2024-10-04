@@ -189,7 +189,7 @@ describe('getFileDescriptor()', () => {
 		expect(fileDescriptor).toBeDefined();
 		expect(fileDescriptor.key).toBe(testFile1);
 		expect(fileDescriptor.err).toBeDefined();
-		expect(fileDescriptor.notFound).toBe(true);
+		expect(fileDescriptor.notFound).toBe(false);
 	});
 
 	test('should return that the file has not changed', () => {
