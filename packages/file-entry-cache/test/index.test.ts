@@ -44,6 +44,13 @@ describe('file-entry-cache with options', () => {
 		const fileEntryCache = defaultFileEntryCache.create('test1');
 		expect(fileEntryCache).toBeDefined();
 	});
+
+	test('should initialize with hashAlgorithm', () => {
+		const fileEntryCache = new FileEntryCache({hashAlgorithm: 'sha256'});
+		expect(fileEntryCache.hashAlgorithm).toBe('sha256');
+		fileEntryCache.hashAlgorithm = 'md5';
+		expect(fileEntryCache.hashAlgorithm).toBe('md5');
+	});
 });
 
 describe('getHash', () => {

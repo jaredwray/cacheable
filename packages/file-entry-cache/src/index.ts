@@ -6,6 +6,7 @@ import {FlatCache, createFromFile as createFlatCacheFile, type FlatCacheOptions}
 export type FileEntryCacheOptions = {
 	currentWorkingDirectory?: string;
 	useCheckSum?: boolean;
+	hashAlgorithm?: string;
 	cache?: FlatCacheOptions;
 };
 
@@ -74,6 +75,7 @@ export class FileEntryCache {
 	private _cache: FlatCache = new FlatCache();
 	private _useCheckSum = false;
 	private _currentWorkingDirectory: string | undefined;
+	private _hashAlgorithm = 'md5';
 
 	constructor(options?: FileEntryCacheOptions) {
 		if (options?.cache) {
@@ -86,6 +88,10 @@ export class FileEntryCache {
 
 		if (options?.currentWorkingDirectory) {
 			this._currentWorkingDirectory = options.currentWorkingDirectory;
+		}
+
+		if (options?.hashAlgorithm) {
+			this._hashAlgorithm = options.hashAlgorithm;
 		}
 	}
 
@@ -105,6 +111,14 @@ export class FileEntryCache {
 		this._useCheckSum = value;
 	}
 
+	public get hashAlgorithm(): string {
+		return this._hashAlgorithm;
+	}
+
+	public set hashAlgorithm(value: string) {
+		this._hashAlgorithm = value;
+	}
+
 	public get currentWorkingDirectory(): string | undefined {
 		return this._currentWorkingDirectory;
 	}
@@ -121,7 +135,7 @@ export class FileEntryCache {
 	 */
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	public getHash(buffer: Buffer): string {
-		return crypto.createHash('md5').update(buffer).digest('hex');
+		return crypto.createHash(this._hashAlgorithm).update(buffer).digest('hex');
 	}
 
 	/**
