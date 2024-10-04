@@ -210,8 +210,6 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		fs.writeFileSync(testFile1, 'test4 changed');
 		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
 		const meta = fileEntryCache.cache.get(testFile1);
-		console.log(meta);
-		console.log(fileDescriptor2.meta);
 		expect(fileDescriptor2).toBeDefined();
 		expect(fileDescriptor2.key).toBe(testFile1);
 		expect(fileDescriptor2.changed).toBe(true);
@@ -503,5 +501,45 @@ describe('file-entry-cache - getUpdatedFiles()', () => {
 		fs.writeFileSync(testFile4, 'test5booosdkfjsldfkjsldkjfls');
 		const updatedFiles2 = fileEntryCache.getUpdatedFiles(files);
 		expect(updatedFiles2).toEqual(['test4.txt']);
+	});
+});
+
+describe('createFromFile()', () => {
+	const fileCacheName = 'createFromFiles';
+	beforeEach(() => {
+		// Generate files for testing
+		fs.mkdirSync(path.resolve(`./${fileCacheName}`));
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'test');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test2.txt`), 'test sdfljsdlfjsdflsj');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test3.txt`), 'test3');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test4.txt`), 'test4');
+	});
+
+	afterEach(() => {
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
+	});
+	test('should create a file entry cache from a file', () => {
+		const filePath = path.resolve('./.testCacheCFF/test1');
+		const cacheId = path.basename(filePath);
+		const cacheDirectory = path.dirname(filePath);
+		const fileEntryCacheOptions = {
+			cache: {
+				cacheId,
+				cacheDir: cacheDirectory,
+			},
+			currentWorkingDirectory: `./${fileCacheName}`,
+		};
+		const fileEntryCache1 = new FileEntryCache(fileEntryCacheOptions);
+		fileEntryCache1.getFileDescriptor('test1.txt');
+		fileEntryCache1.getFileDescriptor('test2.txt');
+		fileEntryCache1.getFileDescriptor('test3.txt');
+		fileEntryCache1.getFileDescriptor('test4.txt');
+		fileEntryCache1.reconcile();
+		const fileEntryCache2 = defaultFileEntryCache.createFromFile(filePath, undefined, `./${fileCacheName}`);
+		expect(fileEntryCache2.cache.cacheId).toBe(cacheId);
+		expect(fileEntryCache2.cache.cacheDir).toBe(cacheDirectory);
+		expect(fileEntryCache2.currentWorkingDirectory).toBe(`./${fileCacheName}`);
+		expect(fileEntryCache2.cache.all()).toEqual(fileEntryCache1.cache.all());
+		fs.rmSync(path.resolve(cacheDirectory), {recursive: true, force: true});
 	});
 });

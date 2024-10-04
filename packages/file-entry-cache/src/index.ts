@@ -50,7 +50,18 @@ export function create(cacheId: string, cacheDirectory?: string, useCheckSum?: b
 			cacheDir: cacheDirectory,
 		},
 	};
-	return new FileEntryCache(options);
+
+	const fileEntryCache = new FileEntryCache(options);
+
+	if (cacheDirectory) {
+		const cachePath = `${cacheDirectory}/${cacheId}`;
+		if (fs.existsSync(cachePath)) {
+			fileEntryCache.cache = createFlatCacheFile(cachePath, options.cache);
+			fileEntryCache.reconcile();
+		}
+	}
+
+	return fileEntryCache;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class, unicorn/no-static-only-class
@@ -66,12 +77,7 @@ export class FileEntryCache {
 
 	constructor(options?: FileEntryCacheOptions) {
 		if (options?.cache) {
-			if (!options.cache.cacheDir && options.cache.cacheId) {
-				const path = options.cache.cacheDir + '/' + options.cache.cacheId;
-				this._cache = fs.existsSync(path) ? createFlatCacheFile(path, options.cache) : new FlatCache(options.cache);
-			} else {
-				this._cache = new FlatCache(options.cache);
-			}
+			this._cache = new FlatCache(options.cache);
 		}
 
 		if (options?.useCheckSum) {
