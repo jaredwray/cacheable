@@ -270,6 +270,15 @@ describe('getFileDescriptor()', () => {
 		expect(fileDescriptor.changed).toBe(true);
 	});
 
+	test('should default to process.cwd() if current workind directory not set', () => {
+		const fileEntryCache = new FileEntryCache();
+		const testFile1 = './.cacheGFD/test1.txt';
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.changed).toBe(true);
+	});
+
 	test('should cascade currentWorkingDirectory', () => {
 		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: './.cacheGFD'});
 		const fileDescriptor = fileEntryCache.getFileDescriptor('test1.txt', {currentWorkingDirectory: './.cacheGFD'});

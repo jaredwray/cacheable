@@ -225,8 +225,9 @@ export class FileEntryCache {
 		};
 
 		// Set the file path
-		if (this.isRelativePath(filePath) && (options?.currentWorkingDirectory ?? this._currentWorkingDirectory)) {
-			const currentWorkingDirectory = options?.currentWorkingDirectory ?? this._currentWorkingDirectory;
+		if (this.isRelativePath(filePath)) {
+			// eslint-disable-next-line n/prefer-global/process
+			const currentWorkingDirectory = options?.currentWorkingDirectory ?? this._currentWorkingDirectory ?? process.cwd();
 			if (currentWorkingDirectory) {
 				filePath = path.resolve(currentWorkingDirectory, filePath);
 			}
