@@ -5,9 +5,6 @@ import {
 } from 'vitest';
 import defaultFileEntryCache, {FileEntryCache, type FileEntryCacheOptions} from '../src/index.js';
 
-// eslint-disable-next-line no-promise-executor-return
-const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 describe('file-entry-cache with options', () => {
 	test('should initialize', () => {
 		const fileEntryCache = new FileEntryCache();
@@ -43,6 +40,7 @@ describe('file-entry-cache with options', () => {
 	test('create should initialize a file-entry-cache', () => {
 		const fileEntryCache = defaultFileEntryCache.create('test1');
 		expect(fileEntryCache).toBeDefined();
+		fs.rmSync(fileEntryCache.cache.cacheDirPath, {recursive: true, force: true});
 	});
 
 	test('should initialize with hashAlgorithm', () => {
@@ -685,5 +683,6 @@ describe('renameAbsolutePathKeys()', () => {
 		expect(fileEntry2.changed).toBe(false);
 
 		fs.rmSync(newFileCacheNamePath, {recursive: true, force: true});
+		fs.rmSync(fileEntryCache.cache.cacheDirPath, {recursive: true, force: true});
 	});
 });
