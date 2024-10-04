@@ -23,7 +23,7 @@ describe('eslint tests scenarios', () => {
 
 	afterEach(() => {
 		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
-		fs.rmSync(path.resolve(`./${eslintCacheName}`), {recursive: true, force: true});
+		fs.rmSync(path.resolve(`./${eslintDirectory}`), {recursive: true, force: true});
 	});
 	test('about to do absolute paths', () => {
 		// Make sure the cache doesnt exist before we start
