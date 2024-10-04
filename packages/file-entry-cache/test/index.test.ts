@@ -410,3 +410,55 @@ describe('file-entry-cache - reconcile()', () => {
 		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
 	});
 });
+
+describe('file-entry-cache - analyzeFiles()', () => {
+	const fileCacheName = 'analyzeFiles';
+	beforeEach(() => {
+		// Generate files for testing
+		fs.mkdirSync(path.resolve(`./${fileCacheName}`));
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'test');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test2.txt`), 'test sdfljsdlfjsdflsj');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test3.txt`), 'test3');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test4.txt`), 'test4');
+	});
+
+	afterEach(() => {
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
+	});
+
+	test('should analyze files', () => {
+		const options: FileEntryCacheOptions = {
+			currentWorkingDirectory: `./${fileCacheName}`,
+			cache: {
+				cacheId: 'test1',
+				cacheDir: './.cacheAnalyzeFiles',
+			},
+		};
+		const fileEntryCache = new FileEntryCache(options);
+		const files = ['test1.txt', 'test2.txt', 'test3.txt', 'test4.txt'];
+		const analyzedFiles = fileEntryCache.analyzeFiles(files);
+		expect(analyzedFiles).toBeDefined();
+		expect(analyzedFiles.changedFiles.length).toBe(4);
+	});
+
+	test('should analyze files with removed ones', () => {
+		const options: FileEntryCacheOptions = {
+			currentWorkingDirectory: `./${fileCacheName}`,
+			cache: {
+				cacheId: 'test1',
+				cacheDir: './.cacheAnalyzeFiles',
+			},
+		};
+		const fileEntryCache = new FileEntryCache(options);
+		const files = ['test1.txt', 'test2.txt', 'test3.txt', 'test4.txt'];
+		const analyzedFiles = fileEntryCache.analyzeFiles(files);
+		expect(analyzedFiles).toBeDefined();
+		expect(analyzedFiles.changedFiles.length).toBe(4);
+		const testFile4 = path.resolve(`./${fileCacheName}/test4.txt`);
+		fs.unlinkSync(testFile4);
+		const analyzedFiles2 = fileEntryCache.analyzeFiles(files);
+		expect(analyzedFiles2.changedFiles.length).toBe(0);
+		expect(analyzedFiles2.notChangedFiles.length).toBe(3);
+		expect(analyzedFiles2.notFoundFiles.length).toBe(1);
+	});
+});

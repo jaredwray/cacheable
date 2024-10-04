@@ -23,6 +23,12 @@ export type FileDescriptor = {
 	err?: Error;
 };
 
+export type AnalyzedFiles = {
+	changedFiles: string[];
+	notFoundFiles: string[];
+	notChangedFiles: string[];
+};
+
 export function create(): FileEntryCache {
 	return new FileEntryCache();
 }
@@ -254,5 +260,32 @@ export class FileEntryCache {
 	 */
 	public normalizeEntries(files: string[]): FileDescriptor[] {
 		return files.map(file => this.getFileDescriptor(file));
+	}
+
+	/**
+	 * Analyze the files
+	 * @method analyzeFiles
+	 * @param files - The files to analyze
+	 * @returns {AnalyzedFiles} The analysis of the files
+	 */
+	public analyzeFiles(files: string[]): AnalyzedFiles {
+		const result: AnalyzedFiles = {
+			changedFiles: [],
+			notFoundFiles: [],
+			notChangedFiles: [],
+		};
+
+		const fileDescriptors = this.normalizeEntries(files);
+		for (const fileDescriptor of fileDescriptors) {
+			if (fileDescriptor.notFound) {
+				result.notFoundFiles.push(fileDescriptor.key);
+			} else if (fileDescriptor.changed) {
+				result.changedFiles.push(fileDescriptor.key);
+			} else {
+				result.notChangedFiles.push(fileDescriptor.key);
+			}
+		}
+
+		return result;
 	}
 }
