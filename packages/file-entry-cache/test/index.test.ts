@@ -84,7 +84,7 @@ describe('getFileKey', () => {
 		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: '/usr/src/test2'});
 		const path = '/usr/src/test2/test.file';
 		const key = fileEntryCache.createFileKey(path);
-		expect(key).toBe('/test.file');
+		expect(key).toBe('test.file');
 	});
 	test('should return full path when cwd is full path', () => {
 		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: '/usr/src/test2'});
@@ -105,11 +105,21 @@ describe('destroy()', () => {
 });
 
 describe('removeEntry()', () => {
-	test('should remove the entry', () => {
+	test('test relative path and absolute path', () => {
 		const fileEntryCache = new FileEntryCache();
-		fileEntryCache.cache.setKey('foo', 'bar');
-		expect(fileEntryCache.cache.all()).toEqual({foo: 'bar'});
-		fileEntryCache.removeEntry('foo');
+		fileEntryCache.cache.setKey('/usr/src/test2/test', 'bar');
+		// eslint-disable-next-line @typescript-eslint/naming-convention
+		expect(fileEntryCache.cache.all()).toEqual({'/usr/src/test2/test': 'bar'});
+		fileEntryCache.removeEntry('test', {currentWorkingDirectory: '/usr/src/test2'});
+		expect(fileEntryCache.cache.all()).toEqual({});
+	});
+
+	test('should not work if passing a absolute path to a relative key', () => {
+		const fileEntryCache = new FileEntryCache();
+		fileEntryCache.cache.setKey('testified', 'bar');
+
+		expect(fileEntryCache.cache.all()).toEqual({testified: 'bar'});
+		fileEntryCache.removeEntry('/usr/src/test2/testified', {currentWorkingDirectory: '/usr/src/test2'});
 		expect(fileEntryCache.cache.all()).toEqual({});
 	});
 });
@@ -333,7 +343,7 @@ describe('hasFileChanged()', () => {
 
 describe('normalizeEntries()', () => {
 	const fileCacheName = '.cacheNE';
-	beforeAll(() => {
+	beforeEach(() => {
 		// Generate files for testing
 		fs.mkdirSync(path.resolve(`./${fileCacheName}`));
 		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'test');
@@ -341,7 +351,7 @@ describe('normalizeEntries()', () => {
 		fs.writeFileSync(path.resolve(`./${fileCacheName}/test3.txt`), 'test3');
 	});
 
-	afterAll(() => {
+	afterEach(() => {
 		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
 	});
 	test('should return an empty array', () => {
@@ -355,6 +365,20 @@ describe('normalizeEntries()', () => {
 		const entries = fileEntryCache.normalizeEntries(['test1.txt', 'test2.txt']);
 		expect(entries[0].key).toBe('test1.txt');
 		expect(entries[0].changed).toBe(true);
+		expect(entries[1].key).toBe('test2.txt');
+		expect(entries[1].changed).toBe(false);
+	});
+
+	test('should return all entries', () => {
+		const fileEntryCache = new FileEntryCache({useCheckSum: true, currentWorkingDirectory: `./${fileCacheName}`});
+		fileEntryCache.getFileDescriptor('test1.txt');
+		fileEntryCache.getFileDescriptor('test2.txt');
+		fileEntryCache.getFileDescriptor('test3.txt');
+		fs.chmodSync(path.resolve(`./${fileCacheName}/test3.txt`), 0o000);
+		const entries = fileEntryCache.normalizeEntries();
+		expect(entries.length).toBe(2);
+		expect(entries[0].key).toBe('test1.txt');
+		expect(entries[0].changed).toBe(false);
 		expect(entries[1].key).toBe('test2.txt');
 		expect(entries[1].changed).toBe(false);
 	});

@@ -144,12 +144,16 @@ export class FileEntryCache {
 	 * @param {String} filePath
 	 * @return {String}
 	 */
-	public createFileKey(filePath: string): string {
+	public createFileKey(filePath: string, optons?: {currentWorkingDirectory?: string}): string {
 		let result = filePath;
-		if (this._currentWorkingDirectory) {
-			const splitPath = filePath.split(this._currentWorkingDirectory).pop();
+		const currentWorkingDirectory = optons?.currentWorkingDirectory ?? this._currentWorkingDirectory;
+		if (currentWorkingDirectory && filePath.startsWith(currentWorkingDirectory)) {
+			const splitPath = filePath.split(currentWorkingDirectory).pop();
 			if (splitPath) {
 				result = splitPath;
+				if (result.startsWith('/')) {
+					result = result.slice(1);
+				}
 			}
 		}
 
@@ -188,8 +192,14 @@ export class FileEntryCache {
 	 * @method removeEntry
 	 * @param filePath - The file path to remove from the cache
 	 */
-	public removeEntry(filePath: string) {
-		this._cache.removeKey(this.createFileKey(filePath));
+	public removeEntry(filePath: string, options?: {currentWorkingDirectory?: string}): void {
+		if (this.isRelativePath(filePath)) {
+			filePath = this.getAbsolutePath(filePath, {currentWorkingDirectory: options?.currentWorkingDirectory});
+			this._cache.removeKey(this.createFileKey(filePath));
+		}
+
+		const key = this.createFileKey(filePath, {currentWorkingDirectory: options?.currentWorkingDirectory});
+		this._cache.removeKey(key);
 	}
 
 	/**
@@ -296,11 +306,30 @@ export class FileEntryCache {
 	/**
 	 * Get the file descriptors for the files
 	 * @method normalizeEntries
-	 * @param files - The files to get the file descriptors for
+	 * @param files?: string[] - The files to get the file descriptors for
 	 * @returns The file descriptors
 	 */
-	public normalizeEntries(files: string[]): FileDescriptor[] {
-		return files.map(file => this.getFileDescriptor(file));
+	public normalizeEntries(files?: string[]): FileDescriptor[] {
+		const result = new Array<FileDescriptor>();
+		if (files) {
+			for (const file of files) {
+				const fileDescriptor = this.getFileDescriptor(file);
+				result.push(fileDescriptor);
+			}
+
+			return result;
+		}
+
+		const keys = this.cache.keys();
+		for (const key of keys) {
+			const fileDescriptor = this.getFileDescriptor(key);
+			console.log('fileDescriptor', fileDescriptor);
+			if (!fileDescriptor.notFound && !fileDescriptor.err) {
+				result.push(fileDescriptor);
+			}
+		}
+
+		return result;
 	}
 
 	/**
