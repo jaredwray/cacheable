@@ -18,7 +18,7 @@ export type GetFileDescriptorOptions = {
 export type FileDescriptor = {
 	key: string;
 	changed?: boolean;
-	meta?: FileDescriptorMeta;
+	meta: FileDescriptorMeta;
 	notFound?: boolean;
 	err?: Error;
 };
@@ -246,6 +246,7 @@ export class FileEntryCache {
 		const result: FileDescriptor = {
 			key: this.createFileKey(filePath),
 			changed: false,
+			meta: {},
 		};
 
 		// Set the file path
@@ -274,28 +275,30 @@ export class FileEntryCache {
 				notFound = true;
 			}
 
-			return {key: result.key, err: error as Error, notFound};
+			return {
+				key: result.key, err: error as Error, notFound, meta: {},
+			};
 		}
 
-		// Check if the file is in the cache
-		const cacheFileDescriptor: FileDescriptor = {
-			key: result.key,
-			meta: this._cache.getKey(result.key),
-		};
+		const metaCache = this._cache.getKey<FileDescriptorMeta>(result.key);
+
 		// If the file is not in the cache, add it
-		if (!cacheFileDescriptor.meta) {
+		if (!metaCache) {
 			result.changed = true;
 			this._cache.setKey(result.key, result.meta);
 			return result;
 		}
 
+		// Set the data from the cache
+		result.meta.data = metaCache.data;
+
 		// If the file is in the cache, check if the file has changed
-		if (cacheFileDescriptor.meta?.mtime !== result.meta?.mtime || cacheFileDescriptor.meta?.size !== result.meta?.size) {
+		if (metaCache?.mtime !== result.meta?.mtime || metaCache?.size !== result.meta?.size) {
 			result.changed = true;
 			this._cache.setKey(result.key, result.meta);
 		}
 
-		if (useCheckSumValue && cacheFileDescriptor.meta?.hash !== result.meta?.hash) {
+		if (useCheckSumValue && metaCache?.hash !== result.meta?.hash) {
 			result.changed = true;
 			this._cache.setKey(result.key, result.meta);
 		}
@@ -323,7 +326,6 @@ export class FileEntryCache {
 		const keys = this.cache.keys();
 		for (const key of keys) {
 			const fileDescriptor = this.getFileDescriptor(key);
-			console.log('fileDescriptor', fileDescriptor);
 			if (!fileDescriptor.notFound && !fileDescriptor.err) {
 				result.push(fileDescriptor);
 			}

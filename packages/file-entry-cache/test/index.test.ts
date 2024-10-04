@@ -159,7 +159,7 @@ describe('getFileDescriptor()', () => {
 		expect(fileDescriptor.key).toBe('non-existent-file');
 		expect(fileDescriptor.err).toBeDefined();
 		expect(fileDescriptor.notFound).toBe(true);
-		expect(fileDescriptor.meta).to.not.toBeDefined();
+		expect(fileDescriptor.meta.data).to.not.toBeDefined();
 	});
 
 	test('should return a file descriptor', () => {
