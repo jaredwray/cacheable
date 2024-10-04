@@ -136,13 +136,13 @@ export interface Emitter extends EventEmitter {
 export class RequestError extends Error {
 	constructor(error: Error) {
 		super(error.message);
-		Object.assign(this, error);
+		Object.defineProperties(this, Object.getOwnPropertyDescriptors(error));
 	}
 }
 export class CacheError extends Error {
 	constructor(error: Error) {
 		super(error.message);
-		Object.assign(this, error);
+		Object.defineProperties(this, Object.getOwnPropertyDescriptors(error));
 	}
 }
 
