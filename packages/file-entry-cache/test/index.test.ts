@@ -46,7 +46,7 @@ describe('file-entry-cache with options', () => {
 	});
 });
 
-describe('file-entry-cache - getHash', () => {
+describe('getHash', () => {
 	test('should return a hash', () => {
 		const fileEntryCache = new FileEntryCache();
 		const buffer = Buffer.from('test');
@@ -61,7 +61,7 @@ describe('file-entry-cache - getHash', () => {
 	});
 });
 
-describe('file-entry-cache - getFileKey', () => {
+describe('getFileKey', () => {
 	test('should return a key', () => {
 		const fileEntryCache = new FileEntryCache();
 		const key = fileEntryCache.createFileKey('test');
@@ -87,7 +87,7 @@ describe('file-entry-cache - getFileKey', () => {
 	});
 });
 
-describe('file-entry-cache - destroy()', () => {
+describe('destroy()', () => {
 	test('should return false to delete the file cache', () => {
 		const fileEntryCache = new FileEntryCache();
 		fileEntryCache.cache.setKey('foo', 'bar');
@@ -97,7 +97,7 @@ describe('file-entry-cache - destroy()', () => {
 	});
 });
 
-describe('file-entry-cache - removeEntry()', () => {
+describe('removeEntry()', () => {
 	test('should remove the entry', () => {
 		const fileEntryCache = new FileEntryCache();
 		fileEntryCache.cache.setKey('foo', 'bar');
@@ -107,7 +107,7 @@ describe('file-entry-cache - removeEntry()', () => {
 	});
 });
 
-describe('file-entry-cache - removeCacheFile()', () => {
+describe('removeCacheFile()', () => {
 	test('should remove the cache file', () => {
 		const fileEntryCache = new FileEntryCache();
 		fileEntryCache.cache.setKey('foo', 'bar');
@@ -121,7 +121,7 @@ describe('file-entry-cache - removeCacheFile()', () => {
 	});
 });
 
-describe('file-entry-cache - getFileDescriptor()', () => {
+describe('getFileDescriptor()', () => {
 	const fileCacheName = '.cacheGFD';
 	beforeEach(() => {
 		// Generate files for testing
@@ -280,7 +280,7 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 	});
 });
 
-describe('file-entry-cache - hasFileChanged()', () => {
+describe('hasFileChanged()', () => {
 	const fileCacheName = '.cacheHFC';
 	beforeAll(() => {
 		// Generate files for testing
@@ -315,7 +315,7 @@ describe('file-entry-cache - hasFileChanged()', () => {
 	});
 });
 
-describe('file-entry-cache - normalizeEntries()', () => {
+describe('normalizeEntries()', () => {
 	const fileCacheName = '.cacheNE';
 	beforeAll(() => {
 		// Generate files for testing
@@ -344,7 +344,7 @@ describe('file-entry-cache - normalizeEntries()', () => {
 	});
 });
 
-describe('file-entry-cache - reconcile()', () => {
+describe('reconcile()', () => {
 	const fileCacheName = '.cacheReconcile';
 	beforeEach(() => {
 		// Generate files for testing
@@ -410,7 +410,7 @@ describe('file-entry-cache - reconcile()', () => {
 	});
 });
 
-describe('file-entry-cache - analyzeFiles()', () => {
+describe('analyzeFiles()', () => {
 	const fileCacheName = 'analyzeFiles';
 	beforeEach(() => {
 		// Generate files for testing
@@ -462,7 +462,7 @@ describe('file-entry-cache - analyzeFiles()', () => {
 	});
 });
 
-describe('file-entry-cache - getUpdatedFiles()', () => {
+describe('getUpdatedFiles()', () => {
 	const fileCacheName = 'getUpdatedFiles';
 	beforeEach(() => {
 		// Generate files for testing
