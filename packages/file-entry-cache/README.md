@@ -47,7 +47,8 @@ There have been many features added and changes made to the `file-entry-cache` c
 
 # API
 
-
+- `constructor(options?: FileEntryCacheOptions)` - Creates a new instance of the `FileEntryCache` class
+- `getHash(buffer: Buffer): string` - Gets the hash of a buffer used for checksums
 
 # How to Contribute
 

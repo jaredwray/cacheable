@@ -41,3 +41,18 @@ describe('file-entry-cache with options', () => {
 		expect(fileEntryCache).toBeDefined();
 	});
 });
+
+describe('file-entry-cache - getHash', () => {
+	test('should return a hash', () => {
+		const fileEntryCache = new FileEntryCache();
+		const buffer = Buffer.from('test');
+		const hash = fileEntryCache.getHash(buffer);
+		expect(hash).toBeDefined();
+	});
+	test('empty buffer should return md5 empty hash', () => {
+		const fileEntryCache = new FileEntryCache();
+		const buffer = Buffer.from('');
+		const hash = fileEntryCache.getHash(buffer);
+		expect(hash).toBe('d41d8cd98f00b204e9800998ecf8427e'); // md5 hash of empty string
+	});
+});

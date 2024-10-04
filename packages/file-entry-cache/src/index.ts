@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import {FlatCache, type FlatCacheOptions} from 'flat-cache';
 
 export type FileEntryCacheOptions = {
@@ -56,5 +57,16 @@ export class FileEntryCache {
 
 	public set currentWorkingDirectory(value: string | undefined) {
 		this._currentWorkingDirectory = value;
+	}
+
+	/**
+	 * Given a buffer, calculate md5 hash of its content.
+	 * @method getHash
+	 * @param  {Buffer} buffer   buffer to calculate hash on
+	 * @return {String}          content hash digest
+	 */
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	public getHash(buffer: Buffer): string {
+		return crypto.createHash('md5').update(buffer).digest('hex');
 	}
 }
