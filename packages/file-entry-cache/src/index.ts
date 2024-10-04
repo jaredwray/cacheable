@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
 import {FlatCache, type FlatCacheOptions} from 'flat-cache';
 
 export type FileEntryCacheOptions = {
@@ -10,7 +11,7 @@ export type FileEntryCacheOptions = {
 
 export type GetFileDescriptorOptions = {
 	useCheckSum?: boolean;
-	useCurrentWorkingDirectory?: boolean;
+	currentWorkingDirectory?: string;
 };
 
 export type FileDescriptor = {
@@ -24,7 +25,6 @@ export type FileDescriptor = {
 	};
 	notFound?: boolean;
 	err?: Error;
-	isRelative?: boolean;
 };
 
 export function create(): FileEntryCache {
@@ -92,6 +92,7 @@ export class FileEntryCache {
 
 	/**
 	 * Create the key for the file path used for caching.
+	 * @method createFileKey
 	 * @param {String} filePath
 	 * @return {String}
 	 */
@@ -108,6 +109,16 @@ export class FileEntryCache {
 	}
 
 	/**
+	 * Check if the file path is a relative path
+	 * @method isRelativePath
+	 * @param filePath - The file path to check
+	 * @returns {boolean} if the file path is a relative path, false otherwise
+	 */
+	public isRelativePath(filePath: string): boolean {
+		return !path.isAbsolute(filePath);
+	}
+
+	/**
 	* Delete the cache file from the disk
 	* @method deleteCacheFile
 	* @return {boolean}       true if the file was deleted, false otherwise
@@ -118,6 +129,7 @@ export class FileEntryCache {
 
 	/**
 	* Remove the cache from the file and clear the memory cache
+	* @method destroy
 	*/
 	public destroy() {
 		this._cache.destroy();
@@ -125,6 +137,7 @@ export class FileEntryCache {
 
 	/**
 	 * Remove and Entry From the Cache
+	 * @method removeEntry
 	 * @param filePath - The file path to remove from the cache
 	 */
 	public removeEntry(filePath: string) {
@@ -133,11 +146,35 @@ export class FileEntryCache {
 
 	/**
 	 * Reconcile the cache
+	 * @method reconcile
 	 */
 	public reconcile(): void {
 		this._cache.save();
 	}
 
+	/**
+	 * Check if the file has changed
+	 * @method hasFileChanged
+	 * @param filePath - The file path to check
+	 * @returns {boolean} if the file has changed, false otherwise
+	 */
+	public hasFileChanged(filePath: string): boolean {
+		let result = false;
+		const fileDescriptor = this.getFileDescriptor(filePath);
+		if (!fileDescriptor.notFound && fileDescriptor.changed) {
+			result = true;
+		}
+
+		return result;
+	}
+
+	/**
+	 * Get the file descriptor for the file path
+	 * @method getFileDescriptor
+	 * @param filePath - The file path to get the file descriptor for
+	 * @param options - The options for getting the file descriptor
+	 * @returns The file descriptor
+	 */
 	public getFileDescriptor(filePath: string, options?: GetFileDescriptorOptions): FileDescriptor {
 		let fstat: fs.Stats;
 		const result: FileDescriptor = {
@@ -145,9 +182,12 @@ export class FileEntryCache {
 			changed: false,
 		};
 
-		if (this._currentWorkingDirectory && options?.useCurrentWorkingDirectory !== false) {
-			filePath = `${this._currentWorkingDirectory}/${filePath}`;
-			result.isRelative = true;
+		// Set the file path
+		if (this.isRelativePath(filePath) && (options?.currentWorkingDirectory ?? this._currentWorkingDirectory)) {
+			const currentWorkingDirectory = options?.currentWorkingDirectory ?? this._currentWorkingDirectory;
+			if (currentWorkingDirectory) {
+				filePath = path.resolve(currentWorkingDirectory, filePath);
+			}
 		}
 
 		try {
@@ -198,5 +238,15 @@ export class FileEntryCache {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Get the file descriptors for the files
+	 * @method normalizeEntries
+	 * @param files - The files to get the file descriptors for
+	 * @returns The file descriptors
+	 */
+	public normalizeEntries(files: string[]): FileDescriptor[] {
+		return files.map(file => this.getFileDescriptor(file));
 	}
 }
