@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {FlatCache, createFromFile as createFlatCacheFile, type FlatCacheOptions} from 'flat-cache';
+import {aB} from 'vitest/dist/chunks/reporters.WnPwkmgA';
 
 export type FileEntryCacheOptions = {
 	currentWorkingDirectory?: string;
@@ -239,13 +240,7 @@ export class FileEntryCache {
 		};
 
 		// Set the file path
-		if (this.isRelativePath(filePath)) {
-			// eslint-disable-next-line n/prefer-global/process
-			const currentWorkingDirectory = options?.currentWorkingDirectory ?? this._currentWorkingDirectory ?? process.cwd();
-			if (currentWorkingDirectory) {
-				filePath = path.resolve(currentWorkingDirectory, filePath);
-			}
-		}
+		filePath = this.getAbsolutePath(filePath, {currentWorkingDirectory: options?.currentWorkingDirectory});
 
 		const useCheckSumValue = options?.useCheckSum ?? this._useCheckSum;
 
@@ -349,5 +344,42 @@ export class FileEntryCache {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Get the not found files
+	 * @method getFileDescriptorsByPath
+	 * @param filePath - the files that you want to get from a path
+	 * @returns {FileDescriptor[]} The not found files
+	 */
+	public getFileDescriptorsByPath(filePath: string): FileDescriptor[] {
+		const result = new Array<FileDescriptor>();
+		const keys = this._cache.keys();
+		for (const key of keys) {
+			const absolutePath = this.getAbsolutePath(filePath);
+			if (absolutePath.startsWith(filePath)) {
+				const fileDescriptor = this.getFileDescriptor(key);
+				result.push(fileDescriptor);
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Get the Absolute Path. If it is already absolute it will return the path as is.
+	 * @method getAbsolutePath
+	 * @param filePath - The file path to get the absolute path for
+	 * @param options - The options for getting the absolute path. The current working directory is used if not provided.
+	 * @returns {string}
+	 */
+	public getAbsolutePath(filePath: string, options?: {currentWorkingDirectory?: string}): string {
+		if (this.isRelativePath(filePath)) {
+			// eslint-disable-next-line n/prefer-global/process
+			const currentWorkingDirectory = options?.currentWorkingDirectory ?? this._currentWorkingDirectory ?? process.cwd();
+			filePath = path.resolve(currentWorkingDirectory, filePath);
+		}
+
+		return filePath;
 	}
 }

@@ -559,3 +559,35 @@ describe('createFromFile()', () => {
 		fs.rmSync(path.resolve(cacheDirectory), {recursive: true, force: true});
 	});
 });
+
+describe('getFileDescriptorsByPath()', () => {
+	const fileCacheName = 'filesGFDBP';
+	beforeEach(() => {
+		// Generate files for testing
+		fs.mkdirSync(path.resolve(`./${fileCacheName}`));
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'test');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test2.txt`), 'test sdfljsdlfjsdflsj');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test3.txt`), 'test3');
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test4.txt`), 'test4');
+	});
+
+	afterEach(() => {
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
+	});
+	test('should return an empty array', () => {
+		const fileEntryCache = new FileEntryCache();
+		const fileDescriptors = fileEntryCache.getFileDescriptorsByPath('/foo/bar');
+		expect(fileDescriptors).toEqual([]);
+	});
+
+	test('should return an array of file descriptors', () => {
+		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: `./${fileCacheName}`});
+		fileEntryCache.getFileDescriptor('test1.txt');
+		fileEntryCache.getFileDescriptor('test2.txt');
+		fileEntryCache.getFileDescriptor('test3.txt');
+		const absolutePath = path.resolve(`./${fileCacheName}/`);
+		const fileDescriptors = fileEntryCache.getFileDescriptorsByPath(absolutePath);
+		expect(fileDescriptors.length).toBe(3);
+		expect(fileDescriptors[0].key).toBe('test1.txt');
+	});
+});
