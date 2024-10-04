@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import {describe, test, expect} from 'vitest';
 import defaultFileEntryCache, {FileEntryCache} from '../src/index.js';
 
@@ -80,5 +81,39 @@ describe('file-entry-cache - getFileKey', () => {
 		const path = '/usr/src/test2';
 		const key = fileEntryCache.createFileKey(path);
 		expect(key).toBe(path);
+	});
+});
+
+describe('file-entry-cache - destroy()', () => {
+	test('should return false to delete the file cache', () => {
+		const fileEntryCache = new FileEntryCache();
+		fileEntryCache.cache.setKey('foo', 'bar');
+		expect(fileEntryCache.cache.all()).toEqual({foo: 'bar'});
+		fileEntryCache.destroy();
+		expect(fileEntryCache.cache.all()).toEqual({});
+	});
+});
+
+describe('file-entry-cache - removeEntry()', () => {
+	test('should remove the entry', () => {
+		const fileEntryCache = new FileEntryCache();
+		fileEntryCache.cache.setKey('foo', 'bar');
+		expect(fileEntryCache.cache.all()).toEqual({foo: 'bar'});
+		fileEntryCache.removeEntry('foo');
+		expect(fileEntryCache.cache.all()).toEqual({});
+	});
+});
+
+describe('file-entry-cache - removeCacheFile()', () => {
+	test('should remove the cache file', () => {
+		const fileEntryCache = new FileEntryCache();
+		fileEntryCache.cache.setKey('foo', 'bar');
+		expect(fileEntryCache.cache.all()).toEqual({foo: 'bar'});
+		fileEntryCache.reconcile();
+		expect(fs.existsSync(fileEntryCache.cache.cacheFilePath)).toBe(true);
+		fileEntryCache.deleteCacheFile();
+		expect(fs.existsSync(fileEntryCache.cache.cacheFilePath)).toBe(false);
+		// Clean up
+		fs.rmSync(fileEntryCache.cache.cacheDirPath, {recursive: true, force: true});
 	});
 });

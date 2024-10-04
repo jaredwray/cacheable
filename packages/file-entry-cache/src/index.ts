@@ -86,4 +86,35 @@ export class FileEntryCache {
 
 		return result;
 	}
+
+	/**
+	* Delete the cache file from the disk
+	* @method deleteCacheFile
+	* @return {boolean}       true if the file was deleted, false otherwise
+	*/
+	public deleteCacheFile(): boolean {
+		return this._cache.removeCacheFile();
+	}
+
+	/**
+	* Remove the cache from the file and clear the memory cache
+	*/
+	public destroy() {
+		this._cache.destroy();
+	}
+
+	/**
+	 * Remove and Entry From the Cache
+	 * @param filePath - The file path to remove from the cache
+	 */
+	public removeEntry(filePath: string) {
+		this._cache.removeKey(this.createFileKey(filePath));
+	}
+
+	/**
+	 * Reconcile the cache
+	 */
+	public reconcile(): void {
+		this._cache.save();
+	}
 }
