@@ -53,6 +53,32 @@ describe('file-entry-cache - getHash', () => {
 		const fileEntryCache = new FileEntryCache();
 		const buffer = Buffer.from('');
 		const hash = fileEntryCache.getHash(buffer);
-		expect(hash).toBe('d41d8cd98f00b204e9800998ecf8427e'); // md5 hash of empty string
+		expect(hash).toBe('d41d8cd98f00b204e9800998ecf8427e'); // Md5 hash of empty string
+	});
+});
+
+describe('file-entry-cache - getFileKey', () => {
+	test('should return a key', () => {
+		const fileEntryCache = new FileEntryCache();
+		const key = fileEntryCache.createFileKey('test');
+		expect(key).toBe('test');
+	});
+	test('should return a correct path key', () => {
+		const fileEntryCache = new FileEntryCache();
+		const path = '/usr/src/test2/test';
+		const key = fileEntryCache.createFileKey(path);
+		expect(key).toBe(path);
+	});
+	test('should return a correct path key with cwd', () => {
+		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: '/usr/src/test2'});
+		const path = '/usr/src/test2/test.file';
+		const key = fileEntryCache.createFileKey(path);
+		expect(key).toBe('/test.file');
+	});
+	test('should return full path when cwd is full path', () => {
+		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: '/usr/src/test2'});
+		const path = '/usr/src/test2';
+		const key = fileEntryCache.createFileKey(path);
+		expect(key).toBe(path);
 	});
 });

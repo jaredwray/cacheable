@@ -69,4 +69,21 @@ export class FileEntryCache {
 	public getHash(buffer: Buffer): string {
 		return crypto.createHash('md5').update(buffer).digest('hex');
 	}
+
+	/**
+	 * Create the key for the file path used for caching.
+	 * @param {String} filePath
+	 * @return {String}
+	 */
+	public createFileKey(filePath: string): string {
+		let result = filePath;
+		if (this._currentWorkingDirectory) {
+			const splitPath = filePath.split(this._currentWorkingDirectory).pop();
+			if (splitPath) {
+				result = splitPath;
+			}
+		}
+
+		return result;
+	}
 }

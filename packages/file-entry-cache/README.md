@@ -49,6 +49,7 @@ There have been many features added and changes made to the `file-entry-cache` c
 
 - `constructor(options?: FileEntryCacheOptions)` - Creates a new instance of the `FileEntryCache` class
 - `getHash(buffer: Buffer): string` - Gets the hash of a buffer used for checksums
+- `createKey(filePath: string): string` - Gets the key for the file path. This is used to store the data in the cache
 
 # How to Contribute
 
