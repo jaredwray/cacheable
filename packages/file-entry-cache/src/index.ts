@@ -17,9 +17,16 @@ export type GetFileDescriptorOptions = {
 export type FileDescriptor = {
 	key: string;
 	changed?: boolean;
-	meta?: any;
+	meta?: FileDescriptorMeta;
 	notFound?: boolean;
 	err?: Error;
+};
+
+export type FileDescriptorMeta = {
+	size?: number;
+	mtime?: number;
+	hash?: string;
+	data?: unknown;
 };
 
 export type AnalyzedFiles = {
@@ -219,6 +226,8 @@ export class FileEntryCache {
 			}
 		}
 
+		const useCheckSumValue = options?.useCheckSum ?? this._useCheckSum;
+
 		try {
 			fstat = fs.statSync(filePath);
 			// Get the file size
@@ -227,44 +236,40 @@ export class FileEntryCache {
 			};
 			// Get the file modification time
 			result.meta.mtime = fstat.mtime.getTime();
+
+			if (useCheckSumValue) {
+				// Get the file hash
+				const buffer = fs.readFileSync(filePath);
+				result.meta.hash = this.getHash(buffer);
+			}
 		} catch (error) {
 			this.removeEntry(filePath);
 			return {key: result.key, err: error as Error, notFound: true};
 		}
 
-		const useCheckSumValue = options?.useCheckSum ?? this._useCheckSum;
+		// Check if the file is in the cache
 
-		// Add in the checksum selected
-		if (useCheckSumValue) {
-			try {
-				const buffer = fs.readFileSync(filePath);
-				result.meta ||= {};
-				result.meta.hash = this.getHash(buffer);
-			} catch (error) {
-				// If there is an error, remove the file from the cache
-				this.removeEntry(filePath);
-				return {key: result.key, err: error as Error, notFound: true};
-			}
+		const cacheFileDescriptor: FileDescriptor = {
+			key: result.key,
+
+			meta: this._cache.getKey(result.key),
+		};
+		// If the file is not in the cache, add it
+		if (!cacheFileDescriptor) {
+			result.changed = true;
+			this._cache.setKey(result.key, result.meta);
+			return result;
 		}
 
-		if (!result.notFound && !result.err) {
-			// Check if the file is in the cache
-			const cacheFileDescriptor = this._cache.getKey<FileDescriptor>(result.key);
-			// If the file is not in the cache, add it
-			if (!cacheFileDescriptor) {
-				result.changed = true;
-				this._cache.setKey(result.key, result);
-				return result;
-			}
+		// If the file is in the cache, check if the file has changed
+		if (cacheFileDescriptor.meta?.mtime !== result.meta?.mtime || cacheFileDescriptor.meta?.size !== result.meta?.size) {
+			result.changed = true;
+			this._cache.setKey(result.key, result.meta);
+		}
 
-			// If the file is in the cache, check if the file has changed
-			if (useCheckSumValue && cacheFileDescriptor.meta.hash !== result.meta.hash) {
-				result.changed = true;
-				this._cache.setKey(result.key, result);
-			} else if (cacheFileDescriptor.meta?.mtime !== result.meta?.mtime || cacheFileDescriptor.meta?.size !== result.meta?.size) {
-				result.changed = true;
-				this._cache.setKey(result.key, result);
-			}
+		if (useCheckSumValue && cacheFileDescriptor.meta?.hash !== result.meta?.hash) {
+			result.changed = true;
+			this._cache.setKey(result.key, result.meta);
 		}
 
 		return result;

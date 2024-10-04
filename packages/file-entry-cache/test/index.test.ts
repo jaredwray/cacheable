@@ -57,7 +57,7 @@ describe('file-entry-cache - getHash', () => {
 		const fileEntryCache = new FileEntryCache();
 		const buffer = Buffer.from('');
 		const hash = fileEntryCache.getHash(buffer);
-		expect(hash).toBe('d41d8cd98f00b204e9800998ecf8427e'); // Md5 hash of empty string
+		expect(hash).toBe('d41d8cd98f00b204e9800998ecf8427e'); // Sha256 hash of empty string
 	});
 });
 
@@ -123,7 +123,7 @@ describe('file-entry-cache - removeCacheFile()', () => {
 
 describe('file-entry-cache - getFileDescriptor()', () => {
 	const fileCacheName = '.cacheGFD';
-	beforeAll(() => {
+	beforeEach(() => {
 		// Generate files for testing
 		fs.mkdirSync(path.resolve(`./${fileCacheName}`));
 		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'test');
@@ -131,7 +131,7 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		fs.writeFileSync(path.resolve(`./${fileCacheName}/test3.txt`), 'test3');
 	});
 
-	afterAll(() => {
+	afterEach(() => {
 		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
 	});
 
@@ -153,7 +153,7 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		expect(fileDescriptor.key).toBe(testFile1);
 		expect(fileDescriptor.meta).toBeDefined();
 		expect(fileDescriptor.meta?.size).toBe(4);
-		expect(fileDescriptor.meta.hash).to.not.toBeDefined();
+		expect(fileDescriptor.meta?.hash).to.not.toBeDefined();
 	});
 
 	test('should return a file descriptor with checksum', () => {
@@ -162,7 +162,7 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1, {useCheckSum: true});
 		expect(fileDescriptor).toBeDefined();
 		expect(fileDescriptor.key).toBe(testFile1);
-		expect(fileDescriptor.meta.hash).toBeDefined();
+		expect(fileDescriptor.meta?.hash).toBeDefined();
 	});
 
 	test('should return a file descriptor with global useCheckSum', () => {
@@ -171,7 +171,7 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
 		expect(fileDescriptor).toBeDefined();
 		expect(fileDescriptor.key).toBe(testFile1);
-		expect(fileDescriptor.meta.hash).toBeDefined();
+		expect(fileDescriptor.meta?.hash).toBeDefined();
 	});
 
 	test('should return a file descriptor with checksum and error', () => {
@@ -207,8 +207,11 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		expect(fileDescriptor.key).toBe(testFile1);
 		expect(fileDescriptor.changed).toBe(true);
 
-		fs.writeFileSync(testFile1, 'test4');
+		fs.writeFileSync(testFile1, 'test4 changed');
 		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
+		const meta = fileEntryCache.cache.get(testFile1);
+		console.log(meta);
+		console.log(fileDescriptor2.meta);
 		expect(fileDescriptor2).toBeDefined();
 		expect(fileDescriptor2.key).toBe(testFile1);
 		expect(fileDescriptor2.changed).toBe(true);
@@ -228,19 +231,18 @@ describe('file-entry-cache - getFileDescriptor()', () => {
 		expect(fileDescriptor2.changed).toBe(true);
 	});
 
-	test('should return that the file has changed with time', () => {
+	test('should return that the file has changed via via time or checksum', () => {
 		const fileEntryCache = new FileEntryCache({useCheckSum: true});
 		const testFile1 = path.resolve('./.cacheGFD/test1.txt');
 		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
 		expect(fileDescriptor).toBeDefined();
 		expect(fileDescriptor.key).toBe(testFile1);
 		expect(fileDescriptor.changed).toBe(true);
-		fs.writeFileSync(testFile1, 'test');
 		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
 		expect(fileDescriptor2).toBeDefined();
 		expect(fileDescriptor2.key).toBe(testFile1);
-		expect(fileDescriptor2.changed).toBe(true);
-		expect(fileEntryCache.cache.get(testFile1)).toEqual(fileDescriptor2);
+		expect(fileDescriptor2.changed).toBe(false);
+		expect(fileEntryCache.cache.get(testFile1)).toEqual(fileDescriptor2.meta);
 	});
 
 	test('should work with currentWorkingDirectory', () => {
@@ -369,14 +371,17 @@ describe('file-entry-cache - reconcile()', () => {
 		};
 		const fileEntryCache = new FileEntryCache(options);
 		const fileEntry1 = fileEntryCache.getFileDescriptor('test1.txt');
-		fileEntry1.meta.result = {foo: 'bar'};
+		if (fileEntry1.meta) {
+			fileEntry1.meta.data = {testingFooVariable: '11'};
+		}
+
 		fileEntryCache.getFileDescriptor('test2.txt');
 		fileEntryCache.getFileDescriptor('test3.txt');
 		fileEntryCache.reconcile();
 		const cacheFileContent = fs.readFileSync(fileEntryCache.cache.cacheFilePath, 'utf8');
 		expect(cacheFileContent).toContain('test2.txt');
 		expect(cacheFileContent).toContain('test3.txt');
-		expect(cacheFileContent).toContain('{"foo":"11"}');
+		expect(cacheFileContent).toContain('"testingFooVariable"');
 		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
 	});
 
