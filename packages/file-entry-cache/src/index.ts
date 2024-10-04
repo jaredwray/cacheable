@@ -265,7 +265,6 @@ export class FileEntryCache {
 		// Check if the file is in the cache
 		const cacheFileDescriptor: FileDescriptor = {
 			key: result.key,
-
 			meta: this._cache.getKey(result.key),
 		};
 		// If the file is not in the cache, add it
