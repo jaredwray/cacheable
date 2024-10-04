@@ -1,7 +1,7 @@
 {
 	"name": "file-entry-cache",
 	"version": "10.0.0",
-	"description": "SA lightweight cache for file metadata, ideal for processes that work on a specific set of files and only need to reprocess files that have changed since the last run",
+	"description": "A lightweight cache for file metadata, ideal for processes that work on a specific set of files and only need to reprocess files that have changed since the last run",
 	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
