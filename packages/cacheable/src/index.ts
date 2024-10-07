@@ -301,7 +301,7 @@ export class Cacheable extends Hookified {
 		let result = false;
 		const promises = [];
 		if (this.stats.enabled) {
-			const statResult = await this._primary.get<object>(key);
+			const statResult = await this._primary.get<Record<string, unknown>>(key);
 			if (statResult) {
 				this.stats.decreaseKSize(key);
 				this.stats.decreaseVSize(statResult);
