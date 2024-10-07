@@ -18,14 +18,14 @@ describe('Keyv Cacheable Memory', () => {
 	test('should get undefined from keyv cacheable memory', async () => {
 		const keyvCacheableMemory = new KeyvCacheableMemory();
 		const keyv = new Keyv({store: keyvCacheableMemory});
-		const value = await keyv.get('key');
+		const value = await keyv.get('key') as string | undefined;
 		expect(value).toBe(undefined);
 	});
 	test('should set and get value from keyv cacheable memory', async () => {
 		const keyvCacheableMemory = new KeyvCacheableMemory();
 		const keyv = new Keyv({store: keyvCacheableMemory});
 		await keyv.set('key', 'value');
-		const value = await keyv.get('key');
+		const value = await keyv.get<string>('key');
 		expect(value).toBe('value');
 	});
 	test('should delete value from keyv cacheable memory', async () => {
@@ -33,7 +33,7 @@ describe('Keyv Cacheable Memory', () => {
 		const keyv = new Keyv({store: keyvCacheableMemory});
 		await keyv.set('key', 'value');
 		await keyv.delete('key');
-		const value = await keyv.get('key');
+		const value = await keyv.get<string>('key');
 		expect(value).toBe(undefined);
 	});
 	test('should clear keyv cacheable memory', async () => {
@@ -41,7 +41,7 @@ describe('Keyv Cacheable Memory', () => {
 		const keyv = new Keyv({store: keyvCacheableMemory});
 		await keyv.set('key', 'value');
 		await keyv.clear();
-		const value = await keyv.get('key');
+		const value = await keyv.get<string>('key');
 		expect(value).toBe(undefined);
 	});
 	test('should check if key exists in keyv cacheable memory', async () => {
@@ -63,7 +63,7 @@ describe('Keyv Cacheable Memory', () => {
 		const keyv = new Keyv({store: keyvCacheableMemory});
 		await keyv.set('key', 'value');
 		await keyv.delete(['key']);
-		const value = await keyv.get('key');
+		const value = await keyv.get<string>('key');
 		expect(value).toBe(undefined);
 	});
 	test('should set many values in keyv cacheable memory', async () => {

@@ -3,7 +3,11 @@
 	"version": "12.0.1",
 	"description": "Wrap native HTTP requests with RFC compliant cache support",
 	"license": "MIT",
-	"repository": "jaredwray/cacheable",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jaredwray/cacheable.git",
+		"directory": "packages/cacheable-request"
+    },
 	"author": "Jared Wray <me@jaredwray.com> (http://jaredwray.com)",
 	"type": "module",
 	"exports": "./dist/index.js",
@@ -51,7 +55,7 @@
 		"@types/node": "^20.14.8",
 		"@types/responselike": "^1.0.3",
 		"@types/sqlite3": "^3.1.11",
-		"@vitest/coverage-v8": "^2.0.5",
+		"@vitest/coverage-v8": "^2.1.2",
 		"body-parser": "^1.20.2",
 		"delay": "^6.0.0",
 		"express": "^4.19.2",
@@ -60,7 +64,7 @@
 		"sqlite3": "^5.1.7",
 		"ts-node": "^10.9.2",
 		"typescript": "^5.5.2",
-		"vitest": "^2.0.5",
+		"vitest": "^2.1.2",
 		"xo": "^0.59.3"
 	},
 	"xo": {

@@ -301,7 +301,7 @@ export class Cacheable extends Hookified {
 		let result = false;
 		const promises = [];
 		if (this.stats.enabled) {
-			const statResult = await this._primary.get(key);
+			const statResult = await this._primary.get<Record<string, unknown>>(key);
 			if (statResult) {
 				this.stats.decreaseKSize(key);
 				this.stats.decreaseVSize(statResult);
@@ -327,7 +327,7 @@ export class Cacheable extends Hookified {
 
 	public async deleteMany(keys: string[]): Promise<boolean> {
 		if (this.stats.enabled) {
-			const statResult = await this._primary.get(keys);
+			const statResult = await this._primary.get(keys) as unknown;
 			for (const key of keys) {
 				this.stats.decreaseKSize(key);
 				this.stats.decreaseVSize(statResult);

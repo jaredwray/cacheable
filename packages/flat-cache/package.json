@@ -12,7 +12,11 @@
 			"import": "./dist/index.js"
 		}
 	},
-	"repository": "https://github.com/jaredwray/cacheable.git",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jaredwray/cacheable.git",
+		"directory": "packages/flat-cache"
+	},
 	"author": "Jared Wray <me@jaredwray.com>",
 	"license": "MIT",
 	"private": false,

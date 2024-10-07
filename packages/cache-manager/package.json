@@ -19,13 +19,14 @@
   "scripts": {
     "clean": "rimraf ./dist ./coverage ./node_modules",
     "test": "xo --fix && vitest run --coverage",
-    "test:ci": "xo && vitest run --coverage",
+    "test:ci": "xo && vitest run",
     "build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
     "prepare": "pnpm run build"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jaredwray/cacheable.git"
+    "url": "git+https://github.com/jaredwray/cacheable.git",
+    "directory": "packages/cache-manager"
   },
   "keywords": [
     "cache",
