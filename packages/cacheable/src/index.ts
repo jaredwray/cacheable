@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {Keyv, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
 import {shorthandToMilliseconds} from './shorthand-time.js';
@@ -328,7 +327,7 @@ export class Cacheable extends Hookified {
 
 	public async deleteMany(keys: string[]): Promise<boolean> {
 		if (this.stats.enabled) {
-			const statResult = await this._primary.get(keys);
+			const statResult = await this._primary.get(keys) as unknown;
 			for (const key of keys) {
 				this.stats.decreaseKSize(key);
 				this.stats.decreaseVSize(statResult);
