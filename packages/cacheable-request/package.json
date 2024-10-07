@@ -3,7 +3,11 @@
 	"version": "12.0.1",
 	"description": "Wrap native HTTP requests with RFC compliant cache support",
 	"license": "MIT",
-	"repository": "jaredwray/cacheable",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jaredwray/cacheable.git",
+		"directory": "packages/cacheable-request"
+    },
 	"author": "Jared Wray <me@jaredwray.com> (http://jaredwray.com)",
 	"type": "module",
 	"exports": "./dist/index.js",

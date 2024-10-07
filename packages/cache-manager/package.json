@@ -25,7 +25,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jaredwray/cacheable.git"
+    "url": "git+https://github.com/jaredwray/cacheable.git",
+    "directory": "packages/cache-manager"
   },
   "keywords": [
     "cache",
