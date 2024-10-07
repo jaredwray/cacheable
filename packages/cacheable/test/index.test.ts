@@ -288,7 +288,7 @@ describe('cacheable get method', async () => {
 		expect(secondaryResult).toEqual(['value1', 'value2']);
 		const result = await cacheable.getMany(['key1', 'key2']);
 		expect(result).toEqual(['value1', 'value2']);
-		const primaryResult = await cacheable.primary.get('key1');
+		const primaryResult = await cacheable.primary.get<string>('key1');
 		expect(primaryResult).toEqual('value1');
 	});
 });
