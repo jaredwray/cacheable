@@ -1,4 +1,4 @@
-/* eslint-disabe @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {Keyv, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
 import {shorthandToMilliseconds} from './shorthand-time.js';
