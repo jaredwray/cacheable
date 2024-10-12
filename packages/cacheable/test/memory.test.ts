@@ -193,6 +193,15 @@ describe('CacheableMemory Has', async () => {
 		const cache = new CacheableMemory();
 		expect(cache.has('key')).toBe(false);
 	});
+	test('should return for many keys', () => {
+		const cache = new CacheableMemory();
+		cache.setMany(cacheItemList);
+		const result = cache.hasMany(['key', 'key1', 'key2', 'key3']);
+		expect(result[0]).toBe(true);
+		expect(result[1]).toBe(true);
+		expect(result[2]).toBe(true);
+		expect(result[3]).toBe(true);
+	});
 });
 
 describe('CacheableMemory Take', async () => {

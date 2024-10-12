@@ -196,6 +196,21 @@ export class CacheableMemory {
 		return Boolean(item);
 	}
 
+	/**
+	 * @function hasMany
+	 * @param keys: string[]
+	 * @returns boolean[]
+	 */
+	public hasMany(keys: string[]): boolean[] {
+		const result = new Array<boolean>();
+		for (const key of keys) {
+			const item = this.get(key);
+			result.push(Boolean(item));
+		}
+
+		return result;
+	}
+
 	public take<T>(key: string): any {
 		const item = this.get(key);
 		if (!item) {

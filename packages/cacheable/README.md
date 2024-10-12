@@ -273,6 +273,7 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 * `getRaw(key)`: Gets a value from the cache as `CacheableStoreItem`.
 * `getManyRaw([keys])`: Gets multiple values from the cache as `CacheableStoreItem`.
 * `has(key)`: Checks if a value exists in the cache.
+* `hasMany([keys])`: Checks if multiple values exist in the cache.
 * `delete(key)`: Deletes a value from the cache.
 * `deleteMany([keys])`: Deletes multiple values from the cache.
 * `take(key)`: Takes a value from the cache and deletes it.
