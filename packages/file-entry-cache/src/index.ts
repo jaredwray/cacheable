@@ -144,9 +144,9 @@ export class FileEntryCache {
 	 * @param {String} filePath
 	 * @return {String}
 	 */
-	public createFileKey(filePath: string, optons?: {currentWorkingDirectory?: string}): string {
+	public createFileKey(filePath: string, options?: {currentWorkingDirectory?: string}): string {
 		let result = filePath;
-		const currentWorkingDirectory = optons?.currentWorkingDirectory ?? this._currentWorkingDirectory;
+		const currentWorkingDirectory = options?.currentWorkingDirectory ?? this._currentWorkingDirectory;
 		if (currentWorkingDirectory && filePath.startsWith(currentWorkingDirectory)) {
 			const splitPath = filePath.split(currentWorkingDirectory).pop();
 			if (splitPath) {

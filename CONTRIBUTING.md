@@ -18,7 +18,7 @@ You can contribute changes to this repo by opening a pull request:
 8) Similarly, respond to any reviewer comments or requests for changes by making edits to your local repository and pushing them to Git.
 9) Once the pull request has been reviewed, those with write access to the branch will be able to merge your changes into the `main` repository branch and pushed via our release schedule.
 
-If you need more information on the steps to create a pull request, you can find a detailed walkthrough in the [Github documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork)
+If you need more information on the steps to create a pull request, you can find a detailed walkthrough in the [GitHub documentation](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork)
 
 # Code of Conduct
 Please refer to our [Code of Conduct](CODE_OF_CONDUCT.md) readme for how to contribute to this open source project and work within the community. 

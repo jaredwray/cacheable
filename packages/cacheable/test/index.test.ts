@@ -95,7 +95,7 @@ describe('cacheable stats', async () => {
 		const stats = cacheable.stats;
 		expect(stats.enabled).toBe(false);
 	});
-	test('shoudl be able to enable stats', async () => {
+	test('should be able to enable stats', async () => {
 		const cacheable = new Cacheable({stats: true});
 		expect(cacheable.stats.enabled).toBe(true);
 		cacheable.stats.enabled = false;

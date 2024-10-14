@@ -27,7 +27,7 @@ describe('wrap', () => {
 		expect(getValue).toBeCalledTimes(1);
 	});
 
-	it('ttl - miliseconds', async () => {
+	it('ttl - milliseconds', async () => {
 		await cache.wrap(data.key, async () => data.value, ttl);
 		await expect(cache.get(data.key)).resolves.toEqual(data.value);
 		await sleep(ttl + 100);

@@ -250,7 +250,7 @@ test(
 	async () => testCacheKey(new url.URL('http://www.example.com'), 'GET:http://www.example.com'),
 );
 
-test('no requried properties', async () => testCacheKey({}, 'GET:http://localhost'));
+test('no required properties', async () => testCacheKey({}, 'GET:http://localhost'));
 
 test(
 	'return without slash',
@@ -497,7 +497,7 @@ test('Stale cache entries with Last-Modified headers are revalidated', async () 
 	expect(firstResponse.body).toBe(secondResponse.body);
 });
 
-test('Stale cache enteries with stale-if-error-success should send response as expected', async () => {
+test('Stale cache entries with stale-if-error-success should send response as expected', async () => {
 	const endpoint = '/stale-if-error-success';
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
