@@ -35,7 +35,7 @@ describe('init', () => {
 		expect(cache).toBeDefined();
 	});
 
-	it('mutiple stores', async () => {
+	it('multiple stores', async () => {
 		const store1 = new Keyv();
 		const store2 = new Keyv();
 		const cache = createCache({

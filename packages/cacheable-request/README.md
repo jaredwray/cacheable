@@ -311,7 +311,7 @@ CacheableRequest.removeHook('onResponse');
 
 ## How to Contribute
 
-Cacheable-Request is an open source package and community driven that is maintained regularly. In addtion we have a couple of other guidelines for review:
+Cacheable-Request is an open source package and community driven that is maintained regularly. In addition we have a couple of other guidelines for review:
 
 * [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) - Our code of conduct
 * [CONTRIBUTING.md](CONTRIBUTING.md) - How to contribute to this project

@@ -267,7 +267,7 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 ### CacheableMemory API
 
 * `set(key, value, ttl?)`: Sets a value in the cache.
-* `setMany([{key, value, ttl?}])`: Sets multiple values in the cache from `CachableItem`.
+* `setMany([{key, value, ttl?}])`: Sets multiple values in the cache from `CacheableItem`.
 * `get(key)`: Gets a value from the cache.
 * `getMany([keys])`: Gets multiple values from the cache.
 * `getRaw(key)`: Gets a value from the cache as `CacheableStoreItem`.

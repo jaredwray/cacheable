@@ -169,7 +169,7 @@ const cache = createCache({ stores: [keyv] });
 
 - **nonBlocking**?: boolean - Default false
 
-    If set to true, the system will not block when multiple stores are used. Here is how it affects tye type of functions:
+    If set to true, the system will not block when multiple stores are used. Here is how it affects the type of functions:
     * `set and mset` - will not wait for all stores to finish.
     * `get and mget` - will return the first (fastest) value found.
     * `del and mdel` - will not wait for all stores to finish.
@@ -180,7 +180,7 @@ const cache = createCache({ stores: [keyv] });
 ### set
 `set(key, value, [ttl]): Promise<value>`
 
-Sets a key value pair. It is possible to define a ttl (in miliseconds). An error will be throw on any failed
+Sets a key value pair. It is possible to define a ttl (in milliseconds). An error will be throw on any failed
 
 ```ts
 await cache.set('key-1', 'value 1')
@@ -194,7 +194,7 @@ See unit tests in [`test/set.test.ts`](./test/set.test.ts) for more information.
 
 `mset(keys: [ { key, value, ttl } ]): Promise<true>`
 
-Sets multiple key value pairs. It is possible to define a ttl (in miliseconds). An error will be throw on any failed
+Sets multiple key value pairs. It is possible to define a ttl (in milliseconds). An error will be throw on any failed
 
 ```ts
 await cache.mset([

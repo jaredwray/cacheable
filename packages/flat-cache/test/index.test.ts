@@ -131,7 +131,7 @@ describe('flat-cache file cache', () => {
 		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
 		fs.rmSync(cache.cacheDirPath, {recursive: true, force: true});
 	});
-	test('do a custome cache path and cache id', () => {
+	test('do a custom cache path and cache id', () => {
 		const cache = new FlatCache({cacheDir: '.cachefoo', cacheId: 'cache2'});
 		expect(cache.cacheFilePath).toContain('.cachefoo/cache2');
 		cache.setKey('bar', {foo: 'bar'});

@@ -116,7 +116,7 @@ still want to store the data in Redis for backup, and for the requests that
 aren't as common as the ones you want to store in memory. This is something
 node-cache-manager handles easily and transparently.
 
-**Fourth**, it allows you to get and set multiple keys at once for caching store that support it. This means that when getting muliple keys it will go through the different caches starting from the highest priority one (see multi store below) and merge the values it finds at each level.
+**Fourth**, it allows you to get and set multiple keys at once for caching store that support it. This means that when getting multiple keys it will go through the different caches starting from the highest priority one (see multi store below) and merge the values it finds at each level.
 
 ## Usage Examples
 
@@ -217,7 +217,7 @@ only using the `wrap` function to set these records in cache.
 Side note: Ideally the `wrap` function would get what it can from the cache and fill in
 the missing records from the data store, but I can't think of a way to do this
 that is generic to all situations. Another option is to only return the data
-from the cache if all records are found, but this woul break multi-caching.
+from the cache if all records are found, but this would break multi-caching.
 
 See unit tests in `caching.unit.js` for more information.
 
