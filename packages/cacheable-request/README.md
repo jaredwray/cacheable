@@ -331,4 +331,4 @@ To ask a question, create an issue with the label "question." In the issue descr
 
 ## License and Copyright
 
-[MIT © Luke Children 2017-2021 and Jared Wray 2022+](./LICENSE)
+[MIT © Luke Childs 2017-2021 and Jared Wray 2022+](./LICENSE)
