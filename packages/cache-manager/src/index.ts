@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/prefer-promise-reject-errors, unicorn/no-useless-promise-resolve-reject, no-await-in-loop, unicorn/prefer-event-target */
 import EventEmitter from 'node:events';
 import {Keyv} from 'keyv';
-import {T} from '@faker-js/faker/dist/airline-C5Qwd7_q.js';
 import {coalesceAsync} from './coalesce-async.js';
 import {runIfFn} from './run-if-fn.js';
 import {lt} from './lt.js';

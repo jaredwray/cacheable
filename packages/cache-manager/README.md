@@ -84,7 +84,7 @@ Here is an example of doing layer 1 and layer 2 caching with the in-memory being
 
 ```ts
 import { Keyv } from 'keyv';
-import { KeyvRedis } from '@keyv/redis';
+import KeyvRedis from '@keyv/redis';
 import { CacheableMemory } from 'cacheable';
 import { createCache } from 'cache-manager';
 
@@ -138,10 +138,11 @@ In this example we are using `CacheableMemory` from Cacheable which is a fast in
 
 ```ts
 import { createCache } from 'cache-manager';
-import {Keyv} from 'keyv';
-import { CacheableMemory } from 'cacheable';
+import { Keyv } from 'keyv';
+import { KeyvCacheableMemory } from 'cacheable';
 
-const keyv = new Keyv({ store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }) });
+const store = new KeyvCacheableMemory({ ttl: 60000, lruSize: 5000 });
+const keyv = new Keyv({ store });
 const cache = createCache({ stores: [keyv] });
 ```
 
