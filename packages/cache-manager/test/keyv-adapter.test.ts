@@ -1,6 +1,6 @@
 import {Keyv} from 'keyv';
 import {
-	beforeEach, describe, expect, it,
+	describe, expect, it,
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {redisStore as redisYetStore} from 'cache-manager-redis-yet';
