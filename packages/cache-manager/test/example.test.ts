@@ -25,9 +25,19 @@ describe('examples of cache-manager', async () => {
 		expect(value).toBe('bar');
 	});
 	test('set and get with KeyvCacheableMemory', async () => {
-		const store = new KeyvCacheableMemory({ttl: 60_000, lruSize: 5000});
-		const keyv = new Keyv({store});
-		const cache = createCache({stores: [keyv]});
+		const cache = createCache({
+			stores: [
+				//  High performance in-memory cache with LRU and TTL
+				new Keyv({
+					store: new KeyvCacheableMemory({ttl: 60_000, lruSize: 5000}),
+				}),
+
+				//  Redis Store
+				new Keyv({
+					store: new KeyvRedis('redis://localhost:6379'),
+				}),
+			],
+		});
 		await cache.set('foo', 'bar');
 		const value = await cache.get('foo');
 		expect(value).toBe('bar');
