@@ -1,4 +1,4 @@
-module.exports.options = {
+export const options = {
 	githubPath: 'jaredwray/cacheable',
 	siteTitle: 'Cacheable',
 	siteDescription: 'Caching for Node.js',
