@@ -57,7 +57,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "keyv": "^5.0.3"
+    "keyv": "^5.1.0"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.0.3",
