@@ -26,7 +26,7 @@
 * ESM and CommonJS support with Typescript
 * Maintained and supported regularly
 
-## Table of Contents
+# Table of Contents
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
 * [Hooks and Events](#hooks-and-events)
@@ -36,15 +36,16 @@
 * [CacheSync - Distributed Updates](#cachesync---distributed-updates)
 * [Cacheable Options](#cacheable-options)
 * [Cacheable Statistics (Instance Only)](#cacheable-statistics-instance-only)
-* [Cacheable API](#api)
+* [Cacheable - API](#cacheable---api)
 * [CacheableMemory - In-Memory Cache](#cacheablememory---in-memory-cache)
 * [CacheableMemory Options](#cacheablememory-options)
-* [CacheableMemory API](#cacheablememory-api)
+* [CacheableMemory - API](#cacheablememory---api)
 * [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
+* [Keyv Storage Adapter - KeyvCacheableMemory](#keyv-storage-adapter---keyvcacheablememory)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
-## Getting Started
+# Getting Started
 
 `cacheable` is primarily used as an extension to you caching engine with a robust storage backend [Keyv](https://keyv.org), Memonization (Wrap), Hooks, Events, and Statistics.
 
@@ -52,7 +53,7 @@
 npm install cacheable
 ```
 
-## Basic Usage
+# Basic Usage
 
 ```javascript
 import { Cacheable } from 'cacheable';
@@ -87,7 +88,7 @@ const cache = new Cacheable({primary, secondary});
 
 This is a more advanced example and not needed for most use cases.
 
-## Hooks and Events
+# Hooks and Events
 
 The following hooks are available for you to extend the functionality of `cacheable` via `CacheableHooks` enum:
 
@@ -111,7 +112,7 @@ cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
 });
 ```
 
-## Storage Tiering and Caching
+# Storage Tiering and Caching
 
 `cacheable` is built as a layer 1 and layer 2 caching engine by default. The purpose is to have your layer 1 be fast and your layer 2 be more persistent. The primary store is the layer 1 cache and the secondary store is the layer 2 cache. By adding the secondary store you are enabling layer 2 caching. By default the operations are blocking but fault tolerant:
 
@@ -158,7 +159,7 @@ cache.ttl = -1; // sets the default ttl to 0 which is disabled
 console.log(cache.ttl); // undefined
 ```
 
-## Non-Blocking Operations
+# Non-Blocking Operations
 
 If you want your layer 2 (secondary) store to be non-blocking you can set the `nonBlocking` property to `true` in the options. This will make the secondary store non-blocking and will not wait for the secondary store to respond on `setting data`, `deleting data`, or `clearing data`. This is useful if you want to have a faster response time and not wait for the secondary store to respond.
 
@@ -170,7 +171,7 @@ const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
 const cache = new Cacheable({secondary, nonBlocking: true});
 ```
 
-## CacheSync - Distributed Updates
+# CacheSync - Distributed Updates
 
 `cacheable` has a feature called `CacheSync` that is coming soon. This feature will allow you to have distributed caching with Pub/Sub. This will allow you to have multiple instances of `cacheable` running and when a value is set, deleted, or cleared it will update all instances of `cacheable` with the same value. Current plan is to support the following:
 
@@ -182,7 +183,7 @@ const cache = new Cacheable({secondary, nonBlocking: true});
 
 This feature should be live by end of year. 
 
-## Cacheable Options
+# Cacheable Options
 
 The following options are available for you to configure `cacheable`:
 
@@ -192,7 +193,7 @@ The following options are available for you to configure `cacheable`:
 * `stats`: To enable statistics for this instance. Default is `false`.
 * `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
 
-## Cacheable Statistics (Instance Only)
+# Cacheable Statistics (Instance Only)
 
 If you want to enable statistics for your instance you can set the `.stats.enabled` property to `true` in the options. This will enable statistics for your instance and you can get the statistics by calling the `stats` property. Here are the following property statistics:
 
@@ -210,7 +211,7 @@ You can clear / reset the stats by calling the `.stats.reset()` method.
 
 _This does not enable statistics for your layer 2 cache as that is a distributed cache_.
 
-## API
+# Cacheable - API
 
 * `set(key, value, ttl?)`: Sets a value in the cache.
 * `setMany([{key, value, ttl?}])`: Sets multiple values in the cache.
@@ -235,7 +236,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
 
-## CacheableMemory - In-Memory Cache
+# CacheableMemory - In-Memory Cache
 
 `cacheable` comes with a built-in in-memory cache called `CacheableMemory`. This is a simple in-memory cache that is used as the primary store for `cacheable`. You can use this as a standalone cache or as a primary store for `cacheable`. Here is an example of how to use `CacheableMemory`:
 
@@ -257,14 +258,14 @@ This simple in-memory cache uses multiple Map objects and a with `expiration` an
 
 By default we use lazy expiration deletion which means on `get` and `getMany` type functions we look if it is expired and then delete it. If you want to have a more aggressive expiration policy you can set the `checkInterval` property to a value greater than `0` which will check for expired keys at the interval you set.
 
-### CacheableMemory Options
+## CacheableMemory Options
 
 * `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.
 * `useClones`: If the cache should use clones for the values. Default is `true`.
 * `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
 
-### CacheableMemory API
+## CacheableMemory - API
 
 * `set(key, value, ttl?)`: Sets a value in the cache.
 * `setMany([{key, value, ttl?}])`: Sets multiple values in the cache from `CacheableItem`.
@@ -288,7 +289,7 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 * `stopIntervalCheck()`: Stops the interval check for expired keys.
 * `hash(object: any, algorithm = 'sha256'): string`: Hashes an object with the algorithm. Default is `sha256`.
 
-## Wrap / Memoization for Sync and Async Functions
+# Wrap / Memoization for Sync and Async Functions
 
 `Cacheable` and `CacheableMemory` has a feature called `wrap` that allows you to wrap a function in a cache. This is useful for memoization and caching the results of a function. You can wrap a `sync` or `async` function in a cache. Here is an example of how to use the `wrap` function:
 
@@ -321,9 +322,23 @@ console.log(cache.get('syncFunction')); // 4
 
 In this example we are wrapping a `sync` function in a cache with a `ttl` of `1 hour`. This will cache the result of the function for `1 hour` and then expire the value. You can also set the `key` property in the `wrap()` options to set a custom key for the cache.
 
-## How to Contribute
+# Keyv Storage Adapter - KeyvCacheableMemory
+
+`cacheable` comes with a built-in storage adapter for Keyv called `KeyvCacheableMemory`. This takes `CacheableMemory` and creates a storage adapter for Keyv. This is useful if you want to use `CacheableMemory` as a storage adapter for Keyv. Here is an example of how to use `KeyvCacheableMemory`:
+
+```javascript
+import { Keyv } from 'keyv';
+import { KeyvCacheableMemory } from 'cacheable';
+
+const keyv = new Keyv({ store: new KeyvCacheableMemory() });
+await keyv.set('foo', 'bar');
+const value = await keyv.get('key');
+console.log(value); // bar 
+```
+
+# How to Contribute
 
 You can contribute by forking the repo and submitting a pull request. Please make sure to add tests and update the documentation. To learn more about how to contribute go to our main README [https://github.com/jaredwray/cacheable](https://github.com/jaredwray/cacheable). This will talk about how to `Open a Pull Request`, `Ask a Question`, or `Post an Issue`.
 
-## License and Copyright
+# License and Copyright
 [MIT © Jared Wray](./LICENSE)
