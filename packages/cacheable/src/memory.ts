@@ -4,6 +4,15 @@ import {shorthandToTime} from './shorthand-time.js';
 import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
 
+/**
+ * @typedef {Object} CacheableMemoryOptions
+ * @property {number|string} [ttl] - Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable
+ * format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means that it will use the default time-to-live. If both are
+ * undefined then it will not have a time-to-live.
+ * @property {boolean} [useClone] - If true, it will clone the value before returning it. If false, it will return the value directly. Default is true.
+ * @property {number} [lruSize] - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0.
+ * @property {number} [checkInterval] - The interval to check for expired items. If set to 0, it will not check for expired items. Default is 0.
+ */
 export type CacheableMemoryOptions = {
 	ttl?: number | string;
 	useClone?: boolean;
@@ -31,6 +40,10 @@ export class CacheableMemory {
 	private _checkInterval = 0; // Turned off by default
 	private _interval: number | NodeJS.Timeout = 0; // Turned off by default
 
+	/**
+	 * @constructor
+	 * @param {CacheableMemoryOptions} [options] - The options for the CacheableMemory
+	 */
 	constructor(options?: CacheableMemoryOptions) {
 		if (options?.ttl) {
 			this.setTtl(options.ttl);
@@ -51,51 +64,100 @@ export class CacheableMemory {
 		this.startIntervalCheck();
 	}
 
+	/**
+	 * gets the time-to-live
+	 * @returns {number|string|undefined} - The time-to-live in miliseconds or a human-readable format. If undefined, it will not have a time-to-live.
+	 */
 	public get ttl(): number | string | undefined {
 		return this._ttl;
 	}
 
+	/**
+	 * sets the time-to-live
+	 * @param {number|string|undefined} value - The time-to-live in miliseconds or a human-readable format (example '1s' = 1 second, '1h' = 1 hour). If undefined, it will not have a time-to-live.
+	 */
 	public set ttl(value: number | string | undefined) {
 		this.setTtl(value);
 	}
 
+	/**
+	 * gets whether to use clone
+	 * @returns {boolean} - If true, it will clone the value before returning it. If false, it will return the value directly. Default is true.
+	 */
 	public get useClone(): boolean {
 		return this._useClone;
 	}
 
+	/**
+	 * sets whether to use clone
+	 * @param {boolean} value - If true, it will clone the value before returning it. If false, it will return the value directly. Default is true.
+	 */
 	public set useClone(value: boolean) {
 		this._useClone = value;
 	}
 
+	/**
+	 * gets the size of the LRU cache
+	 * @returns {number} - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0.
+	 */
 	public get lruSize(): number {
 		return this._lruSize;
 	}
 
+	/**
+	 * sets the size of the LRU cache
+	 * @param {number} value - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0.
+	 */
 	public set lruSize(value: number) {
 		this._lruSize = value;
 		this.lruResize();
 	}
 
+	/**
+	 * gets the check interval
+	 * @returns {number} - The interval to check for expired items. If set to 0, it will not check for expired items. Default is 0.
+	 */
 	public get checkInterval(): number {
 		return this._checkInterval;
 	}
 
+	/**
+	 * sets the check interval
+	 * @param {number} value - The interval to check for expired items. If set to 0, it will not check for expired items. Default is 0.
+	 */
 	public set checkInterval(value: number) {
 		this._checkInterval = value;
 	}
 
+	/**
+	 * gets the size of the cache
+	 * @returns {number} - The size of the cache
+	 */
 	public get size(): number {
 		return this._hash0.size + this._hash1.size + this._hash2.size + this._hash3.size + this._hash4.size + this._hash5.size + this._hash6.size + this._hash7.size + this._hash8.size + this._hash9.size;
 	}
 
+	/**
+	 * gets the keys
+	 * @returns {IterableIterator<string>} - The keys
+	 */
 	public get keys(): IterableIterator<string> {
 		return this.concatStores().keys();
 	}
 
+	/**
+	 * gets the items
+	 * @returns {IterableIterator<CacheableStoreItem>} - The items
+	 */
 	public get items(): IterableIterator<CacheableStoreItem> {
 		return this.concatStores().values();
 	}
 
+	/**
+	 * gets the value of the key
+	 * @param {string} key - The key to get the value
+	 * @returns {T | undefined} - The value of the key
+	 */
 	public get<T>(key: string): T | undefined {
 		const store = this.getStore(key);
 		const item = store.get(key) as CacheableStoreItem;
@@ -117,6 +179,11 @@ export class CacheableMemory {
 		return this.clone(item.value) as T;
 	}
 
+	/**
+	 * gets the values of the keys
+	 * @param {string[]} keys - The keys to get the values
+	 * @returns {T[]} - The values of the keys
+	 */
 	public getMany<T>(keys: string[]): T[] {
 		const result = new Array<T>();
 		for (const key of keys) {
@@ -126,6 +193,11 @@ export class CacheableMemory {
 		return result;
 	}
 
+	/**
+	 * gets the raw value of the key
+	 * @param {string} key - The key to get the value
+	 * @returns {CacheableStoreItem | undefined} - The raw value of the key
+	 */
 	public getRaw(key: string): CacheableStoreItem | undefined {
 		const store = this.getStore(key);
 		const item = store.get(key) as CacheableStoreItem;
@@ -142,6 +214,11 @@ export class CacheableMemory {
 		return item;
 	}
 
+	/**
+	 * gets the raw values of the keys
+	 * @param {string[]} keys - The keys to get the values
+	 * @returns {CacheableStoreItem[]} - The raw values of the keys
+	 */
 	public getManyRaw(keys: string[]): Array<CacheableStoreItem | undefined> {
 		const result = new Array<CacheableStoreItem | undefined>();
 		for (const key of keys) {
@@ -151,6 +228,14 @@ export class CacheableMemory {
 		return result;
 	}
 
+	/**
+	 * sets the value of the key
+	 * @param {string} key - The key to set the value
+	 * @param {any} value - The value to set
+	 * @param {number|string} [ttl] - Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable. 
+	 * If you set undefined, it will use the default time-to-live. If both are undefined then it will not have a time-to-live.
+	 * @returns {void}
+	 */
 	public set(key: string, value: any, ttl?: number | string): void {
 		const store = this.getStore(key);
 		let expires;
@@ -185,12 +270,22 @@ export class CacheableMemory {
 		});
 	}
 
+	/**
+	 * sets the values of the keys
+	 * @param {CacheableItem[]} items - The items to set
+	 * @returns {void}
+	 */
 	public setMany(items: CacheableItem[]): void {
 		for (const item of items) {
 			this.set(item.key, item.value, item.ttl);
 		}
 	}
 
+	/**
+	 * checks if the key exists
+	 * @param {string} key - The key to check
+	 * @returns {boolean} - If true, the key exists. If false, the key does not exist.
+	 */
 	public has(key: string): boolean {
 		const item = this.get(key);
 		return Boolean(item);
@@ -198,8 +293,8 @@ export class CacheableMemory {
 
 	/**
 	 * @function hasMany
-	 * @param keys: string[]
-	 * @returns boolean[]
+	 * @param {string[]} keys - The keys to check
+	 * @returns {boolean[]} - If true, the key exists. If false, the key does not exist.
 	 */
 	public hasMany(keys: string[]): boolean[] {
 		const result = new Array<boolean>();
@@ -211,7 +306,12 @@ export class CacheableMemory {
 		return result;
 	}
 
-	public take<T>(key: string): any {
+	/**
+	 * Take will get the key and delete the entry from cache
+	 * @param {string} key - The key to take
+	 * @returns {T | undefined} - The value of the key
+	 */
+	public take<T>(key: string): T | undefined {
 		const item = this.get(key);
 		if (!item) {
 			return undefined;
@@ -221,7 +321,12 @@ export class CacheableMemory {
 		return item as T;
 	}
 
-	public takeMany<T>(keys: string[]): any[] {
+	/**
+	 * TakeMany will get the keys and delete the entries from cache
+	 * @param {string[]} keys - The keys to take
+	 * @returns {T[]} - The values of the keys
+	 */
+	public takeMany<T>(keys: string[]): T[] {
 		const result = new Array<any>();
 		for (const key of keys) {
 			result.push(this.take(key) as T);
@@ -230,17 +335,31 @@ export class CacheableMemory {
 		return result;
 	}
 
+	/**
+	 * delete the key
+	 * @param {string} key - The key to delete
+	 * @returns {void}
+	 */
 	public delete(key: string): void {
 		const store = this.getStore(key);
 		store.delete(key);
 	}
 
+	/**
+	 * delete the keys
+	 * @param {string[]} keys - The keys to delete
+	 * @returns {void}
+	 */
 	public deleteMany(keys: string[]): void {
 		for (const key of keys) {
 			this.delete(key);
 		}
 	}
 
+	/**
+	 * clear the cache
+	 * @returns {void}
+	 */
 	public clear(): void {
 		this._hash0.clear();
 		this._hash1.clear();
@@ -255,6 +374,11 @@ export class CacheableMemory {
 		this._hashCache.clear();
 	}
 
+	/**
+	 * hash the key. this is used to determine which store to use (internal use)
+	 * @param {string} key - The key to hash
+	 * @returns {number} - The hash number
+	 */
 	public hashKey(key: string): number {
 		const cacheHashNumber = this._hashCache.get(key)!;
 		if (cacheHashNumber) {
@@ -274,6 +398,11 @@ export class CacheableMemory {
 		return result;
 	}
 
+	/**
+	 * get the store based on the key (internal use)
+	 * @param {string} key - The key to get the store
+	 * @returns {Map<string, any>} - The store
+	 */
 	public getStore(key: string): Map<string, any> {
 		const hashKey = this.hashKey(key);
 		switch (hashKey) {
@@ -319,6 +448,11 @@ export class CacheableMemory {
 		}
 	}
 
+	/**
+	 * clone the value. This is for internal use
+	 * @param {any} value - The value to clone
+	 * @returns {any} - The cloned value
+	 */
 	public clone(value: any): any {
 		if (this.isPrimitive(value)) {
 			return value;
@@ -327,6 +461,11 @@ export class CacheableMemory {
 		return structuredClone(value);
 	}
 
+	/**
+	 * add to the front of the LRU cache. This is for internal use
+	 * @param {string} key - The key to add to the front
+	 * @returns {void}
+	 */
 	public lruAddToFront(key: string): void {
 		if (this._lruSize === 0) {
 			return;
@@ -335,6 +474,11 @@ export class CacheableMemory {
 		this._lru.addToFront(key);
 	}
 
+	/**
+	 * move to the front of the LRU cache. This is for internal use
+	 * @param {string} key - The key to move to the front
+	 * @returns {void}
+	 */
 	public lruMoveToFront(key: string): void {
 		if (this._lruSize === 0) {
 			return;
@@ -343,6 +487,10 @@ export class CacheableMemory {
 		this._lru.moveToFront(key);
 	}
 
+	/**
+	 * resize the LRU cache. This is for internal use
+	 * @returns {void}
+	 */
 	public lruResize(): void {
 		if (this._lruSize === 0) {
 			return;
@@ -357,6 +505,10 @@ export class CacheableMemory {
 		}
 	}
 
+	/**
+	 * check for expiration. This is for internal use
+	 * @returns {void}
+	 */
 	public checkExpiration() {
 		const stores = this.concatStores();
 		for (const item of stores.values()) {
@@ -366,6 +518,10 @@ export class CacheableMemory {
 		}
 	}
 
+	/**
+	 * start the interval check. This is for internal use
+	 * @returns {void}
+	 */
 	public startIntervalCheck() {
 		if (this._checkInterval > 0) {
 			this._interval = setInterval(() => {
@@ -374,6 +530,10 @@ export class CacheableMemory {
 		}
 	}
 
+	/**
+	 * stop the interval check. This is for internal use
+	 * @returns {void}
+	 */
 	public stopIntervalCheck() {
 		if (this._interval) {
 			clearInterval(this._interval);
@@ -383,10 +543,22 @@ export class CacheableMemory {
 		this._checkInterval = 0;
 	}
 
+	/**
+	 * hash the object. This is for internal use
+	 * @param {any} object - The object to hash
+	 * @param {string} [algorithm='sha256'] - The algorithm to hash
+	 * @returns {string} - The hashed string
+	 */
 	public hash(object: any, algorithm = 'sha256'): string {
 		return hash(object, algorithm);
 	}
 
+	/**
+	 * wrap the function for caching
+	 * @param {Function} function_ - The function to wrap
+	 * @param {Object} [options] - The options to wrap
+	 * @returns {Function} - The wrapped function
+	 */
 	public wrap<T>(function_: (...arguments_: any[]) => T, options: {ttl?: number; key?: string} = {}): (...arguments_: any[]) => T {
 		const wrapOptions = {
 			ttl: options.ttl,
