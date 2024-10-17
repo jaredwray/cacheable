@@ -133,7 +133,8 @@ export class Cacheable extends Hookified {
 
 	/**
 	 * The time-to-live for the cacheable instance and will be used as the default value.
-	 * It is set to undefined by default which means that there is no time-to-live.
+	 * can be a number in milliseconds or a human-readable format such as `1s` for 1 second or `1h` for 1 hour
+	 * or undefined if there is no time-to-live.
 	 *
 	 * [Learn more about time-to-live](https://cacheable.org/docs/cacheable/#shorthand-for-time-to-live-ttl).
 	 *
@@ -150,7 +151,9 @@ export class Cacheable extends Hookified {
 
 	/**
 	 * Sets the time-to-live for the cacheable instance and will be used as the default value.
-	 * It is set to undefined by default which means that there is no time-to-live.
+	 * If you set a number it is miliseconds, if you set a string it is a human-readable
+	 * format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means that
+	 * there is no time-to-live.
 	 *
 	 * [Learn more about time-to-live](https://cacheable.org/docs/cacheable/#shorthand-for-time-to-live-ttl).
 	 *
@@ -278,7 +281,9 @@ export class Cacheable extends Hookified {
 	 * Sets the value of the key. If the secondary store is set then it will also set the value in the secondary store.
 	 * @param {string} key the key to set the value of
 	 * @param {T} value The value to set
-	 * @param {number | string} [ttl] The time-to-live for the key
+	 * @param {number | string} [ttl] Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable
+	 * format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means that it will use the default time-to-live. If both are
+	 * undefined then it will not have a time-to-live.
 	 * @returns {boolean} Whether the value was set
 	 */
 	public async set<T>(key: string, value: T, ttl?: number | string): Promise<boolean> {

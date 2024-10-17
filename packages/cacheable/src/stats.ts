@@ -21,46 +21,88 @@ export class CacheableStats {
 		}
 	}
 
+	/**
+	 * @returns {boolean} - Whether the stats are enabled
+	 */
 	public get enabled(): boolean {
 		return this._enabled;
 	}
 
+	/**
+	 * @param {boolean} enabled - Whether to enable the stats
+	 */
 	public set enabled(enabled: boolean) {
 		this._enabled = enabled;
 	}
 
+	/**
+	 * @returns {number} - The number of hits
+	 * @readonly
+	 */
 	public get hits(): number {
 		return this._hits;
 	}
 
+	/**
+	 * @returns {number} - The number of misses
+	 * @readonly
+	 */
 	public get misses(): number {
 		return this._misses;
 	}
 
+	/**
+	 * @returns {number} - The number of gets
+	 * @readonly
+	 */
 	public get gets(): number {
 		return this._gets;
 	}
 
+	/**
+	 * @returns {number} - The number of sets
+	 * @readonly
+	 */
 	public get sets(): number {
 		return this._sets;
 	}
 
+	/**
+	 * @returns {number} - The number of deletes
+	 * @readonly
+	 */
 	public get deletes(): number {
 		return this._deletes;
 	}
 
+	/**
+	 * @returns {number} - The number of clears
+	 * @readonly
+	 */
 	public get clears(): number {
 		return this._clears;
 	}
 
+	/**
+	 * @returns {number} - The vsize (value size) of the cache instance
+	 * @readonly
+	 */
 	public get vsize(): number {
 		return this._vsize;
 	}
 
+	/**
+	 * @returns {number} - The ksize (key size) of the cache instance
+	 * @readonly
+	 */
 	public get ksize(): number {
 		return this._ksize;
 	}
 
+	/**
+	 * @returns {number} - The count of the cache instance
+	 * @readonly
+	 */
 	public get count(): number {
 		return this._count;
 	}
