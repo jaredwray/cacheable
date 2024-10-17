@@ -2,9 +2,9 @@ import * as crypto from 'node:crypto';
 
 /**
  * Hashes an object using the specified algorithm. The default algorithm is 'sha256'.
- * @param obj
- * @param algorithm
- * @returns {string}
+ * @param object The object to hash
+ * @param algorithm The hash algorithm to use
+ * @returns {string} The hash of the object
  */
 export function hash(object: any, algorithm = 'sha256'): string {
 	// Convert the object to a string
