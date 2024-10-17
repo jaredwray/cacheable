@@ -1,6 +1,7 @@
 {
   "name": "cacheable-mono-repo",
   "version": "1.0.0",
+  "private": true,
   "description": "Cacheable Mono Repo",
   "scripts": {
     "test": "pnpm -r --workspace-concurrency 1 test",
