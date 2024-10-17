@@ -37,6 +37,10 @@ export class Cacheable extends Hookified {
 	private _ttl?: number | string;
 	private readonly _stats = new CacheableStats({enabled: false});
 
+	/**
+	 * Creates a new cacheable instance
+	 * @param {CacheableOptions} [options] The options for the cacheable instance
+	 */
 	constructor(options?: CacheableOptions) {
 		super();
 
@@ -61,50 +65,134 @@ export class Cacheable extends Hookified {
 		}
 	}
 
+	/**
+	 * The statistics for the cacheable instance
+	 * @returns {CacheableStats} The statistics for the cacheable instance
+	 */
 	public get stats(): CacheableStats {
 		return this._stats;
 	}
 
+	/**
+	 * The primary store for the cacheable instance
+	 * @returns {Keyv} The primary store for the cacheable instance
+	 */
 	public get primary(): Keyv {
 		return this._primary;
 	}
 
+	/**
+	 * Sets the primary store for the cacheable instance
+	 * @param {Keyv} primary The primary store for the cacheable instance
+	 */
 	public set primary(primary: Keyv) {
 		this._primary = primary;
 	}
 
+	/**
+	 * The secondary store for the cacheable instance
+	 * @returns {Keyv | undefined} The secondary store for the cacheable instance
+	 */
 	public get secondary(): Keyv | undefined {
 		return this._secondary;
 	}
 
+	/**
+	 * Sets the secondary store for the cacheable instance. If it is set to undefined then the secondary store is disabled.
+	 * @param {Keyv | undefined} secondary The secondary store for the cacheable instance
+	 * @returns {void}
+	 */
 	public set secondary(secondary: Keyv | undefined) {
 		this._secondary = secondary;
 	}
 
+	/**
+	 * Gets whether the secondary store is non-blocking mode. It is set to false by default.
+	 * If it is set to true then the secondary store will not block the primary store.
+	 *
+	 * [Learn more about non-blocking mode](https://cacheable.org/docs/cacheable/#non-blocking-operations).
+	 *
+	 * @returns {boolean} Whether the cacheable instance is non-blocking
+	 */
 	public get nonBlocking(): boolean {
 		return this._nonBlocking;
 	}
 
+	/**
+	 * Sets whether the secondary store is non-blocking mode. It is set to false by default.
+	 * If it is set to true then the secondary store will not block the primary store.
+	 *
+	 * [Learn more about non-blocking mode](https://cacheable.org/docs/cacheable/#non-blocking-operations).
+	 *
+	 * @param {boolean} nonBlocking Whether the cacheable instance is non-blocking
+	 * @returns {void}
+	 */
 	public set nonBlocking(nonBlocking: boolean) {
 		this._nonBlocking = nonBlocking;
 	}
 
+	/**
+	 * The time-to-live for the cacheable instance and will be used as the default value.
+	 * It is set to undefined by default which means that there is no time-to-live.
+	 *
+	 * [Learn more about time-to-live](https://cacheable.org/docs/cacheable/#shorthand-for-time-to-live-ttl).
+	 *
+	 * @returns {number | string | undefined} The time-to-live for the cacheable instance in milliseconds, human-readable format or undefined
+	 * @example
+	 * ```typescript
+	 * const cacheable = new Cacheable({ ttl: '1h' });
+	 * console.log(cacheable.ttl); // 1h
+	 * ```
+	 */
 	public get ttl(): number | string | undefined {
 		return this._ttl;
 	}
 
+	/**
+	 * Sets the time-to-live for the cacheable instance and will be used as the default value.
+	 * It is set to undefined by default which means that there is no time-to-live.
+	 *
+	 * [Learn more about time-to-live](https://cacheable.org/docs/cacheable/#shorthand-for-time-to-live-ttl).
+	 *
+	 * @param {number | string | undefined} ttl The time-to-live for the cacheable instance
+	 * @example
+	 * ```typescript
+	 * const cacheable = new Cacheable();
+	 * cacheable.ttl = '1h'; // Set the time-to-live to 1 hour
+	 * ```
+	 * or setting the time-to-live in milliseconds
+	 * ```typescript
+	 * const cacheable = new Cacheable();
+	 * cacheable.ttl = 3600000; // Set the time-to-live to 1 hour
+	 * ```
+	 */
 	public set ttl(ttl: number | string | undefined) {
 		this.setTtl(ttl);
 	}
 
+	/**
+	 * Sets the primary store for the cacheable instance
+	 * @param {Keyv | KeyvStoreAdapter} primary The primary store for the cacheable instance
+	 * @returns {void}
+	 */
 	public setPrimary(primary: Keyv | KeyvStoreAdapter): void {
 		this._primary = primary instanceof Keyv ? primary : new Keyv(primary);
 	}
 
+	/**
+	 * Sets the secondary store for the cacheable instance. If it is set to undefined then the secondary store is disabled.
+	 * @param {Keyv | KeyvStoreAdapter} secondary The secondary store for the cacheable instance
+	 * @returns {void}
+	 */
 	public setSecondary(secondary: Keyv | KeyvStoreAdapter): void {
 		this._secondary = secondary instanceof Keyv ? secondary : new Keyv(secondary);
 	}
 
+	/**
+	 * Gets the value of the key. If the key does not exist in the primary store then it will check the secondary store.
+	 * @param {string} key The key to get the value of
+	 * @returns {Promise<T | undefined>} The value of the key or undefined if the key does not exist
+	 */
 	public async get<T>(key: string): Promise<T | undefined> {
 		let result;
 		try {
@@ -136,6 +224,11 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	/**
+	 * Gets the values of the keys. If the key does not exist in the primary store then it will check the secondary store.
+	 * @param {string[]} keys The keys to get the values of
+	 * @returns {Promise<Array<T | undefined>>} The values of the keys or undefined if the key does not exist
+	 */
 	public async getMany<T>(keys: string[]): Promise<Array<T | undefined>> {
 		let result: Array<T | undefined> = [];
 		try {
@@ -181,6 +274,13 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	/**
+	 * Sets the value of the key. If the secondary store is set then it will also set the value in the secondary store.
+	 * @param {string} key the key to set the value of
+	 * @param {T} value The value to set
+	 * @param {number | string} [ttl] The time-to-live for the key
+	 * @returns {boolean} Whether the value was set
+	 */
 	public async set<T>(key: string, value: T, ttl?: number | string): Promise<boolean> {
 		let result = false;
 		const finalTtl = shorthandToMilliseconds(ttl ?? this._ttl);
@@ -215,6 +315,11 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	/**
+	 * Sets the values of the keys. If the secondary store is set then it will also set the values in the secondary store.
+	 * @param {CacheableItem[]} items The items to set
+	 * @returns {boolean} Whether the values were set
+	 */
 	public async setMany(items: CacheableItem[]): Promise<boolean> {
 		let result = false;
 		try {
@@ -245,6 +350,11 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	/**
+	 * Takes the value of the key and deletes the key. If the key does not exist then it will return undefined.
+	 * @param {string} key The key to take the value of
+	 * @returns {Promise<T | undefined>} The value of the key or undefined if the key does not exist
+	 */
 	public async take<T>(key: string): Promise<T | undefined> {
 		const result = await this.get<T>(key);
 		await this.delete(key);
@@ -252,6 +362,11 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	/**
+	 * Takes the values of the keys and deletes the keys. If the key does not exist then it will return undefined.
+	 * @param {string[]} keys The keys to take the values of
+	 * @returns {Promise<Array<T | undefined>>} The values of the keys or undefined if the key does not exist
+	 */
 	public async takeMany<T>(keys: string[]): Promise<Array<T | undefined>> {
 		const result = await this.getMany<T>(keys);
 		await this.deleteMany(keys);
@@ -259,6 +374,11 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	/**
+	 * Checks if the key exists in the primary store. If it does not exist then it will check the secondary store.
+	 * @param {string} key The key to check
+	 * @returns {Promise<boolean>} Whether the key exists
+	 */
 	public async has(key: string): Promise<boolean> {
 		const promises = [];
 		promises.push(this._primary.has(key));
@@ -276,6 +396,11 @@ export class Cacheable extends Hookified {
 		return false;
 	}
 
+	/**
+	 * Checks if the keys exist in the primary store. If it does not exist then it will check the secondary store.
+	 * @param {string[]} keys The keys to check
+	 * @returns {Promise<boolean[]>} Whether the keys exist
+	 */
 	public async hasMany(keys: string[]): Promise<boolean[]> {
 		const result = await this.hasManyKeyv(this._primary, keys);
 		const missingKeys = [];
@@ -297,6 +422,11 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	/**
+	 * Deletes the key from the primary store. If the secondary store is set then it will also delete the key from the secondary store.
+	 * @param {string} key The key to delete
+	 * @returns {Promise<boolean>} Whether the key was deleted
+	 */
 	public async delete(key: string): Promise<boolean> {
 		let result = false;
 		const promises = [];
@@ -325,6 +455,11 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	/**
+	 * Deletes the keys from the primary store. If the secondary store is set then it will also delete the keys from the secondary store.
+	 * @param {string[]} keys The keys to delete
+	 * @returns {Promise<boolean>} Whether the keys were deleted
+	 */
 	public async deleteMany(keys: string[]): Promise<boolean> {
 		if (this.stats.enabled) {
 			const statResult = await this._primary.get(keys) as unknown;
@@ -349,6 +484,10 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	/**
+	 * Clears the primary store. If the secondary store is set then it will also clear the secondary store.
+	 * @returns {Promise<void>}
+	 */
 	public async clear(): Promise<void> {
 		const promises = [];
 		promises.push(this._primary.clear());
@@ -364,6 +503,10 @@ export class Cacheable extends Hookified {
 		}
 	}
 
+	/**
+	 * Disconnects the primary store. If the secondary store is set then it will also disconnect the secondary store.
+	 * @returns {Promise<void>}
+	 */
 	public async disconnect(): Promise<void> {
 		const promises = [];
 		promises.push(this._primary.disconnect());
@@ -374,6 +517,14 @@ export class Cacheable extends Hookified {
 		await (this._nonBlocking ? Promise.race(promises) : Promise.all(promises));
 	}
 
+	/**
+	 * Wraps a function with caching
+	 *
+	 * [Learn more about wrapping functions](https://cacheable.org/docs/cacheable/#wrap--memoization-for-sync-and-async-functions).
+	 * @param {Function} function_ The function to wrap
+	 * @param {WrapOptions} [options] The options for the wrap function
+	 * @returns {Function} The wrapped function
+	 */
 	public wrap<T>(function_: (...arguments_: any[]) => T, options: {ttl?: number; key?: string} = {}): (...arguments_: any[]) => T {
 		const wrapOptions = {
 			ttl: options.ttl,
@@ -384,6 +535,12 @@ export class Cacheable extends Hookified {
 		return wrap<T>(function_, wrapOptions);
 	}
 
+	/**
+	 * Will hash an object using the specified algorithm. The default algorithm is 'sha256'.
+	 * @param {any} object the object to hash
+	 * @param {string} algorithm the hash algorithm to use. The default is 'sha256'
+	 * @returns {string} the hash of the object
+	 */
 	public hash(object: any, algorithm = 'sha256'): string {
 		return hash(object, algorithm);
 	}
