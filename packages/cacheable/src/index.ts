@@ -107,11 +107,11 @@ export class Cacheable extends Hookified {
 	}
 
 	/**
-	 * Gets whether the secondary store is non-blocking mode. It is set to false by default. 
+	 * Gets whether the secondary store is non-blocking mode. It is set to false by default.
 	 * If it is set to true then the secondary store will not block the primary store.
-	 * 
+	 *
 	 * [Learn more about non-blocking mode](https://cacheable.org/docs/cacheable/#non-blocking-operations).
-	 * 
+	 *
 	 * @returns {boolean} Whether the cacheable instance is non-blocking
 	 */
 	public get nonBlocking(): boolean {
@@ -121,9 +121,9 @@ export class Cacheable extends Hookified {
 	/**
 	 * Sets whether the secondary store is non-blocking mode. It is set to false by default.
 	 * If it is set to true then the secondary store will not block the primary store.
-	 * 
+	 *
 	 * [Learn more about non-blocking mode](https://cacheable.org/docs/cacheable/#non-blocking-operations).
-	 * 
+	 *
 	 * @param {boolean} nonBlocking Whether the cacheable instance is non-blocking
 	 * @returns {void}
 	 */
@@ -132,11 +132,11 @@ export class Cacheable extends Hookified {
 	}
 
 	/**
-	 * The time-to-live for the cacheable instance and will be used as the default value. 
+	 * The time-to-live for the cacheable instance and will be used as the default value.
 	 * It is set to undefined by default which means that there is no time-to-live.
-	 * 
+	 *
 	 * [Learn more about time-to-live](https://cacheable.org/docs/cacheable/#shorthand-for-time-to-live-ttl).
-	 * 
+	 *
 	 * @returns {number | string | undefined} The time-to-live for the cacheable instance in milliseconds, human-readable format or undefined
 	 * @example
 	 * ```typescript
@@ -151,9 +151,9 @@ export class Cacheable extends Hookified {
 	/**
 	 * Sets the time-to-live for the cacheable instance and will be used as the default value.
 	 * It is set to undefined by default which means that there is no time-to-live.
-	 * 
+	 *
 	 * [Learn more about time-to-live](https://cacheable.org/docs/cacheable/#shorthand-for-time-to-live-ttl).
-	 * 
+	 *
 	 * @param {number | string | undefined} ttl The time-to-live for the cacheable instance
 	 * @example
 	 * ```typescript
@@ -190,7 +190,7 @@ export class Cacheable extends Hookified {
 
 	/**
 	 * Gets the value of the key. If the key does not exist in the primary store then it will check the secondary store.
-	 * @param {string} key The key to get the value of 
+	 * @param {string} key The key to get the value of
 	 * @returns {Promise<T | undefined>} The value of the key or undefined if the key does not exist
 	 */
 	public async get<T>(key: string): Promise<T | undefined> {
@@ -226,7 +226,7 @@ export class Cacheable extends Hookified {
 
 	/**
 	 * Gets the values of the keys. If the key does not exist in the primary store then it will check the secondary store.
-	 * @param {string[]} keys The keys to get the values of 
+	 * @param {string[]} keys The keys to get the values of
 	 * @returns {Promise<Array<T | undefined>>} The values of the keys or undefined if the key does not exist
 	 */
 	public async getMany<T>(keys: string[]): Promise<Array<T | undefined>> {
@@ -278,7 +278,7 @@ export class Cacheable extends Hookified {
 	 * Sets the value of the key. If the secondary store is set then it will also set the value in the secondary store.
 	 * @param {string} key the key to set the value of
 	 * @param {T} value The value to set
-	 * @param {number | string} [ttl] The time-to-live for the key 
+	 * @param {number | string} [ttl] The time-to-live for the key
 	 * @returns {boolean} Whether the value was set
 	 */
 	public async set<T>(key: string, value: T, ttl?: number | string): Promise<boolean> {
@@ -519,7 +519,7 @@ export class Cacheable extends Hookified {
 
 	/**
 	 * Wraps a function with caching
-	 * 
+	 *
 	 * [Learn more about wrapping functions](https://cacheable.org/docs/cacheable/#wrap--memoization-for-sync-and-async-functions).
 	 * @param {Function} function_ The function to wrap
 	 * @param {WrapOptions} [options] The options for the wrap function
