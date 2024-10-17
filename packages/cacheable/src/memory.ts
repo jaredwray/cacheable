@@ -65,7 +65,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the time-to-live
+	 * Gets the time-to-live
 	 * @returns {number|string|undefined} - The time-to-live in miliseconds or a human-readable format. If undefined, it will not have a time-to-live.
 	 */
 	public get ttl(): number | string | undefined {
@@ -73,7 +73,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * sets the time-to-live
+	 * Sets the time-to-live
 	 * @param {number|string|undefined} value - The time-to-live in miliseconds or a human-readable format (example '1s' = 1 second, '1h' = 1 hour). If undefined, it will not have a time-to-live.
 	 */
 	public set ttl(value: number | string | undefined) {
@@ -81,7 +81,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets whether to use clone
+	 * Gets whether to use clone
 	 * @returns {boolean} - If true, it will clone the value before returning it. If false, it will return the value directly. Default is true.
 	 */
 	public get useClone(): boolean {
@@ -89,7 +89,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * sets whether to use clone
+	 * Sets whether to use clone
 	 * @param {boolean} value - If true, it will clone the value before returning it. If false, it will return the value directly. Default is true.
 	 */
 	public set useClone(value: boolean) {
@@ -97,7 +97,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the size of the LRU cache
+	 * Gets the size of the LRU cache
 	 * @returns {number} - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0.
 	 */
 	public get lruSize(): number {
@@ -105,7 +105,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * sets the size of the LRU cache
+	 * Sets the size of the LRU cache
 	 * @param {number} value - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0.
 	 */
 	public set lruSize(value: number) {
@@ -114,7 +114,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the check interval
+	 * Gets the check interval
 	 * @returns {number} - The interval to check for expired items. If set to 0, it will not check for expired items. Default is 0.
 	 */
 	public get checkInterval(): number {
@@ -122,7 +122,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * sets the check interval
+	 * Sets the check interval
 	 * @param {number} value - The interval to check for expired items. If set to 0, it will not check for expired items. Default is 0.
 	 */
 	public set checkInterval(value: number) {
@@ -130,7 +130,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the size of the cache
+	 * Gets the size of the cache
 	 * @returns {number} - The size of the cache
 	 */
 	public get size(): number {
@@ -138,7 +138,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the keys
+	 * Gets the keys
 	 * @returns {IterableIterator<string>} - The keys
 	 */
 	public get keys(): IterableIterator<string> {
@@ -146,7 +146,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the items
+	 * Gets the items
 	 * @returns {IterableIterator<CacheableStoreItem>} - The items
 	 */
 	public get items(): IterableIterator<CacheableStoreItem> {
@@ -154,7 +154,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the value of the key
+	 * Gets the value of the key
 	 * @param {string} key - The key to get the value
 	 * @returns {T | undefined} - The value of the key
 	 */
@@ -180,7 +180,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the values of the keys
+	 * Gets the values of the keys
 	 * @param {string[]} keys - The keys to get the values
 	 * @returns {T[]} - The values of the keys
 	 */
@@ -194,7 +194,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the raw value of the key
+	 * Gets the raw value of the key
 	 * @param {string} key - The key to get the value
 	 * @returns {CacheableStoreItem | undefined} - The raw value of the key
 	 */
@@ -215,7 +215,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * gets the raw values of the keys
+	 * Gets the raw values of the keys
 	 * @param {string[]} keys - The keys to get the values
 	 * @returns {CacheableStoreItem[]} - The raw values of the keys
 	 */
@@ -229,10 +229,10 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * sets the value of the key
+	 * Sets the value of the key
 	 * @param {string} key - The key to set the value
 	 * @param {any} value - The value to set
-	 * @param {number|string} [ttl] - Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable. 
+	 * @param {number|string} [ttl] - Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable.
 	 * If you set undefined, it will use the default time-to-live. If both are undefined then it will not have a time-to-live.
 	 * @returns {void}
 	 */
@@ -271,7 +271,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * sets the values of the keys
+	 * Sets the values of the keys
 	 * @param {CacheableItem[]} items - The items to set
 	 * @returns {void}
 	 */
@@ -282,7 +282,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * checks if the key exists
+	 * Checks if the key exists
 	 * @param {string} key - The key to check
 	 * @returns {boolean} - If true, the key exists. If false, the key does not exist.
 	 */
@@ -332,11 +332,11 @@ export class CacheableMemory {
 			result.push(this.take(key) as T);
 		}
 
-		return result;
+		return result as T[];
 	}
 
 	/**
-	 * delete the key
+	 * Delete the key
 	 * @param {string} key - The key to delete
 	 * @returns {void}
 	 */
@@ -346,7 +346,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * delete the keys
+	 * Delete the keys
 	 * @param {string[]} keys - The keys to delete
 	 * @returns {void}
 	 */
@@ -357,7 +357,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * clear the cache
+	 * Clear the cache
 	 * @returns {void}
 	 */
 	public clear(): void {
@@ -375,7 +375,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * hash the key. this is used to determine which store to use (internal use)
+	 * Hash the key. this is used to determine which store to use (internal use)
 	 * @param {string} key - The key to hash
 	 * @returns {number} - The hash number
 	 */
@@ -399,7 +399,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * get the store based on the key (internal use)
+	 * Get the store based on the key (internal use)
 	 * @param {string} key - The key to get the store
 	 * @returns {Map<string, any>} - The store
 	 */
@@ -449,7 +449,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * clone the value. This is for internal use
+	 * Clone the value. This is for internal use
 	 * @param {any} value - The value to clone
 	 * @returns {any} - The cloned value
 	 */
@@ -462,7 +462,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * add to the front of the LRU cache. This is for internal use
+	 * Add to the front of the LRU cache. This is for internal use
 	 * @param {string} key - The key to add to the front
 	 * @returns {void}
 	 */
@@ -475,7 +475,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * move to the front of the LRU cache. This is for internal use
+	 * Move to the front of the LRU cache. This is for internal use
 	 * @param {string} key - The key to move to the front
 	 * @returns {void}
 	 */
@@ -488,7 +488,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * resize the LRU cache. This is for internal use
+	 * Resize the LRU cache. This is for internal use
 	 * @returns {void}
 	 */
 	public lruResize(): void {
@@ -506,7 +506,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * check for expiration. This is for internal use
+	 * Check for expiration. This is for internal use
 	 * @returns {void}
 	 */
 	public checkExpiration() {
@@ -519,7 +519,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * start the interval check. This is for internal use
+	 * Start the interval check. This is for internal use
 	 * @returns {void}
 	 */
 	public startIntervalCheck() {
@@ -531,7 +531,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * stop the interval check. This is for internal use
+	 * Stop the interval check. This is for internal use
 	 * @returns {void}
 	 */
 	public stopIntervalCheck() {
@@ -544,7 +544,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * hash the object. This is for internal use
+	 * Hash the object. This is for internal use
 	 * @param {any} object - The object to hash
 	 * @param {string} [algorithm='sha256'] - The algorithm to hash
 	 * @returns {string} - The hashed string
@@ -554,7 +554,7 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * wrap the function for caching
+	 * Wrap the function for caching
 	 * @param {Function} function_ - The function to wrap
 	 * @param {Object} [options] - The options to wrap
 	 * @returns {Function} - The wrapped function
