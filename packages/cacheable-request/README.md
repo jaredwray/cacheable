@@ -27,7 +27,7 @@
 
 # Latest Changes
 
-## Breaking Changes with v10.0.0
+## Breaking Changes with v13.0.0
 [Keyv](https://keyv.org) has been updated to version 5. With this update, you can no longer pass in a connection string directly to the `CacheableRequest` constructor. Instead, you should pass in a Keyv or Keyv storage adapter instance.
 
 ## Breaking Changes with v10.0.0
