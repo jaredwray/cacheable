@@ -23,13 +23,8 @@ class CacheableRequest {
 	constructor(cacheRequest: RequestFn, cacheAdapter?: any) {
 		if (cacheAdapter instanceof Keyv) {
 			this.cache = cacheAdapter;
-		} else if (cacheAdapter instanceof Map) {
-			this.cache = new Keyv<any>({
-				store: cacheAdapter,
-				namespace: 'cacheable-request',
-			});
 		} else {
-			this.cache = new Keyv<any>({
+			this.cache = new Keyv({
 				store: cacheAdapter,
 				namespace: 'cacheable-request',
 			});
