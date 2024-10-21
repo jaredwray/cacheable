@@ -1,6 +1,6 @@
 import {request} from 'node:http';
 import {test, expect} from 'vitest';
-import Keyv from 'keyv';
+import {Keyv} from 'keyv';
 import CacheableRequest from '../src/index.js';
 
 test('CacheableRequest is a function', () => {

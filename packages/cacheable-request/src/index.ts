@@ -7,29 +7,29 @@ import normalizeUrl from 'normalize-url';
 import {getStreamAsBuffer} from 'get-stream';
 import CachePolicy from 'http-cache-semantics';
 import Response from 'responselike';
-import Keyv from 'keyv';
+import {Keyv, type KeyvStoreAdapter} from 'keyv';
 import mimicResponse from 'mimic-response';
 import {
-	RequestFn, StorageAdapter, CacheResponse, CacheValue, CacheableOptions, UrlOption, CacheError, RequestError, Emitter, CacheableRequestFunction,
+	RequestFn, CacheResponse, CacheValue, CacheableOptions, UrlOption, CacheError, RequestError, Emitter, CacheableRequestFunction,
 } from './types.js';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type Function_ = (...arguments_: any[]) => any;
 
 class CacheableRequest {
-	cache: StorageAdapter;
+	cache: Keyv = new Keyv<any>({namespace: 'cacheable-request'});
 	cacheRequest: RequestFn;
 	hooks: Map<string, Function_> = new Map<string, Function_>();
-	constructor(cacheRequest: RequestFn, cacheAdapter?: StorageAdapter | string) {
+	constructor(cacheRequest: RequestFn, cacheAdapter?: any) {
 		if (cacheAdapter instanceof Keyv) {
 			this.cache = cacheAdapter;
-		} else if (typeof cacheAdapter === 'string') {
-			this.cache = new Keyv({
-				uri: cacheAdapter,
+		} else if (cacheAdapter instanceof Map) {
+			this.cache = new Keyv<any>({
+				store: cacheAdapter,
 				namespace: 'cacheable-request',
 			});
 		} else {
-			this.cache = new Keyv({
+			this.cache = new Keyv<any>({
 				store: cacheAdapter,
 				namespace: 'cacheable-request',
 			});
@@ -202,11 +202,11 @@ class CacheableRequest {
 					return;
 				}
 
-				const policy = CachePolicy.fromObject(cacheEntry.cachePolicy);
+				const policy = CachePolicy.fromObject((cacheEntry as CacheValue).cachePolicy);
 				if (policy.satisfiesWithoutRevalidation(options_) && !options_.forceRefresh) {
 					const headers = convertHeaders(policy.responseHeaders());
 					const response: any = new Response({
-						statusCode: cacheEntry.statusCode, headers, body: cacheEntry.body, url: cacheEntry.url,
+						statusCode: (cacheEntry as CacheValue).statusCode, headers, body: Buffer.from((cacheEntry as CacheValue).body), url: (cacheEntry as CacheValue).url,
 					});
 					response.cachePolicy = policy;
 					response.fromCache = true;
@@ -229,8 +229,12 @@ class CacheableRequest {
 			if (this.cache instanceof Keyv) {
 				const cachek = this.cache;
 				cachek.once('error', errorHandler);
-				ee.on('error', () => cachek.removeListener('error', errorHandler));
-				ee.on('response', () => cachek.removeListener('error', errorHandler));
+				ee.on('error', () => {
+					cachek.removeListener('error', errorHandler);
+				});
+				ee.on('response', () => {
+					cachek.removeListener('error', errorHandler);
+				});
 			}
 
 			try {

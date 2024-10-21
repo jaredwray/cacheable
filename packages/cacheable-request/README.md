@@ -130,7 +130,11 @@ npm install @keyv/redis
 And then you can pass `CacheableRequest` your connection string:
 
 ```js
-const cacheableRequest = new CacheableRequest(http.request, 'redis://user:pass@localhost:6379').createCacheableRequest();
+import KeyvRedis from '@keyv/redis';
+import CacheableRequest from 'cacheable-request';
+
+const keyvRedis = new KeyvRedis('redis://localhost:6379');
+const cacheableRequest = new CacheableRequest(http.request, KeyvRedis).createCacheableRequest();
 ```
 
 [View all official Keyv storage adapters.](https://github.com/jaredwray/keyv#official-storage-adapters)

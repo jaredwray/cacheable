@@ -8,7 +8,7 @@ import {
 import getStream from 'get-stream';
 import delay from 'delay';
 import sqlite3 from 'sqlite3';
-import Keyv from 'keyv';
+import {Keyv} from 'keyv';
 import CacheableRequest, {CacheValue, onResponse} from '../src/index.js';
 import createTestServer from './create-test-server/index.mjs';
 
