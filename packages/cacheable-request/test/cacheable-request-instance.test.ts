@@ -172,14 +172,13 @@ test('cacheableRequest emits CacheError if cache.delete errors', () => {
 		}).on('request', (request_: any) => request_.end());
 	})();
 });
-test('cacheableRequest emits RequestError if request function throws', () => {
+test('cacheableRequest emits Error if request function throws', () => {
 	const cacheableRequest = new CacheableRequest(request).request();
 	const options: any = url.parse(s.url);
 	options.headers = {invalid: '💣'};
 	cacheableRequest(options)
 		.on('error', (error: any) => {
-			console.log(error);
-			expect(error).toBeTruthy();
+			expect(error instanceof RequestError).toBeTruthy();
 		})
 		.on('request', (request_: any) => request_.end());
 });

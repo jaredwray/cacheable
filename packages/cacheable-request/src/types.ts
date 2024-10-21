@@ -136,6 +136,7 @@ export class RequestError extends Error {
 		Object.defineProperties(this, Object.getOwnPropertyDescriptors(error));
 	}
 }
+
 export class CacheError extends Error {
 	constructor(error: Error) {
 		super(error.message);

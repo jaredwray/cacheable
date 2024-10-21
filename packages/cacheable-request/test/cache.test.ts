@@ -7,7 +7,6 @@ import {
 } from 'vitest';
 import getStream from 'get-stream';
 import delay from 'delay';
-import sqlite3 from 'sqlite3';
 import {Keyv} from 'keyv';
 import CacheableRequest, {CacheValue, onResponse} from '../src/index.js';
 import createTestServer from './create-test-server/index.mjs';
@@ -338,6 +337,7 @@ test(
 test('auth should be in url', async () => testCacheKey({auth: 'user:pass'}, 'GET:http://user:pass@localhost'));
 
 test('should return default url', async () => testCacheKey({method: 'POST'}, 'POST:http://localhost'));
+
 test('request options path query is passed through', async () => {
 	const cacheableRequest = new CacheableRequest(request);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -363,6 +363,7 @@ test('request options path query is passed through', async () => {
 		expect(body.query.foo).toBe('bar');
 	}
 });
+
 test('Setting opts.cache to false bypasses cache for a single request', async () => {
 	const endpoint = '/cache';
 	const cache = new Map();
