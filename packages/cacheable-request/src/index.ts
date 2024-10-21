@@ -21,13 +21,15 @@ class CacheableRequest {
 	cacheRequest: RequestFn;
 	hooks: Map<string, Function_> = new Map<string, Function_>();
 	constructor(cacheRequest: RequestFn, cacheAdapter?: any) {
-		if (cacheAdapter instanceof Keyv) {
-			this.cache = cacheAdapter;
-		} else {
-			this.cache = new Keyv({
-				store: cacheAdapter,
-				namespace: 'cacheable-request',
-			});
+		if (cacheAdapter) {
+			if (cacheAdapter instanceof Keyv) {
+				this.cache = cacheAdapter;
+			} else {
+				this.cache = new Keyv({
+					store: cacheAdapter,
+					namespace: 'cacheable-request',
+				});
+			}
 		}
 
 		this.request = this.request.bind(this);
