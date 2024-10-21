@@ -3,11 +3,12 @@ import urlLib from 'node:url';
 import crypto from 'node:crypto';
 import stream, {PassThrough as PassThroughStream} from 'node:stream';
 import {IncomingMessage} from 'node:http';
+import process from 'node:process';
 import normalizeUrl from 'normalize-url';
 import {getStreamAsBuffer} from 'get-stream';
 import CachePolicy from 'http-cache-semantics';
 import Response from 'responselike';
-import {Keyv, type KeyvStoreAdapter} from 'keyv';
+import {Keyv} from 'keyv';
 import mimicResponse from 'mimic-response';
 import {
 	RequestFn, CacheResponse, CacheValue, CacheableOptions, UrlOption, CacheError, RequestError, Emitter, CacheableRequestFunction,
