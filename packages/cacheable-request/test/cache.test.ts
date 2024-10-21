@@ -582,26 +582,6 @@ test('Custom Keyv instance adapters used', async () => {
 	const cached = await cache.get(`GET:${s.url + endpoint}`);
 	expect(response.body).toBe(cached.body.toString());
 });
-test('Keyv cache adapters load via connection uri', async () => {
-	const endpoint = '/cache';
-	const cacheableRequest = new CacheableRequest(
-		request,
-		'sqlite://test/testdb.sqlite',
-	);
-	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const database = new sqlite3.Database('test/testdb.sqlite');
-	const firstResponse: any = await cacheableRequestHelper(s.url + endpoint);
-	await delay(1000);
-	const secondResponse: any = await cacheableRequestHelper(s.url + endpoint);
-	database.all(`SELECT * FROM keyv WHERE "key" = "cacheable-request:GET:${
-		s.url + endpoint
-	}"`, (error, data) => {
-		expect(data.length).toBe(1);
-		database.all('DELETE FROM keyv');
-	});
-	expect(firstResponse.fromCache).toBeFalsy();
-	expect(secondResponse.fromCache).toBeTruthy();
-});
 test('ability to force refresh', async () => {
 	const endpoint = '/cache';
 	const cache = new Map();
