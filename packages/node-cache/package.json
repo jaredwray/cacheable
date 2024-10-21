@@ -49,7 +49,7 @@
 	"dependencies": {
 		"cacheable": "^1.7.0",
 		"eventemitter3": "^5.0.1",
-		"keyv": "^5.1.0"
+		"keyv": "^5.1.2"
 	},
 	"files": [
 		"dist",

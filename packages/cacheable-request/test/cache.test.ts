@@ -7,8 +7,7 @@ import {
 } from 'vitest';
 import getStream from 'get-stream';
 import delay from 'delay';
-import sqlite3 from 'sqlite3';
-import Keyv from 'keyv';
+import {Keyv} from 'keyv';
 import CacheableRequest, {CacheValue, onResponse} from '../src/index.js';
 import createTestServer from './create-test-server/index.mjs';
 
@@ -338,6 +337,7 @@ test(
 test('auth should be in url', async () => testCacheKey({auth: 'user:pass'}, 'GET:http://user:pass@localhost'));
 
 test('should return default url', async () => testCacheKey({method: 'POST'}, 'POST:http://localhost'));
+
 test('request options path query is passed through', async () => {
 	const cacheableRequest = new CacheableRequest(request);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -363,6 +363,7 @@ test('request options path query is passed through', async () => {
 		expect(body.query.foo).toBe('bar');
 	}
 });
+
 test('Setting opts.cache to false bypasses cache for a single request', async () => {
 	const endpoint = '/cache';
 	const cache = new Map();
@@ -581,26 +582,6 @@ test('Custom Keyv instance adapters used', async () => {
 	const response: any = await cacheableRequestHelper(s.url + endpoint);
 	const cached = await cache.get(`GET:${s.url + endpoint}`);
 	expect(response.body).toBe(cached.body.toString());
-});
-test('Keyv cache adapters load via connection uri', async () => {
-	const endpoint = '/cache';
-	const cacheableRequest = new CacheableRequest(
-		request,
-		'sqlite://test/testdb.sqlite',
-	);
-	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const database = new sqlite3.Database('test/testdb.sqlite');
-	const firstResponse: any = await cacheableRequestHelper(s.url + endpoint);
-	await delay(1000);
-	const secondResponse: any = await cacheableRequestHelper(s.url + endpoint);
-	database.all(`SELECT * FROM keyv WHERE "key" = "cacheable-request:GET:${
-		s.url + endpoint
-	}"`, (error, data) => {
-		expect(data.length).toBe(1);
-		database.all('DELETE FROM keyv');
-	});
-	expect(firstResponse.fromCache).toBeFalsy();
-	expect(secondResponse.fromCache).toBeTruthy();
 });
 test('ability to force refresh', async () => {
 	const endpoint = '/cache';

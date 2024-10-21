@@ -28,6 +28,9 @@
 # Latest Changes
 
 ## Breaking Changes with v10.0.0
+[Keyv](https://keyv.org) has been updated to version 5. With this update, you can no longer pass in a connection string directly to the `CacheableRequest` constructor. Instead, you should pass in a Keyv or Keyv storage adapter instance.
+
+## Breaking Changes with v10.0.0
 This release contains breaking changes. This is the new way to use this package.
 
 ### Usage Before v10
@@ -130,7 +133,11 @@ npm install @keyv/redis
 And then you can pass `CacheableRequest` your connection string:
 
 ```js
-const cacheableRequest = new CacheableRequest(http.request, 'redis://user:pass@localhost:6379').createCacheableRequest();
+import KeyvRedis from '@keyv/redis';
+import CacheableRequest from 'cacheable-request';
+
+const keyvRedis = new KeyvRedis('redis://localhost:6379');
+const cacheableRequest = new CacheableRequest(http.request, KeyvRedis).createCacheableRequest();
 ```
 
 [View all official Keyv storage adapters.](https://github.com/jaredwray/keyv#official-storage-adapters)

@@ -6,6 +6,7 @@ import {
 	test, expect, beforeAll, afterAll,
 } from 'vitest';
 import getStream from 'get-stream';
+import {KeyvSqlite} from '@keyv/sqlite';
 import CacheableRequest from '../src/index.js';
 import {CacheError, RequestError} from '../src/types.js';
 import createTestServer from './create-test-server/index.mjs';
@@ -87,7 +88,7 @@ test('cacheableRequest emits response event for cached responses', () => {
 	}).on('request', (request_: any) => request_.end());
 });
 test('cacheableRequest emits CacheError if cache adapter connection errors', () => {
-	const cacheableRequest = new CacheableRequest(request, 'sqlite://non/existent/database.sqlite').request();
+	const cacheableRequest = new CacheableRequest(request, new KeyvSqlite('sqlite://non/existent/database.sqlite')).request();
 	cacheableRequest(url.parse(s.url))
 		.on('error', (error: any) => {
 			expect(error instanceof CacheError).toBeTruthy();
@@ -171,7 +172,7 @@ test('cacheableRequest emits CacheError if cache.delete errors', () => {
 		}).on('request', (request_: any) => request_.end());
 	})();
 });
-test('cacheableRequest emits RequestError if request function throws', () => {
+test('cacheableRequest emits Error if request function throws', () => {
 	const cacheableRequest = new CacheableRequest(request).request();
 	const options: any = url.parse(s.url);
 	options.headers = {invalid: '💣'};
@@ -245,7 +246,7 @@ test('cacheableRequest does not cache response if request is aborted after recei
 	/* eslint-enable max-nested-callbacks */
 });
 test('cacheableRequest makes request even if initial DB connection fails (when opts.automaticFailover is enabled)', async () => {
-	const cacheableRequest = new CacheableRequest(request, 'sqlite://non/existent/database.sqlite').request();
+	const cacheableRequest = new CacheableRequest(request, new KeyvSqlite('sqlite://non/existent/database.sqlite')).request();
 	const options: any = url.parse(s.url);
 	options.automaticFailover = true;
 	cacheableRequest(options, (response_: any) => {

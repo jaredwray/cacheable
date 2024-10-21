@@ -13,7 +13,6 @@ import {
 import {URL} from 'node:url';
 import {EventEmitter} from 'node:events';
 import {Buffer} from 'node:buffer';
-import {Store} from 'keyv';
 import ResponseLike from 'responselike';
 import {CachePolicyObject} from 'http-cache-semantics';
 
@@ -28,8 +27,6 @@ export type CacheableRequestFunction = (
 ) => Emitter;
 
 export type CacheableOptions = Options & RequestOptions | string | URL;
-
-export type StorageAdapter = Store<any>;
 
 export interface Options {
 	/**
@@ -139,6 +136,7 @@ export class RequestError extends Error {
 		Object.defineProperties(this, Object.getOwnPropertyDescriptors(error));
 	}
 }
+
 export class CacheError extends Error {
 	constructor(error: Error) {
 		super(error.message);

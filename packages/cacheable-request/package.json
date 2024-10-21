@@ -1,6 +1,6 @@
 {
 	"name": "cacheable-request",
-	"version": "12.0.1",
+	"version": "13.0.0",
 	"description": "Wrap native HTTP requests with RFC compliant cache support",
 	"license": "MIT",
 	"repository": {
@@ -45,13 +45,13 @@
 		"@types/http-cache-semantics": "^4.0.4",
 		"get-stream": "^9.0.1",
 		"http-cache-semantics": "^4.1.1",
-		"keyv": "^4.5.4",
+		"keyv": "^5.1.2",
 		"mimic-response": "^4.0.0",
 		"normalize-url": "^8.0.1",
 		"responselike": "^3.0.0"
 	},
 	"devDependencies": {
-		"@keyv/sqlite": "^3.6.7",
+		"@keyv/sqlite": "^4.0.1",
 		"@types/node": "^22.7.7",
 		"@types/responselike": "^1.0.3",
 		"@types/sqlite3": "^3.1.11",
