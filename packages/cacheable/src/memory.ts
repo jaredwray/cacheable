@@ -25,6 +25,7 @@ export type CacheableMemoryOptions = {
 export class CacheableMemory {
 	private readonly _hashCache = new Map<string, number>();
 	private readonly _defaultStore = new CacheableHashStore();
+	private readonly _namedStores = new Map<string, CacheableHashStore>();
 	private readonly _lru = new DoublyLinkedList();
 
 	private _ttl: number | string | undefined; // Turned off by default
@@ -386,6 +387,18 @@ export class CacheableMemory {
 	 * @returns {CacheableHashStore} - The store
 	 */
 	public getStore(key: string): CacheableHashStore {
+		return this._defaultStore;
+	}
+
+	public getStoreByNamespace(namespace?: string): CacheableHashStore {
+		if (namespace) {
+			if (!this._namedStores.has(namespace)) {
+				this._namedStores.set(namespace, new CacheableHashStore());
+			}
+
+			return this._namedStores.get(namespace)!;
+		}
+
 		return this._defaultStore;
 	}
 

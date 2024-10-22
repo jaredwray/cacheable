@@ -476,4 +476,14 @@ describe('Cacheable Namespace', async () => {
 		cache.namespace = 'test2';
 		expect(cache.namespace).toBe('test2');
 	});
+
+	test('get store with namespace', () => {
+		const cache = new CacheableMemory();
+		const defaultStore = cache.getStoreByNamespace();
+		defaultStore.set({key: 'key', value: 'value'});
+		const store = cache.getStoreByNamespace('test');
+		expect(store.get('key')).toBeUndefined();
+		const defaultStore2 = cache.getStoreByNamespace();
+		expect(defaultStore2.get('key')?.value).toBe('value');
+	});
 });
