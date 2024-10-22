@@ -28,6 +28,7 @@ export type CacheableOptions = {
 	stats?: boolean;
 	nonBlocking?: boolean;
 	ttl?: number | string;
+	namespace?: string | (() => string);
 };
 
 export class Cacheable extends Hookified {
@@ -36,6 +37,7 @@ export class Cacheable extends Hookified {
 	private _nonBlocking = false;
 	private _ttl?: number | string;
 	private readonly _stats = new CacheableStats({enabled: false});
+	private _namespace?: string | (() => string);
 
 	/**
 	 * Creates a new cacheable instance
@@ -62,6 +64,35 @@ export class Cacheable extends Hookified {
 
 		if (options?.ttl) {
 			this.setTtl(options.ttl);
+		}
+
+		if (options?.namespace) {
+			this._namespace = options.namespace;
+			this._primary.namespace = this.getNameSpace();
+			if (this._secondary) {
+				this._secondary.namespace = this.getNameSpace();
+			}
+		}
+	}
+
+	/**
+	 * The namespace for the cacheable instance
+	 * @returns {string | (() => string) | undefined} The namespace for the cacheable instance
+	 */
+	public get namespace(): string | (() => string) | undefined {
+		return this._namespace;
+	}
+
+	/**
+	 * Sets the namespace for the cacheable instance
+	 * @param {string | (() => string) | undefined} namespace The namespace for the cacheable instance
+	 * @returns {void}
+	 */
+	public set namespace(namespace: string | (() => string) | undefined) {
+		this._namespace = namespace;
+		this._primary.namespace = this.getNameSpace();
+		if (this._secondary) {
+			this._secondary.namespace = this.getNameSpace();
 		}
 	}
 
@@ -189,6 +220,14 @@ export class Cacheable extends Hookified {
 	 */
 	public setSecondary(secondary: Keyv | KeyvStoreAdapter): void {
 		this._secondary = secondary instanceof Keyv ? secondary : new Keyv(secondary);
+	}
+
+	public getNameSpace(): string | undefined {
+		if (typeof this._namespace === 'function') {
+			return this._namespace();
+		}
+
+		return this._namespace;
 	}
 
 	/**

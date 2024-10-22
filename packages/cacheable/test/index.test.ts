@@ -621,3 +621,23 @@ describe('cacheable wrap', async () => {
 		expect(cacheResult2).toBeUndefined();
 	});
 });
+
+describe('cacheable namespace', async () => {
+	test('should set the namespace via options', async () => {
+		const cacheable = new Cacheable({namespace: 'test'});
+		expect(cacheable.namespace).toBe('test');
+	});
+	test('should set the namespace via function', async () => {
+		const cacheable = new Cacheable({namespace: () => 'test'});
+		expect(cacheable.getNameSpace()).toBe('test');
+	});
+	test('should set the secondary namespace', async () => {
+		const cacheable = new Cacheable({secondary: new Keyv(), namespace: 'test'});
+		expect(cacheable.namespace).toBe('test');
+	});
+	test('should set the secondary namspace when setting property', async () => {
+		const cacheable = new Cacheable({secondary: new Keyv()});
+		cacheable.namespace = 'test';
+		expect(cacheable.secondary?.namespace).toBe('test');
+	});
+});
