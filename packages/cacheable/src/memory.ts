@@ -3,6 +3,7 @@ import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
 import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
+import {CacheableHashStore} from './hash-store.js';
 
 /**
  * @typedef {Object} CacheableMemoryOptions
@@ -22,16 +23,7 @@ export type CacheableMemoryOptions = {
 
 export class CacheableMemory {
 	private readonly _hashCache = new Map<string, number>();
-	private readonly _hash0 = new Map<string, CacheableStoreItem>();
-	private readonly _hash1 = new Map<string, CacheableStoreItem>();
-	private readonly _hash2 = new Map<string, CacheableStoreItem>();
-	private readonly _hash3 = new Map<string, CacheableStoreItem>();
-	private readonly _hash4 = new Map<string, CacheableStoreItem>();
-	private readonly _hash5 = new Map<string, CacheableStoreItem>();
-	private readonly _hash6 = new Map<string, CacheableStoreItem>();
-	private readonly _hash7 = new Map<string, CacheableStoreItem>();
-	private readonly _hash8 = new Map<string, CacheableStoreItem>();
-	private readonly _hash9 = new Map<string, CacheableStoreItem>();
+	private readonly _defaultStore = new CacheableHashStore();
 	private readonly _lru = new DoublyLinkedList<string>();
 
 	private _ttl: number | string | undefined; // Turned off by default
@@ -134,7 +126,7 @@ export class CacheableMemory {
 	 * @returns {number} - The size of the cache
 	 */
 	public get size(): number {
-		return this._hash0.size + this._hash1.size + this._hash2.size + this._hash3.size + this._hash4.size + this._hash5.size + this._hash6.size + this._hash7.size + this._hash8.size + this._hash9.size;
+		return this._defaultStore.size;
 	}
 
 	/**
@@ -160,7 +152,7 @@ export class CacheableMemory {
 	 */
 	public get<T>(key: string): T | undefined {
 		const store = this.getStore(key);
-		const item = store.get(key) as CacheableStoreItem;
+		const item = store.get(key)!;
 		if (!item) {
 			return undefined;
 		}
@@ -200,7 +192,7 @@ export class CacheableMemory {
 	 */
 	public getRaw(key: string): CacheableStoreItem | undefined {
 		const store = this.getStore(key);
-		const item = store.get(key) as CacheableStoreItem;
+		const item = store.get(key)!;
 		if (!item) {
 			return undefined;
 		}
@@ -262,7 +254,7 @@ export class CacheableMemory {
 			}
 		}
 
-		store.set(key, {
+		store.set({
 			key,
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			value,
@@ -361,91 +353,17 @@ export class CacheableMemory {
 	 * @returns {void}
 	 */
 	public clear(): void {
-		this._hash0.clear();
-		this._hash1.clear();
-		this._hash2.clear();
-		this._hash3.clear();
-		this._hash4.clear();
-		this._hash5.clear();
-		this._hash6.clear();
-		this._hash7.clear();
-		this._hash8.clear();
-		this._hash9.clear();
+		this._defaultStore.clear();
 		this._hashCache.clear();
-	}
-
-	/**
-	 * Hash the key. this is used to determine which store to use (internal use)
-	 * @param {string} key - The key to hash
-	 * @returns {number} - The hash number
-	 */
-	public hashKey(key: string): number {
-		const cacheHashNumber = this._hashCache.get(key)!;
-		if (cacheHashNumber) {
-			return cacheHashNumber;
-		}
-
-		let hash = 0;
-		const primeMultiplier = 31; // Use a prime multiplier for better distribution
-
-		for (let i = 0; i < key.length; i++) {
-			// eslint-disable-next-line unicorn/prefer-code-point
-			hash = (hash * primeMultiplier) + key.charCodeAt(i);
-		}
-
-		const result = Math.abs(hash) % 10; // Return a number between 0 and 9
-		this._hashCache.set(key, result);
-		return result;
 	}
 
 	/**
 	 * Get the store based on the key (internal use)
 	 * @param {string} key - The key to get the store
-	 * @returns {Map<string, any>} - The store
+	 * @returns {CacheableHashStore} - The store
 	 */
-	public getStore(key: string): Map<string, any> {
-		const hashKey = this.hashKey(key);
-		switch (hashKey) {
-			case 1: {
-				return this._hash1;
-			}
-
-			case 2: {
-				return this._hash2;
-			}
-
-			case 3: {
-				return this._hash3;
-			}
-
-			case 4: {
-				return this._hash4;
-			}
-
-			case 5: {
-				return this._hash5;
-			}
-
-			case 6: {
-				return this._hash6;
-			}
-
-			case 7: {
-				return this._hash7;
-			}
-
-			case 8: {
-				return this._hash8;
-			}
-
-			case 9: {
-				return this._hash9;
-			}
-
-			default: {
-				return this._hash0;
-			}
-		}
+	public getStore(key: string): CacheableHashStore {
+		return this._defaultStore;
 	}
 
 	/**
@@ -585,8 +503,7 @@ export class CacheableMemory {
 	}
 
 	private concatStores(): Map<string, CacheableStoreItem> {
-		const result = new Map([...this._hash0, ...this._hash1, ...this._hash2, ...this._hash3, ...this._hash4, ...this._hash5, ...this._hash6, ...this._hash7, ...this._hash8, ...this._hash9]);
-		return result;
+		return this._defaultStore.concatStores();
 	}
 
 	private setTtl(ttl: number | string | undefined): void {

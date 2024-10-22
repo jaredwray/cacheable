@@ -303,19 +303,6 @@ describe('CacheableMemory Get Store and Hash Key', async () => {
 		cache.set('ice', 'value');
 		expect(cache.getStore('ice').get('ice')).toBeDefined();
 	});
-	test('hash key should be the correct number', () => {
-		const cache = new CacheableMemory();
-		expect(cache.hashKey('apple')).toBe(0);
-		expect(cache.hashKey('carrot')).toBe(1);
-		expect(cache.hashKey('4123')).toBe(2);
-		expect(cache.hashKey('mouse')).toBe(3);
-		expect(cache.hashKey('dog')).toBe(4);
-		expect(cache.hashKey('ice')).toBe(5);
-		expect(cache.hashKey('jacket')).toBe(6);
-		expect(cache.hashKey('grape')).toBe(7);
-		expect(cache.hashKey('house')).toBe(8);
-		expect(cache.hashKey('banana')).toBe(9);
-	});
 });
 
 describe('CacheableMemory LRU', async () => {
