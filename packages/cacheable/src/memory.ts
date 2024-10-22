@@ -24,7 +24,7 @@ export type CacheableMemoryOptions = {
 export class CacheableMemory {
 	private readonly _hashCache = new Map<string, number>();
 	private readonly _defaultStore = new CacheableHashStore();
-	private readonly _lru = new DoublyLinkedList();
+	private readonly _lru = new DoublyLinkedList<string>();
 
 	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
@@ -248,7 +248,7 @@ export class CacheableMemory {
 					const oldestKey = this._lru.getOldest();
 					if (oldestKey) {
 						this._lru.removeOldest();
-						this.delete(oldestKey.key);
+						this.delete(oldestKey);
 					}
 				}
 			}
@@ -418,7 +418,7 @@ export class CacheableMemory {
 			const oldestKey = this._lru.getOldest();
 			if (oldestKey) {
 				this._lru.removeOldest();
-				this.delete(oldestKey.key);
+				this.delete(oldestKey);
 			}
 		}
 	}
