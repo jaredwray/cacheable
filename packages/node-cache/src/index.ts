@@ -3,16 +3,41 @@ import eventemitter from 'eventemitter3';
 import {CacheableMemory, CacheableStats} from 'cacheable';
 
 export type NodeCacheOptions = {
-	stdTTL?: number; // The standard ttl as number in seconds for every generated cache element. 0 = unlimited
-	checkperiod?: number; // Default is 600
-	useClones?: boolean; // Default is true
-	deleteOnExpire?: boolean; // Default is true
-	maxKeys?: number; // Default is -1
+	/**
+	 * The standard ttl as number in seconds for every generated cache element. 0 = unlimited
+	 */
+	stdTTL?: number;
+	/**
+	 * The interval to check for expired items in seconds. Default is 600 = 5 minutes
+	 */
+	checkperiod?: number;
+	/**
+	 * Clones the returned items via get functions. Default is true.
+	 */
+	useClones?: boolean;
+	/**
+	 * Delete all expired items at the set interval. Default is true.
+	 */
+	deleteOnExpire?: boolean;
+	/**
+	 * The maximum number of keys that will be stored in the cache. Default is -1 = unlimited
+	 * If the limit is reached, it will no longer add any new items until some expire.
+	 */
+	maxKeys?: number;
 };
 
 export type NodeCacheItem = {
+	/**
+	 * The key of the item
+	 */
 	key: string | number;
+	/**
+	 * The value of the item
+	 */
 	value: unknown;
+	/**
+	 * The ttl of the item in seconds. 0 = unlimited
+	 */
 	ttl?: number;
 };
 
@@ -24,11 +49,26 @@ export enum NodeCacheErrors {
 }
 
 export type NodeCacheStats = {
-	keys: number; // global key count
-	hits: number; // global hit count
-	misses: number; // global miss count
-	ksize: number; // global key size count in approximately bytes
-	vsize: number; // global value size count in approximately bytes
+	/**
+	 * The number of keys stored in the cache
+	 */
+	keys: number;
+	/**
+	 * The number of hits
+	 */
+	hits: number;
+	/**
+	 * The number of misses
+	 */
+	misses: number;
+	/**
+	 * The global key size count in approximately bytes
+	 */
+	ksize: number;
+	/**
+	 * The global value size count in approximately bytes
+	 */
+	vsize: number;
 };
 
 export default class NodeCache extends eventemitter {
@@ -59,7 +99,13 @@ export default class NodeCache extends eventemitter {
 		this.startInterval();
 	}
 
-	// Sets a key value pair. It is possible to define a ttl (in seconds). Returns true on success.
+	/**
+	 * Sets a key value pair. It is possible to define a ttl (in seconds). Returns true on success.
+	 * @param {string | number} key - it will convert the key to a string
+	 * @param {any} value
+	 * @param {number} [ttl] - this is in seconds and undefined will use the default ttl
+	 * @returns {boolean}
+	 */
 	public set(key: string | number, value: any, ttl?: number): boolean {
 		// Check on key type
 		/* c8 ignore next 3 */
@@ -100,7 +146,11 @@ export default class NodeCache extends eventemitter {
 		return true;
 	}
 
-	// Sets multiple key val pairs. It is possible to define a ttl (seconds). Returns true on success.
+	/**
+	 * Sets multiple key val pairs. It is possible to define a ttl (seconds). Returns true on success.
+	 * @param {NodeCacheItem[]} data an array of key value pairs with optional ttl
+	 * @returns {boolean}
+	 */
 	public mset(data: NodeCacheItem[]): boolean {
 		// Check on keys type
 		/* c8 ignore next 3 */
@@ -115,7 +165,11 @@ export default class NodeCache extends eventemitter {
 		return true;
 	}
 
-	// Gets a saved value from the cache. Returns a undefined if not found or expired. If the value was found it returns the value.
+	/**
+	 * Gets a saved value from the cache. Returns a undefined if not found or expired. If the value was found it returns the value.
+	 * @param {string | number} key if the key is a number it will convert it to a string
+	 * @returns {T} the value or undefined
+	 */
 	public get<T>(key: string | number): any {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
@@ -151,10 +205,12 @@ export default class NodeCache extends eventemitter {
 		return undefined;
 	}
 
-	/*
-		Gets multiple saved values from the cache. Returns an empty object {} if not found or expired.
-		If the value was found it returns an object with the key value pair.
-	*/
+	/**
+	 * Gets multiple saved values from the cache. Returns an empty object {} if not found or expired.
+	 * If the value was found it returns an object with the key value pair.
+	 * @param {Array<string | number} keys an array of keys
+	 * @returns {Record<string, unknown>} an object with the key as a property and the value as the value
+	 */
 	public mget<T>(keys: Array<string | number>): Record<string, unknown> {
 		const result: Record<string, unknown> = {};
 
@@ -168,27 +224,32 @@ export default class NodeCache extends eventemitter {
 		return result;
 	}
 
-	/*
-		Get the cached value and remove the key from the cache.
-		Equivalent to calling get(key) + del(key).
-		Useful for implementing single use mechanism such as OTP, where once a value is read it will become obsolete.
-	*/
-	public take(key: string | number): any {
+	/**
+	 * Get the cached value and remove the key from the cache. Equivalent to calling get(key) + del(key).
+	 * Useful for implementing single use mechanism such as OTP, where once a value is read it will become obsolete.
+	 * @param {string | number} key
+	 * @returns {T | undefined} the value or undefined
+	 */
+	public take<T>(key: string | number): T | undefined {
 		const result = this.get(key);
 
 		if (result) {
 			this.del(key);
 			if (this.options.useClones) {
-				return this._cacheable.clone(result);
+				return this._cacheable.clone(result) as T;
 			}
 
-			return result;
+			return result as T;
 		}
 
 		return undefined;
 	}
 
-	// Delete a key. Returns the number of deleted entries. A delete will never fail.
+	/**
+	 * Delete a key. Returns the number of deleted entries. A delete will never fail.
+	 * @param {string | number | Array<string | number>} key if the key is a number it will convert it to a string. if an array is passed it will delete all keys in the array.
+	 * @returns {number} if it was successful it will return the count that was deleted
+	 */
 	public del(key: string | number | Array<string | number>): number {
 		if (Array.isArray(key)) {
 			return this.mdel(key);
@@ -212,7 +273,11 @@ export default class NodeCache extends eventemitter {
 		return 0;
 	}
 
-	// Delete all keys in Array that exist. Returns the number of deleted entries.
+	/**
+	 * Delete all keys in Array that exist. Returns the number of deleted entries.
+	 * @param {Array<string | number>} keys an array of keys
+	 * @returns {number} the count of deleted keys
+	 */
 	public mdel(keys: Array<string | number>): number {
 		let result = 0;
 		for (const key of keys) {
@@ -222,8 +287,13 @@ export default class NodeCache extends eventemitter {
 		return result;
 	}
 
-	// Redefine the ttl of a key. Returns true if the key has been found and changed.
-	// Otherwise returns false. If the ttl-argument isn't passed the default-TTL will be used.
+	/**
+	 * Redefine the ttl of a key. Returns true if the key has been found and changed.
+	 * Otherwise returns false. If the ttl-argument isn't passed the default-TTL will be used.
+	 * @param {string | number} key if the key is a number it will convert it to a string
+	 * @param {number} [ttl] the ttl in seconds
+	 * @returns {boolean} true if the key has been found and changed. Otherwise returns false.
+	 */
 	public ttl(key: string | number, ttl?: number): boolean {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
@@ -236,14 +306,12 @@ export default class NodeCache extends eventemitter {
 		return false;
 	}
 
-	/*
-		Receive the ttl of a key. You will get:
-
-		undefined if the key does not exist
-		0 if this key has no ttl
-		a timestamp in ms representing the time at which the key will expire
-	*/
-
+	/**
+	 * Receive the ttl of a key.
+	 * @param {string | number} key if the key is a number it will convert it to a string
+	 * @returns {number | undefined} 0 if this key has no ttl, undefined if this key is not in the cache,
+	 * a timestamp in ms representing the time at which this key will expire
+	 */
 	public getTtl(key: string | number): number | undefined {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
@@ -257,10 +325,10 @@ export default class NodeCache extends eventemitter {
 		return undefined;
 	}
 
-	/*
-		Returns an array of all existing keys.
-		[ "all", "my", "keys", "foo", "bar" ]
-	*/
+	/**
+	 * Returns an array of all existing keys. [ "all", "my", "keys", "foo", "bar" ]
+	 * @returns {string[]} an array of all keys
+	 */
 	public keys(): string[] {
 		const result: string[] = [];
 
@@ -271,12 +339,19 @@ export default class NodeCache extends eventemitter {
 		return result;
 	}
 
-	// Returns boolean indicating if the key is cached.
+	/**
+	 * Returns boolean indicating if the key is cached.
+	 * @param {string | number} key if the key is a number it will convert it to a string
+	 * @returns {boolean} true if the key is cached
+	 */
 	public has(key: string | number): boolean {
 		return this.store.has(this.formatKey(key));
 	}
 
-	// Gets the stats of the cache.
+	/**
+	 * Gets the stats of the cache
+	 * @returns {NodeCacheStats} the stats of the cache
+	 */
 	public getStats(): NodeCacheStats {
 		const stats = {
 			keys: this._stats.count,
@@ -289,7 +364,10 @@ export default class NodeCache extends eventemitter {
 		return stats;
 	}
 
-	// Flush the whole data.
+	/**
+	 * Flush the whole data.
+	 * @returns {void}
+	 */
 	public flushAll(): void {
 		this.store.clear();
 		this.flushStats();
@@ -297,19 +375,28 @@ export default class NodeCache extends eventemitter {
 		this.emit('flush');
 	}
 
-	// Flush the stats
+	/**
+	 * Flush the stats.
+	 * @returns {void}
+	 */
 	public flushStats(): void {
 		this._stats = new CacheableStats({enabled: true});
 		// Event
 		this.emit('flush_stats');
 	}
 
-	// Close the cache. This will clear the interval timeout which is set on check period option.
+	/**
+	 * Close the cache. This will clear the interval timeout which is set on check period option.
+	 * @returns {void}
+	 */
 	public close(): void {
 		this.stopInterval();
 	}
 
-	// Get the interval id
+	/**
+	 * Get the interval id
+	 * @returns {number | NodeJS.Timeout} the interval id
+	 */
 	public getIntervalId(): number | NodeJS.Timeout {
 		return this.intervalId;
 	}
