@@ -1,22 +1,36 @@
-export class ListNode<T> {
-	// eslint-disable-next-line @typescript-eslint/parameter-properties
-	value: T;
-	prev: ListNode<T> | undefined = undefined;
-	next: ListNode<T> | undefined = undefined;
+export class ListNode {
+	prev: ListNode | undefined = undefined;
+	next: ListNode | undefined = undefined;
+	private readonly _key: string;
+	private readonly _namespace: string | undefined;
 
-	constructor(value: T) {
-		this.value = value;
+	constructor(key: string, namespace?: string) {
+		this._key = key;
+		this._namespace = namespace;
+	}
+
+	public get key(): string {
+		return this._key;
+	}
+
+	public get namespace(): string | undefined {
+		return this._namespace;
 	}
 }
 
-export class DoublyLinkedList<T> {
-	private head: ListNode<T> | undefined = undefined;
-	private tail: ListNode<T> | undefined = undefined;
-	private readonly nodesMap = new Map<T, ListNode<T>>();
+export class DoublyLinkedList {
+	private head: ListNode | undefined = undefined;
+	private tail: ListNode | undefined = undefined;
+	private readonly nodesMap = new Map<string, ListNode>();
+
+	getNodeKey(key: string, namespace?: string): string {
+		return namespace ? `${namespace}::${key}` : key;
+	}
 
 	// Add a new node to the front (most recently used)
-	addToFront(value: T): void {
-		const newNode = new ListNode(value);
+	addToFront(key: string, namespace?: string): void {
+		const nodeKey = this.getNodeKey(key, namespace);
+		const newNode = new ListNode(key, namespace);
 
 		if (this.head) {
 			newNode.next = this.head;
@@ -28,12 +42,13 @@ export class DoublyLinkedList<T> {
 		}
 
 		// Store the node reference in the map
-		this.nodesMap.set(value, newNode);
+		this.nodesMap.set(nodeKey, newNode);
 	}
 
 	// Move an existing node to the front (most recently used)
-	moveToFront(value: T): void {
-		const node = this.nodesMap.get(value);
+	moveToFront(key: string, namespace?: string): void {
+		const nodeKey = this.getNodeKey(key, namespace);
+		const node = this.nodesMap.get(nodeKey);
 		if (!node || this.head === node) {
 			return;
 		} // Node doesn't exist or is already at the front
@@ -67,18 +82,18 @@ export class DoublyLinkedList<T> {
 	}
 
 	// Get the oldest node (tail)
-	getOldest(): T | undefined {
-		return this.tail ? this.tail.value : undefined;
+	getOldest(): ListNode | undefined {
+		return this.tail;
 	}
 
 	// Remove the oldest node (tail)
-	removeOldest(): T | undefined {
+	removeOldest(): ListNode | undefined {
 		/* c8 ignore next 3 */
 		if (!this.tail) {
 			return undefined;
 		}
 
-		const oldValue = this.tail.value;
+		const oldValue = this.tail;
 
 		if (this.tail.prev) {
 			this.tail = this.tail.prev;
@@ -89,8 +104,10 @@ export class DoublyLinkedList<T> {
 			this.head = this.tail = undefined;
 		}
 
+		const nodeKey = this.getNodeKey(oldValue.key, oldValue.namespace);
+
 		// Remove the node from the map
-		this.nodesMap.delete(oldValue);
+		this.nodesMap.delete(nodeKey);
 		return oldValue;
 	}
 
