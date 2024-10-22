@@ -19,7 +19,7 @@
 
 Note: `NodeCache` is ready and available for use. `NodeCacheStore` is in progress and will be available soon. Please do not use it until it is released.
 
-## Table of Contents
+# Table of Contents
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
 * [Advanced Usage](#advanced-usage)
@@ -28,13 +28,13 @@ Note: `NodeCache` is ready and available for use. `NodeCacheStore` is in progres
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
-## Getting Started
+# Getting Started
 
 ```bash
 npm install @cacheable/node-cache --save
 ```
 
-## Basic Usage
+# Basic Usage
 
 ```javascript
 import {NodeCache} from '@cacheable/node-cache';
@@ -44,7 +44,7 @@ cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
 ```
 
-## Advanced Usage
+# Advanced Usage
 
 ```javascript
 import {NodeStorageCache} from '@cacheable/node-cache';
@@ -62,7 +62,7 @@ await cache.get('foo'); // 'bar'
 cache.getStats(); // {hits: 1, misses: 1, keys: 1, ksize: 2, vsize: 3}
 ```
 
-## NodeCacheStore
+# NodeCacheStore
 
 The `NodeCacheStore` is a class that extends the `NodeCache` and adds the ability to use storage adapters. This is based on the `cacheable` engine and allows you to do layer 1 and layer 2 caching. The storage adapters are based on the [Keyv](https://keyv.org) package. This allows you to use any of the storage adapters that are available.
 
@@ -74,7 +74,7 @@ cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
 ```
 
-### NodeCacheStoreOptions
+## NodeCacheStoreOptions
 
 When initializing the cache you can pass in the options below:
 
@@ -95,7 +95,7 @@ cache.set('foo', 'bar', '1h'); // 1 hour
 cache.set('longfoo', 'bar', '1d'); // 1 day
 ```
 
-### Node Cache Store API
+## Node Cache Store API
 
 * `set(key: string | number, value: any, ttl?: number): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl)
 * `mset(data: Array<NodeCacheItem>): Promise<boolean>` - Set multiple key value pairs at once
@@ -113,9 +113,9 @@ cache.set('longfoo', 'bar', '1d'); // 1 day
 * `secondary`: `Keyv` - The secondary storage adapter
 * `maxKeys`: `number` - If this is set it will throw and error if you try to set more keys than the max
 
-## API
+# API
 
-### `constructor(options?: NodeCacheOptions)`
+## `constructor(options?: NodeCacheOptions)`
 
 Create a new cache instance. You can pass in options to set the configuration:
 
@@ -144,7 +144,7 @@ cache.on('expired', (key, value) => {
 });
 ```
 
-### `.set(key: string | number, value: any, ttl?: number): boolean`
+## `.set(key: string | number, value: any, ttl?: number): boolean`
 
 Set a key value pair with an optional ttl (in seconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl).
 
@@ -152,7 +152,7 @@ Set a key value pair with an optional ttl (in seconds). Will return true on succ
 cache.set('foo', 'bar', 10); // true
 ```
 
-### `.mset(data: Array<NodeCacheItem>): boolean`
+## `.mset(data: Array<NodeCacheItem>): boolean`
 
 Set multiple key value pairs at once. This will take an array of objects with the key, value, and optional ttl.
 
@@ -170,7 +170,7 @@ export type NodeCacheItem = {
 };
 ```
 
-### `.get(key: string | number): any`
+## `.get(key: string | number): any`
 
 Get a value from the cache by key. If the key does not exist it will return `undefined`.
 
@@ -178,7 +178,7 @@ Get a value from the cache by key. If the key does not exist it will return `und
 cache.get('foo'); // 'bar'
 ```
 
-### `mget(keys: Array<string | number>): Record<string, unknown>`
+## `mget(keys: Array<string | number>): Record<string, unknown>`
 
 Get multiple values from the cache by keys. This will return an object with the keys and values.
 
@@ -190,7 +190,7 @@ cache.set('my2', obj2);
 cache.mget(['my', 'my2']); // { my: { my: 'value', my2: 'value2' }, my2: { special: 'value3', life: 'value4' } }
 ```
 
-### `take(key: string | number): any`
+## `take(key: string | number): any`
 
 Get a value from the cache by key and delete it. If the key does not exist it will return `undefined`.
 
@@ -200,7 +200,7 @@ cache.take('foo'); // 'bar'
 cache.get('foo'); // undefined
 ```
 
-### `del(key: string | number | Array<string | number>): number`
+## `del(key: string | number | Array<string | number>): number`
 
 Delete a key from the cache. Will return the number of deleted entries and never fail. You can also pass in an array of keys to delete multiple keys. All examples assume that you have initialized the cache like `const cache = new NodeCache();`.
 
@@ -214,7 +214,7 @@ passing in an array of keys:
 cache.del(['foo', 'bar']); // true
 ```
 
-### `.mdel(keys: Array<string | number>): number`
+## `.mdel(keys: Array<string | number>): number`
 
 Delete multiple keys from the cache. Will return the number of deleted entries and never fail.
 
@@ -222,7 +222,7 @@ Delete multiple keys from the cache. Will return the number of deleted entries a
 cache.mdel(['foo', 'bar']); // true
 ```
 
-### `.ttl(key: string | number, ttl?: number): boolean`
+## `.ttl(key: string | number, ttl?: number): boolean`
 
 Redefine the ttl of a key. Returns true if the key has been found and changed. Otherwise returns false. If the ttl-argument isn't passed the default-TTL will be used.
 
@@ -230,7 +230,7 @@ Redefine the ttl of a key. Returns true if the key has been found and changed. O
 cache.ttl('foo', 10); // true
 ```
 
-### `getTtl(key: string | number): number | undefined`
+## `getTtl(key: string | number): number | undefined`
 
 Get the ttl expiration from `Date.now()` of a key. If the key does not exist it will return `undefined`.
 
@@ -238,7 +238,7 @@ Get the ttl expiration from `Date.now()` of a key. If the key does not exist it 
 cache.getTtl('foo'); // 1725993344859
 ```
 
-### `has(key: string | number): boolean`
+## `has(key: string | number): boolean`
 
 Check if a key exists in the cache.
 
@@ -247,7 +247,7 @@ cache.set('foo', 'bar');
 cache.has('foo'); // true
 ```
 
-### `keys(): Array<string>`
+## `keys(): Array<string>`
 
 Get all keys from the cache.
 
@@ -255,7 +255,7 @@ Get all keys from the cache.
 cache.keys(); // ['foo', 'bar']
 ```
 
-### `getStats(): NodeCacheStats`
+## `getStats(): NodeCacheStats`
 
 Get the stats of the cache.
 
@@ -263,7 +263,7 @@ Get the stats of the cache.
 cache.getStats(); // {hits: 1, misses: 1, keys: 1, ksize: 2, vsize: 3}
 ```
 
-### `flushAll(): void`
+## `flushAll(): void`
 
 Flush the cache. Will remove all keys and reset the stats.
 
@@ -273,7 +273,7 @@ cache.keys(); // []
 cache.getStats(); // {hits: 0, misses: 0, keys: 0, ksize: 0, vsize: 0}
 ```
 
-### `flushStats(): void`
+## `flushStats(): void`
 
 Flush the stats. Will reset the stats but keep the keys.
 
@@ -284,7 +284,7 @@ cache.getStats(); // {hits: 0, misses: 0, keys: 0, ksize: 0, vsize: 0}
 cache.keys(); // ['foo']
 ```
 
-### `close(): void`
+## `close(): void`
 
 this will stop the interval that is running for the `checkperiod` and `deleteOnExpire` options.
 
@@ -292,7 +292,7 @@ this will stop the interval that is running for the `checkperiod` and `deleteOnE
 cache.close();
 ```
 
-### `on(event: string, callback: Function): void`
+## `on(event: string, callback: Function): void`
 
 Listen to events. Here are the events that you can listen to:
 * `set` - when a key is set and it will pass in the `key` and `value`.
@@ -307,9 +307,9 @@ cache.on('set', (key, value) => {
 });
 ```
 
-## How to Contribute
+# How to Contribute
 
 You can contribute by forking the repo and submitting a pull request. Please make sure to add tests and update the documentation. To learn more about how to contribute go to our main README [https://github.com/jaredwray/cacheable](https://github.com/jaredwray/cacheable). This will talk about how to `Open a Pull Request`, `Ask a Question`, or `Post an Issue`.
 
-## License and Copyright
+# License and Copyright
 [MIT © Jared Wray](./LICENSE)

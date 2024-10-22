@@ -48,7 +48,7 @@ If you are looking for older documentation you can find it here:
 * [Contribute](#contribute)
 * [License](#license)
 
-## Installation
+# Installation
 
 ```sh
 npm install cache-manager
@@ -67,7 +67,7 @@ npm install @keyv/etcd
 ```
 In addition Keyv supports other storage adapters such as `lru-cache` and `CacheableMemory` from Cacheable (more examples below). Please read [Keyv document](https://keyv.org/docs/) for more information.
 
-## Quick start
+# Quick start
 ```typescript
 import { Keyv } from 'keyv';
 import { createCache } from 'cache-manager';
@@ -130,7 +130,7 @@ await cache.wrap('key', () => 'value')
 // => value
 ```
 
-## Using `CacheableMemory` or `lru-cache` as storage adapter
+# Using CacheableMemory or lru-cache as storage adapter
 
 Because we are using [Keyv](https://keyv.org/), you can use any storage adapter that Keyv supports such as `lru-cache` or `CacheableMemory` from Cacheable. Below is an example of using `CacheableMemory`:
 
@@ -157,7 +157,7 @@ const keyv = new Keyv({ store: new LRU({ max: 5000, maxAge: 60000 }) });
 const cache = createCache({ stores: [keyv] });
 ```
 
-### Options
+## Options
 - **stores**?: Keyv[]
 
     List of Keyv instance. Please refer to the [Keyv document](https://keyv.org/docs/#3.-create-a-new-keyv-instance) for more information.
@@ -177,8 +177,8 @@ const cache = createCache({ stores: [keyv] });
     * `clear` - will not wait for all stores to finish.
     * `wrap` - will do the same as `get` and `set` (return the first value found and not wait for all stores to finish).
 
-## Methods
-### set
+# Methods
+## set
 `set(key, value, [ttl]): Promise<value>`
 
 Sets a key value pair. It is possible to define a ttl (in milliseconds). An error will be throw on any failed
@@ -191,7 +191,7 @@ await cache.set('key 2', 'value 2', 5000)
 ```
 See unit tests in [`test/set.test.ts`](./test/set.test.ts) for more information.
 
-### mset
+## mset
 
 `mset(keys: [ { key, value, ttl } ]): Promise<true>`
 
@@ -204,7 +204,7 @@ await cache.mset([
 ]);
 ```
 
-### get
+## get
 `get(key): Promise<value>`
 
 Gets a saved value from the cache. Returns a null if not found or expired. If the value was found it returns the value.
@@ -220,7 +220,7 @@ await cache.get('foo')
 ```
 See unit tests in [`test/get.test.ts`](./test/get.test.ts) for more information.
 
-### mget
+## mget
 
 `mget(keys: [key]): Promise<value[]>`
 
@@ -236,7 +236,7 @@ await cache.mget(['key-1', 'key-2', 'key-3'])
 // => ['value 1', 'value 2', null]
 ```
 
-### del
+## del
 `del(key): Promise<true>`
 
 Delete a key, an error will be throw on any failed.
@@ -254,7 +254,7 @@ await cache.get('key')
 ```
 See unit tests in [`test/del.test.ts`](./test/del.test.ts) for more information.
 
-### mdel
+## mdel
 
 `mdel(keys: [key]): Promise<true>`
 
@@ -269,7 +269,7 @@ await cache.mset([
 await cache.mdel(['key-1', 'key-2'])
 ```
 
-### clear
+## clear
 `clear(): Promise<true>`
 
 Flush all data, an error will be throw on any failed.
@@ -292,7 +292,7 @@ await cache.get('key-2')
 ```
 See unit tests in [`test/clear.test.ts`](./test/clear.test.ts) for more information.
 
-### wrap
+## wrap
 `wrap(key, fn: async () => value, [ttl], [refreshThreshold]): Promise<value>`
 
 Wraps a function in cache. The first time the function is run, its results are stored in cache so subsequent calls retrieve from cache instead of calling the function.
@@ -332,8 +332,8 @@ await cache.wrap('error', () => {
 
 See unit tests in [`test/wrap.test.ts`](./test/wrap.test.ts) for more information.
 
-## Events
-### set
+# Events
+## set
 Fired when a key has been added or changed.
 
 ```ts
@@ -342,7 +342,7 @@ cache.on('set', ({ key, value, error }) => {
 })
 ```
 
-### del
+## del
 Fired when a key has been removed manually.
 
 ```ts
@@ -351,7 +351,7 @@ cache.on('del', ({ key, error }) => {
 })
 ```
 
-### clear
+## clear
 Fired when the cache has been flushed.
 
 ```ts
@@ -362,7 +362,7 @@ cache.on('clear', (error) => {
 })
 ```
 
-### refresh
+## refresh
 Fired when the cache has been refreshed in the background.
 
 ```ts
@@ -375,11 +375,11 @@ cache.on('refresh', ({ key, value, error }) => {
 
 See unit tests in [`test/events.test.ts`](./test/events.test.ts) for more information.
 
-## Update on `redis` and `ioredis` Support
+# Update on redis and ioredis Support
 
 We will not be supporting `cache-manager-ioredis-yet` or `cache-manager-redis-yet` in the future as we have moved to using `Keyv` as the storage adapter `@keyv/redis`.
 
-## Using Legacy Storage Adapters
+# Using Legacy Storage Adapters
 
 There are many storage adapters built for `cache-manager` and because of that we wanted to provide a way to use them with `KeyvAdapter`. Below is an example of using `cache-manager-redis-yet`:
 
@@ -396,10 +396,10 @@ const cache = createCache({
 
 This adapter will allow you to add in any storage adapter. If there are issues it needs to follow `CacheManagerStore` interface.
 
-## Contribute
+# Contribute
 
 If you would like to contribute to the project, please read how to contribute here [CONTRIBUTING.md](https://github.com/jaredwray/cacheable/blob/main/CONTRIBUTING.md).
 
-## License
+# License
 
 [MIT © Jared Wray ](./LICENSE)
