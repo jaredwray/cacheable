@@ -59,7 +59,7 @@ describe('NodeCache', () => {
 
 	test('should take a key', () => {
 		cache.set('foo', 'bar');
-		const value = cache.take('foo') as string;
+		const value = cache.take('foo')!;
 		expect(value).toBe('bar');
 		expect(cache.get('foo')).toBe(undefined);
 	});
@@ -67,7 +67,7 @@ describe('NodeCache', () => {
 	test('should take a key with useClones set to false', () => {
 		const cache = new NodeCache({checkperiod: 0, useClones: false});
 		cache.set('foo', 'bar');
-		const value = cache.take('foo') as string;
+		const value = cache.take('foo')!;
 		expect(value).toBe('bar');
 		expect(cache.get('foo')).toBe(undefined);
 	});
