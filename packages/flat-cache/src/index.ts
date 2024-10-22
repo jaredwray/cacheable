@@ -12,8 +12,8 @@ export type FlatCacheOptions = {
 	persistInterval?: number;
 	cacheDir?: string;
 	cacheId?: string;
-	parse?: (data: string) => any;
-	stringify?: (data: any) => string;
+	deserialize?: (data: string) => any;
+	serialize?: (data: any) => string;
 };
 
 export enum FlatCacheEvents {
@@ -59,12 +59,12 @@ export class FlatCache extends Hookified {
 			this.startAutoPersist();
 		}
 
-		if (options?.parse) {
-			this._parse = options.parse;
+		if (options?.deserialize) {
+			this._parse = options.deserialize;
 		}
 
-		if (options?.stringify) {
-			this._stringify = options.stringify;
+		if (options?.serialize) {
+			this._stringify = options.serialize;
 		}
 	}
 
