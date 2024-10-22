@@ -152,7 +152,7 @@ describe('wrap function', () => {
 
 		// Expectations
 		expect(result).toBe(result2);
-		await sleep(2500);
+		await sleep(1500);
 		const cacheResult = cache.get('cacheKey');
 		expect(cacheResult).toBe(undefined);
 	});
