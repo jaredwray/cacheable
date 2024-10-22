@@ -111,6 +111,35 @@ export class DoublyLinkedList {
 		return oldValue;
 	}
 
+	remove(key: string, namespace?: string): void {
+		const nodeKey = this.getNodeKey(key, namespace);
+		const node = this.nodesMap.get(nodeKey);
+		if (!node) {
+			return;
+		}
+
+		// Remove the node from the map
+		this.nodesMap.delete(nodeKey);
+
+		// Remove the node from the list
+		if (node.prev) {
+			node.prev.next = node.next;
+		}
+
+		/* c8 ignore next 3 */
+		if (node.next) {
+			node.next.prev = node.prev;
+		}
+
+		if (node === this.head) {
+			this.head = node.next;
+		}
+
+		if (node === this.tail) {
+			this.tail = node.prev;
+		}
+	}
+
 	get size(): number {
 		return this.nodesMap.size;
 	}

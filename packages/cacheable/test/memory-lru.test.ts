@@ -33,4 +33,24 @@ describe('DoublyLinkedList', () => {
 		expect(lru.removeOldest()?.key).toBe('key1');
 		expect(lru.removeOldest()).toBe(undefined);
 	});
+
+	test('should be able to remove items', () => {
+		const lru = new DoublyLinkedList();
+		lru.addToFront('key1');
+		lru.addToFront('key2');
+		lru.addToFront('key3');
+		lru.remove('key1');
+		expect(lru.getOldest()?.key).toBe('key2');
+		expect(lru.size).toBe(2);
+	});
+
+	test('should be able to remove head item', () => {
+		const lru = new DoublyLinkedList();
+		lru.addToFront('key1');
+		lru.addToFront('key2');
+		lru.addToFront('key3');
+		lru.remove('key3');
+		expect(lru.getOldest()?.key).toBe('key1');
+		expect(lru.size).toBe(2);
+	});
 });

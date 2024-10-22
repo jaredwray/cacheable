@@ -272,37 +272,6 @@ describe('CacheableMemory Get Store and Hash Key', async () => {
 		const cache = new CacheableMemory();
 		expect(cache.getStore('key')).toBe(cache.getStore('key'));
 	});
-	test('should return different stores for different keys starting with A to Z', () => {
-		const cache = new CacheableMemory();
-		cache.set('d', 'value');
-		expect(cache.getStore('d').get('d')).toBeDefined();
-		cache.set('ad', 'value');
-		expect(cache.getStore('ad').get('ad')).toBeDefined();
-		cache.set('aa', 'value');
-		expect(cache.getStore('aa').get('aa')).toBeDefined();
-		cache.set('b', 'value');
-		expect(cache.getStore('b').get('b')).toBeDefined();
-		cache.set('abc', 'value');
-		expect(cache.getStore('abc').get('abc')).toBeDefined();
-		cache.set('bb', 'value');
-		expect(cache.getStore('bb').get('bb')).toBeDefined();
-		cache.set('cc', 'value');
-		expect(cache.getStore('cc').get('cc')).toBeDefined();
-		cache.set('h', 'value');
-		expect(cache.getStore('h').get('h')).toBeDefined();
-		cache.set('apple', 'value');
-		expect(cache.getStore('apple').get('apple')).toBeDefined();
-		cache.set('banana', 'value');
-		expect(cache.getStore('banana').get('banana')).toBeDefined();
-		cache.set('carrot', 'value');
-		expect(cache.getStore('carrot').get('carrot')).toBeDefined();
-		cache.set('4123', 'value');
-		expect(cache.getStore('4123').get('4123')).toBeDefined();
-		cache.set('mouse', 'value');
-		expect(cache.getStore('mouse').get('mouse')).toBeDefined();
-		cache.set('ice', 'value');
-		expect(cache.getStore('ice').get('ice')).toBeDefined();
-	});
 });
 
 describe('CacheableMemory LRU', async () => {
@@ -479,11 +448,46 @@ describe('Cacheable Namespace', async () => {
 
 	test('get store with namespace', () => {
 		const cache = new CacheableMemory();
-		const defaultStore = cache.getStoreByNamespace();
+		const defaultStore = cache.getStore();
 		defaultStore.set({key: 'key', value: 'value'});
-		const store = cache.getStoreByNamespace('test');
+		const store = cache.getStore('test');
 		expect(store.get('key')).toBeUndefined();
-		const defaultStore2 = cache.getStoreByNamespace();
+		const defaultStore2 = cache.getStore();
 		expect(defaultStore2.get('key')?.value).toBe('value');
+	});
+
+	test('check expiration with namespace', async () => {
+		const cache = new CacheableMemory();
+		cache.namespace = 'test';
+		cache.set('testKey1', 'testValue1', 1);
+		cache.checkExpiration();
+		expect(cache.get('testKey1')).toBe('testValue1');
+	});
+
+	test('clear all stores without namespace', () => {
+		const cache = new CacheableMemory();
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		cache.set('key3', 'value3');
+		cache.set('key4', 'value4');
+		expect(cache.size).toBe(4);
+		cache.clear();
+		expect(cache.size).toBe(0);
+		cache.namespace = 'test';
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		expect(cache.size).toBe(2);
+		cache.namespace = 'test2';
+		cache.set('key3', 'value3');
+		cache.set('key4', 'value4');
+		cache.set('key5', 'value5');
+		expect(cache.size).toBe(3);
+		cache.namespace = 'test';
+		cache.clear('test');
+		expect(cache.size).toBe(0);
+		cache.namespace = 'test2';
+		expect(cache.size).toBe(3);
+		cache.clear();
+		expect(cache.size).toBe(0);
 	});
 });

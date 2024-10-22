@@ -150,7 +150,7 @@ export class CacheableMemory {
 	 * @returns {number} - The size of the cache
 	 */
 	public get size(): number {
-		return this._defaultStore.size;
+		return this.getStore(this.getNamespace()).size;
 	}
 
 	/**
@@ -175,7 +175,7 @@ export class CacheableMemory {
 	 * @returns {T | undefined} - The value of the key
 	 */
 	public get<T>(key: string): T | undefined {
-		const store = this.getStore(key);
+		const store = this.getStore(this.getNamespace());
 		const item = store.get(key)!;
 		if (!item) {
 			return undefined;
@@ -215,7 +215,7 @@ export class CacheableMemory {
 	 * @returns {CacheableStoreItem | undefined} - The raw value of the key
 	 */
 	public getRaw(key: string): CacheableStoreItem | undefined {
-		const store = this.getStore(key);
+		const store = this.getStore(this.getNamespace());
 		const item = store.get(key)!;
 		if (!item) {
 			return undefined;
@@ -253,7 +253,7 @@ export class CacheableMemory {
 	 * @returns {void}
 	 */
 	public set(key: string, value: any, ttl?: number | string): void {
-		const store = this.getStore(key);
+		const store = this.getStore(this.getNamespace());
 		let expires;
 		if (ttl !== undefined || this._ttl !== undefined) {
 			const finalTtl = shorthandToTime(ttl ?? this._ttl);
@@ -357,7 +357,7 @@ export class CacheableMemory {
 	 * @returns {void}
 	 */
 	public delete(key: string): void {
-		const store = this.getStore(key);
+		const store = this.getStore(this.getNamespace());
 		store.delete(key);
 	}
 
@@ -373,24 +373,30 @@ export class CacheableMemory {
 	}
 
 	/**
-	 * Clear the cache
+	 * Clear the cache. If it is undefined, it will clear all stores, otherwise it will clear the store based on the namespace
+	 * @param {string} [namespace] - The namespace to clear
 	 * @returns {void}
 	 */
-	public clear(): void {
+	public clear(namespace?: string): void {
+		if (namespace) {
+			this.getStore(namespace).clear();
+			return;
+		}
+
+		for (const store of this._namedStores.values()) {
+			store.clear();
+		}
+
 		this._defaultStore.clear();
 		this._hashCache.clear();
 	}
 
 	/**
 	 * Get the store based on the key (internal use)
-	 * @param {string} key - The key to get the store
+	 * @param {string} [namespace] - The key to get the store
 	 * @returns {CacheableHashStore} - The store
 	 */
-	public getStore(key: string): CacheableHashStore {
-		return this._defaultStore;
-	}
-
-	public getStoreByNamespace(namespace?: string): CacheableHashStore {
+	public getStore(namespace?: string): CacheableHashStore {
 		if (namespace) {
 			if (!this._namedStores.has(namespace)) {
 				this._namedStores.set(namespace, new CacheableHashStore());
@@ -466,7 +472,8 @@ export class CacheableMemory {
 			const oldestKey = this._lru.getOldest();
 			if (oldestKey) {
 				this._lru.removeOldest();
-				this.delete(oldestKey.key);
+				const store = this.getStore(oldestKey.namespace);
+				store.delete(oldestKey.key);
 			}
 		}
 	}
@@ -476,10 +483,24 @@ export class CacheableMemory {
 	 * @returns {void}
 	 */
 	public checkExpiration() {
-		const stores = this.concatStores();
+		this.checkExpirationStore(this._defaultStore);
+
+		for (const store of this._namedStores.values()) {
+			this.checkExpirationStore(store);
+		}
+	}
+
+	/**
+	 * Check for expiration in the store. This is for internal use
+	 * @param {CacheableHashStore} store - The store to check for expiration
+	 * @returns {void}
+	 */
+	public checkExpirationStore(store: CacheableHashStore) {
+		const stores = store.concatStores();
 		for (const item of stores.values()) {
 			if (item.expires && Date.now() > item.expires) {
-				this.delete(item.key);
+				store.delete(item.key);
+				this._lru.remove(item.key);
 			}
 		}
 	}
@@ -551,7 +572,7 @@ export class CacheableMemory {
 	}
 
 	private concatStores(): Map<string, CacheableStoreItem> {
-		return this._defaultStore.concatStores();
+		return this.getStore(this.getNamespace()).concatStores();
 	}
 
 	private setTtl(ttl: number | string | undefined): void {
