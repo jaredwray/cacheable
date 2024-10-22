@@ -119,8 +119,8 @@ In version 6 we attempted to keep as much as the functionality as possible which
 - `persistInterval?` - The interval to save the data to disk. Default is `0` which means no persistence
 - `cacheDir?` - The directory to save the cache files. Default is `./cache`
 - `cacheId?` - The id of the cache. Default is `cache1`
-- `parse?` - The function to parse the data. Default is `flatted.parse`
-- `stringify?` - The function to stringify the data. Default is `flatted.stringify`
+- `serialize?` - The function to parse the data. Default is `flatted.parse`
+- `deserialize?` - The function to stringify the data. Default is `flatted.stringify`
 
 # API
 

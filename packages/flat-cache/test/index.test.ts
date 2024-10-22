@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {deserialize, serialize} from 'node:v8';
 import {describe, test, expect} from 'vitest';
 import defaultFlatCache, {
 	FlatCache, create, createFromFile, clearAll, clearCacheById,
@@ -246,8 +247,8 @@ describe('flat-cache exported functions', () => {
 describe('flat-cache with JSON', () => {
 	test('should be able to set and get via JSON parse and stringify methods', () => {
 		const options = {
-			parse: JSON.parse,
-			stringify: JSON.stringify,
+			serialize: JSON.stringify,
+			deserialize: JSON.parse,
 		};
 		const cache = new FlatCache(options);
 		cache.set('foo', {bar: 'baz'});
