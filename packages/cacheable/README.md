@@ -192,6 +192,7 @@ The following options are available for you to configure `cacheable`:
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: To enable statistics for this instance. Default is `false`.
 * `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
+* `namespace`: The namespace for the cache. Default is `undefined`.
 
 # Cacheable Statistics (Instance Only)
 
@@ -233,6 +234,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `hash(object: any, algorithm = 'sha256'): string`: Hashes an object with the algorithm. Default is `sha256`.
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
+* `namespace`: The namespace for the cache. Default is `undefined`. This will set the namespace for the primary and secondary stores.
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
 
