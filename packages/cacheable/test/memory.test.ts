@@ -451,3 +451,29 @@ describe('cacheable wrap', async () => {
 		expect(cacheResult2).toBeUndefined();
 	});
 });
+
+describe('Cacheable Namespace', async () => {
+	test('should be able to set a namespace as option', () => {
+		const cache = new CacheableMemory({namespace: 'test'});
+		cache.namespace = 'test';
+	});
+
+	test('should be able to set a namespace', () => {
+		const cache = new CacheableMemory();
+		cache.namespace = 'test';
+		expect(cache.namespace).toBe('test');
+	});
+
+	test('should be able to set the namespace as a function', () => {
+		const cache = new CacheableMemory();
+		cache.namespace = () => 'test';
+		expect(cache.namespace).toBe('test');
+	});
+
+	test('set function namespace option then a string', () => {
+		const cache = new CacheableMemory({namespace: () => 'test'});
+		expect(cache.namespace).toBe('test');
+		cache.namespace = 'test2';
+		expect(cache.namespace).toBe('test2');
+	});
+});

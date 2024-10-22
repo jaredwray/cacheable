@@ -19,6 +19,7 @@ export type CacheableMemoryOptions = {
 	useClone?: boolean;
 	lruSize?: number;
 	checkInterval?: number;
+	namespace?: string | (() => string);
 };
 
 export class CacheableMemory {
@@ -31,6 +32,7 @@ export class CacheableMemory {
 	private _lruSize = 0; // Turned off by default
 	private _checkInterval = 0; // Turned off by default
 	private _interval: number | NodeJS.Timeout = 0; // Turned off by default
+	private _namespace: string | (() => string) | undefined;
 
 	/**
 	 * @constructor
@@ -53,7 +55,28 @@ export class CacheableMemory {
 			this._checkInterval = options.checkInterval;
 		}
 
+		if (options?.namespace) {
+			this._namespace = options.namespace;
+		}
+
 		this.startIntervalCheck();
+	}
+
+	/**
+	 * Gets the namespace
+	 * @returns {string | undefined} - The namespace
+	 */
+	public get namespace(): string | undefined {
+		return this.getNamespace();
+	}
+
+	/**
+	 * Sets the namespace
+	 * @param {string | (() => string) | undefined} value - The namespace
+	 * @returns {void}
+	 */
+	public set namespace(value: string | (() => string) | undefined) {
+		this._namespace = value;
 	}
 
 	/**
@@ -377,6 +400,18 @@ export class CacheableMemory {
 		}
 
 		return structuredClone(value);
+	}
+
+	/**
+	 * Get the namespace. If it is a function, it will call the function to get the namespace
+	 * @returns {string | undefined} - The namespace
+	 */
+	public getNamespace(): string | undefined {
+		if (typeof this._namespace === 'function') {
+			return this._namespace();
+		}
+
+		return this._namespace;
 	}
 
 	/**
