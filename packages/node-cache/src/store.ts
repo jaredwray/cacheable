@@ -106,8 +106,8 @@ export class NodeCacheStore {
 	}
 
 	/**
-	 * Maximum number of keys to store in the cache. if this is set to a value greater than 0, 
-	 * the cache will keep track of the number of keys and will not store more than the specified number of keys. 
+	 * Maximum number of keys to store in the cache. if this is set to a value greater than 0,
+	 * the cache will keep track of the number of keys and will not store more than the specified number of keys.
 	 * @returns {number}
 	 * @readonly
 	 */
@@ -116,8 +116,8 @@ export class NodeCacheStore {
 	}
 
 	/**
-	 * Maximum number of keys to store in the cache. if this is set to a value greater than 0, 
-	 * the cache will keep track of the number of keys and will not store more than the specified number of keys. 
+	 * Maximum number of keys to store in the cache. if this is set to a value greater than 0,
+	 * the cache will keep track of the number of keys and will not store more than the specified number of keys.
 	 * @param {number} maxKeys
 	 */
 	public set maxKeys(maxKeys: number) {
