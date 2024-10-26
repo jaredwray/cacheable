@@ -298,11 +298,15 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 ```javascript
 import { Cacheable } from 'cacheable';
 const asyncFunction = async (value: number) => {
-  return value * 2;
+  return Math.random() * value;
 };
 
 const cache = new Cacheable();
-const wrappedFunction = cache.wrap(asyncFunction, { ttl: '1h' });
+const options = {
+  ttl: '1h', // 1 hour
+  key: 'asyncFunctionKey' // used for prefixing the wrapped function
+}
+const wrappedFunction = cache.wrap(asyncFunction, options);
 console.log(await wrappedFunction(2)); // 4
 console.log(await wrappedFunction(2)); // 4 from cache
 ```
