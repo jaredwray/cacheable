@@ -9,6 +9,13 @@ describe('Keyv Cacheable Memory', () => {
 		const keyv = new Keyv({store: keyvCacheableMemory});
 		expect(keyv).toBeDefined();
 	});
+	test('should set namespace for keyv cacheable memory', async () => {
+		const namespace = 'ns1';
+		const keyvCacheableMemory = new KeyvCacheableMemory({namespace});
+		expect(keyvCacheableMemory.namespace).toBe(namespace);
+		keyvCacheableMemory.namespace = 'ns2';
+		expect(keyvCacheableMemory.namespace).toBe('ns2');
+	});
 	test('should set options for keyv cacheable memory', async () => {
 		const keyvCacheableMemory = new KeyvCacheableMemory({ttl: 1000, lruSize: 1000});
 		expect(keyvCacheableMemory).toBeDefined();
@@ -71,5 +78,19 @@ describe('Keyv Cacheable Memory', () => {
 		await keyvCacheableMemory.setMany([{key: 'key', value: 'value'}, {key: 'key1', value: 'value1'}]);
 		const value = await keyvCacheableMemory.get('key1');
 		expect(value).toBe('value1');
+	});
+	test('should be able to get the store based on namespace', async () => {
+		const cache = new KeyvCacheableMemory();
+		await cache.set('key1', 'default');
+		expect(await cache.get('key1')).toBe('default');
+		cache.namespace = 'ns1';
+		expect(await cache.get('key1')).toBe(undefined);
+		expect(cache.store.get('key1')).toBe(undefined);
+		await cache.set('key1', 'ns1');
+		expect(await cache.get('key1')).toBe('ns1');
+		expect(cache.store.get('key1')).toBe('ns1');
+		cache.namespace = undefined;
+		expect(await cache.get('key1')).toBe('default');
+		expect(cache.store.get('key1')).toBe('default');
 	});
 });
