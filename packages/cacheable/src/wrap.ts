@@ -2,14 +2,19 @@ import {type Cacheable, type CacheableMemory} from './index.js';
 
 export type WrapOptions = {
 	ttl?: number | string;
-	key?: string;
+	key: string;
 	cache: Cacheable;
 };
 
 export type WrapSyncOptions = {
 	ttl?: number | string;
-	key?: string;
+	key: string;
 	cache: CacheableMemory;
+};
+
+export type WrapFunctionOptions = {
+	ttl?: number | string;
+	key: string;
 };
 
 export type AnyFunction = (...arguments_: any[]) => any;
@@ -18,7 +23,7 @@ export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): A
 	const {ttl, key, cache} = options;
 
 	return function (...arguments_: any[]) {
-		const cacheKey = key ?? cache.hash(arguments_);
+		const cacheKey = wrapKey(function_, key);
 
 		let value = cache.get(cacheKey);
 
@@ -37,7 +42,7 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 	const {ttl, key, cache} = options;
 
 	return async function (...arguments_: any[]) {
-		const cacheKey = key ?? cache.hash(arguments_);
+		const cacheKey = wrapKey(function_, key);
 
 		let value = await cache.get(cacheKey) as T | undefined;
 
@@ -50,4 +55,8 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 
 		return value;
 	};
+}
+
+export function wrapKey(function_: AnyFunction, key: string): string {
+	return `${key}::${function_.name}`;
 }

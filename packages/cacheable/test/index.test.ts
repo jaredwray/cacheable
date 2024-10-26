@@ -614,11 +614,31 @@ describe('cacheable wrap', async () => {
 		const result = await wrapped(1);
 		const result2 = await wrapped(1);
 		expect(result).toBe(result2);
-		const cacheResult1 = await cacheable.get('cacheKey');
+		const cacheKey = cacheable.wrapKey(asyncFunction, 'cacheKey');
+		const cacheResult1 = await cacheable.get(cacheKey);
 		expect(cacheResult1).toBe(result);
 		await sleep(20);
-		const cacheResult2 = await cacheable.get('cacheKey');
+		const cacheResult2 = await cacheable.get(cacheKey);
 		expect(cacheResult2).toBeUndefined();
+	});
+	test('wrap async function', async () => {
+		const cache = new Cacheable();
+		const options = {
+			key: 'cacheKey',
+			ttl: '5m',
+		};
+
+		const plus = async (a: number, b: number) => a + b;
+		const plusCached = cache.wrap(plus, options);
+
+		const multiply = async (a: number, b: number) => a * b;
+		const multiplyCached = cache.wrap(multiply, options);
+
+		const result1 = await plusCached(1, 2);
+		const result2 = await multiplyCached(1, 2);
+
+		expect(result1).toBe(3);
+		expect(result2).toBe(2);
 	});
 });
 

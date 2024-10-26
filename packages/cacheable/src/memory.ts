@@ -1,4 +1,4 @@
-import {wrapSync} from './wrap.js';
+import {wrapSync, wrapKey, type WrapFunctionOptions} from './wrap.js';
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
 import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
@@ -477,7 +477,7 @@ export class CacheableMemory {
 	 * @param {Object} [options] - The options to wrap
 	 * @returns {Function} - The wrapped function
 	 */
-	public wrap<T>(function_: (...arguments_: any[]) => T, options: {ttl?: number; key?: string} = {}): (...arguments_: any[]) => T {
+	public wrap<T>(function_: (...arguments_: any[]) => T, options: WrapFunctionOptions): (...arguments_: any[]) => T {
 		const wrapOptions = {
 			ttl: options.ttl,
 			key: options.key,
@@ -485,6 +485,16 @@ export class CacheableMemory {
 		};
 
 		return wrapSync<T>(function_, wrapOptions);
+	}
+
+	/**
+	 * Will create the key for the function with a prefix (internal use)
+	 * @param function_ - arguments to hash
+	 * @param {string} key - the key to prefix
+	 * @returns {string} - The wrap key used in cache
+	 */
+	public wrapKey(function_: (...arguments_: any[]) => any, key: string): string {
+		return wrapKey(function_, key);
 	}
 
 	private isPrimitive(value: any): boolean {
