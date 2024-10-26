@@ -444,10 +444,11 @@ describe('cacheable wrap', async () => {
 		const result = wrapped(1);
 		const result2 = wrapped(1);
 		expect(result).toBe(result2);
-		const cacheResult1 = cacheable.get<number>('cacheKey');
+		const cacheKey = cacheable.wrapKey(syncFunction, 'cacheKey');
+		const cacheResult1 = cacheable.get<number>(cacheKey);
 		expect(cacheResult1).toBe(result);
 		await sleep(20);
-		const cacheResult2 = cacheable.get<number>('cacheKey');
+		const cacheResult2 = cacheable.get<number>(cacheKey);
 		expect(cacheResult2).toBeUndefined();
 	});
 });

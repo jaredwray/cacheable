@@ -4,7 +4,7 @@ import {
 } from 'vitest';
 import {Cacheable, CacheableMemory} from '../src/index.js';
 import {
-	wrap, wrapSync, type WrapOptions, type WrapSyncOptions,
+	wrap, wrapKey, wrapSync, type WrapOptions, type WrapSyncOptions,
 } from '../src/wrap.js';
 import {sleep} from './sleep.js';
 
@@ -26,7 +26,8 @@ describe('wrap function', () => {
 
 		// Expectations
 		expect(result).toBe(3);
-		const cacheResult = await cache.get('cacheKey');
+		const cacheKey = wrapKey(asyncFunction, options.key);
+		const cacheResult = await cache.get(cacheKey);
 		expect(cacheResult).toBe(3);
 	});
 
@@ -36,6 +37,7 @@ describe('wrap function', () => {
 		const cache = new Cacheable();
 
 		const options: WrapOptions = {
+			key: 'cacheKey',
 			cache,
 		};
 
@@ -67,7 +69,8 @@ describe('wrap function', () => {
 
 		// Expectations
 		expect(result).toBe(result2);
-		const cacheResult = cache.get('cacheKey');
+		const cacheKey = wrapKey(syncFunction, options.key);
+		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(result);
 	});
 
@@ -76,6 +79,7 @@ describe('wrap function', () => {
 		const syncFunction = (value: number) => Math.random() * value;
 		const cache = new CacheableMemory();
 		const options: WrapSyncOptions = {
+			key: 'cacheKey',
 			cache,
 		};
 
@@ -110,7 +114,8 @@ describe('wrap function', () => {
 		// Expectations
 		expect(result).toBe(result2);
 		await sleep(30);
-		const cacheResult = cache.get('cacheKey');
+		const cacheKey = wrapKey(syncFunction, options.key);
+		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(undefined);
 	});
 
@@ -119,6 +124,7 @@ describe('wrap function', () => {
 		const syncFunction = (value: number, person: {first: string; last: string; meta: any}) => Math.random() * value;
 		const cache = new CacheableMemory();
 		const options: WrapSyncOptions = {
+			key: 'cacheKey',
 			cache,
 		};
 
@@ -153,7 +159,8 @@ describe('wrap function', () => {
 		// Expectations
 		expect(result).toBe(result2);
 		await sleep(1500);
-		const cacheResult = cache.get('cacheKey');
+		const cacheKey = wrapKey(syncFunction, options.key);
+		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(undefined);
 	});
 });

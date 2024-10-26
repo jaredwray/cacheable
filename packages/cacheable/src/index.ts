@@ -5,7 +5,7 @@ import {KeyvCacheableMemory} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
-import {wrap} from './wrap.js';
+import {wrap, wrapKey, type WrapFunctionOptions} from './wrap.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -568,7 +568,7 @@ export class Cacheable extends Hookified {
 	 * @param {WrapOptions} [options] The options for the wrap function
 	 * @returns {Function} The wrapped function
 	 */
-	public wrap<T>(function_: (...arguments_: any[]) => T, options: {ttl?: number; key?: string} = {}): (...arguments_: any[]) => T {
+	public wrap<T>(function_: (...arguments_: any[]) => T, options: WrapFunctionOptions): (...arguments_: any[]) => T {
 		const wrapOptions = {
 			ttl: options.ttl,
 			key: options.key,
@@ -576,6 +576,16 @@ export class Cacheable extends Hookified {
 		};
 
 		return wrap<T>(function_, wrapOptions);
+	}
+
+	/**
+	 * Will create the key for the function with a prefix (internal use)
+	 * @param function_ - arguments to hash
+	 * @param {string} key - the key to prefix
+	 * @returns {string} - The wrap key used in cache
+	 */
+	public wrapKey(function_: (...arguments_: any[]) => any, key: string): string {
+		return wrapKey(function_, key);
 	}
 
 	/**
