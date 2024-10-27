@@ -1,4 +1,5 @@
 import {describe, test, expect} from 'vitest';
+import {createWrapKey} from '../src/wrap.js';
 import {CacheableMemory} from '../src/memory.js';
 import {sleep} from './sleep.js';
 
@@ -436,7 +437,7 @@ describe('cacheable wrap', async () => {
 		const cacheable = new CacheableMemory();
 		const syncFunction = (value: number) => Math.random() * value;
 		const options = {
-			key: 'cacheKey',
+			keyPrefix: 'prefix',
 			ttl: 10,
 		};
 
@@ -444,7 +445,7 @@ describe('cacheable wrap', async () => {
 		const result = wrapped(1);
 		const result2 = wrapped(1);
 		expect(result).toBe(result2);
-		const cacheKey = cacheable.wrapKey(syncFunction, 'cacheKey');
+		const cacheKey = createWrapKey(syncFunction, [1], options.keyPrefix);
 		const cacheResult1 = cacheable.get<number>(cacheKey);
 		expect(cacheResult1).toBe(result);
 		await sleep(20);

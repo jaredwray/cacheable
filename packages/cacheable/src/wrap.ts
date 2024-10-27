@@ -1,29 +1,30 @@
+import {hash} from './hash.js';
 import {type Cacheable, type CacheableMemory} from './index.js';
 
 export type WrapOptions = {
 	ttl?: number | string;
-	key: string;
+	keyPrefix?: string;
 	cache: Cacheable;
 };
 
 export type WrapSyncOptions = {
 	ttl?: number | string;
-	key: string;
+	keyPrefix?: string;
 	cache: CacheableMemory;
 };
 
 export type WrapFunctionOptions = {
 	ttl?: number | string;
-	key: string;
+	keyPrefix: string;
 };
 
 export type AnyFunction = (...arguments_: any[]) => any;
 
 export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): AnyFunction {
-	const {ttl, key, cache} = options;
+	const {ttl, keyPrefix, cache} = options;
 
 	return function (...arguments_: any[]) {
-		const cacheKey = wrapKey(function_, key);
+		const cacheKey = createWrapKey(function_, arguments_, keyPrefix);
 
 		let value = cache.get(cacheKey);
 
@@ -39,10 +40,10 @@ export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): A
 }
 
 export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFunction {
-	const {ttl, key, cache} = options;
+	const {ttl, keyPrefix, cache} = options;
 
 	return async function (...arguments_: any[]) {
-		const cacheKey = wrapKey(function_, key);
+		const cacheKey = createWrapKey(function_, arguments_, keyPrefix);
 
 		let value = await cache.get(cacheKey) as T | undefined;
 
@@ -57,6 +58,10 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 	};
 }
 
-export function wrapKey(function_: AnyFunction, key: string): string {
-	return `${key}::${function_.name}`;
+export function createWrapKey(function_: AnyFunction, arguments_: any[], keyPrefix?: string): string {
+	if (!keyPrefix) {
+		return `${function_.name}::${hash(arguments_)}`;
+	}
+
+	return `${keyPrefix}::${function_.name}::${hash(arguments_)}`;
 }

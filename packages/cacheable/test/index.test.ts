@@ -5,6 +5,7 @@ import {Keyv} from 'keyv';
 import KeyvRedis from '@keyv/redis';
 import {LRUCache} from 'lru-cache';
 import {Cacheable, CacheableHooks} from '../src/index.js';
+import {createWrapKey} from '../src/wrap.js';
 import {sleep} from './sleep.js';
 
 describe('cacheable options and properties', async () => {
@@ -606,7 +607,7 @@ describe('cacheable wrap', async () => {
 		const cacheable = new Cacheable();
 		const asyncFunction = async (value: number) => Math.random() * value;
 		const options = {
-			key: 'cacheKey',
+			keyPrefix: 'keyPrefix',
 			ttl: 10,
 		};
 
@@ -614,7 +615,7 @@ describe('cacheable wrap', async () => {
 		const result = await wrapped(1);
 		const result2 = await wrapped(1);
 		expect(result).toBe(result2);
-		const cacheKey = cacheable.wrapKey(asyncFunction, 'cacheKey');
+		const cacheKey = createWrapKey(asyncFunction, [1], options.keyPrefix);
 		const cacheResult1 = await cacheable.get(cacheKey);
 		expect(cacheResult1).toBe(result);
 		await sleep(20);
@@ -624,7 +625,7 @@ describe('cacheable wrap', async () => {
 	test('wrap async function', async () => {
 		const cache = new Cacheable();
 		const options = {
-			key: 'cacheKey',
+			keyPrefix: 'wrapPrefix',
 			ttl: '5m',
 		};
 

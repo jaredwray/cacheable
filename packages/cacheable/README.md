@@ -304,7 +304,7 @@ const asyncFunction = async (value: number) => {
 const cache = new Cacheable();
 const options = {
   ttl: '1h', // 1 hour
-  key: 'asyncFunctionKey' // used for prefixing the wrapped function
+  keyPrefix: 'p1', // key prefix. This is used if you have multiple functions and need to set a unique prefix.
 }
 const wrappedFunction = cache.wrap(asyncFunction, options);
 console.log(await wrappedFunction(2)); // 4
