@@ -3,7 +3,6 @@ import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
 import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
-import {CacheableHashStore} from './hash-store.js';
 
 /**
  * @typedef {Object} CacheableMemoryOptions
@@ -22,9 +21,18 @@ export type CacheableMemoryOptions = {
 };
 
 export class CacheableMemory {
+	private _lru = new DoublyLinkedList<string>();
 	private readonly _hashCache = new Map<string, number>();
-	private readonly _defaultStore = new CacheableHashStore();
-	private readonly _lru = new DoublyLinkedList<string>();
+	private readonly _hash0 = new Map<string, CacheableStoreItem>();
+	private readonly _hash1 = new Map<string, CacheableStoreItem>();
+	private readonly _hash2 = new Map<string, CacheableStoreItem>();
+	private readonly _hash3 = new Map<string, CacheableStoreItem>();
+	private readonly _hash4 = new Map<string, CacheableStoreItem>();
+	private readonly _hash5 = new Map<string, CacheableStoreItem>();
+	private readonly _hash6 = new Map<string, CacheableStoreItem>();
+	private readonly _hash7 = new Map<string, CacheableStoreItem>();
+	private readonly _hash8 = new Map<string, CacheableStoreItem>();
+	private readonly _hash9 = new Map<string, CacheableStoreItem>();
 
 	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
@@ -126,7 +134,7 @@ export class CacheableMemory {
 	 * @returns {number} - The size of the cache
 	 */
 	public get size(): number {
-		return this._defaultStore.size;
+		return this._hash0.size + this._hash1.size + this._hash2.size + this._hash3.size + this._hash4.size + this._hash5.size + this._hash6.size + this._hash7.size + this._hash8.size + this._hash9.size;
 	}
 
 	/**
@@ -254,12 +262,12 @@ export class CacheableMemory {
 			}
 		}
 
-		store.set({
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+		const item = {key, value, expires};
+		store.set(
 			key,
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			value,
-			expires,
-		});
+			item,
+		);
 	}
 
 	/**
@@ -353,8 +361,18 @@ export class CacheableMemory {
 	 * @returns {void}
 	 */
 	public clear(): void {
-		this._defaultStore.clear();
+		this._hash0.clear();
+		this._hash1.clear();
+		this._hash2.clear();
+		this._hash3.clear();
+		this._hash4.clear();
+		this._hash5.clear();
+		this._hash6.clear();
+		this._hash7.clear();
+		this._hash8.clear();
+		this._hash9.clear();
 		this._hashCache.clear();
+		this._lru = new DoublyLinkedList<string>();
 	}
 
 	/**
@@ -362,8 +380,82 @@ export class CacheableMemory {
 	 * @param {string} key - The key to get the store
 	 * @returns {CacheableHashStore} - The store
 	 */
-	public getStore(key: string): CacheableHashStore {
-		return this._defaultStore;
+	public getStore(key: string): Map<string, CacheableStoreItem> {
+		const hash = this.hashKey(key);
+		return this.getStoreFromHash(hash);
+	}
+
+	/**
+	 * Get the store based on the hash (internal use)
+	 * @param {number} hash
+	 * @returns {Map<string, CacheableStoreItem>}
+	 */
+	public getStoreFromHash(hash: number): Map<string, CacheableStoreItem> {
+		switch (hash) {
+			case 1: {
+				return this._hash1;
+			}
+
+			case 2: {
+				return this._hash2;
+			}
+
+			case 3: {
+				return this._hash3;
+			}
+
+			case 4: {
+				return this._hash4;
+			}
+
+			case 5: {
+				return this._hash5;
+			}
+
+			case 6: {
+				return this._hash6;
+			}
+
+			case 7: {
+				return this._hash7;
+			}
+
+			case 8: {
+				return this._hash8;
+			}
+
+			case 9: {
+				return this._hash9;
+			}
+
+			default: {
+				return this._hash0;
+			}
+		}
+	}
+
+	/**
+	 * Hash the key (internal use)
+	 * @param key
+	 * @returns {number} from 0 to 9
+	 */
+	public hashKey(key: string): number {
+		const cacheHashNumber = this._hashCache.get(key)!;
+		if (cacheHashNumber) {
+			return cacheHashNumber;
+		}
+
+		let hash = 0;
+		const primeMultiplier = 31; // Use a prime multiplier for better distribution
+
+		for (let i = 0; i < key.length; i++) {
+			// eslint-disable-next-line unicorn/prefer-code-point
+			hash = (hash * primeMultiplier) + key.charCodeAt(i);
+		}
+
+		const result = Math.abs(hash) % 10; // Return a number between 0 and 9
+		this._hashCache.set(key, result);
+		return result;
 	}
 
 	/**
@@ -503,7 +595,7 @@ export class CacheableMemory {
 	}
 
 	private concatStores(): Map<string, CacheableStoreItem> {
-		return this._defaultStore.concatStores();
+		return new Map([...this._hash0, ...this._hash1, ...this._hash2, ...this._hash3, ...this._hash4, ...this._hash5, ...this._hash6, ...this._hash7, ...this._hash8, ...this._hash9]);
 	}
 
 	private setTtl(ttl: number | string | undefined): void {
