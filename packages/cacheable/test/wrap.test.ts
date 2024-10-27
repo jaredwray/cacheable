@@ -4,7 +4,7 @@ import {
 } from 'vitest';
 import {Cacheable, CacheableMemory} from '../src/index.js';
 import {
-	wrap, wrapKey, wrapSync, type WrapOptions, type WrapSyncOptions,
+	wrap, createWrapKey, wrapSync, type WrapOptions, type WrapSyncOptions,
 } from '../src/wrap.js';
 import {sleep} from './sleep.js';
 
@@ -14,7 +14,7 @@ describe('wrap function', () => {
 		const cache = new Cacheable();
 
 		const options: WrapOptions = {
-			key: 'cacheKey',
+			keyPrefix: 'cacheKey',
 			cache,
 		};
 
@@ -26,7 +26,7 @@ describe('wrap function', () => {
 
 		// Expectations
 		expect(result).toBe(3);
-		const cacheKey = wrapKey(asyncFunction, options.key);
+		const cacheKey = createWrapKey(asyncFunction, [1, 2], options.keyPrefix);
 		const cacheResult = await cache.get(cacheKey);
 		expect(cacheResult).toBe(3);
 	});
@@ -37,7 +37,6 @@ describe('wrap function', () => {
 		const cache = new Cacheable();
 
 		const options: WrapOptions = {
-			key: 'cacheKey',
 			cache,
 		};
 
@@ -57,7 +56,6 @@ describe('wrap function', () => {
 		const cache = new CacheableMemory();
 		const options: WrapSyncOptions = {
 			cache,
-			key: 'cacheKey',
 		};
 
 		// Wrap the sync function
@@ -69,7 +67,7 @@ describe('wrap function', () => {
 
 		// Expectations
 		expect(result).toBe(result2);
-		const cacheKey = wrapKey(syncFunction, options.key);
+		const cacheKey = createWrapKey(syncFunction, [1, 2], options.keyPrefix);
 		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(result);
 	});
@@ -79,7 +77,7 @@ describe('wrap function', () => {
 		const syncFunction = (value: number) => Math.random() * value;
 		const cache = new CacheableMemory();
 		const options: WrapSyncOptions = {
-			key: 'cacheKey',
+			keyPrefix: 'testPrefix',
 			cache,
 		};
 
@@ -101,7 +99,7 @@ describe('wrap function', () => {
 		const options: WrapSyncOptions = {
 			cache,
 			ttl: 10,
-			key: 'cacheKey',
+			keyPrefix: 'cacheKey',
 		};
 
 		// Wrap the sync function
@@ -114,7 +112,7 @@ describe('wrap function', () => {
 		// Expectations
 		expect(result).toBe(result2);
 		await sleep(30);
-		const cacheKey = wrapKey(syncFunction, options.key);
+		const cacheKey = createWrapKey(syncFunction, [1, 2], options.keyPrefix);
 		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(undefined);
 	});
@@ -124,7 +122,7 @@ describe('wrap function', () => {
 		const syncFunction = (value: number, person: {first: string; last: string; meta: any}) => Math.random() * value;
 		const cache = new CacheableMemory();
 		const options: WrapSyncOptions = {
-			key: 'cacheKey',
+			keyPrefix: 'cacheKey',
 			cache,
 		};
 
@@ -146,7 +144,7 @@ describe('wrap function', () => {
 		const options: WrapSyncOptions = {
 			cache,
 			ttl: '1s',
-			key: 'cacheKey',
+			keyPrefix: 'cacheKey',
 		};
 
 		// Wrap the sync function
@@ -159,7 +157,7 @@ describe('wrap function', () => {
 		// Expectations
 		expect(result).toBe(result2);
 		await sleep(1500);
-		const cacheKey = wrapKey(syncFunction, options.key);
+		const cacheKey = createWrapKey(wrapSync, [1, {first: 'John', last: 'Doe', meta: {age: 30}}], options.keyPrefix);
 		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(undefined);
 	});
