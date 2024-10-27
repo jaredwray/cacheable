@@ -387,7 +387,7 @@ export class CacheableMemory {
 
 	/**
 	 * Get the store based on the hash (internal use)
-	 * @param {number} hash 
+	 * @param {number} hash
 	 * @returns {Map<string, CacheableStoreItem>}
 	 */
 	public getStoreFromHash(hash: number): Map<string, CacheableStoreItem> {
@@ -436,7 +436,7 @@ export class CacheableMemory {
 
 	/**
 	 * Hash the key (internal use)
-	 * @param key 
+	 * @param key
 	 * @returns {number} from 0 to 9
 	 */
 	public hashKey(key: string): number {
