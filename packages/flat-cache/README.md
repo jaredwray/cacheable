@@ -17,7 +17,7 @@
 - Easily Loads the data from disk and into memory with `load` or `loadFile`
 - Uses `ttl` and `lruSize` to manage the cache and persist the data
 - Only saves the data to disk if the data has changed even when using `persistInterval` or calling `save()`
-- Uses `flatted` to parse and stringify the data by default but can be overridden using `parse` and `stringify` in options
+- Uses `flatted` to parse and stringify the data by default but can be overridden using `serialize` and `deserialize` in options
 - ESM and CommonJS support with TypeScript typings and maintained regularly!
 
 # Table of Contents
@@ -176,8 +176,8 @@ By default `flat-cache` uses `flatted` to parse and stringify the data. This is 
 ```javascript
 import { FlatCache } from 'flat-cache';
 const cache = new FlatCache({
-  parse: JSON.parse,
-  stringify: JSON.stringify,
+  deserialize: JSON.parse,
+  serialize: JSON.stringify,
 });
 ```
 
