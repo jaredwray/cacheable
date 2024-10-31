@@ -555,7 +555,7 @@ describe('cacheable ttl parsing', async () => {
 		await cacheable.set('key', 'value');
 		const firstResult = await cacheable.get('key');
 		expect(firstResult).toEqual('value');
-		await sleep(3);
+		await sleep(5);
 		const result = await cacheable.get('key');
 		expect(result).toBeUndefined();
 	});
@@ -640,6 +640,21 @@ describe('cacheable wrap', async () => {
 
 		expect(result1).toBe(3);
 		expect(result2).toBe(2);
+	});
+
+	test('should wrap to default ttl', async () => {
+		const cacheable = new Cacheable({ttl: 10});
+		const asyncFunction = async (value: number) => Math.random() * value;
+		const options = {
+			keyPrefix: 'wrapPrefix',
+		};
+		const wrapped = cacheable.wrap(asyncFunction, options);
+		const result = await wrapped(1);
+		const result2 = await wrapped(1);
+		expect(result).toBe(result2); // Cached
+		await sleep(15);
+		const result3 = await wrapped(1);
+		expect(result3).not.toBe(result2);
 	});
 });
 

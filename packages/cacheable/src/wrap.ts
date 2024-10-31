@@ -1,21 +1,17 @@
 import {hash} from './hash.js';
 import {type Cacheable, type CacheableMemory} from './index.js';
 
-export type WrapOptions = {
+export type WrapFunctionOptions = {
 	ttl?: number | string;
 	keyPrefix?: string;
+};
+
+export type WrapOptions = WrapFunctionOptions & {
 	cache: Cacheable;
 };
 
-export type WrapSyncOptions = {
-	ttl?: number | string;
-	keyPrefix?: string;
+export type WrapSyncOptions = WrapFunctionOptions & {
 	cache: CacheableMemory;
-};
-
-export type WrapFunctionOptions = {
-	ttl?: number | string;
-	keyPrefix: string;
 };
 
 export type AnyFunction = (...arguments_: any[]) => any;
