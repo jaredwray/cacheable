@@ -452,4 +452,31 @@ describe('cacheable wrap', async () => {
 		const cacheResult2 = cacheable.get<number>(cacheKey);
 		expect(cacheResult2).toBeUndefined();
 	});
+
+	test('should wrap to default ttl', async () => {
+		const cacheable = new CacheableMemory({ttl: 5});
+		const asyncFunction = (value: number) => Math.random() * value;
+		const options = {
+			keyPrefix: 'wrapPrefix',
+		};
+		const wrapped = cacheable.wrap(asyncFunction, options);
+		const result = wrapped(1);
+		const result2 = wrapped(1);
+		expect(result).toBe(result2); // Cached
+		await sleep(10);
+		const result3 = wrapped(1);
+		expect(result3).not.toBe(result2);
+	});
+
+	test('should wrap and not expire because no ttl set at all', async () => {
+		const cacheable = new CacheableMemory();
+		const asyncFunction = (value: number) => Math.random() * value;
+		const options = {
+			keyPrefix: 'wrapPrefix',
+		};
+		const wrapped = cacheable.wrap(asyncFunction, options);
+		const result = wrapped(1);
+		const result2 = wrapped(1);
+		expect(result).toBe(result2); // Cached
+	});
 });
