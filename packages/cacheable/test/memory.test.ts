@@ -471,10 +471,7 @@ describe('cacheable wrap', async () => {
 	test('should wrap and not expire because no ttl set at all', async () => {
 		const cacheable = new CacheableMemory();
 		const asyncFunction = (value: number) => Math.random() * value;
-		const options = {
-			keyPrefix: 'wrapPrefix',
-		};
-		const wrapped = cacheable.wrap(asyncFunction, options);
+		const wrapped = cacheable.wrap(asyncFunction);
 		const result = wrapped(1);
 		const result2 = wrapped(1);
 		expect(result).toBe(result2); // Cached
