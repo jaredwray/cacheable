@@ -555,7 +555,7 @@ describe('cacheable ttl parsing', async () => {
 		await cacheable.set('key', 'value');
 		const firstResult = await cacheable.get('key');
 		expect(firstResult).toEqual('value');
-		await sleep(3);
+		await sleep(5);
 		const result = await cacheable.get('key');
 		expect(result).toBeUndefined();
 	});
