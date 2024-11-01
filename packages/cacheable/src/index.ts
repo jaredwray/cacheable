@@ -632,7 +632,7 @@ export class Cacheable extends Hookified {
 }
 
 export {CacheableStats} from './stats.js';
-export {CacheableMemory, CacheableMemoryOptions} from './memory.js';
+export {CacheableMemory, type CacheableMemoryOptions} from './memory.js';
 export {KeyvCacheableMemory} from './keyv-memory.js';
 export {shorthandToMilliseconds, shorthandToTime} from './shorthand-time.js';
 export type {CacheableItem} from './cacheable-item-types.js';
