@@ -580,6 +580,31 @@ describe('createFromFile()', () => {
 		expect(fileEntryCache2.cache.all()).toEqual(fileEntryCache1.cache.all());
 		fs.rmSync(path.resolve(cacheDirectory), {recursive: true, force: true});
 	});
+	test('should detect if a file has changed prior to creating a file entry cache from a file', () => {
+		const filePath = path.resolve('./.testCacheCFF/test1');
+		const cacheId = path.basename(filePath);
+		const cacheDirectory = path.dirname(filePath);
+		const fileEntryCacheOptions = {
+			cache: {
+				cacheId,
+				cacheDir: cacheDirectory,
+			},
+			currentWorkingDirectory: `./${fileCacheName}`,
+		};
+		const fileEntryCache1 = new FileEntryCache(fileEntryCacheOptions);
+		fileEntryCache1.getFileDescriptor('test1.txt');
+		fileEntryCache1.reconcile();
+
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'modified');
+
+		const fileEntryCache2 = defaultFileEntryCache.createFromFile(filePath, undefined, `./${fileCacheName}`);
+		expect(fileEntryCache2.getUpdatedFiles(['test1.txt']).length).toBe(1);
+		fileEntryCache2.reconcile();
+
+		const fileEntryCache3 = defaultFileEntryCache.createFromFile(filePath, undefined, `./${fileCacheName}`);
+		expect(fileEntryCache3.getUpdatedFiles(['test1.txt']).length).toBe(0);
+		fs.rmSync(path.resolve(cacheDirectory), {recursive: true, force: true});
+	});
 });
 
 describe('getFileDescriptorsByPath()', () => {
