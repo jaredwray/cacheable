@@ -58,7 +58,6 @@ export function create(cacheId: string, cacheDirectory?: string, useCheckSum?: b
 		const cachePath = `${cacheDirectory}/${cacheId}`;
 		if (fs.existsSync(cachePath)) {
 			fileEntryCache.cache = createFlatCacheFile(cachePath, options.cache);
-			fileEntryCache.reconcile();
 		}
 	}
 
