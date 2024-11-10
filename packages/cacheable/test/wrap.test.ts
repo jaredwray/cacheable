@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
-	describe, it, expect,
+	describe, it, expect, vi,
 } from 'vitest';
-import {Cacheable, CacheableMemory} from '../src/index.js';
+import {Cacheable, CacheableMemory, KeyvCacheableMemory} from '../src/index.js';
 import {
 	wrap, createWrapKey, wrapSync, type WrapOptions, type WrapSyncOptions,
 } from '../src/wrap.js';
@@ -160,5 +160,40 @@ describe('wrap function', () => {
 		const cacheKey = createWrapKey(wrapSync, [1, {first: 'John', last: 'Doe', meta: {age: 30}}], options.keyPrefix);
 		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(undefined);
+	});
+});
+
+describe('wrap function with stampede protection', () => {
+	it('should only execute the wrapped function once when called concurrently with the same key', async () => {
+		const cache = new Cacheable();
+		const mockFunction = vi.fn().mockResolvedValue('result');
+		const mockedKey = createWrapKey(mockFunction, ['arg1'], 'test');
+		const wrappedFunction = wrap(mockFunction, {cache, keyPrefix: 'test'});
+
+		// Call the wrapped function concurrently
+		const [result1, result2, result3, result4] = await Promise.all([wrappedFunction('arg1'), wrappedFunction('arg1'), wrappedFunction('arg2'), wrappedFunction('arg2')]);
+
+		// Verify that the wrapped function was only called two times do to arg1 and arg2
+		expect(mockFunction).toHaveBeenCalledTimes(2);
+
+		// Verify that both calls returned the same result
+		expect(result1).toBe('result');
+		expect(result2).toBe('result');
+		expect(result3).toBe('result');
+
+		// Verify that the result was cached
+		expect(await cache.has(mockedKey)).toBe(true);
+	});
+
+	it('should handle error if the function fails', async () => {
+		const cache = new Cacheable();
+		const mockFunction = vi.fn().mockRejectedValue(new Error('Function failed'));
+		const mockedKey = createWrapKey(mockFunction, ['arg1'], 'test');
+		const wrappedFunction = wrap(mockFunction, {cache, keyPrefix: 'test'});
+
+		await wrappedFunction('arg1');
+
+		// Verify that the wrapped function was only called once
+		expect(mockFunction).toHaveBeenCalledTimes(1);
 	});
 });

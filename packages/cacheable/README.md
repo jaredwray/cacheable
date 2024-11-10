@@ -17,7 +17,7 @@
 * Scalable and trusted storage engine by Keyv
 * Memory Caching with LRU and Expiration `CacheableMemory`
 * Resilient to failures with try/catch and offline
-* Wrap / Memoization for Sync and Async Functions
+* Wrap / Memoization for Sync and Async Functions with Stampede Protection
 * Hooks and Events to extend functionality
 * Shorthand for ttl in milliseconds `(1m = 60000) (1h = 3600000) (1d = 86400000)`
 * Non-blocking operations for layer 2 caching
@@ -309,6 +309,30 @@ const options = {
 const wrappedFunction = cache.wrap(asyncFunction, options);
 console.log(await wrappedFunction(2)); // 4
 console.log(await wrappedFunction(2)); // 4 from cache
+```
+With `Cacheable` we have also included stampede protection so that a `Promise` based call will only be called once if multiple requests of the same are executed at the same time. Here is an example of how to test for stampede protection:
+  
+```javascript
+import { Cacheable } from 'cacheable';
+const asyncFunction = async (value: number) => {
+  return value;
+};
+
+const cache = new Cacheable();
+const options = {
+  ttl: '1h', // 1 hour
+  keyPrefix: 'p1', // key prefix. This is used if you have multiple functions and need to set a unique prefix.
+}
+
+const wrappedFunction = cache.wrap(asyncFunction, options);
+const promises = [];
+for (let i = 0; i < 10; i++) {
+  promises.push(wrappedFunction(i));
+}
+
+const results = await Promise.all(promises); // all results should be the same
+
+console.log(results); // [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ```
 
 In this example we are wrapping an `async` function in a cache with a `ttl` of `1 hour`. This will cache the result of the function for `1 hour` and then expire the value. You can also wrap a `sync` function in a cache:
