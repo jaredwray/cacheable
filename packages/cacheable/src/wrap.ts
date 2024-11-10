@@ -1,4 +1,5 @@
 import {hash} from './hash.js';
+import {coalesceAsync} from './coalesce-async.js';
 import {type Cacheable, type CacheableMemory} from './index.js';
 
 export type WrapFunctionOptions = {
@@ -39,15 +40,22 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 	const {ttl, keyPrefix, cache} = options;
 
 	return async function (...arguments_: any[]) {
-		const cacheKey = createWrapKey(function_, arguments_, keyPrefix);
+		let value;
+		try {
+			const cacheKey = createWrapKey(function_, arguments_, keyPrefix);
 
-		let value = await cache.get(cacheKey) as T | undefined;
+			value = await cache.get(cacheKey) as T | undefined;
 
-		if (value === undefined) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-			value = await function_(...arguments_) as T;
-
-			await cache.set(cacheKey, value, ttl);
+			if (value === undefined) {
+				value = await coalesceAsync(cacheKey, async () => {
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+					const result = await function_(...arguments_) as T;
+					await cache.set(cacheKey, result, ttl);
+					return result;
+				});
+			}
+		} catch {
+			// ignore
 		}
 
 		return value;
