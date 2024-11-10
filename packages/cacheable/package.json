@@ -1,6 +1,6 @@
 {
 	"name": "cacheable",
-	"version": "1.8.3",
+	"version": "1.8.4",
 	"description": "Simple Caching Engine using Keyv",
 	"type": "module",
 	"main": "./dist/index.cjs",
