@@ -45,7 +45,7 @@
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
-		"flat-cache": "^6.1.1"
+		"flat-cache": "^6.1.2"
 	},
 	"files": [
 		"dist",
