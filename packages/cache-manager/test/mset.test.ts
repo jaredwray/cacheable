@@ -4,6 +4,7 @@ import {
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {createCache} from '../src/index.js';
+import {sleep} from './sleep.js';
 
 describe('mset', () => {
 	let keyv: Keyv;
@@ -24,6 +25,20 @@ describe('mset', () => {
 		];
 
 		await expect(cache.mset(list)).resolves.toEqual(list);
+		await expect(cache.get(list[0].key)).resolves.toEqual(list[0].value);
+	});
+
+	it('should mset non-blocking', async () => {
+		const secondKeyv = new Keyv();
+		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
+		const list = [
+			{key: faker.string.alpha(20), value: faker.string.sample()},
+			{key: faker.string.alpha(20), value: faker.string.sample()},
+			{key: faker.string.alpha(20), value: faker.string.sample()},
+		];
+
+		await cache.mset(list);
+		await sleep(10);
 		await expect(cache.get(list[0].key)).resolves.toEqual(list[0].value);
 	});
 });
