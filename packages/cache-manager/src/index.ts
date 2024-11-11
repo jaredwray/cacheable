@@ -91,6 +91,13 @@ export const createCache = (options?: CreateCacheOptions) => {
 				promises.push(stores.map(async store => store.set(item.key, item.value, item.ttl)));
 			}
 
+			if (nonBlocking) {
+				// eslint-disable-next-line @typescript-eslint/no-floating-promises
+				Promise.all(promises);
+				eventEmitter.emit('mset', {list});
+				return list;
+			}
+
 			await Promise.all(promises);
 			eventEmitter.emit('mset', {list});
 			return list;
