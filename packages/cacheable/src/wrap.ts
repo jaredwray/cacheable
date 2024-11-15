@@ -50,7 +50,6 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 
 			if (value === undefined) {
 				value = await coalesceAsync(cacheKey, async () => {
-
 					try {
 						// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 						const result = await function_(...arguments_) as T;

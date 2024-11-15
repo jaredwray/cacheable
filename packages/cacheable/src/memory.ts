@@ -1,4 +1,4 @@
-import { Hookified } from 'hookified';
+import {Hookified} from 'hookified';
 import {wrapSync, type WrapFunctionOptions} from './wrap.js';
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
@@ -47,7 +47,7 @@ export class CacheableMemory extends Hookified {
 	 */
 	constructor(options?: CacheableMemoryOptions) {
 		super();
-		
+
 		if (options?.ttl) {
 			this.setTtl(options.ttl);
 		}

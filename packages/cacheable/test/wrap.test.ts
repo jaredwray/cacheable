@@ -213,8 +213,8 @@ describe('wrap functions handling thrown errors', () => {
 
 		let errorCallCount = 0;
 
-		cache.on('error', (err) => {
-			expect(err.message).toBe('Test error');
+		cache.on('error', error => {
+			expect(error.message).toBe('Test error');
 			errorCallCount++;
 		});
 
@@ -238,8 +238,8 @@ describe('wrap functions handling thrown errors', () => {
 			throw error;
 		}, options);
 
-		cache.on('error', (err) => {
-			expect(err).toBe(error);
+		cache.on('error', error_ => {
+			expect(error_).toBe(error);
 		});
 
 		expect(await wrapped()).toBe(undefined);
@@ -247,6 +247,6 @@ describe('wrap functions handling thrown errors', () => {
 			throw error;
 		}, [], options.keyPrefix);
 		const result = await cache.get(cacheKey);
-		expect(result).toBe(undefined);		
+		expect(result).toBe(undefined);
 	});
 });
