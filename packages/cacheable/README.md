@@ -347,10 +347,23 @@ const cache = new CacheableMemory();
 const wrappedFunction = cache.wrap(syncFunction, { ttl: '1h', key: 'syncFunction' });
 console.log(wrappedFunction(2)); // 4
 console.log(wrappedFunction(2)); // 4 from cache
-console.log(cache.get('syncFunction')); // 4
 ```
 
 In this example we are wrapping a `sync` function in a cache with a `ttl` of `1 hour`. This will cache the result of the function for `1 hour` and then expire the value. You can also set the `key` property in the `wrap()` options to set a custom key for the cache.
+
+When an error occurs in the function it will not cache the value and will return the error. This is useful if you want to cache the results of a function but not cache the error. If you want it to cache the error you can set the `cacheError` property to `true` in the `wrap()` options. This is disabled by default.
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+const syncFunction = (value: number) => {
+  throw new Error('error');
+};
+
+const cache = new CacheableMemory();
+const wrappedFunction = cache.wrap(syncFunction, { ttl: '1h', key: 'syncFunction', cacheError: true });
+console.log(wrappedFunction()); // error
+console.log(wrappedFunction()); // error from cache
+```
 
 # Keyv Storage Adapter - KeyvCacheableMemory
 
