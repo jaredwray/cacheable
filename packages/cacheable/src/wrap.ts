@@ -5,6 +5,7 @@ import {type Cacheable, type CacheableMemory} from './index.js';
 export type WrapFunctionOptions = {
 	ttl?: number | string;
 	keyPrefix?: string;
+	cacheErrors?: boolean;
 };
 
 export type WrapOptions = WrapFunctionOptions & {
@@ -31,6 +32,9 @@ export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): A
 				cache.set(cacheKey, value, ttl);
 			} catch (error) {
 				cache.emit('error', error);
+				if (options.cacheErrors) {
+					cache.set(cacheKey, error, ttl);
+				}
 			}
 		}
 
@@ -57,6 +61,9 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 					return result;
 				} catch (error) {
 					cache.emit('error', error);
+					if (options.cacheErrors) {
+						await cache.set(cacheKey, error, ttl);
+					}
 				}
 			});
 		}

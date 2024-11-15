@@ -226,6 +226,32 @@ describe('wrap functions handling thrown errors', () => {
 		expect(values.length).toBe(0);
 	});
 
+	it('wrapSync should cache the error when the property is set', () => {
+		const cache = new CacheableMemory();
+		const options: WrapSyncOptions = {
+			cache,
+			ttl: '1s',
+			keyPrefix: 'cacheKey',
+			cacheErrors: true,
+		};
+
+		const wrapped = wrapSync(() => {
+			throw new Error('Test error');
+		}, options);
+
+		let errorCallCount = 0;
+
+		cache.on('error', error => {
+			expect(error.message).toBe('Test error');
+			errorCallCount++;
+		});
+
+		wrapped();
+		wrapped(); // Should be cached
+
+		expect(errorCallCount).toBe(1);
+	});
+
 	it('wrap should throw an error if the wrapped function throws an error', async () => {
 		const cache = new Cacheable();
 		const error = new Error('Test error');
@@ -251,6 +277,32 @@ describe('wrap functions handling thrown errors', () => {
 		}, [], options.keyPrefix);
 		const result = await cache.get(cacheKey);
 		expect(result).toBe(undefined);
+		expect(errorCallCount).toBe(1);
+	});
+
+	it('wrap should cache the error when the property is set', async () => {
+		const cache = new Cacheable();
+		const error = new Error('Test error');
+		const options: WrapOptions = {
+			cache,
+			ttl: '1s',
+			keyPrefix: 'cacheKey',
+			cacheErrors: true,
+		};
+		const wrapped = wrap(() => {
+			throw error;
+		}, options);
+
+		let errorCallCount = 0;
+
+		cache.on('error', error_ => {
+			expect(error_).toBe(error);
+			errorCallCount++;
+		});
+
+		await wrapped();
+		await wrapped(); // Should be cached
+
 		expect(errorCallCount).toBe(1);
 	});
 });
