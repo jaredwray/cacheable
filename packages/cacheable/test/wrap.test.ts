@@ -143,7 +143,7 @@ describe('wrap function', () => {
 		const cache = new CacheableMemory();
 		const options: WrapSyncOptions = {
 			cache,
-			ttl: '1s',
+			ttl: '100ms',
 			keyPrefix: 'cacheKey',
 		};
 
@@ -156,7 +156,7 @@ describe('wrap function', () => {
 
 		// Expectations
 		expect(result).toBe(result2);
-		await sleep(1500);
+		await sleep(200);
 		const cacheKey = createWrapKey(wrapSync, [1, {first: 'John', last: 'Doe', meta: {age: 30}}], options.keyPrefix);
 		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(undefined);
@@ -195,5 +195,58 @@ describe('wrap function with stampede protection', () => {
 
 		// Verify that the wrapped function was only called once
 		expect(mockFunction).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('wrap functions handling thrown errors', () => {
+	it('wrapSync should emit an error by default and return undefined but not cache errors', () => {
+		const cache = new CacheableMemory();
+		const options: WrapSyncOptions = {
+			cache,
+			ttl: '1s',
+			keyPrefix: 'cacheKey',
+		};
+
+		const wrapped = wrapSync(() => {
+			throw new Error('Test error');
+		}, options);
+
+		let errorCallCount = 0;
+
+		cache.on('error', (err) => {
+			expect(err.message).toBe('Test error');
+			errorCallCount++;
+		});
+
+		const result = wrapped();
+
+		expect(result).toBe(undefined);
+		expect(errorCallCount).toBe(1);
+		const values = Array.from(cache.items);
+		expect(values.length).toBe(0);
+	});
+
+	it('wrap should throw an error if the wrapped function throws an error', async () => {
+		const cache = new Cacheable();
+		const error = new Error('Test error');
+		const options: WrapOptions = {
+			cache,
+			ttl: '1s',
+			keyPrefix: 'cacheKey',
+		};
+		const wrapped = wrap(() => {
+			throw error;
+		}, options);
+
+		cache.on('error', (err) => {
+			expect(err).toBe(error);
+		});
+
+		expect(await wrapped()).toBe(undefined);
+		const cacheKey = createWrapKey(() => {
+			throw error;
+		}, [], options.keyPrefix);
+		const result = await cache.get(cacheKey);
+		expect(result).toBe(undefined);		
 	});
 });

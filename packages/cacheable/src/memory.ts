@@ -1,3 +1,4 @@
+import { Hookified } from 'hookified';
 import {wrapSync, type WrapFunctionOptions} from './wrap.js';
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
@@ -20,7 +21,7 @@ export type CacheableMemoryOptions = {
 	checkInterval?: number;
 };
 
-export class CacheableMemory {
+export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
 	private readonly _hashCache = new Map<string, number>();
 	private readonly _hash0 = new Map<string, CacheableStoreItem>();
@@ -45,6 +46,8 @@ export class CacheableMemory {
 	 * @param {CacheableMemoryOptions} [options] - The options for the CacheableMemory
 	 */
 	constructor(options?: CacheableMemoryOptions) {
+		super();
+		
 		if (options?.ttl) {
 			this.setTtl(options.ttl);
 		}

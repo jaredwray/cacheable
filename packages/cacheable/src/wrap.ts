@@ -22,17 +22,19 @@ export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): A
 
 	return function (...arguments_: any[]) {
 		const cacheKey = createWrapKey(function_, arguments_, keyPrefix);
-
 		let value = cache.get(cacheKey);
 
 		if (value === undefined) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-			value = function_(...arguments_) as T;
-
-			cache.set(cacheKey, value, ttl);
+			try {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+				value = function_(...arguments_);
+				cache.set(cacheKey, value, ttl);
+			} catch (error) {
+				cache.emit('error', error);
+			}
 		}
 
-		return value;
+		return value as T;
 	};
 }
 
@@ -48,14 +50,19 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 
 			if (value === undefined) {
 				value = await coalesceAsync(cacheKey, async () => {
-					// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-					const result = await function_(...arguments_) as T;
-					await cache.set(cacheKey, result, ttl);
-					return result;
+
+					try {
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+						const result = await function_(...arguments_) as T;
+						await cache.set(cacheKey, result, ttl);
+						return result;
+					} catch (error) {
+						cache.emit('error', error);
+					}
 				});
 			}
-		} catch {
-			// ignore
+		} catch (error) {
+			cache.emit('error', error);
 		}
 
 		return value;

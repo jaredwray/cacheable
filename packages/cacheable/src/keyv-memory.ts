@@ -83,6 +83,7 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 	}
 
 	on(event: string, listener: (...arguments_: any[]) => void): this {
+		this.getStore(this._namespace).on(event, listener);
 		return this;
 	}
 
