@@ -43,25 +43,22 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 
 	return async function (...arguments_: any[]) {
 		let value;
-		try {
-			const cacheKey = createWrapKey(function_, arguments_, keyPrefix);
 
-			value = await cache.get(cacheKey) as T | undefined;
+		const cacheKey = createWrapKey(function_, arguments_, keyPrefix);
 
-			if (value === undefined) {
-				value = await coalesceAsync(cacheKey, async () => {
-					try {
-						// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-						const result = await function_(...arguments_) as T;
-						await cache.set(cacheKey, result, ttl);
-						return result;
-					} catch (error) {
-						cache.emit('error', error);
-					}
-				});
-			}
-		} catch (error) {
-			cache.emit('error', error);
+		value = await cache.get(cacheKey) as T | undefined;
+
+		if (value === undefined) {
+			value = await coalesceAsync(cacheKey, async () => {
+				try {
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+					const result = await function_(...arguments_) as T;
+					await cache.set(cacheKey, result, ttl);
+					return result;
+				} catch (error) {
+					cache.emit('error', error);
+				}
+			});
 		}
 
 		return value;
