@@ -230,6 +230,14 @@ export const createCache = (options?: CreateCacheOptions) => {
 
 	const off = <E extends keyof Events>(event: E, listener: Events[E]) => eventEmitter.removeListener(event, listener);
 
+	const disconnect = async () => {
+		try {
+			await Promise.all(stores.map(async store => store.disconnect()));
+		} catch (error) {
+			return Promise.reject(error);
+		}
+	};
+
 	return {
 		get,
 		mget,
@@ -241,6 +249,7 @@ export const createCache = (options?: CreateCacheOptions) => {
 		wrap,
 		on,
 		off,
+		disconnect
 	};
 };
 

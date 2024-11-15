@@ -13,6 +13,7 @@ export type CacheManagerStore = {
 	keys(): Promise<string[]>;
 	reset?(): Promise<void>;
 	on?(event: string, listener: (...arguments_: any[]) => void): void;
+	disconnect?(): Promise<void>;
 };
 
 export class KeyvAdapter implements KeyvStoreAdapter {
@@ -68,5 +69,9 @@ export class KeyvAdapter implements KeyvStoreAdapter {
 		this._cache.on?.(event, listener);
 
 		return this;
+	}
+
+	async disconnect?(): Promise<void> {
+		await this._cache.disconnect?.();
 	}
 }
