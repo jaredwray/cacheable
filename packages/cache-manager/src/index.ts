@@ -249,7 +249,7 @@ export const createCache = (options?: CreateCacheOptions) => {
 		wrap,
 		on,
 		off,
-		disconnect
+		disconnect,
 	};
 };
 
