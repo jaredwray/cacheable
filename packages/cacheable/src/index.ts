@@ -211,6 +211,10 @@ export class Cacheable extends Hookified {
 	 */
 	public setPrimary(primary: Keyv | KeyvStoreAdapter): void {
 		this._primary = primary instanceof Keyv ? primary : new Keyv(primary);
+		/* c8 ignore next 3 */
+		this._primary.on('error', (error: unknown) => {
+			this.emit(CacheableEvents.ERROR, error);
+		});
 	}
 
 	/**
@@ -220,6 +224,10 @@ export class Cacheable extends Hookified {
 	 */
 	public setSecondary(secondary: Keyv | KeyvStoreAdapter): void {
 		this._secondary = secondary instanceof Keyv ? secondary : new Keyv(secondary);
+		/* c8 ignore next 3 */
+		this._secondary.on('error', (error: unknown) => {
+			this.emit(CacheableEvents.ERROR, error);
+		});
 	}
 
 	public getNameSpace(): string | undefined {
