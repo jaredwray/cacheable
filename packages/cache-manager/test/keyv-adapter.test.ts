@@ -1,10 +1,28 @@
 import {Keyv} from 'keyv';
 import {
-	describe, expect, it,
+	describe, expect, it, vi,
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {redisStore as redisYetStore} from 'cache-manager-redis-yet';
-import {createCache, KeyvAdapter} from '../src/index.js';
+import {createCache, KeyvAdapter, type CacheManagerStore} from '../src/index.js';
+
+const mockCacheManagerStore: CacheManagerStore = {
+	name: 'MockCacheManagerStore',
+	isCacheable: vi.fn((value: unknown) => value !== undefined),
+	get: vi.fn(async (key: string) => `Value for ${key}`),
+	mget: vi.fn(async (...keys: string[]) => keys.map(key => `Value for ${key}`)),
+	set: vi.fn(async (key: string, value: any, ttl?: number) => `Set ${key} to ${value} with TTL ${ttl}`),
+	mset: vi.fn(async () => undefined),
+	del: vi.fn(async () => undefined),
+	mdel: vi.fn(async () => undefined),
+	ttl: vi.fn(async () => 0),
+	keys: vi.fn(async () => ['key1', 'key2', 'key3']),
+	reset: vi.fn(async () => undefined),
+	on: vi.fn((event: string) => {
+		console.log(`Event ${event} registered.`);
+	}),
+	disconnect: vi.fn(async () => undefined),
+};
 
 describe('keyv-adapter', async () => {
 	it('able to handle redis yet third party conversion', async () => {
@@ -109,5 +127,20 @@ describe('keyv-adapter', async () => {
 		const result = await keyv.get(list.map(({key}) => key));
 		expect(result).toEqual([undefined, undefined]);
 	});
-});
 
+	it('should disconnect', async () => {
+		// Store without disconnect
+		const storeNoDisconnect = await redisYetStore();
+		const adapterNoDisconnect = new KeyvAdapter(storeNoDisconnect);
+		const keyvNoDisconnect = new Keyv({store: adapterNoDisconnect});
+
+		await keyvNoDisconnect.disconnect();
+
+		// Store with disconnect
+		const adapterWithDisconnect = new KeyvAdapter(mockCacheManagerStore);
+		const keyvWithDisconnect = new Keyv({store: adapterWithDisconnect});
+
+		await keyvWithDisconnect.disconnect();
+		expect(mockCacheManagerStore.disconnect).toBeCalled();
+	});
+});

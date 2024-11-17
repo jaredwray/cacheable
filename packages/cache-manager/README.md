@@ -1,6 +1,6 @@
 [<img align="center" src="https://cacheable.org/symbol.svg" alt="Cacheable" />](https://github.com/jaredwray/cacheable)
 
-# cache-manager 
+# cache-manager
 [![codecov](https://codecov.io/gh/jaredwray/cacheable/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cacheable)
 [![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
 [![npm](https://img.shields.io/npm/dm/cache-manager)](https://npmjs.com/package/cache-manager)
@@ -18,7 +18,7 @@ A cache module for NodeJS that allows easy wrapping of functions in cache, tiere
 
 We moved to using [Keyv](https://keyv.org/) which are more actively maintained and have a larger community.
 
-A special thanks to [Tim Phan](https://github.com/timphandev) who tooke `cache-manager` v5 and ported it to [Keyv](https://keyv.org/) which is the foundation of v6. 🎉 Another special thanks to [Doug Ayers](https://github.com/douglascayers) who wrote `promise-coalesce` which was used in v5 and now embedded in v6. 
+A special thanks to [Tim Phan](https://github.com/timphandev) who took `cache-manager` v5 and ported it to [Keyv](https://keyv.org/) which is the foundation of v6. 🎉 Another special thanks to [Doug Ayers](https://github.com/douglascayers) who wrote `promise-coalesce` which was used in v5 and now embedded in v6.
 
 If you are looking for older documentation you can find it here:
 * [v5 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv5.md)
@@ -331,6 +331,18 @@ await cache.wrap('error', () => {
 * If no `ttl` is set for the key, the refresh mechanism will not be triggered.
 
 See unit tests in [`test/wrap.test.ts`](./test/wrap.test.ts) for more information.
+
+## disconnect
+
+`disconnect(key): Promise<void>`
+
+Will disconnect from the relevant store(s). It is highly recomended to use this when using a [Keyv](https://keyv.org/) storage adapter that requires a disconnect. For example, when using `@keyv/redis` you should disconnect when you are done with the cache. For each storage adapter, the use case for when to use disconnect is different. An example is that `@keyv/redis` should be used only when you are done with the cache.
+
+```ts
+await cache.disconnect();
+```
+
+See unit tests in [`test/disconnect.test.ts`](./test/disconnect.test.ts) for more information.
 
 # Events
 ## set
