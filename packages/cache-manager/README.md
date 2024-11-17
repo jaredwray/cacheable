@@ -336,7 +336,7 @@ See unit tests in [`test/wrap.test.ts`](./test/wrap.test.ts) for more informatio
 
 `disconnect(key): Promise<void>`
 
-Will disconnect from the relevant store(s).
+Will disconnect from the relevant store(s). It is highly recomended to use this when using a [Keyv](https://keyv.org/) storage adapter that requires a disconnect. For example, when using `@keyv/redis` you should disconnect when you are done with the cache. For each storage adapter, the use case for when to use disconnect is different. An example is that `@keyv/redis` should be used only when you are done with the cache.
 
 ```ts
 await cache.disconnect();
