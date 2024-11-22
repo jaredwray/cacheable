@@ -42,6 +42,12 @@ import {NodeCache} from '@cacheable/node-cache';
 const cache = new NodeCache();
 cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
+
+cache.set('foo', 'bar', 10); // 10 seconds
+
+cache.del('foo'); // true
+
+cache.set('bar', 'baz', '35m'); // 35 minutes using shorthand
 ```
 
 # Advanced Usage
@@ -121,7 +127,7 @@ Create a new cache instance. You can pass in options to set the configuration:
 
 ```javascript
 export type NodeCacheOptions = {
-	stdTTL?: number; // The standard ttl as number in seconds for every generated cache element. 0 = unlimited
+	stdTTL?: number; // The standard ttl as number in seconds for every generated cache element. 0 = unlimited. If string, it will be parsed as shorthand and default to milliseconds if it is a number as a string.
 	checkperiod?: number; // Default is 600, 0 means no periodic check
 	useClones?: boolean; // Default is true
 	deleteOnExpire?: boolean; // Default is true, if this is set to true it will delete the key when it expires.
