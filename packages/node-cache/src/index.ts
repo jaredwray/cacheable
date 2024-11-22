@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import eventemitter from 'eventemitter3';
-import {CacheableMemory, CacheableStats} from 'cacheable';
+import {CacheableMemory, CacheableStats, shorthandToTime} from 'cacheable';
 
 export type NodeCacheOptions = {
 	/**
-	 * The standard ttl as number in seconds for every generated cache element. 0 = unlimited
+	 * The standard ttl as number in seconds for every generated cache element. 0 = unlimited, If string, it will be in shorthand format like '1h' for 1 hour
 	 */
-	stdTTL?: number;
+	stdTTL?: number | string;
 	/**
 	 * The interval to check for expired items in seconds. Default is 600 = 5 minutes
 	 */
@@ -45,7 +45,7 @@ export enum NodeCacheErrors {
 	ECACHEFULL = 'Cache max keys amount exceeded',
 	EKEYTYPE = 'The key argument has to be of type `string` or `number`. Found: `__key`',
 	EKEYSTYPE = 'The keys argument has to be an array.',
-	ETTLTYPE = 'The ttl argument has to be a number.',
+	ETTLTYPE = 'The ttl argument has to be a number or a string for shorthand ttl.',
 }
 
 export type NodeCacheStats = {
@@ -103,10 +103,10 @@ export default class NodeCache extends eventemitter {
 	 * Sets a key value pair. It is possible to define a ttl (in seconds). Returns true on success.
 	 * @param {string | number} key - it will convert the key to a string
 	 * @param {any} value
-	 * @param {number} [ttl] - this is in seconds and undefined will use the default ttl
+	 * @param {number | string} [ttl] - this is in seconds and undefined will use the default ttl
 	 * @returns {boolean}
 	 */
-	public set(key: string | number, value: any, ttl?: number): boolean {
+	public set(key: string | number, value: any, ttl?: number | string): boolean {
 		// Check on key type
 		/* c8 ignore next 3 */
 		if (typeof key !== 'string' && typeof key !== 'number') {
@@ -115,15 +115,23 @@ export default class NodeCache extends eventemitter {
 
 		// Check on ttl type
 		/* c8 ignore next 3 */
-		if (ttl && typeof ttl !== 'number') {
+		if (ttl && typeof ttl !== 'number' && typeof ttl !== 'string') {
 			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
 		}
 
 		const keyValue = this.formatKey(key);
-		const ttlValue = ttl ?? this.options.stdTTL;
+		let ttlValue = 0;
+		if (this.options.stdTTL) {
+			ttlValue = this.getExpirationTimestamp(this.options.stdTTL);
+		}
+
+		if (ttl) {
+			ttlValue = this.getExpirationTimestamp(ttl);
+		}
+
 		let expirationTimestamp = 0; // Never delete
 		if (ttlValue && ttlValue > 0) {
-			expirationTimestamp = this.getExpirationTimestamp(ttlValue);
+			expirationTimestamp = ttlValue;
 		}
 
 		// Check on max key size
@@ -291,10 +299,10 @@ export default class NodeCache extends eventemitter {
 	 * Redefine the ttl of a key. Returns true if the key has been found and changed.
 	 * Otherwise returns false. If the ttl-argument isn't passed the default-TTL will be used.
 	 * @param {string | number} key if the key is a number it will convert it to a string
-	 * @param {number} [ttl] the ttl in seconds
+	 * @param {number | string} [ttl] the ttl in seconds if number, or a shorthand string like '1h' for 1 hour
 	 * @returns {boolean} true if the key has been found and changed. Otherwise returns false.
 	 */
-	public ttl(key: string | number, ttl?: number): boolean {
+	public ttl(key: string | number, ttl?: number | string): boolean {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
 			const ttlValue = ttl ?? this.options.stdTTL!;
@@ -405,7 +413,11 @@ export default class NodeCache extends eventemitter {
 		return key.toString();
 	}
 
-	private getExpirationTimestamp(ttlInSeconds: number): number {
+	private getExpirationTimestamp(ttlInSeconds: number | string): number {
+		if (typeof ttlInSeconds === 'string') {
+			return shorthandToTime(ttlInSeconds);
+		}
+
 		const currentTimestamp = Date.now(); // Current time in milliseconds
 		const ttlInMilliseconds = ttlInSeconds * 1000; // Convert TTL to milliseconds
 		const expirationTimestamp = currentTimestamp + ttlInMilliseconds;

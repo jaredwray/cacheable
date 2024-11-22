@@ -255,4 +255,21 @@ describe('NodeCache', () => {
 		expect(cache.get('foo')).toBe(undefined);
 		cache.close();
 	});
+
+	test('should handle short hand ttl', async () => {
+		const cache = new NodeCache({checkperiod: 0});
+		cache.set('foo', 'bar', '0.25s');
+		expect(cache.get('foo')).toBe('bar');
+		await sleep(300);
+		expect(cache.get('foo')).toBe(undefined);
+	});
+
+	test('should handle short hand via stdTTL', async () => {
+		// eslint-disable-next-line @typescript-eslint/naming-convention
+		const cache = new NodeCache({checkperiod: 0, stdTTL: '0.25s'});
+		cache.set('foo', 'bar');
+		expect(cache.get('foo')).toBe('bar');
+		await sleep(300);
+		expect(cache.get('foo')).toBe(undefined);
+	});
 });
