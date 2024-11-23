@@ -71,7 +71,7 @@ export default class FileEntryDefault {
 }
 
 export class FileEntryCache {
-	private _cache: FlatCache = new FlatCache();
+	private _cache: FlatCache = new FlatCache({useClone: false});
 	private _useCheckSum = false;
 	private _currentWorkingDirectory: string | undefined;
 	private _hashAlgorithm = 'md5';
@@ -248,6 +248,8 @@ export class FileEntryCache {
 			meta: {},
 		};
 
+		result.meta = this._cache.getKey<FileDescriptorMeta>(result.key) ?? {};
+
 		// Set the file path
 		filePath = this.getAbsolutePath(filePath, {currentWorkingDirectory: options?.currentWorkingDirectory});
 
@@ -288,19 +290,25 @@ export class FileEntryCache {
 			return result;
 		}
 
+		if (result.meta.data !== metaCache.data) {
+			result.changed = true;
+		}
+
 		// Set the data from the cache
-		result.meta.data = metaCache.data;
+		if (result.meta.data === undefined) {
+			result.meta.data = metaCache.data;
+		}
 
 		// If the file is in the cache, check if the file has changed
 		if (metaCache?.mtime !== result.meta?.mtime || metaCache?.size !== result.meta?.size) {
 			result.changed = true;
-			this._cache.setKey(result.key, result.meta);
 		}
 
 		if (useCheckSumValue && metaCache?.hash !== result.meta?.hash) {
 			result.changed = true;
-			this._cache.setKey(result.key, result.meta);
 		}
+
+		this._cache.setKey(result.key, result.meta);
 
 		return result;
 	}

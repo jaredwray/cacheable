@@ -3,7 +3,7 @@ import path from 'node:path';
 import {
 	describe, test, expect, beforeAll, afterAll, beforeEach, afterEach,
 } from 'vitest';
-import defaultFileEntryCache, {FileEntryCache, type FileEntryCacheOptions} from '../src/index.js';
+import defaultFileEntryCache, {createFromFile, FileEntryCache, type FileEntryCacheOptions} from '../src/index.js';
 
 describe('file-entry-cache with options', () => {
 	test('should initialize', () => {
@@ -140,6 +140,7 @@ describe('getFileDescriptor()', () => {
 	const fileCacheName = '.cacheGFD';
 	beforeEach(() => {
 		// Generate files for testing
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {recursive: true, force: true});
 		fs.mkdirSync(path.resolve(`./${fileCacheName}`));
 		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), 'test');
 		fs.writeFileSync(path.resolve(`./${fileCacheName}/test2.txt`), 'test sdfljsdlfjsdflsj');
@@ -158,6 +159,36 @@ describe('getFileDescriptor()', () => {
 		expect(fileDescriptor.err).toBeDefined();
 		expect(fileDescriptor.notFound).toBe(true);
 		expect(fileDescriptor.meta.data).to.not.toBeDefined();
+	});
+
+	test('should save the meta data after the first call and loading data', () => {
+		const shared = {shared: 'shared'};
+		const data = {testingFooVariable: '11', name: 'test1.txt', shared};
+		const fileEntryCache = new FileEntryCache({useCheckSum: true});
+		const testFile1 = path.resolve('./.cacheGFD/test1.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+		fileDescriptor.meta.data = data;
+		expect(fileDescriptor).toBeDefined();
+		fileEntryCache.reconcile();
+
+		// Add the meta data to the cache
+		const fileEntryCache2 = createFromFile(fileEntryCache.cache.cacheFilePath, true);
+		const fileDescriptor2 = fileEntryCache2.getFileDescriptor(testFile1);
+		const data2 = {testingFooVariable: '22', name: 'test1.txt', shared};
+		fileDescriptor2.meta.data = data2;
+		fileEntryCache2.reconcile();
+
+		// Load the meta data from the cache
+		const fileEntryCache3 = createFromFile(fileEntryCache.cache.cacheFilePath, true);
+		const fileDescriptor3 = fileEntryCache3.getFileDescriptor(testFile1);
+		expect(fileDescriptor3).toBeDefined();
+		expect(fileDescriptor3.meta.data).toEqual(data2);
+
+		// Verify that the data shows changed
+		const fileDescriptor4 = fileEntryCache3.getFileDescriptor(testFile1);
+		expect(fileDescriptor4).toBeDefined();
+		expect(fileDescriptor4.meta.data).toEqual(data2);
+		expect(fileDescriptor4.changed).toEqual(true);
 	});
 
 	test('should return a file descriptor', () => {
