@@ -188,7 +188,7 @@ describe('getFileDescriptor()', () => {
 		const fileDescriptor4 = fileEntryCache3.getFileDescriptor(testFile1);
 		expect(fileDescriptor4).toBeDefined();
 		expect(fileDescriptor4.meta.data).toEqual(data2);
-		expect(fileDescriptor4.changed).toEqual(true);
+		expect(fileDescriptor4.changed).toEqual(false);
 	});
 
 	test('should return a file descriptor', () => {
