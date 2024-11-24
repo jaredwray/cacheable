@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import {deserialize, serialize} from 'node:v8';
 import {describe, test, expect} from 'vitest';
 import defaultFlatCache, {
 	FlatCache, create, createFromFile, clearAll, clearCacheById,
