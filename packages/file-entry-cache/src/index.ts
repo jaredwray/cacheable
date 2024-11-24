@@ -290,10 +290,6 @@ export class FileEntryCache {
 			return result;
 		}
 
-		if (result.meta.data !== metaCache.data) {
-			result.changed = true;
-		}
-
 		// Set the data from the cache
 		if (result.meta.data === undefined) {
 			result.meta.data = metaCache.data;
