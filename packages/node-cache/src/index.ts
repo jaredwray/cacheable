@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import eventemitter from 'eventemitter3';
 import {CacheableMemory, CacheableStats, shorthandToTime} from 'cacheable';
+import {Hookified} from 'hookified';
 
 export type NodeCacheOptions = {
 	/**
@@ -71,7 +71,7 @@ export type NodeCacheStats = {
 	vsize: number;
 };
 
-export default class NodeCache extends eventemitter {
+export default class NodeCache extends Hookified {
 	public readonly options: NodeCacheOptions = {
 		// eslint-disable-next-line @typescript-eslint/naming-convention
 		stdTTL: 0,
