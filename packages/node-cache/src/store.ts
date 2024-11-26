@@ -20,6 +20,11 @@ export type NodeCacheStoreOptions = {
 	 * [storage-tiering-and-caching](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable#storage-tiering-and-caching)
 	 */
 	secondary?: Keyv;
+
+	/**
+	 * Enable stats tracking. This is a breaking change from the original NodeCache.
+	 */
+	stats?: boolean;
 };
 
 export class NodeCacheStore {
@@ -31,15 +36,13 @@ export class NodeCacheStore {
 				ttl: options.ttl,
 				primary: options.primary,
 				secondary: options.secondary,
+				stats: options.stats ?? true,
 			};
 
 			this._cache = new Cacheable(cacheOptions);
 
 			if (options.maxKeys) {
 				this._maxKeys = options.maxKeys;
-				if (this._maxKeys > 0) {
-					this._cache.stats.enabled = true;
-				}
 			}
 		}
 	}
