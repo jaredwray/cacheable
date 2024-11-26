@@ -90,7 +90,7 @@ export type NodeCacheStoreOptions = {
 	primary?: Keyv; // The primary storage adapter
 	secondary?: Keyv; // The secondary storage adapter
 	maxKeys?: number; // Default is 0 (unlimited). If this is set it will throw and error if you try to set more keys than the max.
-	stats?: boolean; // Default is false, if this is set to false it will not track stats
+	stats?: boolean; // Default is true, if this is set to false it will not track stats
 };
 ```
 

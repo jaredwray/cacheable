@@ -36,7 +36,7 @@ export class NodeCacheStore {
 				ttl: options.ttl,
 				primary: options.primary,
 				secondary: options.secondary,
-				stats: options.stats ?? false,
+				stats: options.stats ?? true,
 			};
 
 			this._cache = new Cacheable(cacheOptions);
