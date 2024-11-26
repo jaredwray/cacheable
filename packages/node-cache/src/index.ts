@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {CacheableMemory, CacheableStats, shorthandToTime} from 'cacheable';
-import { Hookified } from 'hookified';
+import {Hookified} from 'hookified';
 
 export type NodeCacheOptions = {
 	/**

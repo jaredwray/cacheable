@@ -1,7 +1,7 @@
 import {Cacheable, CacheableMemory, type CacheableItem} from 'cacheable';
 import {Keyv} from 'keyv';
 import {type NodeCacheItem} from 'index.js';
-import { Hookified } from 'hookified';
+import {Hookified} from 'hookified';
 
 export type NodeCacheStoreOptions = {
 	/**
@@ -48,11 +48,11 @@ export class NodeCacheStore extends Hookified {
 			}
 		}
 
-		// hook up the cacheable events
+		// Hook up the cacheable events
 		this._cache.on('error', (error: Error) => {
+			/* c8 ignore next 1 */
 			this.emit('error', error);
 		});
-
 	}
 
 	/**
