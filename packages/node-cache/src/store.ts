@@ -1,6 +1,7 @@
 import {Cacheable, CacheableMemory, type CacheableItem} from 'cacheable';
 import {Keyv} from 'keyv';
 import {type NodeCacheItem} from 'index.js';
+import { Hookified } from 'hookified';
 
 export type NodeCacheStoreOptions = {
 	/**
@@ -27,10 +28,11 @@ export type NodeCacheStoreOptions = {
 	stats?: boolean;
 };
 
-export class NodeCacheStore {
+export class NodeCacheStore extends Hookified {
 	private _maxKeys = 0;
 	private readonly _cache = new Cacheable({primary: new Keyv({store: new CacheableMemory()})});
 	constructor(options?: NodeCacheStoreOptions) {
+		super();
 		if (options) {
 			const cacheOptions = {
 				ttl: options.ttl,
@@ -45,6 +47,12 @@ export class NodeCacheStore {
 				this._maxKeys = options.maxKeys;
 			}
 		}
+
+		// hook up the cacheable events
+		this._cache.on('error', (error: Error) => {
+			this.emit('error', error);
+		});
+
 	}
 
 	/**

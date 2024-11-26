@@ -48,7 +48,7 @@
 	},
 	"dependencies": {
 		"cacheable": "^1.8.1",
-		"eventemitter3": "^5.0.1",
+		"hookified": "^1.5.1",
 		"keyv": "^5.2.1"
 	},
 	"files": [
