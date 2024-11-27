@@ -70,7 +70,7 @@
 	"dependencies": {
 		"cacheable": "^1.8.5",
 		"flatted": "^3.3.2",
-		"hookified": "^1.4.0"
+		"hookified": "^1.5.1"
 	},
 	"files": [
 		"dist",
