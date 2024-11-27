@@ -68,7 +68,7 @@
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
-		"cacheable": "^1.8.1",
+		"cacheable": "^1.8.5",
 		"flatted": "^3.3.1",
 		"hookified": "^1.4.0"
 	},
