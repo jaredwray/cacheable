@@ -167,6 +167,9 @@ const cache = createCache({ stores: [keyv] });
 - **refreshThreshold**?: number - Default refreshThreshold in milliseconds.
 
     If the remaining TTL is less than **refreshThreshold**, the system will update the value asynchronously in background.
+- **refreshAllStores**?: boolean - Default false
+
+    If set to true, the system will update the value of all stores when the refreshThreshold is met. Otherwise, it will only update from the top to the store that triggered the refresh.
 
 - **nonBlocking**?: boolean - Default false
 
