@@ -8,6 +8,7 @@ import {lt} from './lt.js';
 export type CreateCacheOptions = {
 	stores?: Keyv[];
 	ttl?: number;
+	refreshAllStores?: boolean;
 	refreshThreshold?: number;
 	nonBlocking?: boolean;
 };
@@ -207,7 +208,11 @@ export const createCache = (options?: CreateCacheOptions) => {
 			coalesceAsync(`+++${key}`, fnc)
 				.then(async result => {
 					try {
-						await set(stores.slice(0, i + 1), key, result, ms);
+						if (options?.refreshAllStores) {
+							await set(stores, key, result, ms);
+						} else {
+							await set(stores.slice(0, i + 1), key, result, ms);
+						}
 						eventEmitter.emit('refresh', {key, value: result});
 					} catch (error) {
 						eventEmitter.emit('refresh', {key, value, error});
