@@ -537,9 +537,15 @@ export class CacheableMemory extends Hookified {
 	 */
 	public startIntervalCheck() {
 		if (this._checkInterval > 0) {
+			if (this._interval) {
+				// Be overly cautious and clear the interval as we've unref'd it
+				// and we don't want to leak it
+				clearInterval(this._interval);
+			}
+
 			this._interval = setInterval(() => {
 				this.checkExpiration();
-			}, this._checkInterval);
+			}, this._checkInterval).unref();
 		}
 	}
 
