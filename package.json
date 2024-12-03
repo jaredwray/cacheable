@@ -16,6 +16,7 @@
   "author": "Jared Wray <me@jaredwray.com>",
   "license": "MIT",
   "devDependencies": {
-    "c8": "^10.1.2"
+    "c8": "^10.1.2",
+    "vitest": "^2.1.8"
   }
 }
