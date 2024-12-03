@@ -97,3 +97,106 @@ describe('wrap', () => {
 		expect(getValue).toBeCalledTimes(2);
 	});
 });
+
+describe('wrap with multi-layer stores', () => {
+	let keyv1: Keyv;
+	let keyv2: Keyv;
+	let cache: ReturnType<typeof createCache>;
+	const ttl1 = 800;
+	const ttl2 = 2000;
+	const refreshThreshold = 500;
+	const data = {key: '', value: ''};
+
+	beforeEach(async () => {
+		data.key = faker.string.alpha(20);
+		data.value = faker.string.sample();
+		keyv1 = new Keyv({ttl: ttl1});
+		keyv2 = new Keyv({ttl: ttl2});
+		cache = createCache({refreshThreshold, stores: [keyv1, keyv2]});
+	});
+
+	it('should refresh according to refreshThreshold', async () => {
+		// 1st call should be cached
+		expect(await cache.wrap(data.key, async () => 0)).toEqual(0);
+		expect(await keyv1.get(data.key)).toEqual(0);
+		expect(await keyv2.get(data.key)).toEqual(0);
+
+		// Sleep 501ms, trigger keyv1 refresh
+		await sleep(501);
+
+		// Background refresh, but stale value returned, while keyv1 is already updated
+		expect(await cache.wrap(data.key, async () => 1)).toEqual(0);
+		expect(await keyv1.get(data.key)).toEqual(1);
+		expect(await keyv2.get(data.key)).toEqual(0);
+
+		// New value returned
+		expect(await cache.wrap(data.key, async () => 2)).toEqual(1);
+		expect(await keyv1.get(data.key)).toEqual(1);
+		expect(await keyv2.get(data.key)).toEqual(0);
+
+		// Sleep 1001ms, keyv1 expired, trigger keyv2 refresh
+		await sleep(1001);
+
+		expect(await keyv1.get(data.key)).toBeUndefined();
+		expect(await keyv2.get(data.key)).toEqual(0);
+
+		// Background refresh, but stale value returned, while keyv1 is already updated
+		expect(await cache.wrap(data.key, async () => 3)).toEqual(0);
+		expect(await keyv1.get(data.key)).toEqual(3);
+		expect(await keyv2.get(data.key)).toEqual(3);
+
+		// New value returned
+		expect(await cache.wrap(data.key, async () => 4)).toEqual(3);
+		expect(await keyv1.get(data.key)).toEqual(3);
+		expect(await keyv2.get(data.key)).toEqual(3);
+	});
+
+	it('should respect refreshAllStores', async () => {
+		cache = createCache({refreshThreshold, refreshAllStores: true, stores: [keyv1, keyv2]});
+
+		// 1st call should be cached
+		expect(await cache.wrap(data.key, async () => 0)).toEqual(0);
+		expect(await keyv1.get(data.key)).toEqual(0);
+		expect(await keyv2.get(data.key)).toEqual(0);
+
+		// Sleep 501ms, trigger keyv1 refresh
+		await sleep(501);
+
+		// Background refresh, but stale value returned, while keyv1 and keyv2 are all updated
+		expect(await cache.wrap(data.key, async () => 1)).toEqual(0);
+		expect(await keyv1.get(data.key)).toEqual(1);
+		expect(await keyv2.get(data.key)).toEqual(1);
+
+		// New value returned
+		expect(await cache.wrap(data.key, async () => 2)).toEqual(1);
+		expect(await keyv1.get(data.key)).toEqual(1);
+		expect(await keyv2.get(data.key)).toEqual(1);
+
+		// Sleep 1001ms, keyv1 expired, but keyv2 was refreshed before, so keyv2 will not be refreshed, write back to keyv1 directly
+		await sleep(1001);
+
+		expect(await keyv1.get(data.key)).toBeUndefined();
+		expect(await keyv2.get(data.key)).toEqual(1);
+
+		// No background refresh, write keyv2 value back to keyv1
+		expect(await cache.wrap(data.key, async () => 3)).toEqual(1);
+		expect(await keyv1.get(data.key)).toEqual(1);
+		expect(await keyv2.get(data.key)).toEqual(1);
+
+		// Sleep 801ms, keyv1 expired, trigger keyv2 refresh
+		await sleep(801);
+
+		expect(await keyv1.get(data.key)).toBeUndefined();
+		expect(await keyv2.get(data.key)).toEqual(1);
+
+		// Background refresh, but stale value returned, while keyv1 and keyv2 are all updated
+		expect(await cache.wrap(data.key, async () => 4)).toEqual(1);
+		expect(await keyv1.get(data.key)).toEqual(4);
+		expect(await keyv2.get(data.key)).toEqual(4);
+
+		// New value returned
+		expect(await cache.wrap(data.key, async () => 5)).toEqual(4);
+		expect(await keyv1.get(data.key)).toEqual(4);
+		expect(await keyv2.get(data.key)).toEqual(4);
+	});
+});
