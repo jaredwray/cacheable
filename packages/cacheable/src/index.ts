@@ -1,7 +1,7 @@
 import {Keyv, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
 import {shorthandToMilliseconds} from './shorthand-time.js';
-import {KeyvCacheableMemory} from './keyv-memory.js';
+import {KeyvCacheableMemory, createKeyv} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
@@ -32,7 +32,7 @@ export type CacheableOptions = {
 };
 
 export class Cacheable extends Hookified {
-	private _primary: Keyv = new Keyv({store: new KeyvCacheableMemory()});
+	private _primary: Keyv = createKeyv();
 	private _secondary: Keyv | undefined;
 	private _nonBlocking = false;
 	private _ttl?: number | string;
@@ -641,7 +641,7 @@ export class Cacheable extends Hookified {
 
 export {CacheableStats} from './stats.js';
 export {CacheableMemory, type CacheableMemoryOptions} from './memory.js';
-export {KeyvCacheableMemory} from './keyv-memory.js';
+export {KeyvCacheableMemory, createKeyv} from './keyv-memory.js';
 export {shorthandToMilliseconds, shorthandToTime} from './shorthand-time.js';
 export type {CacheableItem} from './cacheable-item-types.js';
 export {

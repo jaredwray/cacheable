@@ -1,6 +1,6 @@
 import {describe, test, expect} from 'vitest';
 import {Keyv} from 'keyv';
-import {KeyvCacheableMemory} from '../src/keyv-memory.js';
+import {KeyvCacheableMemory, createKeyv} from '../src/keyv-memory.js';
 
 describe('Keyv Cacheable Memory', () => {
 	test('should initialize keyv cacheable memory', async () => {
@@ -92,5 +92,12 @@ describe('Keyv Cacheable Memory', () => {
 		cache.namespace = undefined;
 		expect(await cache.get('key1')).toBe('default');
 		expect(cache.store.get('key1')).toBe('default');
+	});
+
+	test('should be able to createKeyv with cacheable memory store', async () => {
+		const keyv = createKeyv({ttl: 1000, lruSize: 1000});
+		expect(keyv).toBeDefined();
+		expect(keyv.store).toBeInstanceOf(KeyvCacheableMemory);
+		expect(keyv.store.opts.ttl).toBe(1000);
 	});
 });

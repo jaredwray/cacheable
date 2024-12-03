@@ -37,7 +37,7 @@ npm install @cacheable/node-cache --save
 # Basic Usage
 
 ```javascript
-import {NodeCache} from '@cacheable/node-cache';
+import NodeCache from '@cacheable/node-cache';
 
 const cache = new NodeCache();
 cache.set('foo', 'bar');
@@ -48,6 +48,16 @@ cache.set('foo', 'bar', 10); // 10 seconds
 cache.del('foo'); // true
 
 cache.set('bar', 'baz', '35m'); // 35 minutes using shorthand
+```
+
+# NodeCache Not Default Export
+
+```javascript
+import {NodeCache} from '@cacheable/node-cache';
+
+const cache = new NodeCache();
+cache.set('foo', 'bar');
+cache.get('foo'); // 'bar'
 ```
 
 # Advanced Usage
