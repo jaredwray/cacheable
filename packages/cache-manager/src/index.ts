@@ -8,8 +8,8 @@ import {lt} from './lt.js';
 export type CreateCacheOptions = {
 	stores?: Keyv[];
 	ttl?: number;
-	refreshAllStores?: boolean;
 	refreshThreshold?: number;
+	refreshAllStores?: boolean;
 	nonBlocking?: boolean;
 };
 
