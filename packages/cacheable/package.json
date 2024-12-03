@@ -1,7 +1,7 @@
 {
 	"name": "cacheable",
 	"version": "1.8.5",
-	"description": "Simple Caching Engine using Keyv",
+	"description": "High Performance Layer 1 / Layer 2 Caching with Keyv Storage",
 	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",

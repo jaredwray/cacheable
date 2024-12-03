@@ -1,4 +1,6 @@
-import {type KeyvStoreAdapter, type StoredData} from 'keyv';
+import {
+	Keyv, type KeyvOptions, type KeyvStoreAdapter, type StoredData,
+} from 'keyv';
 import {CacheableMemory, type CacheableMemoryOptions} from './memory.js';
 
 export type KeyvCacheableMemoryOptions = CacheableMemoryOptions & {
@@ -98,4 +100,25 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 
 		return this._nCache.get(namespace)!;
 	}
+}
+
+/**
+ * Creates a new Keyv instance with a new KeyvCacheableMemory store. This also removes the serialize/deserialize methods from the Keyv instance for optimization.
+ * @param options
+ * @returns
+ */
+export function createKeyv(options?: KeyvCacheableMemoryOptions): Keyv {
+	const store = new KeyvCacheableMemory(options);
+	const namespace = options?.namespace;
+
+	let ttl;
+	if (options?.ttl && Number.isInteger(options.ttl)) {
+		ttl = options?.ttl as number;
+	}
+
+	const keyv = new Keyv({store, namespace, ttl});
+	// Remove seriazlize/deserialize
+	keyv.serialize = undefined;
+	keyv.deserialize = undefined;
+	return keyv;
 }

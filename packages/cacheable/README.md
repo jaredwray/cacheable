@@ -2,7 +2,7 @@
 
 # Cacheable
 
-> Simple Caching Engine using Keyv
+> High Performance Layer 1 / Layer 2 Caching with Keyv Storage
 
 [![codecov](https://codecov.io/gh/jaredwray/cacheable/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cacheable)
 [![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
