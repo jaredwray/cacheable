@@ -71,7 +71,7 @@ export type NodeCacheStats = {
 	vsize: number;
 };
 
-export default class NodeCache extends Hookified {
+export class NodeCache extends Hookified {
 	public readonly options: NodeCacheOptions = {
 		// eslint-disable-next-line @typescript-eslint/naming-convention
 		stdTTL: 0,
@@ -464,3 +464,4 @@ export default class NodeCache extends Hookified {
 }
 
 export {NodeCacheStore, type NodeCacheStoreOptions} from './store.js';
+export default NodeCache;
