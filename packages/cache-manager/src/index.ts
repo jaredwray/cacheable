@@ -208,11 +208,7 @@ export const createCache = (options?: CreateCacheOptions) => {
 			coalesceAsync(`+++${key}`, fnc)
 				.then(async result => {
 					try {
-						if (options?.refreshAllStores) {
-							await set(stores, key, result, ms);
-						} else {
-							await set(stores.slice(0, i + 1), key, result, ms);
-						}
+						await set(options?.refreshAllStores ? stores : stores.slice(0, i + 1), key, result, ms);
 						eventEmitter.emit('refresh', {key, value: result});
 					} catch (error) {
 						eventEmitter.emit('refresh', {key, value, error});

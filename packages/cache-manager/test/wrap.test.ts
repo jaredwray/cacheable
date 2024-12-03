@@ -110,8 +110,8 @@ describe('wrap with multi-layer stores', () => {
 	beforeEach(async () => {
 		data.key = faker.string.alpha(20);
 		data.value = faker.string.sample();
-		keyv1 = new Keyv({ ttl: ttl1 });
-		keyv2 = new Keyv({ ttl: ttl2 });
+		keyv1 = new Keyv({ttl: ttl1});
+		keyv2 = new Keyv({ttl: ttl2});
 		cache = createCache({refreshThreshold, stores: [keyv1, keyv2]});
 	});
 
