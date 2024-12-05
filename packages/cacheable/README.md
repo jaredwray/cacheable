@@ -4,6 +4,8 @@
 
 > High Performance Layer 1 / Layer 2 Caching with Keyv Storage
 
+
+
 [![codecov](https://codecov.io/gh/jaredwray/cacheable/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cacheable)
 [![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
 [![npm](https://img.shields.io/npm/dm/cacheable.svg)](https://www.npmjs.com/package/cacheable)
@@ -375,7 +377,7 @@ import { KeyvCacheableMemory } from 'cacheable';
 
 const keyv = new Keyv({ store: new KeyvCacheableMemory() });
 await keyv.set('foo', 'bar');
-const value = await keyv.get('key');
+const value = await keyv.get('foo');
 console.log(value); // bar 
 ```
 
