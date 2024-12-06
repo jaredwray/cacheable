@@ -14,40 +14,40 @@ export type CreateCacheOptions = {
 };
 
 export type Cache = {
-  get: <T>(key: string) => Promise<T | null>;
-  mget: <T>(keys: string[]) => Promise<[T]>;
-  set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
-  mset: <T>(
-    list: Array<{
-      key: string;
-      value: T;
-      ttl?: number;
-    }>
-  ) => Promise<
-    {
-      key: string;
-      value: T;
-      ttl?: number;
-    }[]
-  >;
-  del: (key: string) => Promise<boolean>;
-  mdel: (keys: string[]) => Promise<boolean>;
-  clear: () => Promise<boolean>;
-  wrap: <T>(
-    key: string,
-    fnc: () => T | Promise<T>,
-    ttl?: number | ((value: T) => number),
-    refreshThreshold?: number
-  ) => Promise<T>;
-  on: <E extends keyof Events>(
-    event: E,
-    listener: Events[E]
-  ) => EventEmitter<[never]>;
-  off: <E extends keyof Events>(
-    event: E,
-    listener: Events[E]
-  ) => EventEmitter<[never]>;
-  disconnect: () => Promise<undefined>;
+	get: <T>(key: string) => Promise<T | null>;
+	mget: <T>(keys: string[]) => Promise<[T]>;
+	set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
+	mset: <T>(
+		list: Array<{
+			key: string;
+			value: T;
+			ttl?: number;
+		}>
+	) => Promise<
+	Array<{
+		key: string;
+		value: T;
+		ttl?: number;
+	}>
+	>;
+	del: (key: string) => Promise<boolean>;
+	mdel: (keys: string[]) => Promise<boolean>;
+	clear: () => Promise<boolean>;
+	wrap: <T>(
+		key: string,
+		fnc: () => T | Promise<T>,
+		ttl?: number | ((value: T) => number),
+		refreshThreshold?: number
+	) => Promise<T>;
+	on: <E extends keyof Events>(
+		event: E,
+		listener: Events[E]
+	) => EventEmitter;
+	off: <E extends keyof Events>(
+		event: E,
+		listener: Events[E]
+	) => EventEmitter;
+	disconnect: () => Promise<undefined>;
 };
 
 export type Events = {
