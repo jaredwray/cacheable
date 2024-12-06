@@ -14,6 +14,7 @@ export type CreateCacheOptions = {
 };
 
 export type Cache = {
+	// eslint-disable-next-line @typescript-eslint/ban-types
 	get: <T>(key: string) => Promise<T | null>;
 	mget: <T>(keys: string[]) => Promise<[T]>;
 	set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
