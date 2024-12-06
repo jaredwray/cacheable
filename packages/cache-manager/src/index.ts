@@ -63,6 +63,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const stores = options?.stores?.length ? options.stores : [new Keyv()];
 	const nonBlocking = options?.nonBlocking ?? false;
 
+	// eslint-disable-next-line @typescript-eslint/ban-types
 	const get = async <T>(key: string): Promise<T | null> => {
 		let result = null;
 
