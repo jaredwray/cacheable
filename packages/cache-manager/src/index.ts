@@ -13,6 +13,44 @@ export type CreateCacheOptions = {
 	nonBlocking?: boolean;
 };
 
+export type Cache = {
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	get: <T>(key: string) => Promise<T | null>;
+	mget: <T>(keys: string[]) => Promise<[T]>;
+	set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
+	mset: <T>(
+		list: Array<{
+			key: string;
+			value: T;
+			ttl?: number;
+		}>
+	) => Promise<
+	Array<{
+		key: string;
+		value: T;
+		ttl?: number;
+	}>
+	>;
+	del: (key: string) => Promise<boolean>;
+	mdel: (keys: string[]) => Promise<boolean>;
+	clear: () => Promise<boolean>;
+	wrap: <T>(
+		key: string,
+		fnc: () => T | Promise<T>,
+		ttl?: number | ((value: T) => number),
+		refreshThreshold?: number
+	) => Promise<T>;
+	on: <E extends keyof Events>(
+		event: E,
+		listener: Events[E]
+	) => EventEmitter;
+	off: <E extends keyof Events>(
+		event: E,
+		listener: Events[E]
+	) => EventEmitter;
+	disconnect: () => Promise<undefined>;
+};
+
 export type Events = {
 	set: <T>(data: {key: string; value: T; error?: unknown}) => void;
 	del: (data: {key: string; error?: unknown}) => void;
@@ -20,12 +58,13 @@ export type Events = {
 	refresh: <T>(data: {key: string; value: T; error?: unknown}) => void;
 };
 
-export const createCache = (options?: CreateCacheOptions) => {
+export const createCache = (options?: CreateCacheOptions): Cache => {
 	const eventEmitter = new EventEmitter();
 	const stores = options?.stores?.length ? options.stores : [new Keyv()];
 	const nonBlocking = options?.nonBlocking ?? false;
 
-	const get = async <T>(key: string) => {
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	const get = async <T>(key: string): Promise<T | null> => {
 		let result = null;
 
 		if (nonBlocking) {
