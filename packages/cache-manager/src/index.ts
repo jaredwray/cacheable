@@ -14,7 +14,7 @@ export type CreateCacheOptions = {
 };
 
 export type Cache = {
-	get: <T>(key: string) => Promise<T | undefined>;
+	get: <T>(key: string) => Promise<T | null>;
 	mget: <T>(keys: string[]) => Promise<[T]>;
 	set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
 	mset: <T>(
@@ -62,7 +62,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const stores = options?.stores?.length ? options.stores : [new Keyv()];
 	const nonBlocking = options?.nonBlocking ?? false;
 
-	const get = async <T>(key: string) => {
+	const get = async <T>(key: string): Promise<T | null> => {
 		let result = null;
 
 		if (nonBlocking) {
