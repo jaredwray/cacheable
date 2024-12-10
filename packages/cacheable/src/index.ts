@@ -1,7 +1,7 @@
 import {Keyv, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
 import {shorthandToMilliseconds} from './shorthand-time.js';
-import {KeyvCacheableMemory, createKeyv} from './keyv-memory.js';
+import {createKeyv} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
