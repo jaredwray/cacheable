@@ -181,7 +181,6 @@ export class FlatCache extends Hookified {
 			const items = this._parse(data);
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			for (const key of Object.keys(items)) {
-				console.log('key', items[key]);
 				this._cache.set(items[key].key as string, items[key].value, {expire: items[key].expires as number});
 			}
 
