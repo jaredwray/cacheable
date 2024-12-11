@@ -17,6 +17,7 @@ export type Cache = {
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	get: <T>(key: string) => Promise<T | null>;
 	mget: <T>(keys: string[]) => Promise<[T]>;
+	ttl: (key: string) => Promise<number | undefined>;
 	set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
 	mset: <T>(
 		list: Array<{
@@ -103,6 +104,41 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		}
 
 		return result as [T];
+	};
+
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	const ttl = async (key: string): Promise<number | null> => {
+		let result = null;
+
+		if (nonBlocking) {
+			try {
+				result = await Promise.race(stores.map(async store => store.get(key, {raw: true})));
+				if (result === undefined) {
+					return null;
+				}
+			} catch (error) {
+				eventEmitter.emit('ttl', {key, error});
+			}
+		} else {
+			for (const store of stores) {
+				try {
+					const cacheValue = await store.get(key, {raw: true});
+					if (cacheValue !== undefined) {
+						result = cacheValue;
+						eventEmitter.emit('ttl', {key, value: result});
+						break;
+					}
+				} catch (error) {
+					eventEmitter.emit('ttl', {key, error});
+				}
+			}
+		}
+
+		if (result?.expires) {
+			return result.expires;
+		}
+
+		return null;
 	};
 
 	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number) => {
@@ -281,6 +317,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	return {
 		get,
 		mget,
+		ttl,
 		set: async <T>(key: string, value: T, ttl?: number) => set(stores, key, value, ttl),
 		mset: async <T>(list: Array<{key: string; value: T; ttl?: number}>) => mset(stores, list),
 		del,
