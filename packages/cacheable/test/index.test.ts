@@ -561,12 +561,12 @@ describe('cacheable ttl parsing', async () => {
 	});
 
 	test('setMany without ttl', async () => {
-		const cacheable = new Cacheable({ttl: 2});
+		const cacheable = new Cacheable({ttl: 50});
 		const list = [{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}];
 		await cacheable.setMany(list);
 		const firstResult = await cacheable.getMany(['key1', 'key2']);
 		expect(firstResult).toEqual(['value1', 'value2']);
-		await sleep(5);
+		await sleep(100);
 		const result = await cacheable.getMany(['key1', 'key2']);
 		expect(result).toEqual([undefined, undefined]);
 	});
