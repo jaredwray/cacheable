@@ -34,6 +34,7 @@ If you are looking for older documentation you can find it here:
   * [.mset](#mset)
   * [.get](#get)
   * [.mget](#mget)
+  * [.ttl](#ttl)
   * [.del](#del)
   * [.mdel](#mdel)
   * [.clear](#clear)
@@ -238,6 +239,20 @@ await cache.mset([
 await cache.mget(['key-1', 'key-2', 'key-3'])
 // => ['value 1', 'value 2', null]
 ```
+
+## ttl
+`ttl(key): Promise<number | null>`
+
+Gets the expiration time of a key in milliseconds. Returns a null if not found or expired.
+
+```ts
+await cache.set('key', 'value', 1000); // expires after 5 seconds
+
+await cache.ttl('key'); // => the expiration time in milliseconds
+
+await cache.get('foo'); // => null
+```
+See unit tests in [`test/ttl.test.ts`](./test/ttl.test.ts) for more information.
 
 ## del
 `del(key): Promise<true>`
