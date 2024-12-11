@@ -47,7 +47,7 @@
 		"xo": "^0.59.3"
 	},
 	"dependencies": {
-		"cacheable": "^1.8.1",
+		"cacheable": "workspace:^",
 		"hookified": "^1.5.1",
 		"keyv": "^5.2.1"
 	},
