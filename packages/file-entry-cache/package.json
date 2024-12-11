@@ -30,7 +30,7 @@
 	],
 	"scripts": {
 		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
-		"prepare": "pnpm build",
+		"prepublish": "pnpm build",
 		"test": "xo --fix && vitest run --coverage",
 		"test:ci": "xo && vitest run",
 		"clean": "rimraf ./dist ./coverage ./node_modules"
