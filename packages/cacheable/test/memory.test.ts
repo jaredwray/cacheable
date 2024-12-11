@@ -476,4 +476,37 @@ describe('cacheable wrap', async () => {
 		const result2 = wrapped(1);
 		expect(result).toBe(result2); // Cached
 	});
+
+	test('should be able to pass in expiration time', async () => {
+		const cacheable = new CacheableMemory();
+		const expire = Date.now() + 100;
+		cacheable.set('key-expire1', 'value1', {expire});
+		const result = cacheable.get('key-expire1');
+		expect(result).toBe('value1');
+		await sleep(150);
+		const result2 = cacheable.get('key-expire1');
+		expect(result2).toBeUndefined();
+	});
+
+	test('should be able to pass in ttl as object', async () => {
+		const cacheable = new CacheableMemory();
+		const ttl = '100ms';
+		cacheable.set('key-expire12', 'value1', {ttl});
+		const result = cacheable.get('key-expire12');
+		expect(result).toBe('value1');
+		await sleep(150);
+		const result2 = cacheable.get('key-expire12');
+		expect(result2).toBeUndefined();
+	});
+
+	test('should be able to pass in expiration time with date', async () => {
+		const cacheable = new CacheableMemory();
+		const expire = new Date(Date.now() + 100);
+		cacheable.set('key-expire2', 'value2', {expire});
+		const result = cacheable.get('key-expire2');
+		expect(result).toBe('value2');
+		await sleep(150);
+		const result2 = cacheable.get('key-expire2');
+		expect(result2).toBeUndefined();
+	});
 });

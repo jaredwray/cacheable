@@ -200,6 +200,29 @@ describe('flat-cache load from persisted cache', () => {
 		expect(secondCache.getKey('baz')).toEqual([1, 2, 3]);
 		firstCache.destroy(true);
 	});
+
+	test('should load the cache from the file with expiration', async () => {
+		// eslint-disable-next-line unicorn/prevent-abbreviations
+		const cacheDir = '.cachefoo3';
+		const cacheId = 'cache4';
+		const firstCache = new FlatCache({cacheDir, cacheId});
+		firstCache.setKey('foo', 'bar', 250);
+		firstCache.setKey('bar', {foo: 'bar'}, 500);
+		firstCache.setKey('baz', [1, 2, 3]);
+		firstCache.save();
+		const secondCache = new FlatCache({cacheDir});
+		secondCache.load(cacheId);
+		expect(secondCache.getKey('foo')).toBe('bar');
+		expect(secondCache.getKey('bar')).toEqual({foo: 'bar'});
+		expect(secondCache.getKey('baz')).toEqual([1, 2, 3]);
+		await sleep(300);
+		expect(secondCache.getKey('foo')).toBeUndefined();
+		expect(secondCache.getKey('bar')).toEqual({foo: 'bar'});
+		expect(secondCache.getKey('baz')).toEqual([1, 2, 3]);
+		await sleep(300);
+		expect(secondCache.getKey('bar')).toBeUndefined();
+		firstCache.destroy(true);
+	});
 });
 
 describe('flat-cache exported functions', () => {

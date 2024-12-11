@@ -181,7 +181,8 @@ export class FlatCache extends Hookified {
 			const items = this._parse(data);
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			for (const key of Object.keys(items)) {
-				this._cache.set(key, items[key]);
+				console.log('key', items[key]);
+				this._cache.set(items[key].key as string, items[key].value, {expire: items[key].expires as number});
 			}
 
 			this._changesSinceLastSave = true;
@@ -327,7 +328,7 @@ export class FlatCache extends Hookified {
 		try {
 			if (this._changesSinceLastSave || force) {
 				const filePath = this.cacheFilePath;
-				const items = this.all();
+				const items = Array.from(this._cache.items);
 				const data = this._stringify(items);
 
 				// Ensure the directory exists
