@@ -538,8 +538,8 @@ export class CacheableMemory extends Hookified {
 	public startIntervalCheck() {
 		if (this._checkInterval > 0) {
 			if (this._interval) {
-				// Be overly cautious and clear the interval as we've unref'd it
-				// and we don't want to leak it
+				// Be overly cautious and clear the interval as we've unref'd it and we don't want to leak it
+				/* c8 ignore next 2 */
 				clearInterval(this._interval);
 			}
 
