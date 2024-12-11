@@ -21,6 +21,11 @@ export type CacheableMemoryOptions = {
 	checkInterval?: number;
 };
 
+export type SetOptions = {
+	ttl?: number | string;
+	expire?: number | Date;
+};
+
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
 	private readonly _hashCache = new Map<string, number>();
@@ -239,14 +244,27 @@ export class CacheableMemory extends Hookified {
 	 * If you set undefined, it will use the default time-to-live. If both are undefined then it will not have a time-to-live.
 	 * @returns {void}
 	 */
-	public set(key: string, value: any, ttl?: number | string): void {
+	public set(key: string, value: any, ttl?: number | string | SetOptions): void {
 		const store = this.getStore(key);
 		let expires;
 		if (ttl !== undefined || this._ttl !== undefined) {
-			const finalTtl = shorthandToTime(ttl ?? this._ttl);
+			if (typeof ttl === 'object') {
+				if (ttl.expire) {
+					expires = typeof ttl.expire === 'number' ? ttl.expire : ttl.expire.getTime();
+				}
 
-			if (finalTtl !== undefined) {
-				expires = finalTtl;
+				if (ttl.ttl) {
+					const finalTtl = shorthandToTime(ttl.ttl);
+					if (finalTtl !== undefined) {
+						expires = finalTtl;
+					}
+				}
+			} else {
+				const finalTtl = shorthandToTime(ttl ?? this._ttl);
+
+				if (finalTtl !== undefined) {
+					expires = finalTtl;
+				}
 			}
 		}
 
