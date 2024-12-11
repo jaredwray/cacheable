@@ -240,7 +240,8 @@ export class CacheableMemory extends Hookified {
 	 * Sets the value of the key
 	 * @param {string} key - The key to set the value
 	 * @param {any} value - The value to set
-	 * @param {number|string} [ttl] - Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable.
+	 * @param {number|string|SetOptions} [ttl] - Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable.
+	 * If you want to set expire directly you can do that by setting the expire property in the SetOptions.
 	 * If you set undefined, it will use the default time-to-live. If both are undefined then it will not have a time-to-live.
 	 * @returns {void}
 	 */
