@@ -30,12 +30,12 @@
 	"devDependencies": {
 		"@keyv/redis": "^4.0.2",
 		"@types/node": "^22.10.2",
-		"@vitest/coverage-v8": "^2.1.4",
+		"@vitest/coverage-v8": "^2.1.8",
 		"lru-cache": "^11.0.2",
 		"rimraf": "^6.0.1",
 		"tsup": "^8.3.5",
 		"typescript": "^5.7.2",
-		"vitest": "^2.1.4",
+		"vitest": "^2.1.8",
 		"xo": "^0.60.0"
 	},
 	"dependencies": {
