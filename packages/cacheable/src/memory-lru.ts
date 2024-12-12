@@ -83,8 +83,8 @@ export class DoublyLinkedList<T> {
 		if (this.tail.prev) {
 			this.tail = this.tail.prev;
 			this.tail.next = undefined;
+		/* c8 ignore next 4 */
 		} else {
-			/* c8 ignore next 3 */
 			// eslint-disable-next-line no-multi-assign
 			this.head = this.tail = undefined;
 		}
