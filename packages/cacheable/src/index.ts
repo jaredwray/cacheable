@@ -576,7 +576,7 @@ export class Cacheable extends Hookified {
 	 * @param {WrapOptions} [options] The options for the wrap function
 	 * @returns {Function} The wrapped function
 	 */
-	wrap<T, Args extends any[]>(function_: (...arguments_: Args) => T, options?: WrapFunctionOptions): (...arguments_: Args) => T {
+	public wrap<T, Arguments extends any[]>(function_: (...arguments_: Arguments) => T, options?: WrapFunctionOptions): (...arguments_: Arguments) => T {
 		const wrapOptions = {
 			ttl: options?.ttl ?? this._ttl,
 			keyPrefix: options?.keyPrefix,
