@@ -39,7 +39,7 @@
 		"xo": "^0.60.0"
 	},
 	"dependencies": {
-		"hookified": "^1.5.1",
+		"hookified": "^1.6.0",
 		"keyv": "^5.2.1"
 	},
 	"keywords": [
