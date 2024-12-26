@@ -52,7 +52,7 @@
 	},
 	"devDependencies": {
 		"@keyv/sqlite": "^4.0.1",
-		"@types/node": "^22.10.0",
+		"@types/node": "^22.10.2",
 		"@types/responselike": "^1.0.3",
 		"@types/sqlite3": "^3.1.11",
 		"@vitest/coverage-v8": "^2.1.6",
@@ -64,7 +64,7 @@
 		"sqlite3": "^5.1.7",
 		"typescript": "^5.7.2",
 		"vitest": "^2.1.6",
-		"xo": "^0.59.3"
+		"xo": "^0.60.0"
 	},
 	"xo": {
 	"rules": {
