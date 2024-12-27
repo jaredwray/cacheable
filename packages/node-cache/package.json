@@ -48,7 +48,7 @@
 	},
 	"dependencies": {
 		"cacheable": "workspace:^",
-		"hookified": "^1.5.1",
+		"hookified": "^1.6.0",
 		"keyv": "^5.2.1"
 	},
 	"files": [
