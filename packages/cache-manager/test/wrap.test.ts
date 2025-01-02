@@ -85,6 +85,18 @@ describe('wrap', () => {
 		expect(await cache.wrap(data.key, async () => 5, undefined, 500)).toEqual(4);
 	});
 
+	it('should re-evaluate ttl function on fresh value when triggered by refreshThreshold', async () => {
+		const config = {ttl: 2000, refreshThreshold: 1000};
+		const getTtlFunction = vi.fn(() => config.ttl);
+		let value = 10;
+
+		expect(await cache.wrap(data.key, async () => ++value, getTtlFunction, config.refreshThreshold)).toEqual(11); // 1st call should be cached
+		expect(getTtlFunction).toHaveBeenNthCalledWith(1, 11); // Ttl func called 1st time when cache empty
+		await sleep(1001);
+		expect(await cache.wrap(data.key, async () => ++value, getTtlFunction, config.refreshThreshold)).toEqual(11); // Trigger background refresh. stale value returned
+		expect(getTtlFunction).toHaveBeenNthCalledWith(2, 12); // Ttl func called 2nd time triggered by refreshThreshold on fresh item
+	});
+
 	it('store get failed', async () => {
 		const getValue = vi.fn(() => data.value);
 		keyv.get = () => {

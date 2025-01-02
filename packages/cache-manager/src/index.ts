@@ -254,6 +254,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		let value: T | undefined;
 		let i = 0;
 		let remainingTtl: number | undefined;
+		const resolveTtl = (result: T) => runIfFn(ttl, result) ?? options?.ttl;
 
 		for (; i < stores.length; i++) {
 			try {
@@ -273,18 +274,17 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 		if (value === undefined) {
 			const result = await fnc();
-			await set(stores, key, result, runIfFn(ttl, result) ?? options?.ttl);
+			await set(stores, key, result, resolveTtl(result));
 			return result;
 		}
 
-		const ms = runIfFn(ttl, value) ?? options?.ttl;
 		const shouldRefresh = lt(remainingTtl, refreshThreshold ?? options?.refreshThreshold);
 
 		if (shouldRefresh) {
 			coalesceAsync(`+++${key}`, fnc)
 				.then(async result => {
 					try {
-						await set(options?.refreshAllStores ? stores : stores.slice(0, i + 1), key, result, ms);
+						await set(options?.refreshAllStores ? stores : stores.slice(0, i + 1), key, result, resolveTtl(result));
 						eventEmitter.emit('refresh', {key, value: result});
 					} catch (error) {
 						eventEmitter.emit('refresh', {key, value, error});
@@ -297,7 +297,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		}
 
 		if (!shouldRefresh && i > 0) {
-			await set(stores.slice(0, i), key, value, ms);
+			await set(stores.slice(0, i), key, value, resolveTtl(value));
 		}
 
 		return value;
