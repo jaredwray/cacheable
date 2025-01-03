@@ -97,6 +97,15 @@ describe('wrap', () => {
 		expect(getTtlFunction).toHaveBeenNthCalledWith(2, 12); // Ttl func called 2nd time triggered by refreshThreshold on fresh item
 	});
 
+	it('should support nested calls of other caches - no mutual state', async () => {
+		const getValueA = vi.fn(() => 'A');
+		const getValueB = vi.fn(() => 'B');
+		const anotherCache = createCache({stores: [new Keyv()]});
+		expect(await cache.wrap(data.key, async () => anotherCache.wrap(data.key, getValueB).then((v) => v + getValueA()))).toEqual('BA');
+		expect(getValueA).toHaveBeenCalledOnce();
+		expect(getValueB).toHaveBeenCalledOnce();
+	});
+
 	it('store get failed', async () => {
 		const getValue = vi.fn(() => data.value);
 		keyv.get = () => {
