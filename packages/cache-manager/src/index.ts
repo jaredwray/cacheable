@@ -64,6 +64,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const eventEmitter = new EventEmitter();
 	const stores = options?.stores?.length ? options.stores : [new Keyv()];
 	const nonBlocking = options?.nonBlocking ?? false;
+	const cacheId = Math.random().toString(36).slice(2);
 
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	const get = async <T>(key: string): Promise<T | null> => {
@@ -250,7 +251,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		fnc: () => T | Promise<T>,
 		ttl?: number | ((value: T) => number),
 		refreshThreshold?: number,
-	): Promise<T> => coalesceAsync(key, async () => {
+	): Promise<T> => coalesceAsync(`${cacheId}__${key}`, async () => {
 		let value: T | undefined;
 		let i = 0;
 		let remainingTtl: number | undefined;
@@ -281,7 +282,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		const shouldRefresh = lt(remainingTtl, refreshThreshold ?? options?.refreshThreshold);
 
 		if (shouldRefresh) {
-			coalesceAsync(`+++${key}`, fnc)
+			coalesceAsync(`+++${cacheId}__${key}`, fnc)
 				.then(async result => {
 					try {
 						await set(options?.refreshAllStores ? stores : stores.slice(0, i + 1), key, result, ms);
