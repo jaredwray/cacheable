@@ -85,6 +85,15 @@ describe('wrap', () => {
 		expect(await cache.wrap(data.key, async () => 5, undefined, 500)).toEqual(4);
 	});
 
+	it('should support nested calls of other caches - no mutual state', async () => {
+		const getValueA = vi.fn(() => 'A');
+		const getValueB = vi.fn(() => 'B');
+		const anotherCache = createCache({stores: [new Keyv()]});
+		expect(await cache.wrap(data.key, async () => anotherCache.wrap(data.key, getValueB).then((v) => v + getValueA()))).toEqual('BA');
+		expect(getValueA).toHaveBeenCalledOnce();
+		expect(getValueB).toHaveBeenCalledOnce();
+	});
+
 	it('should re-evaluate ttl function on fresh value when triggered by refreshThreshold', async () => {
 		const config = {ttl: 2000, refreshThreshold: 1000};
 		const getTtlFunction = vi.fn(() => config.ttl);
