@@ -181,6 +181,10 @@ const cache = createCache({ stores: [keyv] });
     * `clear` - will not wait for all stores to finish.
     * `wrap` - will do the same as `get` and `set` (return the first value found and not wait for all stores to finish).
 
+- **cacheId**?: string - Defaults to random string
+
+    Unique identifier for the cache instance.
+
 # Methods
 ## set
 `set(key, value, [ttl]): Promise<value>`
@@ -352,15 +356,26 @@ See unit tests in [`test/wrap.test.ts`](./test/wrap.test.ts) for more informatio
 
 ## disconnect
 
-`disconnect(key): Promise<void>`
+`disconnect(): Promise<void>`
 
-Will disconnect from the relevant store(s). It is highly recomended to use this when using a [Keyv](https://keyv.org/) storage adapter that requires a disconnect. For each storage adapter, the use case for when to use disconnect is different. An example is that `@keyv/redis` should be used only when you are done with the cache.
+Will disconnect from the relevant store(s). It is highly recommended to use this when using a [Keyv](https://keyv.org/) storage adapter that requires a disconnect. For each storage adapter, the use case for when to use disconnect is different. An example is that `@keyv/redis` should be used only when you are done with the cache.
 
 ```ts
 await cache.disconnect();
 ```
 
 See unit tests in [`test/disconnect.test.ts`](./test/disconnect.test.ts) for more information.
+
+## cacheId
+`cacheId(): string`
+
+Returns cache instance id.
+
+```ts
+const cache = createCache({cacheId: 'my-cache-id'});
+cache.cacheId(); // => 'my-cache-id'
+```
+See unit tests in [`test/cache-id.test.ts`](./test/get.test.ts) for more information.
 
 # Events
 ## set
