@@ -270,9 +270,10 @@ export class Cacheable extends Hookified {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
 			result = await this._primary.get(key) as T;
 			if (!result && this._secondary) {
-				result = await this._secondary.get(key) as T;
-				if (result) {
-					const finalTtl = shorthandToMilliseconds(this._ttl);
+				const rawResult = await this._secondary.get(key, {raw: true});
+				if (rawResult) {
+					result = rawResult.value as T;
+					const finalTtl = rawResult.expires ?? undefined;
 					await this._primary.set(key, result, finalTtl);
 				}
 			}
