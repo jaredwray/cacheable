@@ -6,6 +6,7 @@ export type WrapFunctionOptions = {
 	ttl?: number | string;
 	keyPrefix?: string;
 	cacheErrors?: boolean;
+	cacheId?: string;
 };
 
 export type WrapOptions = WrapFunctionOptions & {
@@ -53,7 +54,9 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 		value = await cache.get(cacheKey) as T | undefined;
 
 		if (value === undefined) {
-			value = await coalesceAsync(cacheKey, async () => {
+			const cacheId = options.cacheId ?? 'default';
+			const coalesceKey = `${cacheId}::${cacheKey}`;
+			value = await coalesceAsync(coalesceKey, async () => {
 				try {
 					// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 					const result = await function_(...arguments_) as T;

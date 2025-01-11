@@ -253,7 +253,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		fnc: () => T | Promise<T>,
 		ttl?: number | ((value: T) => number),
 		refreshThreshold?: number,
-	): Promise<T> => coalesceAsync(`${_cacheId}__${key}`, async () => {
+	): Promise<T> => coalesceAsync(`${_cacheId}::${key}`, async () => {
 		let value: T | undefined;
 		let i = 0;
 		let remainingTtl: number | undefined;

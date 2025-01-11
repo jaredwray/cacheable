@@ -88,6 +88,13 @@ describe('cacheable options and properties', async () => {
 		cacheable.ttl = 0;
 		expect(cacheable.ttl).toEqual(undefined);
 	});
+
+	test('should be able to set the cacheId', async () => {
+		const cacheable = new Cacheable({cacheId: 'test'});
+		expect(cacheable.cacheId).toEqual('test');
+		cacheable.cacheId = 'test2';
+		expect(cacheable.cacheId).toEqual('test2');
+	});
 });
 
 describe('cacheable stats', async () => {

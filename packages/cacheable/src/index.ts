@@ -50,6 +50,11 @@ export type CacheableOptions = {
 	 * The namespace for the cacheable instance. It can be a string or a function that returns a string.
 	 */
 	namespace?: string | (() => string);
+	/**
+	 * The cacheId for the cacheable instance. This is primarily used for the wrap function to not have conflicts.
+	 * If it is not set then it will be a random string that is generated
+	 */
+	cacheId?: string;
 };
 
 export class Cacheable extends Hookified {
@@ -59,6 +64,7 @@ export class Cacheable extends Hookified {
 	private _ttl?: number | string;
 	private readonly _stats = new CacheableStats({enabled: false});
 	private _namespace?: string | (() => string);
+	private _cacheId: string = Math.random().toString(36).slice(2);
 
 	/**
 	 * Creates a new cacheable instance
@@ -85,6 +91,10 @@ export class Cacheable extends Hookified {
 
 		if (options?.ttl) {
 			this.setTtl(options.ttl);
+		}
+
+		if (options?.cacheId) {
+			this._cacheId = options.cacheId;
 		}
 
 		if (options?.namespace) {
@@ -223,6 +233,24 @@ export class Cacheable extends Hookified {
 	 */
 	public set ttl(ttl: number | string | undefined) {
 		this.setTtl(ttl);
+	}
+
+	/**
+	 * The cacheId for the cacheable instance. This is primarily used for the wrap function to not have conflicts.
+	 * If it is not set then it will be a random string that is generated
+	 * @returns {string} The cacheId for the cacheable instance
+	 */
+	public get cacheId(): string {
+		return this._cacheId;
+	}
+
+	/**
+	 * Sets the cacheId for the cacheable instance. This is primarily used for the wrap function to not have conflicts.
+	 * If it is not set then it will be a random string that is generated
+	 * @param {string} cacheId The cacheId for the cacheable instance
+	 */
+	public set cacheId(cacheId: string) {
+		this._cacheId = cacheId;
 	}
 
 	/**
@@ -603,6 +631,7 @@ export class Cacheable extends Hookified {
 			ttl: options?.ttl ?? this._ttl,
 			keyPrefix: options?.keyPrefix,
 			cache: this,
+			cacheId: this._cacheId,
 		};
 
 		return wrap<T>(function_, wrapOptions);

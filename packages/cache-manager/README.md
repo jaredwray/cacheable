@@ -183,7 +183,7 @@ const cache = createCache({ stores: [keyv] });
 
 - **cacheId**?: string - Defaults to random string
 
-    Unique identifier for the cache instance.
+    Unique identifier for the cache instance. This is primarily used to not have conflicts when using `wrap` with multiple cache instances.
 
 # Methods
 ## set

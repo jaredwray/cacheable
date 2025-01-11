@@ -89,7 +89,7 @@ describe('wrap', () => {
 		const getValueA = vi.fn(() => 'A');
 		const getValueB = vi.fn(() => 'B');
 		const anotherCache = createCache({stores: [new Keyv()]});
-		expect(await cache.wrap(data.key, async () => anotherCache.wrap(data.key, getValueB).then((v) => v + getValueA()))).toEqual('BA');
+		expect(await cache.wrap(data.key, async () => anotherCache.wrap(data.key, getValueB).then(v => v + getValueA()))).toEqual('BA');
 		expect(getValueA).toHaveBeenCalledOnce();
 		expect(getValueB).toHaveBeenCalledOnce();
 	});
@@ -110,7 +110,7 @@ describe('wrap', () => {
 		const getValueA = vi.fn(() => 'A');
 		const getValueB = vi.fn(() => 'B');
 		const anotherCache = createCache({stores: [new Keyv()]});
-		expect(await cache.wrap(data.key, async () => anotherCache.wrap(data.key, getValueB).then((v) => v + getValueA()))).toEqual('BA');
+		expect(await cache.wrap(data.key, async () => anotherCache.wrap(data.key, getValueB).then(v => v + getValueA()))).toEqual('BA');
 		expect(getValueA).toHaveBeenCalledOnce();
 		expect(getValueB).toHaveBeenCalledOnce();
 	});
