@@ -11,6 +11,7 @@ export type CreateCacheOptions = {
 	refreshThreshold?: number;
 	refreshAllStores?: boolean;
 	nonBlocking?: boolean;
+	cacheId?: string;
 };
 
 export type Cache = {
@@ -51,6 +52,7 @@ export type Cache = {
 		listener: Events[E]
 	) => EventEmitter;
 	disconnect: () => Promise<undefined>;
+	cacheId: () => string;
 };
 
 export type Events = {
@@ -64,6 +66,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const eventEmitter = new EventEmitter();
 	const stores = options?.stores?.length ? options.stores : [new Keyv()];
 	const nonBlocking = options?.nonBlocking ?? false;
+	const _cacheId = options?.cacheId ?? Math.random().toString(36).slice(2);
 
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	const get = async <T>(key: string): Promise<T | null> => {
@@ -250,7 +253,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		fnc: () => T | Promise<T>,
 		ttl?: number | ((value: T) => number),
 		refreshThreshold?: number,
-	): Promise<T> => coalesceAsync(key, async () => {
+	): Promise<T> => coalesceAsync(`${_cacheId}__${key}`, async () => {
 		let value: T | undefined;
 		let i = 0;
 		let remainingTtl: number | undefined;
@@ -281,7 +284,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		const shouldRefresh = lt(remainingTtl, refreshThreshold ?? options?.refreshThreshold);
 
 		if (shouldRefresh) {
-			coalesceAsync(`+++${key}`, fnc)
+			coalesceAsync(`+++${_cacheId}__${key}`, fnc)
 				.then(async result => {
 					try {
 						await set(options?.refreshAllStores ? stores : stores.slice(0, i + 1), key, result, resolveTtl(result));
@@ -315,6 +318,8 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		}
 	};
 
+	const cacheId = () => _cacheId;
+
 	return {
 		get,
 		mget,
@@ -328,6 +333,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		on,
 		off,
 		disconnect,
+		cacheId,
 	};
 };
 
