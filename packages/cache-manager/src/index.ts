@@ -41,7 +41,7 @@ export type Cache = {
 		key: string,
 		fnc: () => T | Promise<T>,
 		ttl?: number | ((value: T) => number),
-		refreshThreshold?: number
+		refreshThreshold?: number | ((value: T) => number)
 	) => Promise<T>;
 	on: <E extends keyof Events>(
 		event: E,
@@ -252,7 +252,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		key: string,
 		fnc: () => T | Promise<T>,
 		ttl?: number | ((value: T) => number),
-		refreshThreshold?: number,
+		refreshThreshold?: number | ((value: T) => number),
 	): Promise<T> => coalesceAsync(`${_cacheId}::${key}`, async () => {
 		let value: T | undefined;
 		let i = 0;
@@ -281,7 +281,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			return result;
 		}
 
-		const shouldRefresh = lt(remainingTtl, refreshThreshold ?? options?.refreshThreshold);
+		const shouldRefresh = lt(remainingTtl, runIfFn(refreshThreshold, value)  ?? options?.refreshThreshold);
 
 		if (shouldRefresh) {
 			coalesceAsync(`+++${_cacheId}__${key}`, fnc)
