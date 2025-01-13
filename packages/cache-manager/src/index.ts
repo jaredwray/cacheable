@@ -281,7 +281,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			return result;
 		}
 
-		const shouldRefresh = lt(remainingTtl, runIfFn(refreshThreshold, value)  ?? options?.refreshThreshold);
+		const shouldRefresh = lt(remainingTtl, runIfFn(refreshThreshold, value) ?? options?.refreshThreshold);
 
 		if (shouldRefresh) {
 			coalesceAsync(`+++${_cacheId}__${key}`, fnc)

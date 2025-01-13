@@ -86,7 +86,7 @@ describe('wrap', () => {
 	});
 
 	it('should allow refreshThreshold function on wrap function', async () => {
-		const config = {ttl: (v:number) => v * 1000, refreshThreshold: (v:number) => v * 500 };
+		const config = {ttl: (v: number) => v * 1000, refreshThreshold: (v: number) => v * 500};
 
 		// 1st call should be cached
 		expect(await cache.wrap(data.key, async () => 1, config.ttl, config.refreshThreshold)).toEqual(1);
