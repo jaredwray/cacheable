@@ -165,7 +165,7 @@ const cache = createCache({ stores: [keyv] });
 - **ttl**?: number - Default time to live in milliseconds.
 
     The time to live in milliseconds. This is the maximum amount of time that an item can be in the cache before it is removed.
-- **refreshThreshold**?: number - Default refreshThreshold in milliseconds.
+- **refreshThreshold**?: number | (value:T) => number - Default refreshThreshold in milliseconds. You can also provide a function that will return the refreshThreshold based on the value.
 
     If the remaining TTL is less than **refreshThreshold**, the system will update the value asynchronously in background.
 - **refreshAllStores**?: boolean - Default false
@@ -319,7 +319,7 @@ See unit tests in [`test/clear.test.ts`](./test/clear.test.ts) for more informat
 
 Wraps a function in cache. The first time the function is run, its results are stored in cache so subsequent calls retrieve from cache instead of calling the function.
 
-If `refreshThreshold` is set and the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously. In the meantime, the system will return the old value until expiration.
+If `refreshThreshold` is set and the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously. In the meantime, the system will return the old value until expiration. You can also provide a function that will return the refreshThreshold based on the value `(value:T) => number`.
 
 ```typescript
 await cache.wrap('key', () => 1, 5000, 3000)
@@ -338,6 +338,10 @@ await cache.wrap('key', () => 2, 5000, 3000)
 // =>  1
 
 await cache.wrap('key', () => 3, 5000, 3000)
+// return data from cache, function will not be called
+// =>  2
+
+await cache.wrap('key', () => 4, 5000, 3000);
 // return data from cache, function will not be called
 // =>  2
 
