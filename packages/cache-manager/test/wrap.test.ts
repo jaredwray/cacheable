@@ -85,6 +85,25 @@ describe('wrap', () => {
 		expect(await cache.wrap(data.key, async () => 5, undefined, 500)).toEqual(4);
 	});
 
+	it('should allow refreshThreshold function on wrap function', async () => {
+		const config = {ttl: (v: number) => v * 1000, refreshThreshold: (v: number) => v * 500};
+
+		// 1st call should be cached
+		expect(await cache.wrap(data.key, async () => 1, config.ttl, config.refreshThreshold)).toEqual(1);
+		await sleep(501);
+		// Background refresh, but stale value returned
+		expect(await cache.wrap(data.key, async () => 2, config.ttl, config.refreshThreshold)).toEqual(1);
+		// New value in cache
+		expect(await cache.wrap(data.key, async () => 2, config.ttl, config.refreshThreshold)).toEqual(2);
+		await sleep(1001);
+		// No background refresh with the new override params
+		expect(await cache.wrap(data.key, async () => 3, undefined, 500)).toEqual(2);
+		await sleep(500);
+		// Background refresh, but stale value returned
+		expect(await cache.wrap(data.key, async () => 4, undefined, 500)).toEqual(2);
+		expect(await cache.wrap(data.key, async () => 5, undefined, 500)).toEqual(4);
+	});
+
 	it('should support nested calls of other caches - no mutual state', async () => {
 		const getValueA = vi.fn(() => 'A');
 		const getValueB = vi.fn(() => 'B');
