@@ -39,11 +39,16 @@ If you are looking for older documentation you can find it here:
   * [.mdel](#mdel)
   * [.clear](#clear)
   * [.wrap](#wrap)
+  * [.disconnect](#disconnect)
 * [Events](#events)
   * [.set](#set)
   * [.del](#del)
   * [.clear](#clear)
   * [.refresh](#refresh)
+* [Properties](#properties)
+  * [.cacheId](#cacheId)
+  * [.stores](#stores)
+* [Doing Iteration on Stores](#doing-iteration-on-stores)
 * [Update on `redis` and `ioredis` Support](#update-on-redis-and-ioredis-support)
 * [Using Legacy Storage Adapters](#using-legacy-storage-adapters)
 * [Contribute](#contribute)
@@ -370,10 +375,17 @@ await cache.disconnect();
 
 See unit tests in [`test/disconnect.test.ts`](./test/disconnect.test.ts) for more information.
 
+# Properties
+
 ## cacheId
 `cacheId(): string`
 
-Returns cache instance id.
+Returns cache instance id. This is primarily used to not have conflicts when using `wrap` with multiple cache instances.
+
+## stores
+`stores(): Keyv[]`
+
+Returns the list of Keyv instances. This can be used to get the list of stores and then use the Keyv API to interact with the store directly.
 
 ```ts
 const cache = createCache({cacheId: 'my-cache-id'});
@@ -423,6 +435,38 @@ cache.on('refresh', ({ key, value, error }) => {
 ```
 
 See unit tests in [`test/events.test.ts`](./test/events.test.ts) for more information.
+
+# Doing Iteration on Stores
+
+You can use the `stores` method to get the list of stores and then use the Keyv API to interact with the store directly. Below is an example of iterating over all stores and getting all keys:
+
+```ts
+import Keyv from 'keyv';
+import { createKeyv } from '@keyv/redis';
+import { createCache } from 'cache-manager';
+
+const keyv = new Keyv();
+const keyvRedis = createKeyv('redis://user:pass@localhost:6379');
+
+const cache = createCache({
+  stores: [keyv, keyvRedis],
+});
+
+// add some data
+await cache.set('key-1', 'value 1');
+await cache.set('key-2', 'value 2');
+
+// get the store you want to iterate over. In this example we are using the second store (redis)
+const store = cache.stores[1];
+
+if(store?.iterator) {
+  for await (const [key, value] of store.iterator({})) {
+    console.log(key, value);
+  }
+}
+```
+
+WARNING: Be careful when using `iterator` as it can cause major performance issues with the amount of data being retrieved. Also, Not all storage adapters support `iterator` so you may need to check the documentation for the storage adapter you are using.
 
 # Update on redis and ioredis Support
 
