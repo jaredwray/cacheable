@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "6.3.2",
+  "version": "6.4.0",
   "description": "Cache Manager for Node.js",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -60,16 +60,16 @@
     "keyv": "^5.2.3"
   },
   "devDependencies": {
-    "@faker-js/faker": "^9.3.0",
+    "@faker-js/faker": "^9.4.0",
     "@keyv/redis": "^4.2.0",
-    "@types/node": "^22.10.2",
-    "@vitest/coverage-v8": "^2.1.8",
+    "@types/node": "^22.10.9",
+    "@vitest/coverage-v8": "^3.0.4",
     "cache-manager-redis-yet": "^5.1.5",
     "cacheable": "workspace:^",
     "rimraf": "^6.0.1",
     "tsup": "^8.3.5",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4",
     "xo": "^0.60.0"
   },
   "xo": {
