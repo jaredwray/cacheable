@@ -53,6 +53,7 @@ export type Cache = {
 	) => EventEmitter;
 	disconnect: () => Promise<undefined>;
 	cacheId: () => string;
+	stores: Keyv[];
 };
 
 export type Events = {
@@ -334,6 +335,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		off,
 		disconnect,
 		cacheId,
+		stores,
 	};
 };
 
