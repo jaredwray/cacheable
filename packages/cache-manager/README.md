@@ -435,6 +435,38 @@ cache.on('refresh', ({ key, value, error }) => {
 
 See unit tests in [`test/events.test.ts`](./test/events.test.ts) for more information.
 
+# Doing Iteration on Stores
+
+You can use the `stores` method to get the list of stores and then use the Keyv API to interact with the store directly. Below is an example of iterating over all stores and getting all keys:
+
+```ts
+import Keyv from 'keyv';
+import { createKeyv } from '@keyv/redis';
+import { createCache } from 'cache-manager';
+
+const keyv = new Keyv();
+const keyvRedis = createKeyv('redis://user:pass@localhost:6379');
+
+const cache = createCache({
+  stores: [keyv, keyvRedis],
+});
+
+// add some data
+await cache.set('key-1', 'value 1');
+await cache.set('key-2', 'value 2');
+
+// get the store you want to iterate over. In this example we are using the second store (redis)
+const store = cache.stores[1];
+
+if(store?.iterator) {
+  for await (const [key, value] of store.iterator({})) {
+    console.log(key, value);
+  }
+}
+```
+
+WARNING: Be careful when using `iterator` as it can cause major performance issues with the amount of data being retrieved. Also, Not all storage adapters support `iterator` so you may need to check the documentation for the storage adapter you are using.
+
 # Update on redis and ioredis Support
 
 We will not be supporting `cache-manager-ioredis-yet` or `cache-manager-redis-yet` in the future as we have moved to using `Keyv` as the storage adapter `@keyv/redis`.
