@@ -39,6 +39,7 @@ If you are looking for older documentation you can find it here:
   * [.mdel](#mdel)
   * [.clear](#clear)
   * [.wrap](#wrap)
+  * [.disconnect](#disconnect)
 * [Events](#events)
   * [.set](#set)
   * [.del](#del)
