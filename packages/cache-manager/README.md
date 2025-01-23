@@ -48,6 +48,7 @@ If you are looking for older documentation you can find it here:
 * [Properties](#properties)
   * [.cacheId](#cacheId)
   * [.stores](#stores)
+* [Doing Iteration on Stores](#doing-iteration-on-stores)
 * [Update on `redis` and `ioredis` Support](#update-on-redis-and-ioredis-support)
 * [Using Legacy Storage Adapters](#using-legacy-storage-adapters)
 * [Contribute](#contribute)
