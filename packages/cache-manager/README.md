@@ -45,6 +45,9 @@ If you are looking for older documentation you can find it here:
   * [.del](#del)
   * [.clear](#clear)
   * [.refresh](#refresh)
+* [Properties](#properties)
+  * [.cacheId](#cacheId)
+  * [.stores](#stores)
 * [Update on `redis` and `ioredis` Support](#update-on-redis-and-ioredis-support)
 * [Using Legacy Storage Adapters](#using-legacy-storage-adapters)
 * [Contribute](#contribute)
@@ -371,10 +374,17 @@ await cache.disconnect();
 
 See unit tests in [`test/disconnect.test.ts`](./test/disconnect.test.ts) for more information.
 
+# Properties
+
 ## cacheId
 `cacheId(): string`
 
-Returns cache instance id.
+Returns cache instance id. This is primarily used to not have conflicts when using `wrap` with multiple cache instances.
+
+## stores
+`stores(): Keyv[]`
+
+Returns the list of Keyv instances. This can be used to get the list of stores and then use the Keyv API to interact with the store directly.
 
 ```ts
 const cache = createCache({cacheId: 'my-cache-id'});
