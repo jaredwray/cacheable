@@ -55,7 +55,7 @@
 		"@types/node": "^22.10.2",
 		"@types/responselike": "^1.0.3",
 		"@types/sqlite3": "^3.1.11",
-		"@vitest/coverage-v8": "^2.1.8",
+		"@vitest/coverage-v8": "^3.0.4",
 		"body-parser": "^1.20.3",
 		"delay": "^6.0.0",
 		"express": "^4.21.2",
@@ -63,7 +63,7 @@
 		"rimraf": "^6.0.1",
 		"sqlite3": "^5.1.7",
 		"typescript": "^5.7.2",
-		"vitest": "^2.1.8",
+		"vitest": "^3.0.4",
 		"xo": "^0.60.0"
 	},
 	"xo": {
