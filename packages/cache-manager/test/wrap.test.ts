@@ -50,9 +50,20 @@ describe('wrap', () => {
 		await expect(cache.get(data.key)).resolves.toBeNull();
 	});
 
-	it('returns raw data', async () => {
+	it('returns single value or raw storage-data', async () => {
+		// Run pristine and expect single value
+		await expect(cache.wrap(data.key, () => data.value, ttl))
+			.resolves.toEqual(data.value);
+		// Expect cached response with raw data
 		await expect(cache.wrap(data.key, () => data.value, {ttl, raw: true}))
 			.resolves.toEqual({value: data.value, expires: expect.any(Number)});
+
+		// Run pristine with new key and expect raw data
+		await expect(cache.wrap(data.key + 'i', () => data.value, {ttl, raw: true}))
+			.resolves.toEqual({value: data.value, expires: expect.any(Number)});
+		// Expect cached response with single value
+		await expect(cache.wrap(data.key + 'i', () => data.value, ttl))
+			.resolves.toEqual(data.value);
 	});
 
 	it('calls fn once to fetch value on cache miss when invoked multiple times', async () => {

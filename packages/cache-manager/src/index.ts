@@ -301,9 +301,9 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 		if (value === undefined) {
 			const result = await fnc();
-			const ttl = resolveTtl(result);
+			const ttl = resolveTtl(result)!;
 			await set(stores, key, result, ttl);
-			return raw ? {value: result, expires: Date.now() + (ttl ?? 0)} : result;
+			return raw ? {value: result, expires: Date.now() + ttl} : result;
 		}
 
 		const shouldRefresh = lt(remainingTtl, runIfFn(refreshThreshold, value) ?? options?.refreshThreshold);
