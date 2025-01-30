@@ -222,7 +222,7 @@ describe('wrap functions handling thrown errors', () => {
 
 		expect(result).toBe(undefined);
 		expect(errorCallCount).toBe(1);
-		const values = Array.from(cache.items);
+		const values = [...cache.items];
 		expect(values.length).toBe(0);
 	});
 

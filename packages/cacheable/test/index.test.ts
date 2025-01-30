@@ -100,7 +100,7 @@ describe('cacheable options and properties', async () => {
 describe('cacheable stats', async () => {
 	test('should return stats', async () => {
 		const cacheable = new Cacheable();
-		const stats = cacheable.stats;
+		const {stats} = cacheable;
 		expect(stats.enabled).toBe(false);
 	});
 	test('should be able to enable stats', async () => {

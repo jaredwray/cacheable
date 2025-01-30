@@ -46,7 +46,7 @@ describe('CacheableMemory Options and Properties', () => {
 		cache.set('key2', 'value');
 		cache.set('key3', 'value');
 		cache.set('key4', 'value');
-		const keys = Array.from(cache.keys);
+		const keys = [...cache.keys];
 		expect(keys).toContain('key');
 		expect(keys).toContain('key1');
 		expect(keys).toContain('key2');
@@ -60,7 +60,7 @@ describe('CacheableMemory Options and Properties', () => {
 		cache.set('key2', 'value2');
 		cache.set('key3', 'value3');
 		cache.set('key4', 'value4');
-		const values = Array.from(cache.items);
+		const values = [...cache.items];
 		expect(values[0].value).toBe('value3');
 		expect(values[1].value).toBe('value4');
 		expect(values[2].value).toBe('value1');
