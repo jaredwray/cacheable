@@ -273,13 +273,13 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		key: string,
 		fnc: () => T | Promise<T>,
 		ttlOrOptions?: number | ((value: T) => number) | Partial<WrapOptionsRaw<T>>,
-		refreshThresholdParam?: number | ((value: T) => number),
+		refreshThresholdParameter?: number | ((value: T) => number),
 	): Promise<T | StoredDataRaw<T>> => coalesceAsync(`${_cacheId}::${key}`, async () => {
 		let value: T | undefined;
 		let data: StoredDataRaw<T> | undefined;
 		let i = 0;
 		let remainingTtl: number | undefined;
-		const {ttl, refreshThreshold, raw} = isObject(ttlOrOptions) ? ttlOrOptions : {ttl: ttlOrOptions, refreshThreshold: refreshThresholdParam};
+		const {ttl, refreshThreshold, raw} = isObject(ttlOrOptions) ? ttlOrOptions : {ttl: ttlOrOptions, refreshThreshold: refreshThresholdParameter};
 		const resolveTtl = (result: T) => runIfFn(ttl, result) ?? options?.ttl;
 
 		for (; i < stores.length; i++) {
