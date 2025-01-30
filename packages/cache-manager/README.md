@@ -322,9 +322,15 @@ See unit tests in [`test/clear.test.ts`](./test/clear.test.ts) for more informat
 ## wrap
 `wrap(key, fn: async () => value, [ttl], [refreshThreshold]): Promise<value>`
 
+Alternatively, with optional parameters as options object supporting a `raw` parameter:
+
+`wrap(key, fn: async () => value, { ttl?: number, refreshThreshold?: number, raw?: true }): Promise<value>`
+
 Wraps a function in cache. The first time the function is run, its results are stored in cache so subsequent calls retrieve from cache instead of calling the function.
 
 If `refreshThreshold` is set and the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously. In the meantime, the system will return the old value until expiration. You can also provide a function that will return the refreshThreshold based on the value `(value:T) => number`.
+
+If the object format for the optional parameters is used, an additional `raw` parameter can be applied, changing the function return type to raw data including expiration timestamp as `{ value: [data], expires: [timestamp] }`.
 
 ```typescript
 await cache.wrap('key', () => 1, 5000, 3000)
@@ -334,6 +340,10 @@ await cache.wrap('key', () => 1, 5000, 3000)
 await cache.wrap('key', () => 2, 5000, 3000)
 // return data from cache, function will not be called again
 // => 1
+
+await cache.wrap('key', () => 2, { ttl: 5000, refreshThreshold: 3000, raw: true })
+// returns raw data including expiration timestamp
+// => { value: 1, expires: [timestamp] }
 
 // wait 3 seconds
 await sleep(3000)

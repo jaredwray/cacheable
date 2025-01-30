@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/prefer-promise-reject-errors, unicorn/no-useless-promise-resolve-reject, no-await-in-loop, unicorn/prefer-event-target */
 import EventEmitter from 'node:events';
-import {Keyv} from 'keyv';
+import {Keyv, type StoredDataRaw} from 'keyv';
 import {coalesceAsync} from './coalesce-async.js';
+import {isObject} from './is-object.js';
 import {runIfFn} from './run-if-fn.js';
 import {lt} from './lt.js';
 
@@ -12,6 +13,15 @@ export type CreateCacheOptions = {
 	refreshAllStores?: boolean;
 	nonBlocking?: boolean;
 	cacheId?: string;
+};
+
+type WrapOptions<T> = {
+	ttl?: number | ((value: T) => number);
+	refreshThreshold?: number | ((value: T) => number);
+};
+
+type WrapOptionsRaw<T> = WrapOptions<T> & {
+	raw: true;
 };
 
 export type Cache = {
@@ -37,12 +47,6 @@ export type Cache = {
 	del: (key: string) => Promise<boolean>;
 	mdel: (keys: string[]) => Promise<boolean>;
 	clear: () => Promise<boolean>;
-	wrap: <T>(
-		key: string,
-		fnc: () => T | Promise<T>,
-		ttl?: number | ((value: T) => number),
-		refreshThreshold?: number | ((value: T) => number)
-	) => Promise<T>;
 	on: <E extends keyof Events>(
 		event: E,
 		listener: Events[E]
@@ -54,6 +58,22 @@ export type Cache = {
 	disconnect: () => Promise<undefined>;
 	cacheId: () => string;
 	stores: Keyv[];
+	wrap<T>(
+		key: string,
+		fnc: () => T | Promise<T>,
+		ttl?: number | ((value: T) => number),
+		refreshThreshold?: number | ((value: T) => number)
+	): Promise<T>;
+	wrap<T>(
+		key: string,
+		fnc: () => T | Promise<T>,
+		options: WrapOptions<T>
+	): Promise<T>;
+	wrap<T>(
+		key: string,
+		fnc: () => T | Promise<T>,
+		options: WrapOptionsRaw<T>
+	): Promise<StoredDataRaw<T>>;
 };
 
 export type Events = {
@@ -252,12 +272,14 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const wrap = async <T>(
 		key: string,
 		fnc: () => T | Promise<T>,
-		ttl?: number | ((value: T) => number),
-		refreshThreshold?: number | ((value: T) => number),
-	): Promise<T> => coalesceAsync(`${_cacheId}::${key}`, async () => {
+		ttlOrOptions?: number | ((value: T) => number) | Partial<WrapOptionsRaw<T>>,
+		refreshThresholdParameter?: number | ((value: T) => number),
+	): Promise<T | StoredDataRaw<T>> => coalesceAsync(`${_cacheId}::${key}`, async () => {
 		let value: T | undefined;
+		let rawData: StoredDataRaw<T> | undefined;
 		let i = 0;
 		let remainingTtl: number | undefined;
+		const {ttl, refreshThreshold, raw} = isObject(ttlOrOptions) ? ttlOrOptions : {ttl: ttlOrOptions, refreshThreshold: refreshThresholdParameter};
 		const resolveTtl = (result: T) => runIfFn(ttl, result) ?? options?.ttl;
 
 		for (; i < stores.length; i++) {
@@ -265,6 +287,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 				const data = await stores[i].get<T>(key, {raw: true});
 				if (data !== undefined) {
 					value = data.value;
+					rawData = data;
 					if (typeof data.expires === 'number') {
 						remainingTtl = Math.max(0, data.expires - Date.now());
 					}
@@ -278,8 +301,9 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 		if (value === undefined) {
 			const result = await fnc();
-			await set(stores, key, result, resolveTtl(result));
-			return result;
+			const ttl = resolveTtl(result)!;
+			await set(stores, key, result, ttl);
+			return raw ? {value: result, expires: Date.now() + ttl} : result;
 		}
 
 		const shouldRefresh = lt(remainingTtl, runIfFn(refreshThreshold, value) ?? options?.refreshThreshold);
@@ -304,7 +328,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			await set(stores.slice(0, i), key, value, resolveTtl(value));
 		}
 
-		return value;
+		return raw ? rawData : value;
 	});
 
 	const on = <E extends keyof Events>(event: E, listener: Events[E]) => eventEmitter.addListener(event, listener);

@@ -43,6 +43,29 @@ describe('wrap', () => {
 		expect(getTtlFunction).toHaveBeenCalledTimes(1);
 	});
 
+	it('ttl - options', async () => {
+		await cache.wrap(data.key, async () => data.value, {ttl});
+		await expect(cache.get(data.key)).resolves.toEqual(data.value);
+		await sleep(ttl + 100);
+		await expect(cache.get(data.key)).resolves.toBeNull();
+	});
+
+	it('returns single value or raw storage-data', async () => {
+		// Run pristine and expect single value
+		await expect(cache.wrap(data.key, () => data.value, ttl))
+			.resolves.toEqual(data.value);
+		// Expect cached response with raw data
+		await expect(cache.wrap(data.key, () => data.value, {ttl, raw: true}))
+			.resolves.toEqual({value: data.value, expires: expect.any(Number)});
+
+		// Run pristine with new key and expect raw data
+		await expect(cache.wrap(data.key + 'i', () => data.value, {ttl, raw: true}))
+			.resolves.toEqual({value: data.value, expires: expect.any(Number)});
+		// Expect cached response with single value
+		await expect(cache.wrap(data.key + 'i', () => data.value, ttl))
+			.resolves.toEqual(data.value);
+	});
+
 	it('calls fn once to fetch value on cache miss when invoked multiple times', async () => {
 		const getValue = vi.fn().mockResolvedValue(data.value);
 
@@ -65,16 +88,17 @@ describe('wrap', () => {
 		}
 	});
 
-	it('should allow dynamic refreshThreshold on wrap function', async () => {
-		const config = {ttl: 2000, refreshThreshold: 1000};
-
+	it.each([
+		[2000, 1000],
+		[{ttl: 2000, refreshThreshold: 1000}, undefined],
+	])('should allow dynamic refreshThreshold on wrap function with ttl/options param as %s', async (ttlOrOptions, refreshThreshold) => {
 		// 1st call should be cached
-		expect(await cache.wrap(data.key, async () => 0, config.ttl, config.refreshThreshold)).toEqual(0);
+		expect(await cache.wrap(data.key, async () => 0, ttlOrOptions as never, refreshThreshold)).toEqual(0);
 		await sleep(1001);
 		// Background refresh, but stale value returned
-		expect(await cache.wrap(data.key, async () => 1, config.ttl, config.refreshThreshold)).toEqual(0);
+		expect(await cache.wrap(data.key, async () => 1, ttlOrOptions as never, refreshThreshold)).toEqual(0);
 		// New value in cache
-		expect(await cache.wrap(data.key, async () => 2, config.ttl, config.refreshThreshold)).toEqual(1);
+		expect(await cache.wrap(data.key, async () => 2, ttlOrOptions as never, refreshThreshold)).toEqual(1);
 
 		await sleep(1001);
 		// No background refresh with the new override params
