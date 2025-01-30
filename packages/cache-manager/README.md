@@ -330,7 +330,7 @@ Wraps a function in cache. The first time the function is run, its results are s
 
 If `refreshThreshold` is set and the remaining TTL is less than `refreshThreshold`, the system will update the value asynchronously. In the meantime, the system will return the old value until expiration. You can also provide a function that will return the refreshThreshold based on the value `(value:T) => number`.
 
-If the options syntax for the optional parameters is used, an additional `raw` parameter can be applied, changing the function return type to   raw data including expiration timestamp as `{ value: [data], expires: [timestamp] }`.
+If the object format for the optional parameters is used, an additional `raw` parameter can be applied, changing the function return type to raw data including expiration timestamp as `{ value: [data], expires: [timestamp] }`.
 
 ```typescript
 await cache.wrap('key', () => 1, 5000, 3000)

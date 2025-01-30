@@ -276,7 +276,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		refreshThresholdParameter?: number | ((value: T) => number),
 	): Promise<T | StoredDataRaw<T>> => coalesceAsync(`${_cacheId}::${key}`, async () => {
 		let value: T | undefined;
-		let data: StoredDataRaw<T> | undefined;
+		let rawData: StoredDataRaw<T> | undefined;
 		let i = 0;
 		let remainingTtl: number | undefined;
 		const {ttl, refreshThreshold, raw} = isObject(ttlOrOptions) ? ttlOrOptions : {ttl: ttlOrOptions, refreshThreshold: refreshThresholdParameter};
@@ -284,9 +284,10 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 		for (; i < stores.length; i++) {
 			try {
-				data = await stores[i].get<T>(key, {raw: true});
+				const data = await stores[i].get<T>(key, {raw: true});
 				if (data !== undefined) {
 					value = data.value;
+					rawData = data;
 					if (typeof data.expires === 'number') {
 						remainingTtl = Math.max(0, data.expires - Date.now());
 					}
@@ -300,9 +301,9 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 		if (value === undefined) {
 			const result = await fnc();
-			const ttl = resolveTtl(result) ?? 0;
+			const ttl = resolveTtl(result);
 			await set(stores, key, result, ttl);
-			return raw ? {value: result, expires: Date.now() + ttl} : result;
+			return raw ? {value: result, expires: Date.now() + (ttl ?? 0)} : result;
 		}
 
 		const shouldRefresh = lt(remainingTtl, runIfFn(refreshThreshold, value) ?? options?.refreshThreshold);
@@ -327,7 +328,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			await set(stores.slice(0, i), key, value, resolveTtl(value));
 		}
 
-		return raw ? data : value;
+		return raw ? rawData : value;
 	});
 
 	const on = <E extends keyof Events>(event: E, listener: Events[E]) => eventEmitter.addListener(event, listener);
