@@ -21,6 +21,6 @@
     "wrangler": "^3.105.1"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild", "protobufjs", "sqlite3"]
+    "onlyBuiltDependencies": ["esbuild", "protobufjs", "sqlite3", "workerd"]
   }
 }
