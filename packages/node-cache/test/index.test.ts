@@ -271,5 +271,23 @@ describe('NodeCache', () => {
 		expect(cache.get('foo')).toBe('bar');
 		await sleep(300);
 		expect(cache.get('foo')).toBe(undefined);
+		cache.close();
+	});
+
+	test('should not delete if expired even on interval', async () => {
+		const cache = new NodeCache({checkperiod: 1, deleteOnExpire: false});
+		let expiredKey = '';
+		cache.on('expired', key => {
+			expiredKey = key as string;
+		});
+		cache.set('foo-expired', 'bar', 0.25);
+		cache.set('baz-expired', 'qux', 2);
+		expect(cache.getStats().keys).toBe(2);
+		await sleep(1000);
+		expect(cache.getStats().keys).toBe(2);
+		expect(expiredKey).toBe('foo-expired');
+		const expiredValue = cache.get('foo-expired') as string;
+		expect(expiredValue).toBe(undefined);
+		cache.close();
 	});
 });

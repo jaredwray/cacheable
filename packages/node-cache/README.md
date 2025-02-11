@@ -141,7 +141,7 @@ export type NodeCacheOptions = {
 	stdTTL?: number; // The standard ttl as number in seconds for every generated cache element. 0 = unlimited. If string, it will be parsed as shorthand and default to milliseconds if it is a number as a string.
 	checkperiod?: number; // Default is 600, 0 means no periodic check
 	useClones?: boolean; // Default is true
-	deleteOnExpire?: boolean; // Default is true, if this is set to true it will delete the key when it expires.
+	deleteOnExpire?: boolean; // Default is true, if false it will keep the key and not delete during an interval check and the value on get() will be undefined
 	maxKeys?: number; // Default is -1 (unlimited). If this is set it will throw and error if you try to set more keys than the max.
 };
 ```

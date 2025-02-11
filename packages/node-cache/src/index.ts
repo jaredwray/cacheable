@@ -16,7 +16,7 @@ export type NodeCacheOptions = {
 	 */
 	useClones?: boolean;
 	/**
-	 * Delete all expired items at the set interval. Default is true.
+	 * Delete expired items during an interval check or a single item on a get request. Default is true.
 	 */
 	deleteOnExpire?: boolean;
 	/**
@@ -440,7 +440,11 @@ export class NodeCache extends Hookified {
 	private checkData(): void {
 		for (const [key, value] of this.store.entries()) {
 			if (value.ttl > 0 && value.ttl < Date.now()) {
-				this.del(key);
+				if (this.options.deleteOnExpire) {
+					this.del(key);
+				}
+
+				this.emit('expired', this.formatKey(key), value.value);
 			}
 		}
 	}
