@@ -16,7 +16,7 @@ export type NodeCacheOptions = {
 	 */
 	useClones?: boolean;
 	/**
-	 * Delete all expired items at the set interval. Default is true.
+	 * Delete expired items during an interval check or a single item on a get request. Default is true.
 	 */
 	deleteOnExpire?: boolean;
 	/**
