@@ -42,30 +42,31 @@ describe('cacheable options and properties', async () => {
 		const getResult = await cacheable.get('key');
 		expect(getResult).toEqual('value');
 	});
-	test('should be able to set KeyvStorageAdapter', async () => {
-		const keyvRedis = new KeyvRedis('redis://localhost:6379');
-		const cacheable = new Cacheable({secondary: keyvRedis});
-		expect(cacheable.secondary).toBeDefined();
-		const setResult = await cacheable.set('key', 'value');
-		expect(setResult).toEqual(true);
-		const getResult = await cacheable.get('key');
-		expect(getResult).toEqual('value');
-		await cacheable.delete('key');
-		const getResult2 = await cacheable.get('key');
-		expect(getResult2).toBeUndefined();
-	});
 	test('should be able to set primary KeyvStorageAdapter', async () => {
-		const keyvRedis = new KeyvRedis('redis://localhost:6379');
-		const cacheable = new Cacheable({primary: keyvRedis});
+		const primary = new KeyvRedis('redis://localhost:6379');
+		const cacheable = new Cacheable({primary});
+		const key = 'key12345-opt';
 		expect(cacheable.primary).toBeDefined();
-		const setResult = await cacheable.set('key', 'value');
+		const setResult = await cacheable.set(key, 'value');
 		expect(setResult).toEqual(true);
-		const getResult = await cacheable.get('key');
+		const getResult = await cacheable.get(key);
 		expect(getResult).toEqual('value');
-		await cacheable.delete('key');
-		const getResult2 = await cacheable.get('key');
+		await cacheable.delete(key);
+		const getResult2 = await cacheable.get(key);
 		expect(getResult2).toBeUndefined();
 	});
+
+	test('should be able to set secondary KeyvStorageAdapter', async () => {
+		const secondary = new KeyvRedis('redis://localhost:6379');
+		const cacheable = new Cacheable({secondary});
+		const key = 'key12345-optsec';
+		expect(cacheable.primary).toBeDefined();
+		const setResult = await cacheable.set(key, 'value');
+		expect(setResult).toEqual(true);
+		const getResult = await cacheable.get(key);
+		expect(getResult).toEqual('value');
+	});
+
 	test('should be able to set ttl default', async () => {
 		const cacheable = new Cacheable({ttl: 1000});
 		expect(cacheable.ttl).toEqual(1000);
