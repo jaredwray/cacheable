@@ -121,14 +121,14 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	};
 
 	const mget = async <T>(keys: string[]) => {
-		const result = [];
+		const result: (T | null)[] = [];
 
 		for (const key of keys) {
 			const data = await get<T>(key);
 			result.push(data);
 		}
 
-		return result as [T];
+		return result;
 	};
 
 	// eslint-disable-next-line @typescript-eslint/ban-types
