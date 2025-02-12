@@ -114,15 +114,15 @@ describe('wrap', () => {
 
 		// 1st call should be cached
 		expect(await cache.wrap(data.key, async () => 1, config.ttl, config.refreshThreshold)).toEqual(1);
-		await sleep(501);
+		await sleep(510);
 		// Background refresh, but stale value returned
 		expect(await cache.wrap(data.key, async () => 2, config.ttl, config.refreshThreshold)).toEqual(1);
 		// New value in cache
 		expect(await cache.wrap(data.key, async () => 2, config.ttl, config.refreshThreshold)).toEqual(2);
-		await sleep(1001);
+		await sleep(1010);
 		// No background refresh with the new override params
 		expect(await cache.wrap(data.key, async () => 3, undefined, 500)).toEqual(2);
-		await sleep(500);
+		await sleep(510);
 		// Background refresh, but stale value returned
 		expect(await cache.wrap(data.key, async () => 4, undefined, 500)).toEqual(2);
 		expect(await cache.wrap(data.key, async () => 5, undefined, 500)).toEqual(4);
