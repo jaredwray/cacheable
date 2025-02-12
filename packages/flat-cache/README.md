@@ -59,11 +59,26 @@ cache.setKey('key', 'value');
 
 This will save the data to disk every 5 minutes and will remove any data that has not been accessed in 1 hour or if the cache has more than 10,000 items. The `expirationInterval` will check every 5 minutes for expired items and evict them. This is replacement to the `save()` method with a `prune` option as it is no longer needed due to the fact that the in-memory cache handles pruning by `ttl` expiration or `lruSize` which will keep the most recent there.
 
-here is an example doing load from already existing persisted cache
+here is an example doing load from already existing persisted cache using the `createFromFile` function:
 
 ```javascript
-import { load } from 'flat-cache';
-const cache = load('cache1', './cacheAltDirectory');
+import { createFromFile } from 'flat-cache';
+const cache = createFromFile('./cacheAltDirectory/cache1');
+```
+
+You can also use the legacy load function to do this:
+
+```javascript
+import { FlatCache } from 'flat-cache';
+const cache = new FlatCache();
+cache.load('cache1', './cacheAltDirectory');
+```
+or
+
+```javascript
+import { FlatCache } from 'flat-cache';
+const cache = new FlatCache({ cacheDir: './cacheAltDirectory' });
+cache.load('cache1');
 ```
 
 This will load the cache from the `./cacheAltDirectory` directory with the `cache1` id. If it doesnt exist it will not throw an error but will just return an empty cache.
