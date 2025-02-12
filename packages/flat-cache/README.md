@@ -62,8 +62,16 @@ This will save the data to disk every 5 minutes and will remove any data that ha
 here is an example doing load from already existing persisted cache
 
 ```javascript
-import { load } from 'flat-cache';
-const cache = load('cache1', './cacheAltDirectory');
+import { FlatCache } from 'flat-cache';
+const cache = new FlatCache();
+cache.load('cache1', './cacheAltDirectory');
+```
+or
+
+```javascript
+import { FlatCache } from 'flat-cache';
+const cache = new FlatCache({ cacheDir: './cacheAltDirectory' });
+cache.load('cache1');
 ```
 
 This will load the cache from the `./cacheAltDirectory` directory with the `cache1` id. If it doesnt exist it will not throw an error but will just return an empty cache.
