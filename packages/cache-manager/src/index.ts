@@ -121,6 +121,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		return result as T;
 	};
 
+	// eslint-disable-next-line @typescript-eslint/ban-types
 	const mget = async <T>(keys: string[]): Promise<Array<T | null>> => {
 		// eslint-disable-next-line @typescript-eslint/ban-types
 		const result: Array<T | null> = [];
