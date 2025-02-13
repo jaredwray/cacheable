@@ -27,7 +27,8 @@ type WrapOptionsRaw<T> = WrapOptions<T> & {
 export type Cache = {
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	get: <T>(key: string) => Promise<T | null>;
-	mget: <T>(keys: string[]) => Promise<[T]>;
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	mget: <T>(keys: string[]) => Promise<Array<T | null>>;
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	ttl: (key: string) => Promise<number | null>;
 	set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
@@ -120,15 +121,17 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		return result as T;
 	};
 
-	const mget = async <T>(keys: string[]) => {
-		const result = [];
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	const mget = async <T>(keys: string[]): Promise<Array<T | null>> => {
+		// eslint-disable-next-line @typescript-eslint/ban-types
+		const result: Array<T | null> = [];
 
 		for (const key of keys) {
 			const data = await get<T>(key);
 			result.push(data);
 		}
 
-		return result as [T];
+		return result;
 	};
 
 	// eslint-disable-next-line @typescript-eslint/ban-types
@@ -166,7 +169,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		return null;
 	};
 
-	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number) => {
+	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number): Promise<T> => {
 		try {
 			if (nonBlocking) {
 				// eslint-disable-next-line @typescript-eslint/no-floating-promises
