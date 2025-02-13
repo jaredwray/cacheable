@@ -28,7 +28,7 @@ describe('get', () => {
 	it('expired', async () => {
 		await cache.set(data.key, data.value, ttl);
 		await sleep(ttl + 100);
-		await expect(cache.get(data.key)).resolves.toBeUndefined();
+		await expect(cache.get(data.key)).resolves.toEqual(null);
 	});
 
 	it('error', async () => {
@@ -37,7 +37,7 @@ describe('get', () => {
 			throw new Error('get error');
 		};
 
-		await expect(cache.get(data.key)).resolves.toBeUndefined();
+		await expect(cache.get(data.key)).resolves.toEqual(null);
 	});
 	it('error on non-blocking enabled', async () => {
 		const secondKeyv = new Keyv();
@@ -47,6 +47,6 @@ describe('get', () => {
 
 		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
 		await cache.set(data.key, data.value);
-		await expect(cache.get(data.key)).resolves.toBeUndefined();
+		await expect(cache.get(data.key)).resolves.toEqual(null);
 	});
 });

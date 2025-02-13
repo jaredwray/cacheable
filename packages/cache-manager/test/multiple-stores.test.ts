@@ -49,7 +49,7 @@ describe('multiple stores', () => {
 		keyv1.get = getError;
 		keyv2.get = getError;
 
-		await expect(cache.get(data.key)).resolves.toBeUndefined();
+		await expect(cache.get(data.key)).resolves.toBeNull();
 	});
 
 	it('del', async () => {

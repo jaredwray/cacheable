@@ -24,7 +24,7 @@ describe('del', () => {
 		await cache.set(data.key, data.value, ttl);
 		await expect(cache.get(data.key)).resolves.toEqual(data.value);
 		await expect(cache.del(data.key)).resolves.toEqual(true);
-		await expect(cache.get(data.key)).resolves.toBeUndefined();
+		await expect(cache.get(data.key)).resolves.toBeNull();
 	});
 
 	it('error', async () => {
@@ -42,6 +42,6 @@ describe('del', () => {
 		await cache.set(data.key, data.value);
 		await cache.del(data.key);
 		await sleep(200);
-		await expect(cache.get(data.key)).resolves.toBeUndefined();
+		await expect(cache.get(data.key)).resolves.toBeNull();
 	});
 });

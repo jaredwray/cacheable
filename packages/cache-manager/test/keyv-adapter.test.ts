@@ -43,7 +43,7 @@ describe('keyv-adapter', async () => {
 		const keyv = new Keyv({store: adapter});
 		const cache = createCache({stores: [keyv]});
 		const result = await cache.get('key');
-		expect(result).toBeUndefined();
+		expect(result).toEqual(null);
 	});
 
 	it('deletes a key', async () => {
@@ -58,7 +58,7 @@ describe('keyv-adapter', async () => {
 		expect(result).toEqual(value);
 		await cache.del(key);
 		const result2 = await cache.get(key);
-		expect(result2).toBeUndefined();
+		expect(result2).toEqual(null);
 	});
 
 	it('clears the cache', async () => {
@@ -73,7 +73,7 @@ describe('keyv-adapter', async () => {
 		expect(result).toEqual(value);
 		await cache.clear();
 		const result2 = await cache.get(key);
-		expect(result2).toBeUndefined();
+		expect(result2).toEqual(null);
 	});
 
 	it('returns false on has', async () => {
