@@ -33,7 +33,7 @@ describe('set', () => {
 		};
 
 		await expect(cache.set(data.key, data.value)).rejects.toThrowError(error);
-		await expect(cache.get(data.key)).resolves.toEqual(null);
+		await expect(cache.get(data.key)).resolves.toBeUndefined();
 	});
 	it('set should be non-blocking', async () => {
 		const secondKeyv = new Keyv();

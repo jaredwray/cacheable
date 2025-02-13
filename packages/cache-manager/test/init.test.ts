@@ -25,7 +25,7 @@ describe('init', () => {
 		const cache = createCache({ttl});
 		await cache.set(data.key, data.value);
 		await sleep(ttl + 100);
-		await expect(cache.get(data.key)).resolves.toEqual(null);
+		await expect(cache.get(data.key)).resolves.toBeUndefined();
 	});
 
 	it('single store', async () => {

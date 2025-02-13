@@ -22,13 +22,13 @@ describe('get', () => {
 
 	it('basic', async () => {
 		await cache.set(data.key, data.value);
-		await expect(cache.ttl(data.key)).resolves.toEqual(null);
+		await expect(cache.ttl(data.key)).resolves.toBeUndefined();
 	});
 
 	it('expired', async () => {
 		await cache.set(data.key, data.value, ttl);
 		await sleep(ttl + 100);
-		await expect(cache.ttl(data.key)).resolves.toEqual(null);
+		await expect(cache.ttl(data.key)).resolves.toBeUndefined();
 	});
 
 	it('error', async () => {
@@ -37,7 +37,7 @@ describe('get', () => {
 			throw new Error('get error');
 		};
 
-		await expect(cache.ttl(data.key)).resolves.toEqual(null);
+		await expect(cache.ttl(data.key)).resolves.toBeUndefined();
 	});
 	it('error on non-blocking enabled', async () => {
 		const secondKeyv = new Keyv();
@@ -47,7 +47,7 @@ describe('get', () => {
 
 		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
 		await cache.set(data.key, data.value);
-		await expect(cache.ttl(data.key)).resolves.toEqual(null);
+		await expect(cache.ttl(data.key)).resolves.toBeUndefined();
 	});
 	it('gets the expiration of a key', async () => {
 		await cache.set(data.key, data.value, ttl);
@@ -66,6 +66,6 @@ describe('get', () => {
 	it('gets null of a key with nonBlocking', async () => {
 		const secondKeyv = new Keyv();
 		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
-		await expect(cache.ttl('non-block-bad-key1')).resolves.toEqual(null);
+		await expect(cache.ttl('non-block-bad-key1')).resolves.toBeUndefined();
 	});
 });

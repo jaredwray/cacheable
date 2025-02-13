@@ -31,7 +31,7 @@ describe('wrap', () => {
 		await cache.wrap(data.key, async () => data.value, ttl);
 		await expect(cache.get(data.key)).resolves.toEqual(data.value);
 		await sleep(ttl + 100);
-		await expect(cache.get(data.key)).resolves.toBeNull();
+		await expect(cache.get(data.key)).resolves.toBeUndefined();
 	});
 
 	it('ttl - function', async () => {
@@ -39,7 +39,7 @@ describe('wrap', () => {
 		await cache.wrap(data.key, async () => data.value, getTtlFunction);
 		await expect(cache.get(data.key)).resolves.toEqual(data.value);
 		await sleep(ttl + 100);
-		await expect(cache.get(data.key)).resolves.toBeNull();
+		await expect(cache.get(data.key)).resolves.toBeUndefined();
 		expect(getTtlFunction).toHaveBeenCalledTimes(1);
 	});
 
@@ -47,7 +47,7 @@ describe('wrap', () => {
 		await cache.wrap(data.key, async () => data.value, {ttl});
 		await expect(cache.get(data.key)).resolves.toEqual(data.value);
 		await sleep(ttl + 100);
-		await expect(cache.get(data.key)).resolves.toBeNull();
+		await expect(cache.get(data.key)).resolves.toBeUndefined();
 	});
 
 	it('returns single value or raw storage-data', async () => {
@@ -70,7 +70,7 @@ describe('wrap', () => {
 		const getValue = vi.fn().mockResolvedValue(data.value);
 
 		// Confirm the cache is empty.
-		await expect(cache.get(data.key)).resolves.toBeNull();
+		await expect(cache.get(data.key)).resolves.toBeUndefined();
 
 		// Simulate several concurrent requests for the same value.
 		const array = Array.from({length: 10}).fill(null);
