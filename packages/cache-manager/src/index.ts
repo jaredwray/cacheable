@@ -27,7 +27,8 @@ type WrapOptionsRaw<T> = WrapOptions<T> & {
 export type Cache = {
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	get: <T>(key: string) => Promise<T | null>;
-	mget: <T>(keys: string[]) => Promise<[T]>;
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	mget: <T>(keys: string[]) => Promise<Array<T | null>>;
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	ttl: (key: string) => Promise<number | null>;
 	set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
@@ -121,7 +122,8 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	};
 
 	const mget = async <T>(keys: string[]) => {
-		const result: (T | null)[] = [];
+		// eslint-disable-next-line @typescript-eslint/ban-types
+		const result: Array<T | null> = [];
 
 		for (const key of keys) {
 			const data = await get<T>(key);
