@@ -121,7 +121,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		return result as T;
 	};
 
-	const mget = async <T>(keys: string[]) => {
+	const mget = async <T>(keys: string[]): Promise<Array<T | null>> => {
 		// eslint-disable-next-line @typescript-eslint/ban-types
 		const result: Array<T | null> = [];
 
@@ -168,7 +168,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		return null;
 	};
 
-	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number) => {
+	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number): Promise<T> => {
 		try {
 			if (nonBlocking) {
 				// eslint-disable-next-line @typescript-eslint/no-floating-promises
