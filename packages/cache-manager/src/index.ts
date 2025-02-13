@@ -25,11 +25,9 @@ type WrapOptionsRaw<T> = WrapOptions<T> & {
 };
 
 export type Cache = {
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	get: <T>(key: string) => Promise<T | null>;
-	mget: <T>(keys: string[]) => Promise<[T]>;
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	ttl: (key: string) => Promise<number | null>;
+	get: <T>(key: string) => Promise<T | undefined>;
+	mget: <T>(keys: string[]) => Promise<Array<T | undefined>>;
+	ttl: (key: string) => Promise<number | undefined>;
 	set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
 	mset: <T>(
 		list: Array<{
@@ -89,16 +87,12 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const nonBlocking = options?.nonBlocking ?? false;
 	const _cacheId = options?.cacheId ?? Math.random().toString(36).slice(2);
 
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	const get = async <T>(key: string): Promise<T | null> => {
-		let result = null;
+	const get = async <T>(key: string): Promise<T | undefined> => {
+		let result;
 
 		if (nonBlocking) {
 			try {
 				result = await Promise.race(stores.map(async store => store.get<T>(key)));
-				if (result === undefined) {
-					return null;
-				}
 			} catch (error) {
 				eventEmitter.emit('get', {key, error});
 			}
@@ -117,11 +111,11 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			}
 		}
 
-		return result as T;
+		return result;
 	};
 
 	const mget = async <T>(keys: string[]) => {
-		const result: (T | null)[] = [];
+		const result: Array<T | undefined> = [];
 
 		for (const key of keys) {
 			const data = await get<T>(key);
@@ -131,16 +125,12 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		return result;
 	};
 
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	const ttl = async (key: string): Promise<number | null> => {
-		let result = null;
+	const ttl = async (key: string): Promise<number | undefined> => {
+		let result: StoredDataRaw<any> | undefined;
 
 		if (nonBlocking) {
 			try {
 				result = await Promise.race(stores.map(async store => store.get(key, {raw: true})));
-				if (result === undefined) {
-					return null;
-				}
 			} catch (error) {
 				eventEmitter.emit('ttl', {key, error});
 			}
@@ -163,7 +153,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			return result.expires;
 		}
 
-		return null;
+		return undefined;
 	};
 
 	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number) => {
