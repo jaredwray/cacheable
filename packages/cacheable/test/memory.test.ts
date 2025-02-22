@@ -1,6 +1,8 @@
 import {describe, test, expect} from 'vitest';
+import {faker} from '@faker-js/faker';
 import {createWrapKey} from '../src/wrap.js';
 import {CacheableMemory} from '../src/memory.js';
+import {CacheableItem} from '../src/cacheable-item-types.js';
 import {sleep} from './sleep.js';
 
 const cacheItemList = [
@@ -66,6 +68,25 @@ describe('CacheableMemory Options and Properties', () => {
 		expect(values[2].value).toBe('value1');
 		expect(values[3].value).toBe('value');
 		expect(values[4].value).toBe('value2');
+	});
+	test('should be able to iterate over cache items', () => {
+		const cache = new CacheableMemory();
+		const list = [];
+
+		for (let i = 0; i < 5; i++) {
+			list.push({key: faker.string.alphanumeric(5), value: faker.string.alphanumeric(5)});
+		}
+
+		cache.setMany(list);
+
+		const itemResultList = [];
+
+		for (const item of cache.items) {
+			expect(item).toBeDefined();
+			itemResultList.push(item);
+		}
+
+		expect(itemResultList.length).toBe(5);
 	});
 	test('should be able to set clone', () => {
 		const cache = new CacheableMemory({useClone: true});
