@@ -17,7 +17,7 @@
   "license": "MIT",
   "devDependencies": {
     "c8": "^10.1.3",
-    "vitest": "^3.0.4",
+    "vitest": "^3.0.7",
     "wrangler": "^3.105.1"
   },
   "pnpm": {
