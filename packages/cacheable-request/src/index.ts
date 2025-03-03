@@ -204,7 +204,7 @@ class CacheableRequest {
 				if (policy.satisfiesWithoutRevalidation(options_) && !options_.forceRefresh) {
 					const headers = convertHeaders(policy.responseHeaders());
 					const bodyBuffer = (cacheEntry as CacheValue).body;
-					const body = Buffer.from(bodyBuffer);
+					const body = Buffer.from(bodyBuffer as string);
 					const response: any = new Response({
 						statusCode: (cacheEntry as CacheValue).statusCode,
 						headers,
