@@ -203,11 +203,12 @@ class CacheableRequest {
 				const policy = CachePolicy.fromObject((cacheEntry as CacheValue).cachePolicy);
 				if (policy.satisfiesWithoutRevalidation(options_) && !options_.forceRefresh) {
 					const headers = convertHeaders(policy.responseHeaders());
-					const bodyBuffer = Buffer.from((cacheEntry as CacheValue).body);
+					const bodyBuffer = (cacheEntry as CacheValue).body;
+					const body = Buffer.from(bodyBuffer);
 					const response: any = new Response({
 						statusCode: (cacheEntry as CacheValue).statusCode,
 						headers,
-						body: bodyBuffer,
+						body,
 						url: (cacheEntry as CacheValue).url,
 					});
 					response.cachePolicy = policy;
