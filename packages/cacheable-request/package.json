@@ -19,8 +19,7 @@
 		"test": "xo --fix && vitest run --coverage",
 		"test:ci": "xo && vitest run",
 		"prepublish": "pnpm run build",
-		"build": "rimraf ./dist && tsup src/index.ts --format esm --dts --clean",
-		"build2": "tsc --project tsconfig.build.json",
+		"build": "rimraf ./dist && tsc --project tsconfig.build.json",
 		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"
 	},
 	"files": [
