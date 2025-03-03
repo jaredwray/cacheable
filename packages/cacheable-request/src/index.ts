@@ -3,7 +3,6 @@ import urlLib from 'node:url';
 import crypto from 'node:crypto';
 import stream, {PassThrough as PassThroughStream} from 'node:stream';
 import {IncomingMessage} from 'node:http';
-import process from 'node:process';
 import normalizeUrl from 'normalize-url';
 import {getStreamAsBuffer} from 'get-stream';
 import CachePolicy from 'http-cache-semantics';
@@ -90,7 +89,7 @@ class CacheableRequest {
 		const makeRequest = (options_: any) => {
 			madeRequest = true;
 			let requestErrored = false;
-			let requestErrorCallback: (...arguments_: any[]) => void = () => {/* do nothing */};
+			let requestErrorCallback: (...arguments_: any[]) => void = () => {/* do nothing */ };
 
 			const requestErrorPromise = new Promise<void>(resolve => {
 				requestErrorCallback = () => {
@@ -285,13 +284,13 @@ const urlObjectToRequestOptions = (url: any) => {
 };
 
 const normalizeUrlObject = (url: any) =>
-	// If url was parsed by url.parse or new URL:
-	// - hostname will be set
-	// - host will be hostname[:port]
-	// - port will be set if it was explicit in the parsed string
-	// Otherwise, url was from request options:
-	// - hostname or host may be set
-	// - host shall not have port encoded
+// If url was parsed by url.parse or new URL:
+// - hostname will be set
+// - host will be hostname[:port]
+// - port will be set if it was explicit in the parsed string
+// Otherwise, url was from request options:
+// - hostname or host may be set
+// - host shall not have port encoded
 	({
 		protocol: url.protocol,
 		auth: url.auth,
