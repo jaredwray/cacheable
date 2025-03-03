@@ -1,6 +1,6 @@
 {
 	"name": "cacheable",
-	"version": "1.8.8",
+	"version": "1.8.9",
 	"description": "High Performance Layer 1 / Layer 2 Caching with Keyv Storage",
 	"type": "module",
 	"main": "./dist/index.cjs",
