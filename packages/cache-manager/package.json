@@ -60,7 +60,7 @@
     "keyv": "^5.2.3"
   },
   "devDependencies": {
-    "@faker-js/faker": "^9.4.0",
+    "@faker-js/faker": "^9.5.1",
     "@keyv/redis": "^4.2.0",
     "@types/node": "^22.10.10",
     "@vitest/coverage-v8": "^3.0.7",
