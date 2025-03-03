@@ -19,8 +19,7 @@
 		"test": "xo --fix && vitest run --coverage",
 		"test:ci": "xo && vitest run",
 		"prepublish": "pnpm run build",
-		"build": "rimraf ./dist && tsup src/index.ts --format esm --dts --clean",
-		"build2": "tsc --project tsconfig.build.json",
+		"build": "rimraf ./dist && tsc --project tsconfig.build.json",
 		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"
 	},
 	"files": [
@@ -46,7 +45,7 @@
 		"@types/http-cache-semantics": "^4.0.4",
 		"get-stream": "^9.0.1",
 		"http-cache-semantics": "^4.1.1",
-		"keyv": "^5.2.3",
+		"keyv": "^5.3.1",
 		"mimic-response": "^4.0.0",
 		"normalize-url": "^8.0.1",
 		"responselike": "^3.0.0"
