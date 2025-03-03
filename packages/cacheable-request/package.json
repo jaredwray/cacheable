@@ -7,7 +7,7 @@
 		"type": "git",
 		"url": "git+https://github.com/jaredwray/cacheable.git",
 		"directory": "packages/cacheable-request"
-    },
+	},
 	"author": "Jared Wray <me@jaredwray.com> (http://jaredwray.com)",
 	"type": "module",
 	"exports": "./dist/index.js",
@@ -19,7 +19,8 @@
 		"test": "xo --fix && vitest run --coverage",
 		"test:ci": "xo && vitest run",
 		"prepublish": "pnpm run build",
-		"build": "tsc --project tsconfig.build.json",
+		"build": "rimraf ./dist && tsup src/index.ts --format esm --dts --clean",
+		"build2": "tsc --project tsconfig.build.json",
 		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"
 	},
 	"files": [
@@ -62,12 +63,13 @@
 		"pify": "^6.1.0",
 		"rimraf": "^6.0.1",
 		"sqlite3": "^5.1.7",
+		"tsup": "^8.3.6",
 		"typescript": "^5.7.3",
 		"vitest": "^3.0.4",
 		"xo": "^0.60.0"
 	},
 	"xo": {
-	"rules": {
+		"rules": {
 			"@typescript-eslint/triple-slash-reference": 0,
 			"@typescript-eslint/no-namespace": 0,
 			"@typescript-eslint/no-unsafe-assignment": 0,
