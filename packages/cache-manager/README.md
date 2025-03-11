@@ -24,6 +24,47 @@ If you are looking for older documentation you can find it here:
 * [v5 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv5.md)
 * [v4 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv4.md)
 
+# Migration from v5 to v6
+
+`v6` is a major update and has breaking changes primarily around the storage adapters. We have moved to using [Keyv](https://keyv.org/) which are more actively maintained and have a larger community. Below are the changes you need to make to migrate from `v5` to `v6`. In `v5` the `memoryStore` was used to create a memory store, in `v6` you can use any storage adapter that Keyv supports. Below is an example of how to migrate from `v5` to `v6`:
+
+```ts
+import { createCache, memoryStore } from 'cache-manager';
+
+// Create memory cache synchronously
+const memoryCache = createCache(memoryStore({
+  max: 100,
+  ttl: 10 * 1000 /*milliseconds*/,
+}));
+```
+
+In `v6` you can use any storage adapter that Keyv supports. Below is an example of how to migrate from `v5` to `v6` using `CacheableMemory` from Cacheable:
+
+```ts
+import { createCache } from 'cache-manager';
+import { Keyv } from 'keyv';
+
+const cache = createCache({
+  stores: [new Keyv()],
+});
+```
+
+If you would like a more robust in memory storage adapter you can use `CacheableMemory` from Cacheable. Below is an example of how to migrate from `v5` to `v6` using `CacheableMemory`:
+
+```ts
+import { createCache } from 'cache-manager';
+import { KeyvCacheableMemory } from 'cacheable';
+
+const cache = createCache({
+  stores: [new KeyvCacheableMemory({ ttl: 60000, lruSize: 5000 })],
+});
+```
+
+To learn more about `CacheableMemory` please visit: http://cacheable.org/docs/cacheable/#cacheablememory---in-memory-cache
+
+If you are still wanting to use the legacy storage adapters you can use the `KeyvAdapter` to wrap the storage adapter. Below is an example of how to migrate from `v5` to `v6` using `cache-manager-redis-yet` by going to [Using Legacy Storage Adapters](#using-legacy-storage-adapters).
+
+
 ## Table of Contents
 * [Installation](#installation)
 * [Quick start](#quick-start)
