@@ -9,6 +9,7 @@
     "test:services:start": "docker compose up -d",
     "test:services:stop": "docker compose down",
     "website:build": "pnpm recursive --filter @cacheable/website run website:build",
+    "website:serve": "pnpm recursive --filter @cacheable/website run website:serve",
     "build": "pnpm recursive run build",
     "clean": "pnpm recursive run clean"
   },
