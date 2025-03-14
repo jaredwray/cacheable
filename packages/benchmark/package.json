@@ -1,0 +1,55 @@
+{
+	"name": "@cacheable/benchmark",
+	"version": "1.0.0",
+	"description": "Cacheable Benchmark Library",
+	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.js"
+		}
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jaredwray/cacheable.git",
+		"directory": "packages/node-cache"
+	},
+	"author": "Jared Wray <me@jaredwray.com>",
+	"license": "MIT",
+	"private": false,
+	"keywords": [
+		"cache",
+		"caching",
+		"benchmark",
+		"node",
+		"nodejs",
+		"cacheable",
+		"cacheable-benchmark"
+	],
+	"scripts": {
+		"build": "echo 'no build needed'",
+		"prepublish": "pnpm build",
+		"test": "echo 'no tests needed'",
+		"test:ci": "echo 'no tests needed'",
+		"clean": "rimraf ./dist ./coverage ./node_modules"
+	},
+	"dependencies": {
+		"@faker-js/faker": "^9.5.1",
+		"@monstermann/tinybench-pretty-printer": "^0.0.0",
+		"cache-manager": "workspace:^",
+		"cacheable": "workspace:^",
+		"lru.min": "^1.1.2",
+		"quick-lru": "^7.0.0",
+		"tinybench": "^3.1.1"
+	},
+	"files": [
+		"dist",
+		"license"
+	],
+	"devDependencies": {
+		"tsx": "^4.19.2"
+	}
+}
