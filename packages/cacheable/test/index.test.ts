@@ -397,6 +397,39 @@ describe('cacheable set and get with ttl', async () => {
 			expect(result2, 'result should have expired').toBeUndefined();
 		});
 
+		test('should not return a value from the secondary store or set it in the primary store when the value is expired in the secondary store', async () => {
+			const instance1Primary = new Keyv();
+			const instance2Primary = new Keyv();
+
+			// A custom Keyv class designed return an expired value
+			class CustomKeyv<T> extends Keyv<T> {
+				async get(key: string | string[], options?: {raw?: boolean}): Promise<any> {
+					const value = await super.get(key as unknown as string, options?.raw ? {raw: true} : undefined);
+
+					await sleep(1000);
+
+					return value;
+				}
+			}
+			const sharedSecondary = new CustomKeyv();
+
+			const instance1 = new Cacheable({primary: instance1Primary, secondary: sharedSecondary});
+			const instance2 = new Cacheable({primary: instance2Primary, secondary: sharedSecondary});
+
+			// Set the value in the secondary store
+			await instance1.set('key', 'value', 500);
+
+			await sleep(100);
+
+			// Get the value in the second instance
+			const result = await instance2.get('key');
+			expect(result, 'result should have expired').toBeUndefined();
+
+			// Get the value in the primary store
+			const result2 = await instance2Primary.get('key') as unknown;
+			expect(result2, 'result should not be placed in the primary store').toBeUndefined();
+		});
+
 		test.todo('what\'s the expected behavior when we set an item in the first instance with no ttl, and then get it from the second instance with a ttl?');
 	});
 });
