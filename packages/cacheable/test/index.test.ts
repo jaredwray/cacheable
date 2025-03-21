@@ -345,6 +345,32 @@ describe('cacheable set and get with ttl', async () => {
 			expect(result2, 'result should have expired').toBeUndefined();
 		});
 
+		test('should get a value from the secondary store and respect its zero-ttl when setting the value in the primary store (item specific zero-ttl)', async () => {
+			const instance1Primary = new Keyv();
+			const instance2Primary = new Keyv();
+
+			const sharedSecondary = new Keyv();
+
+			const instance1 = new Cacheable({primary: instance1Primary, secondary: sharedSecondary, ttl: 500});
+			const instance2 = new Cacheable({primary: instance2Primary, secondary: sharedSecondary, ttl: 500});
+
+			// Set the value in the first instance
+			await instance1.set('key', 'value', 0);
+
+			await sleep(100);
+
+			// Get the value in the second instance
+			const result = await instance2.get('key');
+			expect(result).toEqual('value');
+
+			// Wait past the time of the default TTL of 500ms
+			await sleep(700);
+
+			// Get the value in the second instance (it should be valid)
+			const result2 = await instance2.get('key');
+			expect(result2).toEqual('value');
+		});
+
 		test('should get a value from the secondary store and respect its ttl when setting the value in the primary store (default ttl when setting)', async () => {
 			const instance1Primary = new Keyv();
 			const instance2Primary = new Keyv();
@@ -371,6 +397,32 @@ describe('cacheable set and get with ttl', async () => {
 			expect(result2, 'result should have expired').toBeUndefined();
 		});
 
+		test('should get a value from the secondary store and respect its zero-ttl when setting the value in the primary store (default zero-ttl when setting)', async () => {
+			const instance1Primary = new Keyv();
+			const instance2Primary = new Keyv();
+
+			const sharedSecondary = new Keyv();
+
+			const instance1 = new Cacheable({primary: instance1Primary, secondary: sharedSecondary, ttl: 0});
+			const instance2 = new Cacheable({primary: instance2Primary, secondary: sharedSecondary, ttl: 500});
+
+			// Set the value in the first instance
+			await instance1.set('key', 'value');
+
+			await sleep(100);
+
+			// Get the value in the second instance
+			const result = await instance2.get('key');
+			expect(result).toEqual('value');
+
+			// Wait past instance2's default TTL of 500ms
+			await sleep(700);
+
+			// Get the value in the second instance (it should be valid)
+			const result2 = await instance2.get('key');
+			expect(result2).toEqual('value');
+		});
+
 		test('should get a value from the secondary store and respect its ttl when setting the value in the primary store (default ttl when setting in the first instance, despite alternative ttl when getting in the second instance)', async () => {
 			const instance1Primary = new Keyv();
 			const instance2Primary = new Keyv();
@@ -395,6 +447,32 @@ describe('cacheable set and get with ttl', async () => {
 			// Get the value in the second instance (it should be expired)
 			const result2 = await instance2.get('key');
 			expect(result2, 'result should have expired').toBeUndefined();
+		});
+
+		test('should get a value from the secondary store and respect its zero-ttl when setting the value in the primary store (default zero-ttl when setting in the first instance, despite alternative ttl when getting in the second instance)', async () => {
+			const instance1Primary = new Keyv();
+			const instance2Primary = new Keyv();
+
+			const sharedSecondary = new Keyv();
+
+			const instance1 = new Cacheable({primary: instance1Primary, secondary: sharedSecondary, ttl: 0});
+			const instance2 = new Cacheable({primary: instance2Primary, secondary: sharedSecondary, ttl: 500});
+
+			// Set the value in the first instance
+			await instance1.set('key', 'value');
+
+			await sleep(100);
+
+			// Get the value in the second instance
+			const result = await instance2.get('key');
+			expect(result).toEqual('value');
+
+			// Wait past instance2's default TTL of 500ms
+			await sleep(700);
+
+			// Get the value in the second instance (it should be valid)
+			const result2 = await instance2.get('key');
+			expect(result2).toEqual('value');
 		});
 
 		test('should not return a value from the secondary store or set it in the primary store when the value is expired in the secondary store', async () => {
@@ -429,8 +507,6 @@ describe('cacheable set and get with ttl', async () => {
 			const result2 = await instance2Primary.get('key') as unknown;
 			expect(result2, 'result should not be placed in the primary store').toBeUndefined();
 		});
-
-		test.todo('what\'s the expected behavior when we set an item in the first instance with no ttl, and then get it from the second instance with a ttl?');
 	});
 });
 
