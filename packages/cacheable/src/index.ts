@@ -301,8 +301,22 @@ export class Cacheable extends Hookified {
 				const rawResult = await this._secondary.get(key, {raw: true});
 				if (rawResult) {
 					result = rawResult.value as T;
-					const finalTtl = rawResult.expires ?? undefined;
-					await this._primary.set(key, result, finalTtl);
+
+					let finalTtl;
+					let expired = false;
+					if (rawResult.expires) {
+						const now = Date.now();
+						finalTtl = rawResult.expires - now;
+						if (finalTtl <= 0) {
+							expired = true;
+						}
+					}
+
+					if (expired) {
+						result = undefined;
+					} else {
+						await this._primary.set(key, result, finalTtl);
+					}
 				}
 			}
 
