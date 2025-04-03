@@ -34,6 +34,7 @@
 		"prepublish": "pnpm build",
 		"test": "echo 'no tests needed'",
 		"test:ci": "echo 'no tests needed'",
+		"benchmark:memory": "tsx ./memory.ts",
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"dependencies": {
@@ -43,7 +44,7 @@
 		"cacheable": "workspace:^",
 		"lru.min": "^1.1.2",
 		"quick-lru": "^7.0.0",
-		"tinybench": "^3.1.1"
+		"tinybench": "^4.0.1"
 	},
 	"files": [
 		"dist",
