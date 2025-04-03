@@ -55,7 +55,7 @@
 		"@types/node": "^22.13.9",
 		"@types/responselike": "^1.0.3",
 		"@types/sqlite3": "^5.1.0",
-		"@vitest/coverage-v8": "^3.0.7",
+		"@vitest/coverage-v8": "^3.1.1",
 		"body-parser": "^1.20.3",
 		"delay": "^6.0.0",
 		"express": "^4.21.2",
@@ -64,7 +64,7 @@
 		"sqlite3": "^5.1.7",
 		"tsup": "^8.4.0",
 		"typescript": "^5.8.2",
-		"vitest": "^3.0.7",
+		"vitest": "^3.1.1",
 		"xo": "^0.60.0"
 	},
 	"xo": {
