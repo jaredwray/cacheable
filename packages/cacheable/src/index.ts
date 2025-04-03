@@ -307,6 +307,7 @@ export class Cacheable extends Hookified {
 					if (rawResult.expires) {
 						const now = Date.now();
 						finalTtl = rawResult.expires - now;
+						// eslint-disable-next-line max-depth
 						if (finalTtl <= 0) {
 							expired = true;
 						}

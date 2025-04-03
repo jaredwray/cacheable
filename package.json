@@ -19,7 +19,7 @@
   "devDependencies": {
     "c8": "^10.1.3",
     "vitest": "^3.0.7",
-    "wrangler": "^3.111.0"
+    "wrangler": "^4.7.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
