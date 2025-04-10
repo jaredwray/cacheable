@@ -365,6 +365,7 @@ export class CacheableMemory extends Hookified {
 	public delete(key: string): void {
 		const store = this.getStore(key);
 		store.delete(key);
+		this._hashCache.delete(key);
 	}
 
 	/**
@@ -462,8 +463,8 @@ export class CacheableMemory extends Hookified {
 	 * @returns {number} from 0 to 9
 	 */
 	public hashKey(key: string): number {
-		const cacheHashNumber = this._hashCache.get(key)!;
-		if (cacheHashNumber) {
+		const cacheHashNumber = this._hashCache.get(key);
+		if (typeof cacheHashNumber === 'number') {
 			return cacheHashNumber;
 		}
 
