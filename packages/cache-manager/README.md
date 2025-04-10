@@ -49,6 +49,22 @@ const cache = createCache({
 });
 ```
 
+When doing in memory caching and getting errors on `symbol` or if the object is coming back wrong like on `Uint8Array` you will want to set the `serialization` and `deserialization` options in Keyv to `undefined` as it will try to do json serialization. 
+
+```ts
+import { createCache } from "cache-manager";
+import { Keyv } from "keyv";
+
+const keyv = new Keyv();
+keyv.serialize = undefined;
+keyv.deserialize = undefined;
+
+const memoryCache = createCache({
+	stores: [keyv],
+});
+```
+The other option is to set the serialization to something that is not `JSON.stringify`. You can read more about it here: https://keyv.org/docs/keyv/#custom-serializers
+
 If you would like a more robust in memory storage adapter you can use `CacheableMemory` from Cacheable. Below is an example of how to migrate from `v5` to `v6` using `CacheableMemory`:
 
 ```ts
