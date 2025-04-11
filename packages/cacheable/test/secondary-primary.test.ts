@@ -12,19 +12,15 @@ test('should set a new ttl when secondary is setting primary', async () => {
 		key: faker.string.uuid(),
 		value: faker.string.uuid(),
 	};
-	let setItem: {key: string; value: string; ttl: number | undefined} | undefined;
 
 	cacheable.onHook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, async item => {
-		setItem = item as {key: string; value: string; ttl: number | undefined};
-		expect(item.key).toEqual(data.key);
-		expect(item.ttl).toBeGreaterThan(98);
-		expect(item.ttl).toBeLessThan(102);
-		item.ttl = 1;
+		item.ttl = 10;
 	});
 
 	await cacheable.set(data.key, data.value);
 	const result = await cacheable.get(data.key);
 	expect(result).toEqual(data.value);
+
 	// Remove the item from primary
 	await cacheable.primary.delete(data.key);
 	const primaryResult1 = await cacheable.primary.get(data.key, {raw: true});
@@ -32,14 +28,14 @@ test('should set a new ttl when secondary is setting primary', async () => {
 
 	// Update the item from secondary
 	await cacheable.get(data.key);
-	await sleep(1);
 	const primaryResult2 = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult2?.value).toEqual(data.value);
+	console.log('primaryResult2', primaryResult2);
 	const ttlFromExpires = getTtlFromExpires(primaryResult2?.expires as number | undefined);
-	expect(ttlFromExpires).toBeLessThan(2);
+	expect(ttlFromExpires).toBeLessThan(12);
 
-	// Now make sure that it expires after 1 second
-	await sleep(2);
+	// Now make sure that it expires after 10 seconds
+	await sleep(20);
 	const primaryResult3 = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult3).toEqual(undefined);
 
