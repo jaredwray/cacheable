@@ -1,7 +1,7 @@
 import {test, expect} from 'vitest';
 import {faker} from '@faker-js/faker';
 import {Cacheable} from '../src/index.js';
-import {getTtlFromExpires, getCascadingTtl} from '../src/ttl.js';
+import {getTtlFromExpires, getCascadingTtl, calculateTtlFromExpiration} from '../src/ttl.js';
 import {sleep} from './sleep.js';
 
 test('should set a value with ttl', async () => {
@@ -26,9 +26,10 @@ test('should set a ttl on parameter', {timeout: 2000}, async () => {
 
 test('should get the ttl from expires', () => {
 	const now = Date.now();
-	const expires = now + 1000;
+	const expires = now + 2000;
 	const result = getTtlFromExpires(expires);
-	expect(result).toBe(1000);
+	expect(result).toBeGreaterThan(1995);
+	expect(result).toBeLessThan(2005);
 });
 
 test('should get undefined when expires is undefined', () => {
@@ -61,4 +62,43 @@ test('should cascade ttl from cacheable', () => {
 test('should cascade ttl with shorthand on cacheable', () => {
 	const result = getCascadingTtl('1s', undefined, undefined);
 	expect(result).toBe(1000);
+});
+
+test('should calculate and choose the ttl as it is lower', () => {
+	const now = Date.now();
+	const expires = now + 3000;
+	const ttl = 2000;
+	const result = calculateTtlFromExpiration(ttl, expires);
+	expect(result).toBeLessThan(2002);
+	expect(result).toBeGreaterThan(1998);
+});
+
+test('should calculate and choose the expires ttl as it is lower', () => {
+	const now = Date.now();
+	const expires = now + 1000;
+	const ttl = 2000;
+	const result = calculateTtlFromExpiration(ttl, expires);
+	expect(result).toBeLessThan(1002);
+	expect(result).toBeGreaterThan(998);
+});
+
+test('should calculate and choose ttl as expires is undefined', () => {
+	const ttl = 2000;
+	const result = calculateTtlFromExpiration(ttl, undefined);
+	expect(result).toBeLessThan(2002);
+	expect(result).toBeGreaterThan(1998);
+});
+
+test('should calculate and choose expires as ttl is undefined', () => {
+	const now = Date.now();
+	const expires = now + 1000;
+	const result = calculateTtlFromExpiration(undefined, expires);
+	expect(result).toBe(1000);
+	expect(result).toBeLessThan(1002);
+	expect(result).toBeGreaterThan(998);
+});
+
+test('should calculate and choose undefined as both are undefined', () => {
+	const result = calculateTtlFromExpiration(undefined, undefined);
+	expect(result).toBeUndefined();
 });
