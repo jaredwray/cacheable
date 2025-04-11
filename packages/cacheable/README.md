@@ -38,8 +38,8 @@
 * [CacheableMemory - In-Memory Cache](#cacheablememory---in-memory-cache)
 * [CacheableMemory Options](#cacheablememory-options)
 * [CacheableMemory - API](#cacheablememory---api)
-* [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
 * [Keyv Storage Adapter - KeyvCacheableMemory](#keyv-storage-adapter---keyvcacheablememory)
+* [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -289,6 +289,20 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 * `stopIntervalCheck()`: Stops the interval check for expired keys.
 * `hash(object: any, algorithm = 'sha256'): string`: Hashes an object with the algorithm. Default is `sha256`.
 
+# Keyv Storage Adapter - KeyvCacheableMemory
+
+`cacheable` comes with a built-in storage adapter for Keyv called `KeyvCacheableMemory`. This takes `CacheableMemory` and creates a storage adapter for Keyv. This is useful if you want to use `CacheableMemory` as a storage adapter for Keyv. Here is an example of how to use `KeyvCacheableMemory`:
+
+```javascript
+import { Keyv } from 'keyv';
+import { KeyvCacheableMemory } from 'cacheable';
+
+const keyv = new Keyv({ store: new KeyvCacheableMemory() });
+await keyv.set('foo', 'bar');
+const value = await keyv.get('foo');
+console.log(value); // bar 
+```
+
 # Wrap / Memoization for Sync and Async Functions
 
 `Cacheable` and `CacheableMemory` has a feature called `wrap` that allows you to wrap a function in a cache. This is useful for memoization and caching the results of a function. You can wrap a `sync` or `async` function in a cache. Here is an example of how to use the `wrap` function:
@@ -361,20 +375,6 @@ const cache = new CacheableMemory();
 const wrappedFunction = cache.wrap(syncFunction, { ttl: '1h', key: 'syncFunction', cacheError: true });
 console.log(wrappedFunction()); // error
 console.log(wrappedFunction()); // error from cache
-```
-
-# Keyv Storage Adapter - KeyvCacheableMemory
-
-`cacheable` comes with a built-in storage adapter for Keyv called `KeyvCacheableMemory`. This takes `CacheableMemory` and creates a storage adapter for Keyv. This is useful if you want to use `CacheableMemory` as a storage adapter for Keyv. Here is an example of how to use `KeyvCacheableMemory`:
-
-```javascript
-import { Keyv } from 'keyv';
-import { KeyvCacheableMemory } from 'cacheable';
-
-const keyv = new Keyv({ store: new KeyvCacheableMemory() });
-await keyv.set('foo', 'bar');
-const value = await keyv.get('foo');
-console.log(value); // bar 
 ```
 
 # How to Contribute
