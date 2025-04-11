@@ -1,7 +1,7 @@
 import {shorthandToMilliseconds} from '../src/shorthand-time.js';
 
 export function getTtlFromExpires(expires: number | undefined): number | undefined {
-	if (expires === undefined) {
+	if (expires === undefined || expires === null) {
 		return undefined;
 	}
 

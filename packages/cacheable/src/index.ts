@@ -1,4 +1,4 @@
-import {Keyv, type KeyvStoreAdapter} from 'keyv';
+import {Keyv, type StoredDataRaw, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
 import {shorthandToMilliseconds} from './shorthand-time.js';
 import {createKeyv} from './keyv-memory.js';
@@ -6,6 +6,7 @@ import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
 import {wrap, type WrapFunctionOptions} from './wrap.js';
+import {getCascadingTtl, calculateTtlFromExpiration} from './ttl.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -287,18 +288,10 @@ export class Cacheable extends Hookified {
 		return this._namespace;
 	}
 
-	public calculateTtlFromExpiration(primaryTtl: number, expiration: number): number {
-		let result = expiration - Date.now();
-		if (result > 0) {
-			if (primaryTtl && expiration) {
-				const primaryExpiration = primaryTtl + Date.now();
-
-				if (expiration > primaryExpiration) {
-					result = primaryTtl;
-				}
-			}
-		} else {
-			result = 0;
+	public async getSecondaryRawResults<T>(key: string): Promise<StoredDataRaw<T> | undefined> {
+		let result;
+		if (this._secondary) {
+			result = await this._secondary.get(key, {raw: true});
 		}
 
 		return result;
@@ -315,32 +308,13 @@ export class Cacheable extends Hookified {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
 			result = await this._primary.get(key) as T;
 			if (!result && this._secondary) {
-				const rawResult = await this._secondary.get(key, {raw: true});
-				if (rawResult) {
-					result = rawResult.value as T;
-
-					let finalTtl;
-					let expired = false;
-					if (rawResult.expires) {
-						const now = Date.now();
-						finalTtl = rawResult.expires - now;
-						// eslint-disable-next-line max-depth
-						if (finalTtl <= 0) {
-							expired = true;
-						}
-					}
-
-					if (expired) {
-						result = undefined;
-					} else {
-						const primaryTtl = this._primary.ttl ?? shorthandToMilliseconds(this._ttl);
-						// eslint-disable-next-line max-depth
-						if (primaryTtl && rawResult.expires) {
-							finalTtl = this.calculateTtlFromExpiration(primaryTtl, rawResult.expires);
-						}
-
-						await this._primary.set(key, result, finalTtl);
-					}
+				const secondaryResult = await this.getSecondaryRawResults<T>(key);
+				if (secondaryResult) {
+					result = secondaryResult.value as T;
+					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+					const expires = secondaryResult.expires as number | undefined;
+					const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+					await this._primary.set(key, result, ttl);
 				}
 			}
 
