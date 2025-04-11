@@ -300,6 +300,16 @@ describe('cacheable get method', async () => {
 		const primaryResult = await cacheable.primary.get<string>('key1');
 		expect(primaryResult).toEqual('value1');
 	});
+
+	test('should no values from secondary secondary', async () => {
+		const keyv = new Keyv();
+		const cacheable = new Cacheable({secondary: keyv});
+		await cacheable.setMany([{key: 'key1', value: 'value1'}, {key: 'key2', value: 'value2'}]);
+		const result = await cacheable.getMany(['key1', 'key2']);
+		expect(result).toEqual(['value1', 'value2']);
+		const result2 = await cacheable.getMany(['key1', 'key4']);
+		expect(result2).toEqual(['value1', undefined]);
+	});
 });
 
 describe('cacheable has method', async () => {

@@ -297,6 +297,16 @@ export class Cacheable extends Hookified {
 		return result;
 	}
 
+	public async getManySecondaryRawResults<T>(keys: string[]): Promise<Array<StoredDataRaw<T>>> {
+		let result = new Array<StoredDataRaw<T>>();
+
+		if (this._secondary) {
+			result = await this._secondary.get(keys, {raw: true});
+		}
+
+		return result;
+	}
+
 	/**
 	 * Gets the value of the key. If the key does not exist in the primary store then it will check the secondary store.
 	 * @param {string} key The key to get the value of
@@ -354,14 +364,17 @@ export class Cacheable extends Hookified {
 					}
 				}
 
-				const secondaryResult = await this._secondary.get(missingKeys) as Array<T | undefined>;
-				for (const [i, key] of keys.entries()) {
-					if (!result[i] && secondaryResult[i]) {
-						result[i] = secondaryResult[i];
+				const secondaryResults = await this.getManySecondaryRawResults<T>(missingKeys);
 
-						const finalTtl = shorthandToMilliseconds(this._ttl);
+				for (const [i, key] of keys.entries()) {
+					if (!result[i] && secondaryResults[i]) {
+						result[i] = secondaryResults[i].value as T;
+
+						const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+						const expires = secondaryResults[i].expires as number | undefined;
+						const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 						// eslint-disable-next-line no-await-in-loop
-						await this._primary.set(key, secondaryResult[i], finalTtl);
+						await this._primary.set(key, result[i], ttl);
 					}
 				}
 			}
