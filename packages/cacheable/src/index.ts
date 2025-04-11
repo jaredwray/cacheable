@@ -287,6 +287,23 @@ export class Cacheable extends Hookified {
 		return this._namespace;
 	}
 
+	public calculateTtlFromExpiration(primaryTtl: number, expiration: number): number {
+		let result = expiration - Date.now();
+		if (result > 0) {
+			if (primaryTtl && expiration) {
+				const primaryExpiration = primaryTtl + Date.now();
+
+				if (expiration > primaryExpiration) {
+					result = primaryTtl;
+				}
+			}
+		} else {
+			result = 0;
+		}
+
+		return result;
+	}
+
 	/**
 	 * Gets the value of the key. If the key does not exist in the primary store then it will check the secondary store.
 	 * @param {string} key The key to get the value of
@@ -316,6 +333,12 @@ export class Cacheable extends Hookified {
 					if (expired) {
 						result = undefined;
 					} else {
+						const primaryTtl = this._primary.ttl ?? shorthandToMilliseconds(this._ttl);
+						// eslint-disable-next-line max-depth
+						if (primaryTtl && rawResult.expires) {
+							finalTtl = this.calculateTtlFromExpiration(primaryTtl, rawResult.expires);
+						}
+
 						await this._primary.set(key, result, finalTtl);
 					}
 				}
