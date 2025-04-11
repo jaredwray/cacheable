@@ -1,6 +1,7 @@
 import {test, expect} from 'vitest';
 import {faker} from '@faker-js/faker';
 import {Cacheable} from '../src/index.js';
+import {getTtlFromExpires} from '../src/ttl.js';
 import {sleep} from './sleep.js';
 
 test('should set a value with ttl', async () => {
@@ -21,4 +22,23 @@ test('should set a ttl on parameter', {timeout: 2000}, async () => {
 	await sleep(100);
 	const result = await cacheable.get('key');
 	expect(result).toEqual('value');
+});
+
+test('should get the ttl from expires', () => {
+	const now = Date.now();
+	const expires = now + 1000;
+	const result = getTtlFromExpires(expires);
+	expect(result).toBe(1000);
+});
+
+test('should get undefined when expires is undefined', () => {
+	const result = getTtlFromExpires(undefined);
+	expect(result).toBeUndefined();
+});
+
+test('should get undefined when expires is in the past', () => {
+	const now = Date.now();
+	const expires = now - 1000;
+	const result = getTtlFromExpires(expires);
+	expect(result).toBeUndefined();
 });
