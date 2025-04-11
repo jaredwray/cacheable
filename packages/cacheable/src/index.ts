@@ -17,6 +17,7 @@ export enum CacheableHooks {
 	AFTER_GET = 'AFTER_GET',
 	BEFORE_GET_MANY = 'BEFORE_GET_MANY',
 	AFTER_GET_MANY = 'AFTER_GET_MANY',
+	BEFORE_SECONDARY_SETS_PRIMARY = 'BEFORE_SECONDARY_SETS_PRIMARY',
 }
 
 export enum CacheableEvents {
@@ -305,7 +306,9 @@ export class Cacheable extends Hookified {
 					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 					const expires = secondaryResult.expires as number | undefined;
 					const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
-					await this._primary.set(key, result, ttl);
+					const setItem = {key, value: result, ttl};
+					await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
+					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
 				}
 			}
 
@@ -354,8 +357,11 @@ export class Cacheable extends Hookified {
 						const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 						const expires = secondaryResults[i].expires as number | undefined;
 						const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+						const setItem = {key, value: result[i], ttl};
 						// eslint-disable-next-line no-await-in-loop
-						await this._primary.set(key, result[i], ttl);
+						await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
+						// eslint-disable-next-line no-await-in-loop
+						await this._primary.set(setItem.key, setItem.value, setItem.ttl);
 					}
 				}
 			}
