@@ -1,7 +1,7 @@
 import {test, expect} from 'vitest';
 import {faker} from '@faker-js/faker';
 import {Cacheable} from '../src/index.js';
-import {getTtlFromExpires} from '../src/ttl.js';
+import {getTtlFromExpires, getCascadingTtl} from '../src/ttl.js';
 import {sleep} from './sleep.js';
 
 test('should set a value with ttl', async () => {
@@ -41,4 +41,24 @@ test('should get undefined when expires is in the past', () => {
 	const expires = now - 1000;
 	const result = getTtlFromExpires(expires);
 	expect(result).toBeUndefined();
+});
+
+test('should cascade ttl from secondary', () => {
+	const result = getCascadingTtl(1000, undefined, 3000);
+	expect(result).toBe(3000);
+});
+
+test('should cascade ttl from primary', () => {
+	const result = getCascadingTtl(1000, 2000);
+	expect(result).toBe(2000);
+});
+
+test('should cascade ttl from cacheable', () => {
+	const result = getCascadingTtl(1000, undefined, undefined);
+	expect(result).toBe(1000);
+});
+
+test('should cascade ttl with shorthand on cacheable', () => {
+	const result = getCascadingTtl('1s', undefined, undefined);
+	expect(result).toBe(1000);
 });

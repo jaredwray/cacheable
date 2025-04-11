@@ -1,3 +1,4 @@
+import {shorthandToMilliseconds} from '../src/shorthand-time.js';
 
 export function getTtlFromExpires(expires: number | undefined): number | undefined {
 	if (expires === undefined) {
@@ -10,4 +11,8 @@ export function getTtlFromExpires(expires: number | undefined): number | undefin
 	}
 
 	return expires - now;
+}
+
+export function getCascadingTtl(cacheableTtl?: number | string, primaryTtl?: number, secondaryTtl?: number): number | undefined {
+	return secondaryTtl ?? primaryTtl ?? shorthandToMilliseconds(cacheableTtl);
 }
