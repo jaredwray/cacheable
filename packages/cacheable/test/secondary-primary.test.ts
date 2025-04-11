@@ -17,7 +17,7 @@ test('should set a new ttl when secondary is setting primary', async () => {
 		expect(item.key).toEqual(data.key);
 		expect(item.ttl).toBeGreaterThan(98);
 		expect(item.ttl).toBeLessThan(102);
-		item.ttl = 10;
+		item.ttl = 1;
 	});
 
 	await cacheable.set(data.key, data.value);
