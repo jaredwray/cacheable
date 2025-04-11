@@ -299,20 +299,21 @@ export class Cacheable extends Hookified {
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
 			result = await this._primary.get(key) as T;
+			let ttl;
 			if (!result && this._secondary) {
 				const secondaryResult = await this.getSecondaryRawResults<T>(key);
 				if (secondaryResult) {
 					result = secondaryResult.value as T;
 					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 					const expires = secondaryResult.expires as number | undefined;
-					const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+					ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 					const setItem = {key, value: result, ttl};
 					await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
 					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
 				}
 			}
 
-			await this.hook(CacheableHooks.AFTER_GET, {key, result});
+			await this.hook(CacheableHooks.AFTER_GET, {key, result, ttl});
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
