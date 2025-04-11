@@ -32,6 +32,7 @@ test('should set a new ttl when secondary is setting primary', async () => {
 
 	// Update the item from secondary
 	await cacheable.get(data.key);
+	await sleep(1);
 	const primaryResult2 = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult2?.value).toEqual(data.value);
 	const ttlFromExpires = getTtlFromExpires(primaryResult2?.expires as number | undefined);
