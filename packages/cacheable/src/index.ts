@@ -288,25 +288,6 @@ export class Cacheable extends Hookified {
 		return this._namespace;
 	}
 
-	public async getSecondaryRawResults<T>(key: string): Promise<StoredDataRaw<T> | undefined> {
-		let result;
-		if (this._secondary) {
-			result = await this._secondary.get(key, {raw: true});
-		}
-
-		return result;
-	}
-
-	public async getManySecondaryRawResults<T>(keys: string[]): Promise<Array<StoredDataRaw<T>>> {
-		let result = new Array<StoredDataRaw<T>>();
-
-		if (this._secondary) {
-			result = await this._secondary.get(keys, {raw: true});
-		}
-
-		return result;
-	}
-
 	/**
 	 * Gets the value of the key. If the key does not exist in the primary store then it will check the secondary store.
 	 * @param {string} key The key to get the value of
@@ -670,6 +651,25 @@ export class Cacheable extends Hookified {
 	 */
 	public hash(object: any, algorithm = 'sha256'): string {
 		return hash(object, algorithm);
+	}
+
+	private async getSecondaryRawResults<T>(key: string): Promise<StoredDataRaw<T> | undefined> {
+		let result;
+		if (this._secondary) {
+			result = await this._secondary.get(key, {raw: true});
+		}
+
+		return result;
+	}
+
+	private async getManySecondaryRawResults<T>(keys: string[]): Promise<Array<StoredDataRaw<T>>> {
+		let result = new Array<StoredDataRaw<T>>();
+
+		if (this._secondary) {
+			result = await this._secondary.get(keys, {raw: true});
+		}
+
+		return result;
 	}
 
 	private async deleteManyKeyv(keyv: Keyv, keys: string[]): Promise<boolean> {
