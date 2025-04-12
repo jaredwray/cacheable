@@ -29,6 +29,7 @@
 * [Basic Usage](#basic-usage)
 * [Hooks and Events](#hooks-and-events)
 * [Storage Tiering and Caching](#storage-tiering-and-caching)
+* [TTL Propagation and Storage Tiering](#ttl-propagation-and-storage-tiering)
 * [Shorthand for Time to Live (ttl)](#shorthand-for-time-to-live-ttl)
 * [Non-Blocking Operations](#non-blocking-operations)
 * [CacheSync - Distributed Updates](#cachesync---distributed-updates)
@@ -118,6 +119,48 @@ cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
 * `Getting Data`: Gets the value from the primary if the value does not exist it will get it from the secondary store and set it in the primary store.
 * `Deleting Data`: Deletes the value from the primary store and secondary store at the same time waiting for both to respond.
 * `Clearing Data`: Clears the primary store and secondary store at the same time waiting for both to respond.
+
+When `Getting Data` if the value does not exist in the primary store it will try to get it from the secondary store. If the secondary store returns the value it will set it in the primary store. Because we use [TTL Propagation](#ttl-propagation-and-storage-tiering) the value will be set in the primary store with the TTL of the secondary store unless the time to live (TTL) is greater than the primary store which will then use the TTL of the primary store. An example of this is:
+
+```javascript
+import { Cacheable } from 'cacheable';
+import KeyvRedis from '@keyv/redis';
+const secondary = new KeyvRedis('redis://user:pass@localhost:6379', { ttl: 1000 });
+const cache = new Cacheable({secondary, ttl: 100});
+
+await cache.set('key', 'value'); // sets the value in the primary store with a ttl of 100 ms and secondary store with a ttl of 1000 ms
+
+await sleep(500); // wait for .5 seconds
+
+const value = await cache.get('key'); // gets the value from the secondary store and now sets the value in the primary store with a ttl of 500 ms which is what is left from the secondary store
+```
+
+In this example the primary store has a ttl of `100 ms` and the secondary store has a ttl of `1000 ms`. Because the ttl is greater in the secondary store it will default to setting ttl value in the primary store.
+
+```javascript
+import { Cacheable } from 'cacheable';
+import {Keyv} from 'keyv';
+import KeyvRedis from '@keyv/redis';
+const primary = new Keyv({ ttl: 200 });
+const secondary = new KeyvRedis('redis://user:pass@localhost:6379', { ttl: 1000 });
+const cache = new Cacheable({primary, secondary});
+
+await cache.set('key', 'value'); // sets the value in the primary store with a ttl of 100 ms and secondary store with a ttl of 1000 ms
+
+await sleep(200); // wait for .2 seconds
+
+const value = await cache.get('key'); // gets the value from the secondary store and now sets the value in the primary store with a ttl of 200 ms which is what the primary store is set with
+```
+
+# TTL Propagation and Storage Tiering
+
+Cacheable TTL propagation is a feature that allows you to set a time to live (TTL) for the cache. By default the TTL is set in the following order:
+
+```
+ttl = set at the function ?? storage adapter ttl ?? cacheable ttl
+```
+
+This means that if you set a TTL at the function level it will override the storage adapter TTL and the cacheable TTL. If you do not set a TTL at the function level it will use the storage adapter TTL and then the cacheable TTL. If you do not set a TTL at all it will use the default TTL of `undefined` which is disabled.
 
 # Shorthand for Time to Live (ttl)
 

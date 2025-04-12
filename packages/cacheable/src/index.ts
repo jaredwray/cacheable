@@ -1,4 +1,4 @@
-import {Keyv, type KeyvStoreAdapter} from 'keyv';
+import {Keyv, type StoredDataRaw, type KeyvStoreAdapter} from 'keyv';
 import {Hookified} from 'hookified';
 import {shorthandToMilliseconds} from './shorthand-time.js';
 import {createKeyv} from './keyv-memory.js';
@@ -6,6 +6,7 @@ import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
 import {wrap, type WrapFunctionOptions} from './wrap.js';
+import {getCascadingTtl, calculateTtlFromExpiration} from './ttl.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -16,6 +17,7 @@ export enum CacheableHooks {
 	AFTER_GET = 'AFTER_GET',
 	BEFORE_GET_MANY = 'BEFORE_GET_MANY',
 	AFTER_GET_MANY = 'AFTER_GET_MANY',
+	BEFORE_SECONDARY_SETS_PRIMARY = 'BEFORE_SECONDARY_SETS_PRIMARY',
 }
 
 export enum CacheableEvents {
@@ -297,31 +299,21 @@ export class Cacheable extends Hookified {
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
 			result = await this._primary.get(key) as T;
+			let ttl;
 			if (!result && this._secondary) {
-				const rawResult = await this._secondary.get(key, {raw: true});
-				if (rawResult) {
-					result = rawResult.value as T;
-
-					let finalTtl;
-					let expired = false;
-					if (rawResult.expires) {
-						const now = Date.now();
-						finalTtl = rawResult.expires - now;
-						// eslint-disable-next-line max-depth
-						if (finalTtl <= 0) {
-							expired = true;
-						}
-					}
-
-					if (expired) {
-						result = undefined;
-					} else {
-						await this._primary.set(key, result, finalTtl);
-					}
+				const secondaryResult = await this.getSecondaryRawResults<T>(key);
+				if (secondaryResult) {
+					result = secondaryResult.value as T;
+					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+					const expires = secondaryResult.expires as number | undefined;
+					ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+					const setItem = {key, value: result, ttl};
+					await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
+					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
 				}
 			}
 
-			await this.hook(CacheableHooks.AFTER_GET, {key, result});
+			await this.hook(CacheableHooks.AFTER_GET, {key, result, ttl});
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
@@ -357,14 +349,20 @@ export class Cacheable extends Hookified {
 					}
 				}
 
-				const secondaryResult = await this._secondary.get(missingKeys) as Array<T | undefined>;
-				for (const [i, key] of keys.entries()) {
-					if (!result[i] && secondaryResult[i]) {
-						result[i] = secondaryResult[i];
+				const secondaryResults = await this.getManySecondaryRawResults<T>(missingKeys);
 
-						const finalTtl = shorthandToMilliseconds(this._ttl);
+				for (const [i, key] of keys.entries()) {
+					if (!result[i] && secondaryResults[i]) {
+						result[i] = secondaryResults[i].value as T;
+
+						const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+						const expires = secondaryResults[i].expires as number | undefined;
+						const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+						const setItem = {key, value: result[i], ttl};
 						// eslint-disable-next-line no-await-in-loop
-						await this._primary.set(key, secondaryResult[i], finalTtl);
+						await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
+						// eslint-disable-next-line no-await-in-loop
+						await this._primary.set(setItem.key, setItem.value, setItem.ttl);
 					}
 				}
 			}
@@ -660,6 +658,25 @@ export class Cacheable extends Hookified {
 	 */
 	public hash(object: any, algorithm = 'sha256'): string {
 		return hash(object, algorithm);
+	}
+
+	private async getSecondaryRawResults<T>(key: string): Promise<StoredDataRaw<T> | undefined> {
+		let result;
+		if (this._secondary) {
+			result = await this._secondary.get(key, {raw: true});
+		}
+
+		return result;
+	}
+
+	private async getManySecondaryRawResults<T>(keys: string[]): Promise<Array<StoredDataRaw<T>>> {
+		let result = new Array<StoredDataRaw<T>>();
+
+		if (this._secondary) {
+			result = await this._secondary.get(keys, {raw: true});
+		}
+
+		return result;
 	}
 
 	private async deleteManyKeyv(keyv: Keyv, keys: string[]): Promise<boolean> {
