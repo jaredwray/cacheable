@@ -48,17 +48,17 @@ test('should use the cacheable default ttl on secondary -> primary', async () =>
 		key: faker.string.uuid(),
 		value: faker.string.uuid(),
 	};
-	
+
 	const secondary = new Keyv();
 	const cacheable = new Cacheable({secondary, ttl: 100});
-	
-	//set the value on secondary with no ttl
+
+	// Set the value on secondary with no ttl
 	await cacheable.secondary?.set(data.key, data.value);
 
 	const result = await cacheable.get(data.key);
 	expect(result).toEqual(data.value);
 
-	//get the value from primary raw to validate it has expires
+	// Get the value from primary raw to validate it has expires
 	const primaryResult = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult?.value).toEqual(data.value);
 	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires as number | undefined);
@@ -71,18 +71,18 @@ test('should use the primary ttl on secondary -> primary', async () => {
 		key: faker.string.uuid(),
 		value: faker.string.uuid(),
 	};
-	
+
 	const secondary = new Keyv();
 	const primary = new Keyv({ttl: 50});
 	const cacheable = new Cacheable({secondary, primary, ttl: 100});
-	
-	//set the value on secondary with no ttl
+
+	// Set the value on secondary with no ttl
 	await cacheable.secondary?.set(data.key, data.value);
 
 	const result = await cacheable.get(data.key);
 	expect(result).toEqual(data.value);
 
-	//get the value from primary raw to validate it has expires
+	// Get the value from primary raw to validate it has expires
 	const primaryResult = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult?.value).toEqual(data.value);
 	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires as number | undefined);
@@ -95,18 +95,18 @@ test('should use the secondary ttl on secondary -> primary', async () => {
 		key: faker.string.uuid(),
 		value: faker.string.uuid(),
 	};
-	
+
 	const secondary = new Keyv({ttl: 50});
 	const primary = new Keyv();
 	const cacheable = new Cacheable({secondary, primary, ttl: 100});
-	
-	//set the value on secondary with no ttl
+
+	// Set the value on secondary with no ttl
 	await cacheable.secondary?.set(data.key, data.value);
 
 	const result = await cacheable.get(data.key);
 	expect(result).toEqual(data.value);
 
-	//get the value from primary raw to validate it has expires
+	// Get the value from primary raw to validate it has expires
 	const primaryResult = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult?.value).toEqual(data.value);
 	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires as number | undefined);
