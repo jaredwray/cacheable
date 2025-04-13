@@ -99,6 +99,7 @@ The following hooks are available for you to extend the functionality of `cachea
 * `AFTER_GET`: This is called after the `get()` method is called.
 * `BEFORE_GET_MANY`: This is called before the `getMany()` method is called.
 * `AFTER_GET_MANY`: This is called after the `getMany()` method is called.
+* `BEFORE_SECONDARY_SETS_PRIMARY`: This is called when the secondary store sets the value in the primary store.
 
 An example of how to use these hooks:
 
@@ -110,6 +111,19 @@ cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
   console.log(`before set: ${data.key} ${data.value}`);
 });
 ```
+
+Here is an example of how to use `BEFORE_SECONDARY_SETS_PRIMARY` hook:
+
+```javascript
+import { Cacheable, CacheableHooks } from 'cacheable';
+import KeyvRedis from '@keyv/redis';
+const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
+const cache = new Cacheable({secondary});
+cache.onHook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, (data) => {
+  console.log(`before secondary sets primary: ${data.key} ${data.value} ${data.ttl}`);
+});
+```
+This is called when the secondary store sets the value in the primary store. This is useful if you want to do something before the value is set in the primary store such as manipulating the ttl or the value.
 
 # Storage Tiering and Caching
 
