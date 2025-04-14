@@ -1,6 +1,6 @@
 import {Keyv} from 'keyv';
 import {
-	beforeEach, describe, expect, it,
+	beforeEach, describe, expect, it, vi,
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {createCache} from '../src/index.js';
@@ -28,17 +28,66 @@ describe('mset', () => {
 		await expect(cache.get(list[0].key)).resolves.toEqual(list[0].value);
 	});
 
-	it('should mset non-blocking', async () => {
-		const secondKeyv = new Keyv();
-		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
+	it('should work blocking', async () => {
 		const list = [
 			{key: faker.string.alpha(20), value: faker.string.sample()},
 			{key: faker.string.alpha(20), value: faker.string.sample()},
 			{key: faker.string.alpha(20), value: faker.string.sample()},
 		];
 
-		await cache.mset(list);
-		await sleep(10);
-		await expect(cache.get(list[0].key)).resolves.toEqual(list[0].value);
+		let resolveSet: (value: boolean) => void = () => undefined;
+		const setPromise = new Promise<boolean>(_resolve => {
+			resolveSet = _resolve;
+		});
+
+		const cache = createCache({stores: [keyv], nonBlocking: false});
+		const setHandler = vi.spyOn(keyv, 'set').mockReturnValue(setPromise);
+		const setResolved = vi.fn();
+		const setRejected = vi.fn();
+		cache.mset(list).then(
+			setResolved,
+			setRejected,
+		);
+
+		expect(setHandler).toBeCalledTimes(list.length);
+
+		await sleep(200);
+
+		expect(setResolved).not.toBeCalled();
+		expect(setRejected).not.toBeCalled();
+
+		resolveSet(true);
+		await sleep(1);
+
+		expect(setResolved).toBeCalled();
+		expect(setRejected).not.toBeCalled();
+	});
+
+	it('should work non-blocking', async () => {
+		const list = [
+			{key: faker.string.alpha(20), value: faker.string.sample()},
+			{key: faker.string.alpha(20), value: faker.string.sample()},
+			{key: faker.string.alpha(20), value: faker.string.sample()},
+		];
+
+		const setPromise = new Promise<boolean>(_resolve => {
+			// Do nothing, this will be a never resolved promise
+		});
+
+		const cache = createCache({stores: [keyv], nonBlocking: true});
+		const setHandler = vi.spyOn(keyv, 'set').mockReturnValue(setPromise);
+		const setResolved = vi.fn();
+		const setRejected = vi.fn();
+		cache.mset(list).then(
+			setResolved,
+			setRejected,
+		);
+
+		expect(setHandler).toBeCalledTimes(list.length);
+
+		await sleep(1);
+
+		expect(setResolved).toBeCalled();
+		expect(setRejected).not.toBeCalled();
 	});
 });

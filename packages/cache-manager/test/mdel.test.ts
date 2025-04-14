@@ -1,6 +1,6 @@
 import {Keyv} from 'keyv';
 import {
-	beforeEach, describe, expect, it,
+	beforeEach, describe, expect, it, vi,
 } from 'vitest';
 import {faker} from '@faker-js/faker';
 import {createCache} from '../src/index.js';
@@ -33,14 +33,57 @@ describe('mdel', () => {
 		await expect(cache.get(list[1].key)).resolves.toEqual(null);
 		await expect(cache.get(list[2].key)).resolves.toEqual(list[2].value);
 	});
-	it('should be non-blocking', async () => {
-		const secondKeyv = new Keyv();
-		const cache = createCache({stores: [keyv, secondKeyv], nonBlocking: true});
+
+	it('should work blocking', async () => {
+		let resolveDeleted: (value: boolean) => void = () => undefined;
+		const deletePromise = new Promise<boolean>(_resolve => {
+			resolveDeleted = _resolve;
+		});
+		const cache = createCache({stores: [keyv], nonBlocking: false});
 		await cache.mset(list);
-		await cache.mdel(list.map(({key}) => key));
+
+		const delHandler = vi.spyOn(keyv, 'delete').mockReturnValue(deletePromise);
+		const deleteResolved = vi.fn();
+		const deleteRejected = vi.fn();
+		cache.mdel(list.map(({key}) => key)).then(
+			deleteResolved,
+			deleteRejected,
+		);
+
+		expect(delHandler).toBeCalledTimes(list.length);
+
 		await sleep(200);
-		await expect(cache.get(list[0].key)).resolves.toBeNull();
-		await expect(cache.get(list[1].key)).resolves.toBeNull();
-		await expect(cache.get(list[2].key)).resolves.toBeNull();
+
+		expect(deleteResolved).not.toBeCalled();
+		expect(deleteRejected).not.toBeCalled();
+
+		resolveDeleted(true);
+		await sleep(1);
+
+		expect(deleteResolved).toBeCalled();
+		expect(deleteRejected).not.toBeCalled();
+	});
+
+	it('should work non-blocking', async () => {
+		const deletePromise = new Promise<boolean>(_resolve => {
+			// Do nothing, this will be a never resolved promise
+		});
+		const cache = createCache({stores: [keyv], nonBlocking: true});
+		await cache.mset(list);
+
+		const delHandler = vi.spyOn(keyv, 'delete').mockReturnValue(deletePromise);
+		const deleteResolved = vi.fn();
+		const deleteRejected = vi.fn();
+		cache.mdel(list.map(({key}) => key)).then(
+			deleteResolved,
+			deleteRejected,
+		);
+
+		expect(delHandler).toBeCalledTimes(list.length);
+
+		await sleep(1);
+
+		expect(deleteResolved).toBeCalled();
+		expect(deleteRejected).not.toBeCalled();
 	});
 });
