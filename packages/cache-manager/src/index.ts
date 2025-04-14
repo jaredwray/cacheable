@@ -86,7 +86,10 @@ export type Events = {
 
 export const createCache = (options?: CreateCacheOptions): Cache => {
 	const eventEmitter = new EventEmitter();
-	const stores = options?.stores?.length ? options.stores : [new Keyv()];
+	const keyv = new Keyv();
+	keyv.serialize = undefined;
+	keyv.deserialize = undefined;
+	const stores = options?.stores?.length ? options.stores : [keyv];
 	const nonBlocking = options?.nonBlocking ?? false;
 	const _cacheId = options?.cacheId ?? Math.random().toString(36).slice(2);
 
