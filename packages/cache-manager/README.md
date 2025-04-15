@@ -38,14 +38,26 @@ const memoryCache = createCache(memoryStore({
 }));
 ```
 
-In `v6` you can use any storage adapter that Keyv supports. Below is an example of how to migrate from `v5` to `v6` using `CacheableMemory` from Cacheable:
+In `v6` you can use any storage adapter that Keyv supports. Below is an example of using the in memory store with `Keyv`:
 
 ```ts
 import { createCache } from 'cache-manager';
-import { Keyv } from 'keyv';
+
+const cache = createCache();
+```
+
+If you would like to do multiple stores you can do the following:
+
+```ts
+import { createCache } from 'cache-manager';
+import { createKeyv } from 'cacheable';
+import { createKeyv as createKeyvRedis } from '@keyv/redis';
+
+const memoryStore = createKeyv();
+const redisStore = createKeyvRedis('redis://user:pass@localhost:6379');
 
 const cache = createCache({
-  stores: [new Keyv()],
+  stores: [memoryStore, redisStore],
 });
 ```
 
@@ -69,10 +81,10 @@ If you would like a more robust in memory storage adapter you can use `Cacheable
 
 ```ts
 import { createCache } from 'cache-manager';
-import { KeyvCacheableMemory } from 'cacheable';
+import { createKeyv } from 'cacheable';
 
 const cache = createCache({
-  stores: [new KeyvCacheableMemory({ ttl: 60000, lruSize: 5000 })],
+  stores: [createKeyv({ ttl: 60000, lruSize: 5000 })],
 });
 ```
 
