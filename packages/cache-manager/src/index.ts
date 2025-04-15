@@ -193,9 +193,9 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const mset = async <T>(stores: Keyv[], list: Array<{key: string; value: T; ttl?: number}>) => {
 		const items = list.map(({key, value, ttl}) => ({key, value, ttl}));
 		try {
-			const promises = [];
+			const promises: Array<Promise<boolean>> = [];
 			for (const item of list) {
-				promises.push(stores.map(async store => store.set(item.key, item.value, item.ttl)));
+				promises.push(...stores.map(async store => store.set(item.key, item.value, item.ttl)));
 			}
 
 			if (nonBlocking) {
@@ -235,9 +235,9 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 	const mdel = async (keys: string[]) => {
 		try {
-			const promises = [];
+			const promises: Array<Promise<boolean>> = [];
 			for (const key of keys) {
-				promises.push(stores.map(async store => store.delete(key)));
+				promises.push(...stores.map(async store => store.delete(key)));
 			}
 
 			if (nonBlocking) {
