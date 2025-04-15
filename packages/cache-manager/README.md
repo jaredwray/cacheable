@@ -561,9 +561,8 @@ import { Keyv } from 'keyv';
 import { redisStore } from 'cache-manager-redis-yet';
 
 const adapter = new KeyvAdapter( await redisStore() );
-const cache = createCache({
-  stores: [new Keyv({ store: adapter })],
-});
+const keyv = new Keyv({ store: adapter });
+const cache = createCache({ stores: [keyv]});
 ```
 
 This adapter will allow you to add in any storage adapter. If there are issues it needs to follow `CacheManagerStore` interface.
