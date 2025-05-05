@@ -232,8 +232,8 @@ describe('wrap with multi-layer stores', () => {
 		expect(await keyv1.get(data.key)).toEqual(0);
 		expect(await keyv2.get(data.key)).toEqual(0);
 
-		// Sleep 251ms, trigger keyv1 refresh
-		await sleep(251);
+		// Sleep 275ms, trigger keyv1 refresh
+		await sleep(275);
 
 		// Background refresh, but stale value returned, while keyv1 and keyv2 are all updated
 		expect(await cache.wrap(data.key, async () => 1)).toEqual(0);
@@ -245,8 +245,8 @@ describe('wrap with multi-layer stores', () => {
 		expect(await keyv1.get(data.key)).toEqual(1);
 		expect(await keyv2.get(data.key)).toEqual(1);
 
-		// Sleep 501ms, keyv1 expired, but keyv2 was refreshed before, so keyv2 will not be refreshed, write back to keyv1 directly
-		await sleep(501);
+		// Sleep 525ms, keyv1 expired, but keyv2 was refreshed before, so keyv2 will not be refreshed, write back to keyv1 directly
+		await sleep(525);
 
 		expect(await keyv1.get(data.key)).toBeUndefined();
 		expect(await keyv2.get(data.key)).toEqual(1);
@@ -256,8 +256,8 @@ describe('wrap with multi-layer stores', () => {
 		expect(await keyv1.get(data.key)).toEqual(1);
 		expect(await keyv2.get(data.key)).toEqual(1);
 
-		// Sleep 401ms, keyv1 expired, trigger keyv2 refresh
-		await sleep(401);
+		// Sleep 425ms, keyv1 expired, trigger keyv2 refresh
+		await sleep(425);
 
 		expect(await keyv1.get(data.key)).toBeUndefined();
 		expect(await keyv2.get(data.key)).toEqual(1);
