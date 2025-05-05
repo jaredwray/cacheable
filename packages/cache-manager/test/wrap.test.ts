@@ -89,24 +89,24 @@ describe('wrap', () => {
 	});
 
 	it.each([
-		[2000, 1000],
-		[{ttl: 2000, refreshThreshold: 1000}, undefined],
+		[500, 250],
+		[{ttl: 500, refreshThreshold: 250}, undefined],
 	])('should allow dynamic refreshThreshold on wrap function with ttl/options param as %s', async (ttlOrOptions, refreshThreshold) => {
 		// 1st call should be cached
 		expect(await cache.wrap(data.key, async () => 0, ttlOrOptions as never, refreshThreshold)).toEqual(0);
-		await sleep(1001);
+		await sleep(251);
 		// Background refresh, but stale value returned
 		expect(await cache.wrap(data.key, async () => 1, ttlOrOptions as never, refreshThreshold)).toEqual(0);
 		// New value in cache
 		expect(await cache.wrap(data.key, async () => 2, ttlOrOptions as never, refreshThreshold)).toEqual(1);
 
-		await sleep(1001);
+		await sleep(251);
 		// No background refresh with the new override params
-		expect(await cache.wrap(data.key, async () => 3, undefined, 500)).toEqual(1);
-		await sleep(500);
+		expect(await cache.wrap(data.key, async () => 3, undefined, 125)).toEqual(1);
+		await sleep(126);
 		// Background refresh, but stale value returned
-		expect(await cache.wrap(data.key, async () => 4, undefined, 500)).toEqual(1);
-		expect(await cache.wrap(data.key, async () => 5, undefined, 500)).toEqual(4);
+		expect(await cache.wrap(data.key, async () => 4, undefined, 125)).toEqual(1);
+		expect(await cache.wrap(data.key, async () => 5, undefined, 125)).toEqual(4);
 	});
 
 	it('should allow refreshThreshold function on wrap function', async () => {
@@ -138,13 +138,13 @@ describe('wrap', () => {
 	});
 
 	it('should re-evaluate ttl function on fresh value when triggered by refreshThreshold', async () => {
-		const config = {ttl: 2000, refreshThreshold: 1000};
+		const config = {ttl: 1000, refreshThreshold: 500};
 		const getTtlFunction = vi.fn(() => config.ttl);
 		let value = 10;
 
 		expect(await cache.wrap(data.key, async () => ++value, getTtlFunction, config.refreshThreshold)).toEqual(11); // 1st call should be cached
 		expect(getTtlFunction).toHaveBeenNthCalledWith(1, 11); // Ttl func called 1st time when cache empty
-		await sleep(1500);
+		await sleep(750);
 		expect(await cache.wrap(data.key, async () => ++value, getTtlFunction, config.refreshThreshold)).toEqual(11); // Trigger background refresh. stale value returned
 		expect(getTtlFunction).toHaveBeenNthCalledWith(2, 12); // Ttl func called 2nd time triggered by refreshThreshold on fresh item
 	});
@@ -175,9 +175,9 @@ describe('wrap with multi-layer stores', () => {
 	let keyv1: Keyv;
 	let keyv2: Keyv;
 	let cache: ReturnType<typeof createCache>;
-	const ttl1 = 800;
-	const ttl2 = 2000;
-	const refreshThreshold = 500;
+	const ttl1 = 400;
+	const ttl2 = 1000;
+	const refreshThreshold = 250;
 	const data = {key: '', value: ''};
 
 	beforeEach(async () => {
@@ -194,8 +194,8 @@ describe('wrap with multi-layer stores', () => {
 		expect(await keyv1.get(data.key)).toEqual(0);
 		expect(await keyv2.get(data.key)).toEqual(0);
 
-		// Sleep 501ms, trigger keyv1 refresh
-		await sleep(501);
+		// Sleep 251ms, trigger keyv1 refresh
+		await sleep(251);
 
 		// Background refresh, but stale value returned, while keyv1 is already updated
 		expect(await cache.wrap(data.key, async () => 1)).toEqual(0);
@@ -208,7 +208,7 @@ describe('wrap with multi-layer stores', () => {
 		expect(await keyv2.get(data.key)).toEqual(0);
 
 		// Sleep 1001ms, keyv1 expired, trigger keyv2 refresh
-		await sleep(1001);
+		await sleep(501);
 
 		expect(await keyv1.get(data.key)).toBeUndefined();
 		expect(await keyv2.get(data.key)).toEqual(0);
@@ -232,8 +232,8 @@ describe('wrap with multi-layer stores', () => {
 		expect(await keyv1.get(data.key)).toEqual(0);
 		expect(await keyv2.get(data.key)).toEqual(0);
 
-		// Sleep 501ms, trigger keyv1 refresh
-		await sleep(550);
+		// Sleep 251ms, trigger keyv1 refresh
+		await sleep(251);
 
 		// Background refresh, but stale value returned, while keyv1 and keyv2 are all updated
 		expect(await cache.wrap(data.key, async () => 1)).toEqual(0);
@@ -245,8 +245,8 @@ describe('wrap with multi-layer stores', () => {
 		expect(await keyv1.get(data.key)).toEqual(1);
 		expect(await keyv2.get(data.key)).toEqual(1);
 
-		// Sleep 1001ms, keyv1 expired, but keyv2 was refreshed before, so keyv2 will not be refreshed, write back to keyv1 directly
-		await sleep(1050);
+		// Sleep 501ms, keyv1 expired, but keyv2 was refreshed before, so keyv2 will not be refreshed, write back to keyv1 directly
+		await sleep(501);
 
 		expect(await keyv1.get(data.key)).toBeUndefined();
 		expect(await keyv2.get(data.key)).toEqual(1);
@@ -256,8 +256,8 @@ describe('wrap with multi-layer stores', () => {
 		expect(await keyv1.get(data.key)).toEqual(1);
 		expect(await keyv2.get(data.key)).toEqual(1);
 
-		// Sleep 850ms, keyv1 expired, trigger keyv2 refresh
-		await sleep(850);
+		// Sleep 401ms, keyv1 expired, trigger keyv2 refresh
+		await sleep(401);
 
 		expect(await keyv1.get(data.key)).toBeUndefined();
 		expect(await keyv2.get(data.key)).toEqual(1);
