@@ -38,8 +38,8 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"dependencies": {
-		"@faker-js/faker": "^9.6.0",
-		"@monstermann/tinybench-pretty-printer": "^0.0.0",
+		"@faker-js/faker": "^9.7.0",
+		"@monstermann/tinybench-pretty-printer": "^0.1.0",
 		"cache-manager": "workspace:^",
 		"cacheable": "workspace:^",
 		"lru.min": "^1.1.2",
