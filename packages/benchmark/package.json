@@ -51,6 +51,6 @@
 		"license"
 	],
 	"devDependencies": {
-		"tsx": "^4.19.3"
+		"tsx": "^4.19.4"
 	}
 }
