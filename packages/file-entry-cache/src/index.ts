@@ -79,6 +79,10 @@ export class FileEntryCache {
 	private _currentWorkingDirectory: string | undefined;
 	private _hashAlgorithm = 'md5';
 
+	/**
+	 * Create a new FileEntryCache instance
+	 * @param options - The options for the FileEntryCache
+	 */
 	constructor(options?: FileEntryCacheOptions) {
 		if (options?.cache) {
 			this._cache = new FlatCache(options.cache);
@@ -101,42 +105,82 @@ export class FileEntryCache {
 		}
 	}
 
+	/**
+	 * Get the cache
+	 * @returns {FlatCache} The cache
+	 */
 	public get cache(): FlatCache {
 		return this._cache;
 	}
 
+	/**
+	 * Set the cache
+	 * @param {FlatCache} cache - The cache to set
+	 */
 	public set cache(cache: FlatCache) {
 		this._cache = cache;
 	}
 
+	/**
+	 * Use the hash to check if the file has changed
+	 * @returns {boolean} if the hash is used to check if the file has changed
+	 */
 	public get useCheckSum(): boolean {
 		return this._useCheckSum;
 	}
 
+	/**
+	 * Set the useCheckSum value
+	 * @param {boolean} value - The value to set
+	 */
 	public set useCheckSum(value: boolean) {
 		this._useCheckSum = value;
 	}
 
+	/**
+	 * Use the modified time to check if the file has changed
+	 * @returns {boolean} if the modified time is used to check if the file has changed
+	 */
 	public get useModifiedTime(): boolean {
 		return this._useModifiedTime;
 	}
 
+	/**
+	 * Set the useModifiedTime value
+	 * @param {boolean} value - The value to set
+	 */
 	public set useModifiedTime(value: boolean) {
 		this._useModifiedTime = value;
 	}
 
+	/**
+	 * Get the hash algorithm
+	 * @returns {string} The hash algorithm
+	 */
 	public get hashAlgorithm(): string {
 		return this._hashAlgorithm;
 	}
 
+	/**
+	 * Set the hash algorithm
+	 * @param {string} value - The value to set
+	 */
 	public set hashAlgorithm(value: string) {
 		this._hashAlgorithm = value;
 	}
 
+	/**
+	 * Get the current working directory
+	 * @returns {string | undefined} The current working directory
+	 */
 	public get currentWorkingDirectory(): string | undefined {
 		return this._currentWorkingDirectory;
 	}
 
+	/**
+	 * Set the current working directory
+	 * @param {string | undefined} value - The value to set
+	 */
 	public set currentWorkingDirectory(value: string | undefined) {
 		this._currentWorkingDirectory = value;
 	}
