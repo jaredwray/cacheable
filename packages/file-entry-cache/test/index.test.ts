@@ -30,6 +30,13 @@ describe('file-entry-cache with options', () => {
 		expect(fileEntryCache.useCheckSum).toBe(false);
 	});
 
+	test('should be able to get and set useModifiedTime', () => {
+		const fileEntryCache = new FileEntryCache({useModifiedTime: true});
+		expect(fileEntryCache.useModifiedTime).toBe(true);
+		fileEntryCache.useModifiedTime = false;
+		expect(fileEntryCache.useModifiedTime).toBe(false);
+	});
+
 	test('should be able to get and set currentWorkingDirectory', () => {
 		const fileEntryCache = new FileEntryCache({currentWorkingDirectory: 'test'});
 		expect(fileEntryCache.currentWorkingDirectory).toBe('test');
@@ -200,6 +207,15 @@ describe('getFileDescriptor()', () => {
 		expect(fileDescriptor.meta).toBeDefined();
 		expect(fileDescriptor.meta?.size).toBe(4);
 		expect(fileDescriptor.meta?.hash).to.not.toBeDefined();
+	});
+
+	test('should return a file descriptor without useModifiedTime', () => {
+		const fileEntryCache = new FileEntryCache();
+		const testFile1 = path.resolve('./.cacheGFD/test2.txt');
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1, {useModifiedTime: false});
+		expect(fileDescriptor).toBeDefined();
+		expect(fileDescriptor.key).toBe(testFile1);
+		expect(fileDescriptor.meta?.hash).toBeUndefined();
 	});
 
 	test('should return a file descriptor with checksum', () => {
