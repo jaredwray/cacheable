@@ -5,6 +5,7 @@ import {FlatCache, createFromFile as createFlatCacheFile, type FlatCacheOptions}
 
 export type FileEntryCacheOptions = {
 	currentWorkingDirectory?: string;
+	useModifiedTime?: boolean;
 	useCheckSum?: boolean;
 	hashAlgorithm?: string;
 	cache?: FlatCacheOptions;
@@ -12,6 +13,7 @@ export type FileEntryCacheOptions = {
 
 export type GetFileDescriptorOptions = {
 	useCheckSum?: boolean;
+	useModifiedTime?: boolean;
 	currentWorkingDirectory?: string;
 };
 
@@ -73,12 +75,17 @@ export default class FileEntryDefault {
 export class FileEntryCache {
 	private _cache: FlatCache = new FlatCache({useClone: false});
 	private _useCheckSum = false;
+	private _useModifiedTime = true;
 	private _currentWorkingDirectory: string | undefined;
 	private _hashAlgorithm = 'md5';
 
 	constructor(options?: FileEntryCacheOptions) {
 		if (options?.cache) {
 			this._cache = new FlatCache(options.cache);
+		}
+
+		if (options?.useModifiedTime) {
+			this._useModifiedTime = options.useModifiedTime;
 		}
 
 		if (options?.useCheckSum) {
@@ -108,6 +115,14 @@ export class FileEntryCache {
 
 	public set useCheckSum(value: boolean) {
 		this._useCheckSum = value;
+	}
+
+	public get useModifiedTime(): boolean {
+		return this._useModifiedTime;
+	}
+
+	public set useModifiedTime(value: boolean) {
+		this._useModifiedTime = value;
 	}
 
 	public get hashAlgorithm(): string {
@@ -254,6 +269,7 @@ export class FileEntryCache {
 		filePath = this.getAbsolutePath(filePath, {currentWorkingDirectory: options?.currentWorkingDirectory});
 
 		const useCheckSumValue = options?.useCheckSum ?? this._useCheckSum;
+		const useModifiedTimeValue = options?.useModifiedTime ?? this._useModifiedTime;
 
 		try {
 			fstat = fs.statSync(filePath);
@@ -296,7 +312,11 @@ export class FileEntryCache {
 		}
 
 		// If the file is in the cache, check if the file has changed
-		if (metaCache?.mtime !== result.meta?.mtime || metaCache?.size !== result.meta?.size) {
+		if (useModifiedTimeValue && metaCache?.mtime !== result.meta?.mtime) {
+			result.changed = true;
+		}
+
+		if (metaCache?.size !== result.meta?.size) {
 			result.changed = true;
 		}
 
