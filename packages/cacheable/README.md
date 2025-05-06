@@ -214,6 +214,40 @@ cache.ttl = -1; // sets the default ttl to 0 which is disabled
 console.log(cache.ttl); // undefined
 ```
 
+## Retrieving raw cache entries
+
+The `get` and `getMany` methods support a `raw` option, which returns the full stored metadata (`StoredDataRaw<T>`) instead of just the value:
+
+```typescript
+import { Cacheable } from 'cacheable';
+
+const cache = new Cacheable();
+
+// store a value
+await cache.set('user:1', { name: 'Alice' });
+
+// default: only the value
+const user = await cache.get<{ name: string }>('user:1');
+console.log(user); // { name: 'Alice' }
+
+// with raw: full record including expiration
+const raw = await cache.get<{ name: string }>('user:1', { raw: true });
+console.log(raw.value);   // { name: 'Alice' }
+console.log(raw.expires); // e.g. 1677628495000 or null
+```
+
+```typescript
+// getMany with raw option
+await cache.set('a', 1);
+await cache.set('b', 2);
+
+const raws = await cache.getMany<number>(['a', 'b'], { raw: true });
+raws.forEach((entry, idx) => {
+  console.log(`key=${['a','b'][idx]}, value=${entry?.value}, expires=${entry?.expires}`);
+});
+```
+
+
 # Non-Blocking Operations
 
 If you want your layer 2 (secondary) store to be non-blocking you can set the `nonBlocking` property to `true` in the options. This will make the secondary store non-blocking and will not wait for the secondary store to respond on `setting data`, `deleting data`, or `clearing data`. This is useful if you want to have a faster response time and not wait for the secondary store to respond.
@@ -272,7 +306,9 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `set(key, value, ttl?)`: Sets a value in the cache.
 * `setMany([{key, value, ttl?}])`: Sets multiple values in the cache.
 * `get(key)`: Gets a value from the cache.
+* `get(key, { raw: true })`: Gets a raw value from the cache.
 * `getMany([keys])`: Gets multiple values from the cache.
+* `getMany([keys], { raw: true })`: Gets multiple raw values from the cache.
 * `has(key)`: Checks if a value exists in the cache.
 * `hasMany([keys])`: Checks if multiple values exist in the cache.
 * `take(key)`: Takes a value from the cache and deletes it.
