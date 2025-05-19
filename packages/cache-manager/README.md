@@ -324,7 +324,7 @@ await cache.mget(['key-1', 'key-2', 'key-3'])
 Gets the expiration time of a key in milliseconds. Returns a null if not found or expired.
 
 ```ts
-await cache.set('key', 'value', 1000); // expires after 5 seconds
+await cache.set('key', 'value', 1000); // expires after 1 second
 
 await cache.ttl('key'); // => the expiration time in milliseconds
 
