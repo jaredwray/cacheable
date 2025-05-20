@@ -696,3 +696,25 @@ describe('cacheable namespace', async () => {
 		expect(cacheable.secondary?.namespace).toBe('test');
 	});
 });
+
+describe('cacheable get or set', () => {
+	test('should cache results', async () => {
+		const cacheable = new Cacheable();
+		const function_ = vi.fn(async () => 1 + 2);
+		const result = await cacheable.getOrSet('one_plus_two', function_);
+		await cacheable.getOrSet('one_plus_two', function_);
+		expect(result).toBe(3);
+		expect(function_).toHaveBeenCalledTimes(1);
+	});
+	test('should prevent stampede', async () => {
+		const cacheable = new Cacheable();
+		const function_ = vi.fn(async () => 42);
+		await Promise.all([
+			cacheable.getOrSet('key1', function_),
+			cacheable.getOrSet('key1', function_),
+			cacheable.getOrSet('key2', function_),
+			cacheable.getOrSet('key2', function_),
+		]);
+		expect(function_).toHaveBeenCalledTimes(2);
+	});
+});

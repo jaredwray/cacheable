@@ -252,6 +252,41 @@ raws.forEach((entry, idx) => {
 
 If you want your layer 2 (secondary) store to be non-blocking you can set the `nonBlocking` property to `true` in the options. This will make the secondary store non-blocking and will not wait for the secondary store to respond on `setting data`, `deleting data`, or `clearing data`. This is useful if you want to have a faster response time and not wait for the secondary store to respond.
 
+# GetOrSet
+
+The `getOrSet` method provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value
+from cache, and if not found, calls the provided function to compute the value and store it in cache before returning
+it.
+
+```typescript
+import { Cacheable } from 'cacheable';
+
+// Create a new Cacheable instance
+const cache = new Cacheable();
+
+// Use getOrSet to fetch user data
+async function getUserData(userId: string) {
+  return await cache.getOrSet(
+    `user:${userId}`,
+    async () => {
+      // This function only runs if the data isn't in the cache
+      console.log('Fetching user from database...');
+      // Simulate database fetch
+      return { id: userId, name: 'John Doe', email: 'john@example.com' };
+    },
+    { ttl: '30m' } // Cache for 30 minutes
+  );
+}
+
+// First call - will fetch from "database"
+const user1 = await getUserData('123');
+console.log(user1); // { id: '123', name: 'John Doe', email: 'john@example.com' }
+
+// Second call - will retrieve from cache
+const user2 = await getUserData('123');
+console.log(user2); // Same data, but retrieved from cache
+```
+
 ```javascript
 import { Cacheable } from 'cacheable';
 import {KeyvRedis} from '@keyv/redis';
@@ -317,6 +352,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `deleteMany([keys])`: Deletes multiple values from the cache.
 * `clear()`: Clears the cache stores. Be careful with this as it will clear both layer 1 and layer 2.
 * `wrap(function, WrapOptions)`: Wraps an `async` function in a cache.
+* `getOrSet(key, valueFunction, ttl?)`: Gets a value from cache or sets it if not found using the provided function.
 * `disconnect()`: Disconnects from the cache stores.
 * `onHook(hook, callback)`: Sets a hook.
 * `removeHook(hook)`: Removes a hook.

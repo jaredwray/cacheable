@@ -2,7 +2,7 @@
 import {
 	describe, it, expect, vi,
 } from 'vitest';
-import {Cacheable, CacheableMemory, KeyvCacheableMemory} from '../src/index.js';
+import {Cacheable, CacheableMemory} from '../src/index.js';
 import {
 	wrap, createWrapKey, wrapSync, type WrapOptions, type WrapSyncOptions,
 } from '../src/wrap.js';
