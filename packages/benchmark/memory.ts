@@ -3,18 +3,18 @@ import { CacheableMemory } from "cacheable";
 import QuickLRU from 'quick-lru';
 import { createLRU } from 'lru.min';
 
-const bench = createBenchmark("Memory Benchmark", 5000);
+const bench = createBenchmark("Memory Benchmark", 100000);
 
 // Cacheable Memory
-const cacheable = new CacheableMemory({ lruSize: 1000 });
-let cacheableName = getModuleName("Cacheable", "1.8.9");
+const cacheable = new CacheableMemory();
+let cacheableName = getModuleName("Cacheable Memory", "1.9.0");
 
 // QuickLRU
-const quickLRU = new QuickLRU({maxSize: 1000});
+const quickLRU = new QuickLRU({maxSize: 80000});
 let quickLRUName = getModuleName("quick-lru");
 
 // lru.min
-const lruMin = createLRU({ max: 1000 });
+const lruMin = createLRU({ max: 80000 });
 let lruMinName = getModuleName("lru.min");
 
 // Map
@@ -48,4 +48,3 @@ bench.add(`${mapName} - set / get`, async () => {
 await bench.run();
 
 printToConsole(bench);
-

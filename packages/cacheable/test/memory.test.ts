@@ -2,7 +2,6 @@ import {describe, test, expect} from 'vitest';
 import {faker} from '@faker-js/faker';
 import {createWrapKey} from '../src/wrap.js';
 import {CacheableMemory} from '../src/memory.js';
-import {CacheableItem} from '../src/cacheable-item-types.js';
 import {sleep} from './sleep.js';
 
 const cacheItemList = [
@@ -32,6 +31,13 @@ describe('CacheableMemory Options and Properties', () => {
 		cache.ttl = undefined;
 		expect(cache.ttl).toBe(undefined);
 	});
+	test('should be able to set the hash store size', () => {
+		const cache = new CacheableMemory({storeHashSize: 100});
+		expect(cache.storeHashSize).toBe(100);
+		cache.storeHashSize = 200;
+		expect(cache.storeHashSize).toBe(200);
+	});
+
 	test('should be able to get size', () => {
 		const cache = new CacheableMemory();
 		cache.set('key', 'value');
@@ -63,11 +69,11 @@ describe('CacheableMemory Options and Properties', () => {
 		cache.set('key3', 'value3');
 		cache.set('key4', 'value4');
 		const values = [...cache.items];
-		expect(values[0].value).toBe('value3');
-		expect(values[1].value).toBe('value4');
-		expect(values[2].value).toBe('value1');
-		expect(values[3].value).toBe('value');
-		expect(values[4].value).toBe('value2');
+		expect(values[0].value).toBe('value4');
+		expect(values[1].value).toBe('value');
+		expect(values[2].value).toBe('value2');
+		expect(values[3].value).toBe('value3');
+		expect(values[4].value).toBe('value1');
 	});
 	test('should be able to iterate over cache items', () => {
 		const cache = new CacheableMemory();
