@@ -63,11 +63,11 @@ describe('CacheableMemory Options and Properties', () => {
 		cache.set('key3', 'value3');
 		cache.set('key4', 'value4');
 		const values = [...cache.items];
-		expect(values[0].value).toBe('value3');
-		expect(values[1].value).toBe('value4');
-		expect(values[2].value).toBe('value1');
-		expect(values[3].value).toBe('value');
-		expect(values[4].value).toBe('value2');
+		expect(values[0].value).toBe('value4');
+		expect(values[1].value).toBe('value');
+		expect(values[2].value).toBe('value2');
+		expect(values[3].value).toBe('value3');
+		expect(values[4].value).toBe('value1');
 	});
 	test('should be able to iterate over cache items', () => {
 		const cache = new CacheableMemory();

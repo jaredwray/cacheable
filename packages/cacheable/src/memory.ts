@@ -3,7 +3,7 @@ import {wrapSync, type WrapFunctionOptions} from './wrap.js';
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
 import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
-import {hash} from './hash.js';
+import {djb2Hash, hash} from './hash.js';
 
 /**
  * @typedef {Object} CacheableMemoryOptions
@@ -11,14 +11,16 @@ import {hash} from './hash.js';
  * format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means that it will use the default time-to-live. If both are
  * undefined then it will not have a time-to-live.
  * @property {boolean} [useClone] - If true, it will clone the value before returning it. If false, it will return the value directly. Default is true.
- * @property {number} [lruSize] - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0.
+ * @property {number} [lruSize] - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0. If you are using LRU then the limit is based on Map() size 17mm.
  * @property {number} [checkInterval] - The interval to check for expired items. If set to 0, it will not check for expired items. Default is 0.
+ * @property {number} [storeHashSize] - The number of how many Map stores we have for the hash. Default is 20.
  */
 export type CacheableMemoryOptions = {
 	ttl?: number | string;
 	useClone?: boolean;
 	lruSize?: number;
 	checkInterval?: number;
+	storeHashSize?: number;
 };
 
 export type SetOptions = {
@@ -28,18 +30,8 @@ export type SetOptions = {
 
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
-	private readonly _hashCache = new Map<string, number>();
-	private readonly _hash0 = new Map<string, CacheableStoreItem>();
-	private readonly _hash1 = new Map<string, CacheableStoreItem>();
-	private readonly _hash2 = new Map<string, CacheableStoreItem>();
-	private readonly _hash3 = new Map<string, CacheableStoreItem>();
-	private readonly _hash4 = new Map<string, CacheableStoreItem>();
-	private readonly _hash5 = new Map<string, CacheableStoreItem>();
-	private readonly _hash6 = new Map<string, CacheableStoreItem>();
-	private readonly _hash7 = new Map<string, CacheableStoreItem>();
-	private readonly _hash8 = new Map<string, CacheableStoreItem>();
-	private readonly _hash9 = new Map<string, CacheableStoreItem>();
-
+	private _storeHashSize = 20; // Default is 20
+	private _store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
 	private _lruSize = 0; // Turned off by default
@@ -68,6 +60,8 @@ export class CacheableMemory extends Hookified {
 		if (options?.checkInterval) {
 			this._checkInterval = options.checkInterval;
 		}
+
+		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 
 		this.startIntervalCheck();
 	}
@@ -106,7 +100,7 @@ export class CacheableMemory extends Hookified {
 
 	/**
 	 * Gets the size of the LRU cache
-	 * @returns {number} - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0.
+	 * @returns {number} - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0. If you are using LRU then the limit is based on Map() size 17mm.
 	 */
 	public get lruSize(): number {
 		return this._lruSize;
@@ -114,7 +108,7 @@ export class CacheableMemory extends Hookified {
 
 	/**
 	 * Sets the size of the LRU cache
-	 * @param {number} value - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0.
+	 * @param {number} value - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0. If you are using LRU then the limit is based on Map() size 17mm.
 	 */
 	public set lruSize(value: number) {
 		this._lruSize = value;
@@ -142,7 +136,30 @@ export class CacheableMemory extends Hookified {
 	 * @returns {number} - The size of the cache
 	 */
 	public get size(): number {
-		return this._hash0.size + this._hash1.size + this._hash2.size + this._hash3.size + this._hash4.size + this._hash5.size + this._hash6.size + this._hash7.size + this._hash8.size + this._hash9.size;
+		let size = 0;
+		for (const store of this._store) {
+			size += store.size;
+		}
+
+		return size;
+	}
+
+	/**
+	 * Gets the number of hash stores
+	 * @returns {number} - The number of hash stores
+	 */
+	public get storeHashSize(): number {
+		return this._storeHashSize;
+	}
+
+	/**
+	 * Sets the number of hash stores. This will recreate the store and all data will be cleared
+	 * @param {number} value - The number of hash stores
+	 */
+	public set storeHashSize(value: number) {
+		this._storeHashSize = value;
+
+		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 	}
 
 	/**
@@ -150,7 +167,24 @@ export class CacheableMemory extends Hookified {
 	 * @returns {IterableIterator<string>} - The keys
 	 */
 	public get keys(): IterableIterator<string> {
-		return this.concatStores().keys();
+		const keys = new Array<string>();
+		for (const store of this._store) {
+			if (!store) {
+				continue;
+			}
+
+			for (const key of store.keys()) {
+				const item = store.get(key);
+				if (item && this.hasExpired(item)) {
+					store.delete(key);
+					continue;
+				}
+
+				keys.push(key);
+			}
+		}
+
+		return keys.values();
 	}
 
 	/**
@@ -158,7 +192,23 @@ export class CacheableMemory extends Hookified {
 	 * @returns {IterableIterator<CacheableStoreItem>} - The items
 	 */
 	public get items(): IterableIterator<CacheableStoreItem> {
-		return this.concatStores().values();
+		const items = new Array<CacheableStoreItem>();
+		for (const store of this._store) {
+			if (!store) {
+				continue;
+			}
+
+			for (const item of store.values()) {
+				if (this.hasExpired(item)) {
+					store.delete(item.key);
+					continue;
+				}
+
+				items.push(item);
+			}
+		}
+
+		return items.values();
 	}
 
 	/**
@@ -173,7 +223,7 @@ export class CacheableMemory extends Hookified {
 			return undefined;
 		}
 
-		if (item.expires && item.expires && Date.now() > item.expires) {
+		if (item.expires && Date.now() > item.expires) {
 			store.delete(key);
 			return undefined;
 		}
@@ -365,7 +415,6 @@ export class CacheableMemory extends Hookified {
 	public delete(key: string): void {
 		const store = this.getStore(key);
 		store.delete(key);
-		this._hashCache.delete(key);
 	}
 
 	/**
@@ -384,17 +433,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {void}
 	 */
 	public clear(): void {
-		this._hash0.clear();
-		this._hash1.clear();
-		this._hash2.clear();
-		this._hash3.clear();
-		this._hash4.clear();
-		this._hash5.clear();
-		this._hash6.clear();
-		this._hash7.clear();
-		this._hash8.clear();
-		this._hash9.clear();
-		this._hashCache.clear();
+		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 		this._lru = new DoublyLinkedList<string>();
 	}
 
@@ -404,57 +443,10 @@ export class CacheableMemory extends Hookified {
 	 * @returns {CacheableHashStore} - The store
 	 */
 	public getStore(key: string): Map<string, CacheableStoreItem> {
-		const hash = this.hashKey(key);
-		return this.getStoreFromHash(hash);
-	}
+		const hash = djb2Hash(key, 0, this._storeHashSize);
+		this._store[hash] ||= new Map<string, CacheableStoreItem>();
 
-	/**
-	 * Get the store based on the hash (internal use)
-	 * @param {number} hash
-	 * @returns {Map<string, CacheableStoreItem>}
-	 */
-	public getStoreFromHash(hash: number): Map<string, CacheableStoreItem> {
-		switch (hash) {
-			case 1: {
-				return this._hash1;
-			}
-
-			case 2: {
-				return this._hash2;
-			}
-
-			case 3: {
-				return this._hash3;
-			}
-
-			case 4: {
-				return this._hash4;
-			}
-
-			case 5: {
-				return this._hash5;
-			}
-
-			case 6: {
-				return this._hash6;
-			}
-
-			case 7: {
-				return this._hash7;
-			}
-
-			case 8: {
-				return this._hash8;
-			}
-
-			case 9: {
-				return this._hash9;
-			}
-
-			default: {
-				return this._hash0;
-			}
-		}
+		return this._store[hash];
 	}
 
 	/**
@@ -463,22 +455,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {number} from 0 to 9
 	 */
 	public hashKey(key: string): number {
-		const cacheHashNumber = this._hashCache.get(key);
-		if (typeof cacheHashNumber === 'number') {
-			return cacheHashNumber;
-		}
-
-		let hash = 0;
-		const primeMultiplier = 31; // Use a prime multiplier for better distribution
-
-		for (let i = 0; i < key.length; i++) {
-			// eslint-disable-next-line unicorn/prefer-code-point
-			hash = (hash * primeMultiplier) + key.charCodeAt(i);
-		}
-
-		const result = Math.abs(hash) % 10; // Return a number between 0 and 9
-		this._hashCache.set(key, result);
-		return result;
+		return djb2Hash(key, 0, this._storeHashSize);
 	}
 
 	/**
@@ -521,7 +498,7 @@ export class CacheableMemory extends Hookified {
 	}
 
 	/**
-	 * Resize the LRU cache. This is for internal use
+	 * Resize the LRU cache. This is for internal use.
 	 * @returns {void}
 	 */
 	public lruResize(): void {
@@ -543,10 +520,15 @@ export class CacheableMemory extends Hookified {
 	 * @returns {void}
 	 */
 	public checkExpiration() {
-		const stores = this.concatStores();
-		for (const item of stores.values()) {
-			if (item.expires && Date.now() > item.expires) {
-				this.delete(item.key);
+		for (const store of this._store) {
+			if (!store) {
+				continue;
+			}
+
+			for (const item of store.values()) {
+				if (item.expires && Date.now() > item.expires) {
+					store.delete(item.key);
+				}
 			}
 		}
 	}
@@ -624,10 +606,6 @@ export class CacheableMemory extends Hookified {
 		return result;
 	}
 
-	private concatStores(): Map<string, CacheableStoreItem> {
-		return new Map([...this._hash0, ...this._hash1, ...this._hash2, ...this._hash3, ...this._hash4, ...this._hash5, ...this._hash6, ...this._hash7, ...this._hash8, ...this._hash9]);
-	}
-
 	private setTtl(ttl: number | string | undefined): void {
 		if (typeof ttl === 'string' || ttl === undefined) {
 			this._ttl = ttl;
@@ -636,6 +614,14 @@ export class CacheableMemory extends Hookified {
 		} else {
 			this._ttl = undefined;
 		}
+	}
+
+	private hasExpired(item: CacheableStoreItem): boolean {
+		if (item.expires && Date.now() > item.expires) {
+			return true;
+		}
+
+		return false;
 	}
 }
 
