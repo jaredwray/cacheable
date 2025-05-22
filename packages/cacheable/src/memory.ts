@@ -61,6 +61,10 @@ export class CacheableMemory extends Hookified {
 			this._checkInterval = options.checkInterval;
 		}
 
+		if (options?.storeHashSize) {
+			this._storeHashSize = options.storeHashSize;
+		}
+
 		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 
 		this.startIntervalCheck();
@@ -169,10 +173,6 @@ export class CacheableMemory extends Hookified {
 	public get keys(): IterableIterator<string> {
 		const keys = new Array<string>();
 		for (const store of this._store) {
-			if (!store) {
-				continue;
-			}
-
 			for (const key of store.keys()) {
 				const item = store.get(key);
 				if (item && this.hasExpired(item)) {
