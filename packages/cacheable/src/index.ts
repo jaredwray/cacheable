@@ -5,9 +5,10 @@ import {createKeyv} from './keyv-memory.js';
 import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
-import {wrap, type WrapFunctionOptions} from './wrap.js';
+import {
+	getOrSet, type GetOrSetFunctionOptions, type GetOrSetOptions, wrap, type WrapFunctionOptions,
+} from './wrap.js';
 import {getCascadingTtl, calculateTtlFromExpiration} from './ttl.js';
-import {coalesceAsync} from './coalesce-async.js';
 
 export enum CacheableHooks {
 	BEFORE_SET = 'BEFORE_SET',
@@ -58,11 +59,6 @@ export type CacheableOptions = {
 	 * If it is not set then it will be a random string that is generated
 	 */
 	cacheId?: string;
-};
-
-export type GetOrSetOptions = {
-	ttl?: number | string;
-	cacheErrors?: boolean;
 };
 
 export class Cacheable extends Hookified {
@@ -690,26 +686,14 @@ export class Cacheable extends Hookified {
 	 * @param {WrapFunctionOptions} [options] - Optional settings for caching, such as the time to live (TTL) or whether to cache errors.
 	 * @return {Promise<T | undefined>} - A promise that resolves to the cached or newly computed value, or undefined if an error occurs and caching is not configured for errors.
 	 */
-	public async getOrSet<T>(key: string, function_: () => Promise<T>, options?: GetOrSetOptions): Promise<T | undefined> {
-		let value = await this.get(key) as T | undefined;
-		if (value === undefined) {
-			const cacheId = this.cacheId ?? 'default';
-			const coalesceKey = `${cacheId}::${key}`;
-			value = await coalesceAsync(coalesceKey, async () => {
-				try {
-					const result = await function_() as T;
-					await this.set(key, result, options?.ttl);
-					return result;
-				} catch (error) {
-					this.emit('error', error);
-					if (options?.cacheErrors) {
-						await this.set(key, error, options?.ttl);
-					}
-				}
-			});
-		}
-
-		return value;
+	public async getOrSet<T>(key: string, function_: () => Promise<T>, options?: GetOrSetFunctionOptions): Promise<T | undefined> {
+		const getOrSetOptions: GetOrSetOptions = {
+			cache: this,
+			cacheId: this._cacheId,
+			ttl: options?.ttl ?? this._ttl,
+			cacheErrors: options?.cacheErrors,
+		};
+		return getOrSet(key, function_, getOrSetOptions);
 	}
 
 	/**

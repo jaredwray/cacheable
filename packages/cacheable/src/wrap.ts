@@ -1,5 +1,16 @@
 import {hash} from './hash.js';
+import {coalesceAsync} from './coalesce-async.js';
 import {type Cacheable, type CacheableMemory} from './index.js';
+
+export type GetOrSetFunctionOptions = {
+	ttl?: number | string;
+	cacheErrors?: boolean;
+};
+
+export type GetOrSetOptions = GetOrSetFunctionOptions & {
+	cacheId?: string;
+	cache: Cacheable;
+};
 
 export type WrapFunctionOptions = {
 	ttl?: number | string;
@@ -40,6 +51,28 @@ export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): A
 
 		return value as T;
 	};
+}
+
+export async function getOrSet<T>(key: string, function_: () => Promise<T>, options: GetOrSetOptions): Promise<T | undefined> {
+	let value = await options.cache.get(key) as T | undefined;
+	if (value === undefined) {
+		const cacheId = options.cacheId ?? 'default';
+		const coalesceKey = `${cacheId}::${key}`;
+		value = await coalesceAsync(coalesceKey, async () => {
+			try {
+				const result = await function_() as T;
+				await options.cache.set(key, result, options.ttl);
+				return result;
+			} catch (error) {
+				options.cache.emit('error', error);
+				if (options.cacheErrors) {
+					await options.cache.set(key, error, options.ttl);
+				}
+			}
+		});
+	}
+
+	return value;
 }
 
 export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFunction {
