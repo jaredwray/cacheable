@@ -178,7 +178,7 @@ export class NodeCache extends Hookified {
 	 * @param {string | number} key if the key is a number it will convert it to a string
 	 * @returns {T} the value or undefined
 	 */
-	public get<T>(key: string | number): any {
+	public get<T>(key: string | number): T | undefined {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
 			if (result.ttl > 0) {
@@ -195,7 +195,7 @@ export class NodeCache extends Hookified {
 
 				this._stats.incrementHits();
 				if (this.options.useClones) {
-					return this._cacheable.clone(result.value);
+					return this._cacheable.clone(result.value) as T;
 				}
 
 				return result.value as T;
@@ -203,7 +203,7 @@ export class NodeCache extends Hookified {
 
 			this._stats.incrementHits();
 			if (this.options.useClones) {
-				return this._cacheable.clone(result.value);
+				return this._cacheable.clone(result.value) as T;
 			}
 
 			return result.value as T;
@@ -217,10 +217,10 @@ export class NodeCache extends Hookified {
 	 * Gets multiple saved values from the cache. Returns an empty object {} if not found or expired.
 	 * If the value was found it returns an object with the key value pair.
 	 * @param {Array<string | number} keys an array of keys
-	 * @returns {Record<string, unknown>} an object with the key as a property and the value as the value
+	 * @returns {Record<string, T | undefined>} an object with the key as a property and the value as the value
 	 */
-	public mget<T>(keys: Array<string | number>): Record<string, unknown> {
-		const result: Record<string, unknown> = {};
+	public mget<T>(keys: Array<string | number>): Record<string, T | undefined> {
+		const result: Record<string, T | undefined> = {};
 
 		for (const key of keys) {
 			const value = this.get(key);
