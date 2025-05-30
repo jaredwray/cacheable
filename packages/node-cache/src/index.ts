@@ -429,7 +429,7 @@ export class NodeCache extends Hookified {
 			const checkPeriodinSeconds = this.options.checkperiod * 1000;
 			this.intervalId = setInterval(() => {
 				this.checkData();
-			}, checkPeriodinSeconds);
+			}, checkPeriodinSeconds).unref();
 
 			return;
 		}
