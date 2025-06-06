@@ -30,8 +30,8 @@ describe('mdel', () => {
 		await expect(cache.get(list[1].key)).resolves.toEqual(list[1].value);
 		await expect(cache.get(list[2].key)).resolves.toEqual(list[2].value);
 		await cache.mdel([list[0].key, list[1].key]);
-		await expect(cache.get(list[0].key)).resolves.toEqual(null);
-		await expect(cache.get(list[1].key)).resolves.toEqual(null);
+		await expect(cache.get(list[0].key)).resolves.toBeUndefined();
+		await expect(cache.get(list[1].key)).resolves.toBeUndefined();
 		await expect(cache.get(list[2].key)).resolves.toEqual(list[2].value);
 	});
 

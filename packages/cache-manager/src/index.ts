@@ -91,13 +91,13 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const _cacheId = options?.cacheId ?? Math.random().toString(36).slice(2);
 
 	const get = async <T>(key: string): Promise<T | undefined> => {
-		let result = null;
+		let result;
 
 		if (nonBlocking) {
 			try {
 				result = await Promise.race(stores.map(async store => store.get<T>(key)));
 				if (result === undefined) {
-					return null;
+					return undefined;
 				}
 			} catch (error) {
 				eventEmitter.emit('get', {key, error});
@@ -132,13 +132,13 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	};
 
 	const ttl = async (key: string): Promise<number | undefined> => {
-		let result = null;
+		let result;
 
 		if (nonBlocking) {
 			try {
 				result = await Promise.race(stores.map(async store => store.get(key, {raw: true})));
 				if (result === undefined) {
-					return null;
+					return undefined;
 				}
 			} catch (error) {
 				eventEmitter.emit('ttl', {key, error});
@@ -162,7 +162,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			return result.expires;
 		}
 
-		return null;
+		return undefined;
 	};
 
 	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number): Promise<T> => {
