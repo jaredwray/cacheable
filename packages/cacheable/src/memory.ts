@@ -12,6 +12,8 @@ export enum StoreHashAlgorithm {
 	djb2Hash = 'djb2Hash',
 }
 
+export type StoreHashAlgorithmFunction = ((key: string, storeHashSize: number) => number);
+
 /**
  * @typedef {Object} CacheableMemoryOptions
  * @property {number|string} [ttl] - Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable
@@ -28,7 +30,7 @@ export type CacheableMemoryOptions = {
 	lruSize?: number;
 	checkInterval?: number;
 	storeHashSize?: number;
-	storeHashAlgorithm?: StoreHashAlgorithm | ((storeHashSize: number) => number);
+	storeHashAlgorithm?: StoreHashAlgorithm | ((key: string, storeHashSize: number) => number);
 };
 
 export type SetOptions = {
@@ -39,7 +41,7 @@ export type SetOptions = {
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
 	private _storeHashSize = 16; // Default is 16
-	private _storeHashAlgorithm: StoreHashAlgorithm | ((storeHashSize: number) => number) = StoreHashAlgorithm.djb2Hash; // Default is djb2Hash
+	private _storeHashAlgorithm: StoreHashAlgorithm | ((key: string, storeHashSize: number) => number) = StoreHashAlgorithm.djb2Hash; // Default is djb2Hash
 	private _store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
@@ -181,17 +183,17 @@ export class CacheableMemory extends Hookified {
 
 	/**
 	 * Gets the store hash algorithm
-	 * @returns {StoreHashAlgorithm | ((storeHashSize: number) => number)} - The store hash algorithm
+	 * @returns {StoreHashAlgorithm | StoreHashAlgorithmFunction} - The store hash algorithm
 	 */
-	public get storeHashAlgorithm(): StoreHashAlgorithm | ((storeHashSize: number) => number) {
+	public get storeHashAlgorithm(): StoreHashAlgorithm | StoreHashAlgorithmFunction {
 		return this._storeHashAlgorithm;
 	}
 
 	/**
 	 * Sets the store hash algorithm. This will recreate the store and all data will be cleared
-	 * @param {StoreHashAlgorithm | (((storeHashSize: number) => number)} value - The store hash algorithm
+	 * @param {StoreHashAlgorithm | StoreHashAlgorithmFunction} value - The store hash algorithm
 	 */
-	public set storeHashAlgorithm(value: StoreHashAlgorithm | ((storeHashSize: number) => number)) {
+	public set storeHashAlgorithm(value: StoreHashAlgorithm | StoreHashAlgorithmFunction) {
 		this._storeHashAlgorithm = value;
 	}
 
@@ -496,7 +498,7 @@ export class CacheableMemory extends Hookified {
 
 		// If we have a function, we call it with the store hash size
 		if (typeof this._storeHashAlgorithm === 'function') {
-			return this._storeHashAlgorithm(this._storeHashSize);
+			return this._storeHashAlgorithm(key, this._storeHashSize);
 		}
 
 		if (this._storeHashAlgorithm === StoreHashAlgorithm.SHA256 || this._storeHashAlgorithm === StoreHashAlgorithm.SHA1 || this._storeHashAlgorithm === StoreHashAlgorithm.MD5) {
