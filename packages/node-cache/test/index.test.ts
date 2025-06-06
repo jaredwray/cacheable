@@ -286,7 +286,7 @@ describe('NodeCache', () => {
 		await sleep(1000);
 		expect(cache.getStats().keys).toBe(2);
 		expect(expiredKey).toBe('foo-expired');
-		const expiredValue = cache.get('foo-expired') as string;
+		const expiredValue = cache.get<string>('foo-expired');
 		expect(expiredValue).toBe(undefined);
 		cache.close();
 	});
