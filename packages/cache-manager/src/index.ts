@@ -25,12 +25,9 @@ type WrapOptionsRaw<T> = WrapOptions<T> & {
 };
 
 export type Cache = {
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	get: <T>(key: string) => Promise<T | null>;
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	mget: <T>(keys: string[]) => Promise<Array<T | null>>;
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	ttl: (key: string) => Promise<number | null>;
+	get: <T>(key: string) => Promise<T | undefined>;
+	mget: <T>(keys: string[]) => Promise<Array<T | undefined>>;
+	ttl: (key: string) => Promise<number | undefined>;
 	set: <T>(key: string, value: T, ttl?: number) => Promise<T>;
 	mset: <T>(
 		list: Array<{
@@ -39,11 +36,11 @@ export type Cache = {
 			ttl?: number;
 		}>
 	) => Promise<
-	Array<{
-		key: string;
-		value: T;
-		ttl?: number;
-	}>
+		Array<{
+			key: string;
+			value: T;
+			ttl?: number;
+		}>
 	>;
 	del: (key: string) => Promise<boolean>;
 	mdel: (keys: string[]) => Promise<boolean>;
@@ -93,8 +90,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const nonBlocking = options?.nonBlocking ?? false;
 	const _cacheId = options?.cacheId ?? Math.random().toString(36).slice(2);
 
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	const get = async <T>(key: string): Promise<T | null> => {
+	const get = async <T>(key: string): Promise<T | undefined> => {
 		let result = null;
 
 		if (nonBlocking) {
@@ -124,10 +120,8 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		return result as T;
 	};
 
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	const mget = async <T>(keys: string[]): Promise<Array<T | null>> => {
-		// eslint-disable-next-line @typescript-eslint/ban-types
-		const result: Array<T | null> = [];
+	const mget = async <T>(keys: string[]): Promise<Array<T | undefined>> => {
+		const result: Array<T | undefined> = [];
 
 		for (const key of keys) {
 			const data = await get<T>(key);
@@ -137,8 +131,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		return result;
 	};
 
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	const ttl = async (key: string): Promise<number | null> => {
+	const ttl = async (key: string): Promise<number | undefined> => {
 		let result = null;
 
 		if (nonBlocking) {
@@ -316,6 +309,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 		if (shouldRefresh) {
 			coalesceAsync(`+++${_cacheId}__${key}`, fnc)
+				// eslint-disable-next-line promise/prefer-await-to-then
 				.then(async result => {
 					try {
 						await set(options?.refreshAllStores ? stores : stores.slice(0, i + 1), key, result, resolveTtl(result));
@@ -324,7 +318,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 						eventEmitter.emit('refresh', {key, value, error});
 					}
 				})
-			// eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
+			// eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable, promise/prefer-await-to-then
 				.catch(error => {
 					eventEmitter.emit('refresh', {key, value, error});
 				});

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises, promise/prefer-await-to-then */
 import {Keyv} from 'keyv';
 import {
 	beforeEach, describe, expect, it, vi,
@@ -45,10 +46,7 @@ describe('mdel', () => {
 		const delHandler = vi.spyOn(keyv, 'delete').mockReturnValue(deletePromise);
 		const deleteResolved = vi.fn();
 		const deleteRejected = vi.fn();
-		cache.mdel(list.map(({key}) => key)).then(
-			deleteResolved,
-			deleteRejected,
-		);
+		cache.mdel(list.map(({key}) => key)).catch(deleteRejected).then(deleteResolved);
 
 		expect(delHandler).toBeCalledTimes(list.length);
 
@@ -74,10 +72,7 @@ describe('mdel', () => {
 		const delHandler = vi.spyOn(keyv, 'delete').mockReturnValue(deletePromise);
 		const deleteResolved = vi.fn();
 		const deleteRejected = vi.fn();
-		cache.mdel(list.map(({key}) => key)).then(
-			deleteResolved,
-			deleteRejected,
-		);
+		cache.mdel(list.map(({key}) => key)).catch(deleteRejected).then(deleteResolved);
 
 		expect(delHandler).toBeCalledTimes(list.length);
 

@@ -34,7 +34,8 @@ export class KeyvAdapter implements KeyvStoreAdapter {
 	}
 
 	async set(key: string, value: any, ttl?: number) {
-		return this._cache.set(key, value, ttl).then(() => true);
+		await this._cache.set(key, value, ttl);
+		return true;
 	}
 
 	async delete(key: string): Promise<boolean> {
@@ -56,6 +57,7 @@ export class KeyvAdapter implements KeyvStoreAdapter {
 	}
 
 	async getMany?<T>(keys: string[]): Promise<Array<StoredData<T | undefined>>> {
+		// eslint-disable-next-line promise/prefer-await-to-then
 		return this._cache.mget(...keys).then(values => values.map(value => (value as T)));
 	}
 

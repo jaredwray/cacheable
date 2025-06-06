@@ -27,6 +27,7 @@
       "protobufjs",
       "sharp",
       "sqlite3",
+      "unrs-resolver",
       "workerd"
     ]
   }

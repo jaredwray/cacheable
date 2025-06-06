@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises, promise/prefer-await-to-then */
 import {Keyv} from 'keyv';
 import {
 	beforeEach, describe, expect, it, vi,
@@ -44,10 +45,7 @@ describe('mset', () => {
 		const setHandler = vi.spyOn(keyv, 'set').mockReturnValue(setPromise);
 		const setResolved = vi.fn();
 		const setRejected = vi.fn();
-		cache.mset(list).then(
-			setResolved,
-			setRejected,
-		);
+		cache.mset(list).catch(setRejected).then(setResolved);
 
 		expect(setHandler).toBeCalledTimes(list.length);
 
@@ -78,10 +76,7 @@ describe('mset', () => {
 		const setHandler = vi.spyOn(keyv, 'set').mockReturnValue(setPromise);
 		const setResolved = vi.fn();
 		const setRejected = vi.fn();
-		cache.mset(list).then(
-			setResolved,
-			setRejected,
-		);
+		cache.mset(list).catch(setRejected).then(setResolved);
 
 		expect(setHandler).toBeCalledTimes(list.length);
 

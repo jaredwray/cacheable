@@ -74,6 +74,7 @@ describe('wrap', () => {
 
 		// Simulate several concurrent requests for the same value.
 		const array = Array.from({length: 10}).fill(null);
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
 		const results = await Promise.allSettled(array.map(async () => cache.wrap(data.key, getValue, ttl)));
 
 		// Assert that the function was called exactly once.
@@ -132,6 +133,7 @@ describe('wrap', () => {
 		const getValueA = vi.fn(() => 'A');
 		const getValueB = vi.fn(() => 'B');
 		const anotherCache = createCache({stores: [new Keyv()]});
+		// eslint-disable-next-line promise/prefer-await-to-then
 		expect(await cache.wrap(data.key, async () => anotherCache.wrap(data.key, getValueB).then(v => v + getValueA()))).toEqual('BA');
 		expect(getValueA).toHaveBeenCalledOnce();
 		expect(getValueB).toHaveBeenCalledOnce();
@@ -153,6 +155,7 @@ describe('wrap', () => {
 		const getValueA = vi.fn(() => 'A');
 		const getValueB = vi.fn(() => 'B');
 		const anotherCache = createCache({stores: [new Keyv()]});
+		// eslint-disable-next-line promise/prefer-await-to-then
 		expect(await cache.wrap(data.key, async () => anotherCache.wrap(data.key, getValueB).then(v => v + getValueA()))).toEqual('BA');
 		expect(getValueA).toHaveBeenCalledOnce();
 		expect(getValueB).toHaveBeenCalledOnce();
