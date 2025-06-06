@@ -387,6 +387,51 @@ This simple in-memory cache uses multiple Map objects and a with `expiration` an
 
 By default we use lazy expiration deletion which means on `get` and `getMany` type functions we look if it is expired and then delete it. If you want to have a more aggressive expiration policy you can set the `checkInterval` property to a value greater than `0` which will check for expired keys at the interval you set.
 
+## Cacheable Memory Store Hashing
+
+`CacheableMemory` uses `Map` objects to store the keys and values. To make this scale past the `17 million keys` limit of a single `Map` we use a hash to balance the data across multiple `Map` objects. This is done by hashing the key and using the hash to determine which `Map` object to use. The default hashing algorithm is `djb2Hash` but you can change it by setting the `storeHashAlgorithm` property in the options. By default we set the amount of `Map` objects to `16`. 
+
+NOTE: if you are using the LRU cache feature the `lruSize` no matter how many `Map` objects you have it will be limited to the `17 million keys` limit of a single `Map` object. This is because we use a double linked list to manage the LRU cache and it is not possible to have more than `17 million keys` in a single `Map` object.
+
+Here is an example of how to set the number of `Map` objects and the hashing algorithm:
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+const cache = new CacheableMemory({
+  storeSize: 32, // set the number of Map objects to 32
+});
+cache.set('key', 'value');
+const value = cache.get('key'); // value
+```
+
+Here is an example of how to use the `storeHashAlgorithm` property:
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+const cache = new CacheableMemory({ storeHashAlgorithm: 'sha256' });
+cache.set('key', 'value');
+const value = cache.get('key'); // value
+```
+
+If you want to provide your own hashing function you can set the `storeHashAlgorithm` property to a function that takes an object and returns a `number` that is in the range of the amount of `Map` stores you have.
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+const customHash = (object) => {
+  // custom hashing logic
+  return object.key.length % 32; // returns a number between 0 and 31 for 32 Map objects
+};
+const cache = new CacheableMemory({ storeHashAlgorithm: customHash, storeSize: 32 });
+cache.set('key', 'value');
+const value = cache.get('key'); // value
+```
+
+## Cacheable Memory LRU Feature
+
+You can enable the LRU (Least Recently Used) feature in `CacheableMemory` by setting the `lruSize` property in the options. This will limit the number of keys in the cache to the size you set. When the cache reaches the limit it will remove the least recently used keys from the cache. This is useful if you want to limit the memory usage of the cache.
+
+NOTE: if you are using the LRU cache feature the `lruSize` no matter how many `Map` objects you have it will be limited to the `17 million keys` limit of a single `Map` object. This is because we use a double linked list to manage the LRU cache and it is not possible to have more than `17 million keys` in a single `Map` object.
+
 ## CacheableMemory Options
 
 * `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.

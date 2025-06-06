@@ -5,6 +5,13 @@ import {shorthandToTime} from './shorthand-time.js';
 import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
 import {djb2Hash, hash} from './hash.js';
 
+export enum StoreHashAlgorithm {
+	SHA256 = 'sha256',
+	SHA1 = 'sha1',
+	MD5 = 'md5',
+	djb2Hash = 'djb2Hash',
+}
+
 /**
  * @typedef {Object} CacheableMemoryOptions
  * @property {number|string} [ttl] - Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable
@@ -21,6 +28,7 @@ export type CacheableMemoryOptions = {
 	lruSize?: number;
 	checkInterval?: number;
 	storeHashSize?: number;
+	storeHashAlgorithm?: StoreHashAlgorithm | (() => number);
 };
 
 export type SetOptions = {
@@ -30,7 +38,7 @@ export type SetOptions = {
 
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
-	private _storeHashSize = 10; // Default is 10
+	private _storeHashSize = 16; // Default is 16
 	private _store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
@@ -61,7 +69,7 @@ export class CacheableMemory extends Hookified {
 			this._checkInterval = options.checkInterval;
 		}
 
-		if (options?.storeHashSize) {
+		if (options?.storeHashSize && options.storeHashSize > 0) {
 			this._storeHashSize = options.storeHashSize;
 		}
 
