@@ -20,10 +20,6 @@ We moved to using [Keyv](https://keyv.org/) which are more actively maintained a
 
 A special thanks to [Tim Phan](https://github.com/timphandev) who took `cache-manager` v5 and ported it to [Keyv](https://keyv.org/) which is the foundation of v6. 🎉 Another special thanks to [Doug Ayers](https://github.com/douglascayers) who wrote `promise-coalesce` which was used in v5 and now embedded in v6.
 
-If you are looking for older documentation you can find it here:
-* [v5 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv5.md)
-* [v4 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv4.md)
-
 # Migration from v6 to v7
 
 `v7` has only one breaking change which is changine the return type from `null` to `undefined` when there is no data to return. This is to align with the [Keyv](https://keyv.org) API and to make it more consistent with the rest of the methods. Below is an example of how to migrate from `v6` to `v7`:
@@ -104,6 +100,10 @@ const cache = createCache({
 To learn more about `CacheableMemory` please visit: http://cacheable.org/docs/cacheable/#cacheablememory---in-memory-cache
 
 If you are still wanting to use the legacy storage adapters you can use the `KeyvAdapter` to wrap the storage adapter. Below is an example of how to migrate from `v5` to `v6` using `cache-manager-redis-yet` by going to [Using Legacy Storage Adapters](#using-legacy-storage-adapters).
+
+If you are looking for older documentation you can find it here:
+* [v5 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv5.md)
+* [v4 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv4.md)
 
 
 ## Table of Contents
