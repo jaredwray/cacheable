@@ -417,9 +417,16 @@ If you want to provide your own hashing function you can set the `storeHashAlgor
 
 ```javascript
 import { CacheableMemory } from 'cacheable';
-const customHash = (object) => {
+/**
+ * Custom hash function that takes a key and the size of the store
+ * and returns a number between 0 and storeHashSize - 1.
+ * @param {string} key - The key to hash.
+ * @param {number} storeHashSize - The size of the store (number of Map objects).
+ * @returns {number} - A number between 0 and storeHashSize - 1.
+ */
+const customHash = (key, storeHashSize) => {
   // custom hashing logic
-  return object.key.length % 32; // returns a number between 0 and 31 for 32 Map objects
+  return key.length % storeHashSize; // returns a number between 0 and 31 for 32 Map objects
 };
 const cache = new CacheableMemory({ storeHashAlgorithm: customHash, storeSize: 32 });
 cache.set('key', 'value');
