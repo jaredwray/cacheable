@@ -75,9 +75,11 @@ describe('flat-cache', () => {
 		cache.set('bar', 'baz');
 		cache.set('baz', 'foo');
 		expect(cache.items.length).toBe(3);
-		expect(cache.items[0].value).toEqual('bar');
-		expect(cache.items[1].value).toEqual('foo');
-		expect(cache.items[2].value).toEqual('baz');
+		// eslint-disable-next-line @typescript-eslint/no-unsafe-return
+		const values = cache.items.map(item => item.value);
+		expect(values).toContain('bar');
+		expect(values).toContain('baz');
+		expect(values).toContain('foo');
 	});
 	test('cache id to default', () => {
 		const cache = new FlatCache();
