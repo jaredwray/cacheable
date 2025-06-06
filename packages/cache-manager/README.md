@@ -24,6 +24,19 @@ If you are looking for older documentation you can find it here:
 * [v5 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv5.md)
 * [v4 Documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cache-manager/READMEv4.md)
 
+# Migration from v6 to v7
+
+`v7` has only one breaking change which is changine the return type from `null` to `undefined` for the `get` and `mget` methods. This is to align with the Keyv API and to make it more consistent with the rest of the methods. Below is an example of how to migrate from `v6` to `v7`:
+
+```ts
+import { createCache } from 'cache-manager';
+
+const cache = createCache();
+const result = await cache.get('key');
+// result will be undefined if the key is not found or expired
+console.log(result); // undefined
+```
+
 # Migration from v5 to v6
 
 `v6` is a major update and has breaking changes primarily around the storage adapters. We have moved to using [Keyv](https://keyv.org/) which are more actively maintained and have a larger community. Below are the changes you need to make to migrate from `v5` to `v6`. In `v5` the `memoryStore` was used to create a memory store, in `v6` you can use any storage adapter that Keyv supports. Below is an example of how to migrate from `v5` to `v6`:
