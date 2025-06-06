@@ -13,7 +13,7 @@ import {djb2Hash, hash} from './hash.js';
  * @property {boolean} [useClone] - If true, it will clone the value before returning it. If false, it will return the value directly. Default is true.
  * @property {number} [lruSize] - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0. If you are using LRU then the limit is based on Map() size 17mm.
  * @property {number} [checkInterval] - The interval to check for expired items. If set to 0, it will not check for expired items. Default is 0.
- * @property {number} [storeHashSize] - The number of how many Map stores we have for the hash. Default is 20.
+ * @property {number} [storeHashSize] - The number of how many Map stores we have for the hash. Default is 10.
  */
 export type CacheableMemoryOptions = {
 	ttl?: number | string;
@@ -30,7 +30,7 @@ export type SetOptions = {
 
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
-	private _storeHashSize = 20; // Default is 20
+	private _storeHashSize = 10; // Default is 10
 	private _store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
