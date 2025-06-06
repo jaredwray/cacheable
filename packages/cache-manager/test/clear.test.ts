@@ -30,7 +30,7 @@ describe('clear', () => {
 
 		await expect(cache.clear()).resolves.toEqual(true);
 		for (const index of array) {
-			await expect(cache.get(data.key + index)).resolves.toBeNull();
+			await expect(cache.get(data.key + index)).resolves.toBeUndefined();
 		}
 	});
 
@@ -41,7 +41,7 @@ describe('clear', () => {
 		expect(await secondKeyv.get(data.key)).toBe(data.value);
 		await cache.clear();
 		await sleep(200);
-		await expect(cache.get(data.key)).resolves.toBeNull();
+		await expect(cache.get(data.key)).resolves.toBeUndefined();
 		await expect(secondKeyv.get(data.key)).resolves.toBeUndefined();
 	});
 
