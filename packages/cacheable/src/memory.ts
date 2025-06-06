@@ -28,7 +28,7 @@ export type CacheableMemoryOptions = {
 	lruSize?: number;
 	checkInterval?: number;
 	storeHashSize?: number;
-	storeHashAlgorithm?: StoreHashAlgorithm | (() => number);
+	storeHashAlgorithm?: StoreHashAlgorithm | ((storeHashSize: number) => number);
 };
 
 export type SetOptions = {
@@ -39,6 +39,7 @@ export type SetOptions = {
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
 	private _storeHashSize = 16; // Default is 16
+	private _storeHashAlgorithm: StoreHashAlgorithm | ((storeHashSize: number) => number) = StoreHashAlgorithm.djb2Hash; // Default is djb2Hash
 	private _store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
@@ -71,6 +72,10 @@ export class CacheableMemory extends Hookified {
 
 		if (options?.storeHashSize && options.storeHashSize > 0) {
 			this._storeHashSize = options.storeHashSize;
+		}
+
+		if (options?.storeHashAlgorithm) {
+			this._storeHashAlgorithm = options.storeHashAlgorithm;
 		}
 
 		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
@@ -172,6 +177,22 @@ export class CacheableMemory extends Hookified {
 		this._storeHashSize = value;
 
 		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
+	}
+
+	/**
+	 * Gets the store hash algorithm
+	 * @returns {StoreHashAlgorithm | ((storeHashSize: number) => number)} - The store hash algorithm
+	 */
+	public get storeHashAlgorithm(): StoreHashAlgorithm | ((storeHashSize: number) => number) {
+		return this._storeHashAlgorithm;
+	}
+
+	/**
+	 * Sets the store hash algorithm. This will recreate the store and all data will be cleared
+	 * @param {StoreHashAlgorithm | (((storeHashSize: number) => number)} value - The store hash algorithm
+	 */
+	public set storeHashAlgorithm(value: StoreHashAlgorithm | ((storeHashSize: number) => number)) {
+		this._storeHashAlgorithm = value;
 	}
 
 	/**
@@ -451,22 +472,35 @@ export class CacheableMemory extends Hookified {
 	 * @returns {CacheableHashStore} - The store
 	 */
 	public getStore(key: string): Map<string, CacheableStoreItem> {
-		const hash = djb2Hash(key, 0, this._storeHashSize);
+		const hash = this.getKeyStoreHash(key);
 		this._store[hash] ||= new Map<string, CacheableStoreItem>();
 
 		return this._store[hash];
 	}
 
 	/**
-	 * Hash the key (internal use)
+	 * Hash the key for which store to go to (internal use)
 	 * @param {string} key - The key to hash
-	 * @param {StoreHashAlgorithm} [algorithm] - The algorithm to use for hashing. Default is djb2Hash.
 	 * Available algorithms are: SHA256, SHA1, MD5, and djb2Hash.
 	 * @returns {number} - The hashed key as a number
 	 */
-	public hashKey(key: string, algorithm: StoreHashAlgorithm = StoreHashAlgorithm.djb2Hash): number {
-		if (algorithm === StoreHashAlgorithm.SHA256 || algorithm === StoreHashAlgorithm.SHA1 || algorithm === StoreHashAlgorithm.MD5) {
-			return hashToNumber(key, 0, this._storeHashSize, algorithm);
+	public getKeyStoreHash(key: string): number {
+		if (this._storeHashSize === 1) {
+			return 0; // If we only have one store, we always return 0
+		}
+
+		// Most used and should default to this
+		if (this._storeHashAlgorithm === StoreHashAlgorithm.djb2Hash) {
+			return djb2Hash(key, 0, this._storeHashSize);
+		}
+
+		// If we have a function, we call it with the store hash size
+		if (typeof this._storeHashAlgorithm === 'function') {
+			return this._storeHashAlgorithm(this._storeHashSize);
+		}
+
+		if (this._storeHashAlgorithm === StoreHashAlgorithm.SHA256 || this._storeHashAlgorithm === StoreHashAlgorithm.SHA1 || this._storeHashAlgorithm === StoreHashAlgorithm.MD5) {
+			return hashToNumber(key, 0, this._storeHashSize, this._storeHashAlgorithm);
 		}
 
 		return djb2Hash(key, 0, this._storeHashSize);
