@@ -3,7 +3,7 @@ import {wrapSync, type WrapFunctionOptions} from './wrap.js';
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
 import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
-import {djb2Hash, hash} from './hash.js';
+import {djb2Hash, hashToNumber} from './hash.js';
 
 export enum StoreHashAlgorithm {
 	SHA256 = 'sha256',
@@ -459,10 +459,16 @@ export class CacheableMemory extends Hookified {
 
 	/**
 	 * Hash the key (internal use)
-	 * @param key
-	 * @returns {number} from 0 to 9
+	 * @param {string} key - The key to hash
+	 * @param {StoreHashAlgorithm} [algorithm] - The algorithm to use for hashing. Default is djb2Hash.
+	 * Available algorithms are: SHA256, SHA1, MD5, and djb2Hash.
+	 * @returns {number} - The hashed key as a number
 	 */
-	public hashKey(key: string): number {
+	public hashKey(key: string, algorithm: StoreHashAlgorithm = StoreHashAlgorithm.djb2Hash): number {
+		if (algorithm === StoreHashAlgorithm.SHA256 || algorithm === StoreHashAlgorithm.SHA1 || algorithm === StoreHashAlgorithm.MD5) {
+			return hashToNumber(key, 0, this._storeHashSize, algorithm);
+		}
+
 		return djb2Hash(key, 0, this._storeHashSize);
 	}
 
@@ -571,16 +577,6 @@ export class CacheableMemory extends Hookified {
 
 		this._interval = 0;
 		this._checkInterval = 0;
-	}
-
-	/**
-	 * Hash the object. This is for internal use
-	 * @param {any} object - The object to hash
-	 * @param {string} [algorithm='sha256'] - The algorithm to hash
-	 * @returns {string} - The hashed string
-	 */
-	public hash(object: any, algorithm = 'sha256'): string {
-		return hash(object, algorithm);
 	}
 
 	/**
