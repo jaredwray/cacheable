@@ -1,7 +1,7 @@
 import {describe, test, expect} from 'vitest';
 import {faker} from '@faker-js/faker';
 import {createWrapKey} from '../src/wrap.js';
-import {CacheableMemory} from '../src/memory.js';
+import {CacheableMemory, StoreHashAlgorithm} from '../src/memory.js';
 import {sleep} from './sleep.js';
 
 const cacheItemList = [
@@ -38,6 +38,34 @@ describe('CacheableMemory Options and Properties', () => {
 		expect(cache.storeHashSize).toBe(200);
 	});
 
+	test('should be able to set the storeHashSize', () => {
+		const cache = new CacheableMemory({storeHashSize: 100});
+		expect(cache.storeHashSize).toBe(100);
+		cache.storeHashSize = 200;
+		expect(cache.storeHashSize).toBe(200);
+	});
+
+	test('storeHashSize cannot be 0', () => {
+		const cache = new CacheableMemory({storeHashSize: 0});
+		expect(cache.storeHashSize).toBe(16); // Default size
+	});
+
+	test('should be able to set the storeHashAlgorithm', () => {
+		const cache = new CacheableMemory({storeHashAlgorithm: StoreHashAlgorithm.SHA1});
+		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.SHA1);
+		cache.storeHashAlgorithm = StoreHashAlgorithm.djb2Hash;
+		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.djb2Hash);
+	});
+
+	test('should be able to set storeHashAlgorithm to function', () => {
+		// eslint-disable-next-line unicorn/prefer-code-point
+		const customHashFunction = (key: string) => key.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
+		const cache = new CacheableMemory({storeHashAlgorithm: customHashFunction});
+		expect(cache.storeHashAlgorithm).toBe(customHashFunction);
+	});
+});
+
+describe('CacheableMemory Store', () => {
 	test('should be able to get size', () => {
 		const cache = new CacheableMemory();
 		cache.set('key', 'value');
