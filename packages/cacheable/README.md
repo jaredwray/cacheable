@@ -449,7 +449,23 @@ const value = cache.get('key'); // value
 
 You can enable the LRU (Least Recently Used) feature in `CacheableMemory` by setting the `lruSize` property in the options. This will limit the number of keys in the cache to the size you set. When the cache reaches the limit it will remove the least recently used keys from the cache. This is useful if you want to limit the memory usage of the cache.
 
-NOTE: if you are using the LRU cache feature the `lruSize` no matter how many `Map` objects you have it will be limited to the `17 million keys` limit of a single `Map` object. This is because we use a double linked list to manage the LRU cache and it is not possible to have more than `17 million keys` in a single `Map` object.
+When you set the `lruSize` we use a double linked list to manage the LRU cache and also set the `hashStoreSize` to `1` which means we will only use a single `Map` object for the LRU cache. This is because the LRU cache is managed by the double linked list and it is not possible to have more than `17 million keys` in a single `Map` object.
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+const cache = new CacheableMemory({ lruSize: 1 }); // sets the LRU cache size to 1000 keys and hashStoreSize to 1
+cache.set('key1', 'value1');
+cache.set('key2', 'value2');
+const value1 = cache.get('key1');
+console.log(value1); // undefined if the cache is full and key1 is the least recently used
+const value2 = cache.get('key2');
+console.log(value2); // value2 if key2 is still in the cache
+console.log(cache.size()); // 1
+```
+
+NOTE: if you set the `lruSize` property to `0` after it was enabled the `hashStoreSize` will stay at `1` and the LRU cache will be disabled. This means that the cache will not limit the number of keys and will not remove any keys from the cache. If you want to expand the hash store size you can set the `hashStoreSize` property to a value greater than `1` to use multiple `Map` objects for the cache.
+
+```javascript
 
 ## CacheableMemory Performance
 
@@ -487,9 +503,16 @@ Our goal with `cacheable` and `CacheableMemory` is to provide a high performance
 * `takeMany([keys])`: Takes multiple values from the cache and deletes them.
 * `wrap(function, WrapSyncOptions)`: Wraps a `sync` function in a cache.
 * `clear()`: Clears the cache.
-* `size()`: The number of keys in the cache.
-* `keys()`: The keys in the cache.
-* `items()`: The items in the cache as `CacheableStoreItem` example `{ key, value, expires? }`.
+* `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
+* `useClones`: If the cache should use clones for the values. Default is `true`.
+* `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
+* `size`: The number of keys in the cache.
+* `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
+* `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
+* `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2Hash`.
+* `keys`: Get the keys in the cache. Not able to be set.
+* `items`: Get the items in the cache as `CacheableStoreItem` example `{ key, value, expires? }`.
+* `store`: The hash store for the cache which is an array of `Map` objects.
 * `checkExpired()`: Checks for expired keys in the cache. This is used by the `checkInterval` property.
 * `startIntervalCheck()`: Starts the interval check for expired keys if `checkInterval` is above 0 ms.
 * `stopIntervalCheck()`: Stops the interval check for expired keys.

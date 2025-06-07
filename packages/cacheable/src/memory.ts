@@ -1,4 +1,5 @@
 import {Hookified} from 'hookified';
+import {de} from '@faker-js/faker/.';
 import {wrapSync, type WrapFunctionOptions} from './wrap.js';
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
@@ -38,9 +39,11 @@ export type SetOptions = {
 	expire?: number | Date;
 };
 
+export const defaultStoreHashSize = 16; // Default is 16
+
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
-	private _storeHashSize = 16; // Default is 16
+	private _storeHashSize = defaultStoreHashSize;
 	private _storeHashAlgorithm: StoreHashAlgorithm | ((key: string, storeHashSize: number) => number) = StoreHashAlgorithm.djb2Hash; // Default is djb2Hash
 	private _store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 	private _ttl: number | string | undefined; // Turned off by default
@@ -64,16 +67,21 @@ export class CacheableMemory extends Hookified {
 			this._useClone = options.useClone;
 		}
 
+		if (options?.storeHashSize && options.storeHashSize > 0) {
+			this._storeHashSize = options.storeHashSize;
+		}
+
 		if (options?.lruSize) {
 			this._lruSize = options.lruSize;
+			if (this._lruSize > 0) {
+				this.emit('info', 'using LRU and will reset store size to 1, as we only need one store for LRU');
+				this._storeHashSize = 1; // If we are using LRU, we only need one store
+				this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
+			}
 		}
 
 		if (options?.checkInterval) {
 			this._checkInterval = options.checkInterval;
-		}
-
-		if (options?.storeHashSize && options.storeHashSize > 0) {
-			this._storeHashSize = options.storeHashSize;
 		}
 
 		if (options?.storeHashAlgorithm) {
@@ -130,8 +138,16 @@ export class CacheableMemory extends Hookified {
 	 * @param {number} value - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0. If you are using LRU then the limit is based on Map() size 17mm.
 	 */
 	public set lruSize(value: number) {
-		this._lruSize = value;
-		this.lruResize();
+		if (value > 0) {
+			if (this._storeHashSize > 1) {
+				this.emit('info', 'using LRU and will reset store size to 1, as we only need one store for LRU');
+				this._storeHashSize = 1; // If we are using LRU, we only need one store
+				this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
+			}
+
+			this._lruSize = value;
+			this.lruResize();
+		}
 	}
 
 	/**
@@ -236,6 +252,14 @@ export class CacheableMemory extends Hookified {
 		}
 
 		return items.values();
+	}
+
+	/**
+	 * Gets the store
+	 * @returns {Array<Map<string, CacheableStoreItem>>} - The store
+	 */
+	public get store(): Array<Map<string, CacheableStoreItem>> {
+		return this._store;
 	}
 
 	/**
@@ -544,10 +568,6 @@ export class CacheableMemory extends Hookified {
 	 * @returns {void}
 	 */
 	public lruResize(): void {
-		if (this._lruSize === 0) {
-			return;
-		}
-
 		while (this._lru.size > this._lruSize) {
 			const oldestKey = this._lru.getOldest();
 			if (oldestKey) {

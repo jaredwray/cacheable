@@ -45,6 +45,12 @@ describe('CacheableMemory Options and Properties', () => {
 		expect(cache.storeHashSize).toBe(200);
 	});
 
+	test('should be able to get the store via property', () => {
+		const cache = new CacheableMemory();
+		const store = cache.store;
+		expect(store).toBeInstanceOf(Array);
+	});
+
 	test('storeHashSize cannot be 0', () => {
 		const cache = new CacheableMemory({storeHashSize: 0});
 		expect(cache.storeHashSize).toBe(16); // Default size
@@ -517,6 +523,29 @@ describe('CacheableMemory LRU', async () => {
 		cache.lruAddToFront('key1');
 		expect(cache.size).toBe(1);
 	});
+	test('should set the store hash size to 1 via lruSize property', () => {
+		const cache = new CacheableMemory();
+		expect(cache.storeHashSize).toBe(16); // Default size
+		cache.lruSize = 5;
+		expect(cache.storeHashSize).toBe(1);
+
+		const data1 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		const data2 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		cache.set(data1.key, data1.value);
+		cache.set(data2.key, data2.value);
+
+		expect(cache.get(data1.key)).toBe(data1.value);
+		expect(cache.get(data2.key)).toBe(data2.value);
+	});
+
 	test('should not do the resize on lruSize', () => {
 		const cache = new CacheableMemory({lruSize: 5});
 		cache.set('key1', 'value1');
@@ -525,6 +554,7 @@ describe('CacheableMemory LRU', async () => {
 		cache.lruSize = 0;
 		expect(cache.size).toBe(3);
 	});
+
 	test('should do the resize on lruSize', () => {
 		const cache = new CacheableMemory({lruSize: 10});
 		cache.set('key1', 'value1');
