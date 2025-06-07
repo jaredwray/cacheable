@@ -16,7 +16,6 @@ import {Buffer} from 'node:buffer';
 import ResponseLike from 'responselike';
 import {CachePolicyObject} from 'http-cache-semantics';
 
-// eslint-disable-next-line unicorn/prevent-abbreviations
 export type RequestFn = typeof request;
 export type RequestFunction = typeof request;
 export type CacheResponse = ServerResponse | typeof ResponseLike;
@@ -69,12 +68,14 @@ export interface Options {
 
 	headers?: Record<string, string | string[] | undefined>;
 
+	// eslint-disable-next-line @typescript-eslint/no-restricted-types
 	body?: Buffer;
 }
 
 export interface CacheValue extends Record<string, any> {
 	url: string;
 	statusCode: number;
+	// eslint-disable-next-line @typescript-eslint/no-restricted-types
 	body: Buffer | string;
 	cachePolicy: CachePolicyObject;
 }

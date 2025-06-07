@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated */
 import {Agent, request} from 'node:http';
 import url from 'node:url';
 import util, {promisify as pm} from 'node:util';
@@ -110,10 +111,10 @@ beforeAll(async () => {
 	s.get('/etag', (request_: any, response_: any) => {
 		response_.setHeader('Cache-Control', 'public, max-age=0');
 		response_.setHeader('ETag', '33a64df551425fcc55e4d42a148795d9f25f89d4');
-		let responseBody: string | null = 'etag';
+		let responseBody: string | undefined = 'etag';
 		if (
 			request_.headers['if-none-match']
-						=== '33a64df551425fcc55e4d42a148795d9f25f89d4'
+			=== '33a64df551425fcc55e4d42a148795d9f25f89d4'
 		) {
 			response_.statusCode = 304;
 			responseBody = null;
@@ -127,7 +128,7 @@ beforeAll(async () => {
 		let responseBody = 'revalidate-modified';
 		if (
 			request_.headers['if-none-match']
-						=== '33a64df551425fcc55e4d42a148795d9f25f89d4'
+			=== '33a64df551425fcc55e4d42a148795d9f25f89d4'
 		) {
 			response_.setHeader('ETag', '0000000000000000000000000000000000');
 			responseBody = 'new-body';
@@ -204,9 +205,7 @@ test('Cacheable responses have unique cache key', async () => {
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const firstResponse: any = await cacheableRequestHelper(s.url + endpoint + '?foo');
-	const secondResponse: any = await cacheableRequestHelper(
-		s.url + endpoint + '?bar',
-	);
+	const secondResponse: any = await cacheableRequestHelper(s.url + endpoint + '?bar');
 	expect(cache.size).toBe(2);
 	expect(firstResponse.body).not.toBe(secondResponse.body);
 });
@@ -261,7 +260,8 @@ test(
 			path: '/',
 		},
 		'GET:http://www.example.com',
-	));
+	),
+);
 
 test(
 	'return without port',
@@ -272,7 +272,8 @@ test(
 			path: '/',
 		},
 		'GET:http://www.example.com',
-	));
+	),
+);
 
 test(
 	'return with url and port',
@@ -283,7 +284,8 @@ test(
 			path: '/',
 		},
 		'GET:http://www.example.com:8080',
-	));
+	),
+);
 
 test('return with protocol', async () => testCacheKey({host: 'www.example.com'}, 'GET:http://www.example.com'));
 
@@ -295,14 +297,16 @@ test(
 			hostname: 'xyz.example.com',
 		},
 		'GET:http://xyz.example.com',
-	));
+	),
+);
 
 test(
 	'hostname defaults to localhost',
 	async () => testCacheKey(
 		{path: '/'},
 		'GET:http://localhost',
-	));
+	),
+);
 
 test(
 	'ignores pathname',
@@ -312,7 +316,8 @@ test(
 			pathname: '/bar',
 		},
 		'GET:http://localhost/foo',
-	));
+	),
+);
 
 test(
 	'ignores search',
@@ -322,7 +327,8 @@ test(
 			search: '?bar=baz',
 		},
 		'GET:http://localhost/?foo=bar',
-	));
+	),
+);
 
 test(
 	'ignores query',
@@ -332,7 +338,8 @@ test(
 			query: {bar: 'baz'},
 		},
 		'GET:http://localhost/?foo=bar',
-	));
+	),
+);
 
 test('auth should be in url', async () => testCacheKey({auth: 'user:pass'}, 'GET:http://user:pass@localhost'));
 

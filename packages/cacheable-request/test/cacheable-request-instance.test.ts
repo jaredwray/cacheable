@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-deprecated */
 import EventEmitter from 'node:events';
 import {request} from 'node:http';
 import stream from 'node:stream';
@@ -199,7 +200,7 @@ test('cacheableRequest does not cache response if request is aborted before rece
 		cacheableRequest(options)
 			.on('request', (request_: any) => {
 				request_.end();
-				setTimeout(() => { /* do nothing */}, 20);
+				setTimeout(() => {/* do nothing */}, 20);
 				setTimeout(() => {
 					cacheableRequest(options, async (response: any) => {
 						request_.abort();

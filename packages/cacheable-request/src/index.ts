@@ -1,5 +1,6 @@
+
 import EventEmitter from 'node:events';
-import urlLib from 'node:url';
+import urlLib, {URL} from 'node:url';
 import crypto from 'node:crypto';
 import stream, {PassThrough as PassThroughStream} from 'node:stream';
 import {IncomingMessage} from 'node:http';
@@ -36,14 +37,16 @@ class CacheableRequest {
 		this.cacheRequest = cacheRequest;
 	}
 
-	request = () => (options: CacheableOptions,
-		callback?: (response: CacheResponse) => void): Emitter => {
+	request = () => (
+		options: CacheableOptions,
+		callback?: (response: CacheResponse) => void,
+	): Emitter => {
 		let url;
 		if (typeof options === 'string') {
-			url = normalizeUrlObject(urlLib.parse(options));
+			url = normalizeUrlObject(parseWithWhatwg(options));
 			options = {};
 		} else if (options instanceof urlLib.URL) {
-			url = normalizeUrlObject(urlLib.parse(options.toString()));
+			url = normalizeUrlObject(parseWithWhatwg(options.toString()));
 			options = {};
 		} else {
 			const [pathname, ...searchParts] = (options.path ?? '').split('?');
@@ -89,7 +92,7 @@ class CacheableRequest {
 		const makeRequest = (options_: any) => {
 			madeRequest = true;
 			let requestErrored = false;
-			let requestErrorCallback: (...arguments_: any[]) => void = () => {/* do nothing */ };
+			let requestErrorCallback: (...arguments_: any[]) => void = () => {/* do nothing */};
 
 			const requestErrorPromise = new Promise<void>(resolve => {
 				requestErrorCallback = () => {
@@ -181,6 +184,7 @@ class CacheableRequest {
 			try {
 				const request_ = this.cacheRequest(options_, handler);
 				request_.once('error', requestErrorCallback);
+				// eslint-disable-next-line @typescript-eslint/no-deprecated
 				request_.once('abort', requestErrorCallback);
 				request_.once('destroy', requestErrorCallback);
 				ee.emit('request', request_);
@@ -203,6 +207,7 @@ class CacheableRequest {
 				if (policy.satisfiesWithoutRevalidation(options_) && !options_.forceRefresh) {
 					const headers = convertHeaders(policy.responseHeaders());
 					const bodyBuffer = (cacheEntry as CacheValue).body;
+					// eslint-disable-next-line n/prefer-global/buffer
 					const body = Buffer.from(bodyBuffer as string);
 					const response: any = new Response({
 						statusCode: (cacheEntry as CacheValue).statusCode,
@@ -307,6 +312,29 @@ const convertHeaders = (headers: CachePolicy.Headers) => {
 	}
 
 	return result;
+};
+
+export const parseWithWhatwg = (raw: string) => {
+	const u = new URL(raw);
+
+	// If normalizeUrlObject expects the same fields as url.parse()
+	return {
+		protocol: u.protocol, // E.g. 'https:'
+		slashes: true, // Always true for WHATWG URLs
+		/* c8 ignore next 3 */
+		auth: u.username || u.password
+			? `${u.username}:${u.password}`
+			: undefined,
+		host: u.host, // E.g. 'example.com:8080'
+		port: u.port, // E.g. '8080'
+		hostname: u.hostname, // E.g. 'example.com'
+		hash: u.hash, // E.g. '#quux'
+		search: u.search, // E.g. '?bar=baz'
+		query: Object.fromEntries(u.searchParams), // { bar: 'baz' }
+		pathname: u.pathname, // E.g. '/foo'
+		path: u.pathname + u.search, // '/foo?bar=baz'
+		href: u.href, // Full serialized URL
+	};
 };
 
 export default CacheableRequest;
