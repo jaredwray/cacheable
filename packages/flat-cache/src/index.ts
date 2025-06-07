@@ -156,7 +156,7 @@ export class FlatCache extends Hookified {
 	 * @param cacheId {String} the id of the cache, would also be used as the name of the file cache
 	 * @param cacheDir {String} directory for the cache entry
 	 */
-	// eslint-disable-next-line unicorn/prevent-abbreviations
+
 	public load(cacheId?: string, cacheDir?: string) {
 		try {
 			const filePath = path.resolve(`${cacheDir ?? this._cacheDir}/${cacheId ?? this._cacheId}`);
@@ -195,7 +195,7 @@ export class FlatCache extends Hookified {
 	 */
 	public all() {
 		const result: Record<string, any> = {};
-		const items = Array.from(this._cache.items);
+		const items = [...this._cache.items];
 		for (const item of items) {
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			result[item.key] = item.value;
@@ -210,7 +210,7 @@ export class FlatCache extends Hookified {
 	 * @returns {Array}
 	 */
 	public get items() {
-		return Array.from(this._cache.items);
+		return [...this._cache.items];
 	}
 
 	/**
@@ -237,7 +237,7 @@ export class FlatCache extends Hookified {
 	 * @returns {Array}
 	 */
 	public keys() {
-		return Array.from(this._cache.keys);
+		return [...this._cache.keys];
 	}
 
 	/**
@@ -327,7 +327,7 @@ export class FlatCache extends Hookified {
 		try {
 			if (this._changesSinceLastSave || force) {
 				const filePath = this.cacheFilePath;
-				const items = Array.from(this._cache.items);
+				const items = [...this._cache.items];
 				const data = this._stringify(items);
 
 				// Ensure the directory exists
