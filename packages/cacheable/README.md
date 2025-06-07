@@ -37,6 +37,9 @@
 * [Cacheable Statistics (Instance Only)](#cacheable-statistics-instance-only)
 * [Cacheable - API](#cacheable---api)
 * [CacheableMemory - In-Memory Cache](#cacheablememory---in-memory-cache)
+* [CacheableMemory Store Hashing](#cacheablememory-store-hashing)
+* [CacheableMemory LRU Feature](#cacheablememory-lru-feature)
+* [CacheableMemory Performance](#cacheablememory-performance)
 * [CacheableMemory Options](#cacheablememory-options)
 * [CacheableMemory - API](#cacheablememory---api)
 * [Keyv Storage Adapter - KeyvCacheableMemory](#keyv-storage-adapter---keyvcacheablememory)
@@ -387,12 +390,86 @@ This simple in-memory cache uses multiple Map objects and a with `expiration` an
 
 By default we use lazy expiration deletion which means on `get` and `getMany` type functions we look if it is expired and then delete it. If you want to have a more aggressive expiration policy you can set the `checkInterval` property to a value greater than `0` which will check for expired keys at the interval you set.
 
+Here are some of the main features of `CacheableMemory`:
+* High performance in-memory cache with a robust API and feature set. 🚀
+* Can scale past the `17 million keys` limit of a single `Map` via `hashStoreSize`. Default is `16` Map objects.
+* LRU (Least Recently Used) cache feature to limit the number of keys in the cache via `lruSize`. Limit to `17 million keys` total.
+* Expiration policy to delete expired keys with lazy deletion or aggressive deletion via `checkInterval`.
+* `Wrap` feature to memoize `sync` and `async` functions with stampede protection.
+* Ability to do many operations at once such as `setMany`, `getMany`, `deleteMany`, and `takeMany`.
+* Supports `raw` data retrieval with `getRaw` and `getManyRaw` methods to get the full metadata of the cache entry.
+
+## CacheableMemory Store Hashing
+
+`CacheableMemory` uses `Map` objects to store the keys and values. To make this scale past the `17 million keys` limit of a single `Map` we use a hash to balance the data across multiple `Map` objects. This is done by hashing the key and using the hash to determine which `Map` object to use. The default hashing algorithm is `djb2Hash` but you can change it by setting the `storeHashAlgorithm` property in the options. By default we set the amount of `Map` objects to `16`. 
+
+NOTE: if you are using the LRU cache feature the `lruSize` no matter how many `Map` objects you have it will be limited to the `17 million keys` limit of a single `Map` object. This is because we use a double linked list to manage the LRU cache and it is not possible to have more than `17 million keys` in a single `Map` object.
+
+Here is an example of how to set the number of `Map` objects and the hashing algorithm:
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+const cache = new CacheableMemory({
+  storeSize: 32, // set the number of Map objects to 32
+});
+cache.set('key', 'value');
+const value = cache.get('key'); // value
+```
+
+Here is an example of how to use the `storeHashAlgorithm` property:
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+const cache = new CacheableMemory({ storeHashAlgorithm: 'sha256' });
+cache.set('key', 'value');
+const value = cache.get('key'); // value
+```
+
+If you want to provide your own hashing function you can set the `storeHashAlgorithm` property to a function that takes an object and returns a `number` that is in the range of the amount of `Map` stores you have.
+
+```javascript
+import { CacheableMemory } from 'cacheable';
+/**
+ * Custom hash function that takes a key and the size of the store
+ * and returns a number between 0 and storeHashSize - 1.
+ * @param {string} key - The key to hash.
+ * @param {number} storeHashSize - The size of the store (number of Map objects).
+ * @returns {number} - A number between 0 and storeHashSize - 1.
+ */
+const customHash = (key, storeHashSize) => {
+  // custom hashing logic
+  return key.length % storeHashSize; // returns a number between 0 and 31 for 32 Map objects
+};
+const cache = new CacheableMemory({ storeHashAlgorithm: customHash, storeSize: 32 });
+cache.set('key', 'value');
+const value = cache.get('key'); // value
+```
+
+## CacheableMemory LRU Feature
+
+You can enable the LRU (Least Recently Used) feature in `CacheableMemory` by setting the `lruSize` property in the options. This will limit the number of keys in the cache to the size you set. When the cache reaches the limit it will remove the least recently used keys from the cache. This is useful if you want to limit the memory usage of the cache.
+
+NOTE: if you are using the LRU cache feature the `lruSize` no matter how many `Map` objects you have it will be limited to the `17 million keys` limit of a single `Map` object. This is because we use a double linked list to manage the LRU cache and it is not possible to have more than `17 million keys` in a single `Map` object.
+
+## CacheableMemory Performance
+
+Our goal with `cacheable` and `CacheableMemory` is to provide a high performance caching engine that is simple to use and has a robust API. We test it against other cacheing engines such that are less feature rich to make sure there is little difference. Here are some of the benchmarks we have run:
+
+|                  name                   |  summary  |  ops/sec  |  time/op  |  margin  |  samples  |
+|-----------------------------------------|:---------:|----------:|----------:|:--------:|----------:|
+|  quick-lru (v7.0.1) - set / get         |    🥇     |     126K  |      8µs  |  ±0.80%  |     120K  |
+|  Cacheable Memory (v1.9.0) - set / get  |   -1.2%   |     125K  |      8µs  |  ±0.65%  |     119K  |
+|  Map (v22) - set / get                  |   -1.4%   |     125K  |      9µs  |  ±1.39%  |     117K  |
+|  lru.min (v1.1.2) - set / get           |   -1.4%   |     125K  |      8µs  |  ±0.88%  |     118K  |
+
 ## CacheableMemory Options
 
 * `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.
 * `useClones`: If the cache should use clones for the values. Default is `true`.
 * `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
+* `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
+* `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2Hash`.
 
 ## CacheableMemory - API
 
@@ -416,7 +493,6 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 * `checkExpired()`: Checks for expired keys in the cache. This is used by the `checkInterval` property.
 * `startIntervalCheck()`: Starts the interval check for expired keys if `checkInterval` is above 0 ms.
 * `stopIntervalCheck()`: Stops the interval check for expired keys.
-* `hash(object: any, algorithm = 'sha256'): string`: Hashes an object with the algorithm. Default is `sha256`.
 
 # Keyv Storage Adapter - KeyvCacheableMemory
 
