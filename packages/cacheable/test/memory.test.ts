@@ -89,6 +89,23 @@ describe('CacheableMemory Store', () => {
 		expect(keys).toContain('key3');
 		expect(keys).toContain('key4');
 	});
+
+	test('should be able to get keys that are not expired', async () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value', 1);
+		cache.set('key1', 'value');
+		cache.set('key2', 'value');
+		cache.set('key3', 'value');
+		cache.set('key4', 'value');
+		await sleep(5);
+		const keys = [...cache.keys];
+		expect(keys).not.toContain('key');
+		expect(keys).toContain('key1');
+		expect(keys).toContain('key2');
+		expect(keys).toContain('key3');
+		expect(keys).toContain('key4');
+	});
+
 	test('should be able to get values', () => {
 		const cache = new CacheableMemory();
 		cache.set('key', 'value');

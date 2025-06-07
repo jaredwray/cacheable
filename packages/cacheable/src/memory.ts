@@ -225,10 +225,6 @@ export class CacheableMemory extends Hookified {
 	public get items(): IterableIterator<CacheableStoreItem> {
 		const items = new Array<CacheableStoreItem>();
 		for (const store of this._store) {
-			if (!store) {
-				continue;
-			}
-
 			for (const item of store.values()) {
 				if (this.hasExpired(item)) {
 					store.delete(item.key);
