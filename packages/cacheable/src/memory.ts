@@ -497,11 +497,7 @@ export class CacheableMemory extends Hookified {
 			return this._storeHashAlgorithm(key, this._storeHashSize);
 		}
 
-		if (this._storeHashAlgorithm === StoreHashAlgorithm.SHA256 || this._storeHashAlgorithm === StoreHashAlgorithm.SHA1 || this._storeHashAlgorithm === StoreHashAlgorithm.MD5) {
-			return hashToNumber(key, 0, this._storeHashSize, this._storeHashAlgorithm);
-		}
-
-		return djb2Hash(key, 0, this._storeHashSize);
+		return hashToNumber(key, 0, this._storeHashSize, this._storeHashAlgorithm);
 	}
 
 	/**
@@ -567,10 +563,6 @@ export class CacheableMemory extends Hookified {
 	 */
 	public checkExpiration() {
 		for (const store of this._store) {
-			if (!store) {
-				continue;
-			}
-
 			for (const item of store.values()) {
 				if (item.expires && Date.now() > item.expires) {
 					store.delete(item.key);
