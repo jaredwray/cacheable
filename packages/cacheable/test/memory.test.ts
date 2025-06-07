@@ -114,12 +114,30 @@ describe('CacheableMemory Store', () => {
 		cache.set('key3', 'value3');
 		cache.set('key4', 'value4');
 		const values = [...cache.items];
-		expect(values.filter(item => item.value === 'value')).toBeDefined();
-		expect(values.filter(item => item.value === 'value1')).toBeDefined();
-		expect(values.filter(item => item.value === 'value2')).toBeDefined();
-		expect(values.filter(item => item.value === 'value3')).toBeDefined();
-		expect(values.filter(item => item.value === 'value4')).toBeDefined();
+		expect(values.length).toBe(5);
+		expect(values.find(item => item.value === 'value')?.value).toBe('value');
+		expect(values.find(item => item.value === 'value1')?.value).toBe('value1');
+		expect(values.find(item => item.value === 'value2')?.value).toBe('value2');
+		expect(values.find(item => item.value === 'value3')?.value).toBe('value3');
+		expect(values.find(item => item.value === 'value4')?.value).toBe('value4');
 	});
+
+	test('should be able to get values not expired', async () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value', 1);
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		cache.set('key3', 'value3');
+		cache.set('key4', 'value4');
+		await sleep(5);
+		const values = [...cache.items];
+		expect(values.find(item => item.value === 'value')?.value).toBeUndefined();
+		expect(values.find(item => item.value === 'value1')?.value).toBe('value1');
+		expect(values.find(item => item.value === 'value2')?.value).toBe('value2');
+		expect(values.find(item => item.value === 'value3')?.value).toBe('value3');
+		expect(values.find(item => item.value === 'value4')?.value).toBe('value4');
+	});
+
 	test('should be able to iterate over cache items', () => {
 		const cache = new CacheableMemory();
 		const list = [];
