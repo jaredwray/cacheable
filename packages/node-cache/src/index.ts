@@ -136,7 +136,7 @@ export class NodeCache extends Hookified {
 
 		// Check on max key size
 		if (this.options.maxKeys) {
-			const maxKeys = this.options.maxKeys;
+			const {maxKeys} = this.options;
 			if (maxKeys > -1 && this.store.size >= maxKeys) {
 				throw this.createError(NodeCacheErrors.ECACHEFULL, this.formatKey(key));
 			}
