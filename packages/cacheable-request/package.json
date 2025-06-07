@@ -51,7 +51,7 @@
 		"responselike": "^3.0.0"
 	},
 	"devDependencies": {
-		"@keyv/sqlite": "^4.0.3",
+		"@keyv/sqlite": "^4.0.4",
 		"@types/node": "^22.15.30",
 		"@types/responselike": "^1.0.3",
 		"@vitest/coverage-v8": "^3.2.2",
