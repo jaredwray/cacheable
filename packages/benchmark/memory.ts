@@ -1,21 +1,30 @@
 import { createBenchmark, getModuleName, printToConsole, generateAlphaNumeric } from "index.js";
 import { CacheableMemory } from "cacheable";
-import QuickLRU from 'quick-lru';
-import { createLRU } from 'lru.min';
+import NodeCache from 'node-cache';
+import { BentoCache, bentostore } from 'bentocache';
+import { memoryDriver } from 'bentocache/drivers/memory';
 
 const bench = createBenchmark("Memory Benchmark", 100000);
 
 // Cacheable Memory
 const cacheable = new CacheableMemory();
-let cacheableName = getModuleName("Cacheable Memory", "1.9.0");
+let cacheableName = getModuleName("Cacheable Memory", "1.10.0");
 
-// QuickLRU
-const quickLRU = new QuickLRU({maxSize: 80000});
-let quickLRUName = getModuleName("quick-lru");
+// Node Cache
+const nodeCache = new NodeCache();
+let nodeCacheName = getModuleName("Node Cache");
 
-// lru.min
-const lruMin = createLRU({ max: 80000 });
-let lruMinName = getModuleName("lru.min");
+// BentoCache with Memory Driver
+const bento = new BentoCache({
+  default: 'myCache',
+  stores: {
+    // A first cache store named "myCache" using 
+    // only L1 in-memory cache
+    myCache: bentostore()
+      .useL1Layer(memoryDriver({ maxSize: '10mb' }))
+  }
+});
+let bentoName = getModuleName("BentoCache");
 
 // Map
 const map = new Map<string, string>();
@@ -27,16 +36,16 @@ bench.add(`${cacheableName} - set / get`, async () => {
 	cacheable.get(alphaNumericData.key);
 });
 
-bench.add(`${quickLRUName} - set / get`, async () => {
+bench.add(`${nodeCacheName} - set / get`, async () => {
 	const alphaNumericData = generateAlphaNumeric();
-	quickLRU.set(alphaNumericData.key, alphaNumericData.value);
-	quickLRU.get(alphaNumericData.key);
+	nodeCache.set(alphaNumericData.key, alphaNumericData.value);
+	nodeCache.get(alphaNumericData.key);
 });
 
-bench.add(`${lruMinName} - set / get`, async () => {
+bench.add(`${bentoName} - set / get`, async () => {
 	const alphaNumericData = generateAlphaNumeric();
-	lruMin.set(alphaNumericData.key, alphaNumericData.value);
-	lruMin.get(alphaNumericData.key);
+	await bento.set({ key: alphaNumericData.key, value: alphaNumericData.value});
+	await bento.get({ key: alphaNumericData.key});
 });
 
 bench.add(`${mapName} - set / get`, async () => {
@@ -47,4 +56,5 @@ bench.add(`${mapName} - set / get`, async () => {
 
 await bench.run();
 
+console.log(`*${bench.name} Results:*`);
 printToConsole(bench);
