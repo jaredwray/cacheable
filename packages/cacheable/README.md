@@ -390,6 +390,15 @@ This simple in-memory cache uses multiple Map objects and a with `expiration` an
 
 By default we use lazy expiration deletion which means on `get` and `getMany` type functions we look if it is expired and then delete it. If you want to have a more aggressive expiration policy you can set the `checkInterval` property to a value greater than `0` which will check for expired keys at the interval you set.
 
+Here are some of the main features of `CacheableMemory`:
+* High performance in-memory cache with a robust API and feature set. 🚀
+* Can scale past the `17 million keys` limit of a single `Map` via `hashStoreSize`. Default is `16` Map objects.
+* LRU (Least Recently Used) cache feature to limit the number of keys in the cache via `lruSize`. Limit to `17 million keys` total.
+* Expiration policy to delete expired keys with lazy deletion or aggressive deletion via `checkInterval`.
+* `Wrap` feature to memoize `sync` and `async` functions with stampede protection.
+* Ability to do many operations at once such as `setMany`, `getMany`, `deleteMany`, and `takeMany`.
+* Supports `raw` data retrieval with `getRaw` and `getManyRaw` methods to get the full metadata of the cache entry.
+
 ## CacheableMemory Store Hashing
 
 `CacheableMemory` uses `Map` objects to store the keys and values. To make this scale past the `17 million keys` limit of a single `Map` we use a hash to balance the data across multiple `Map` objects. This is done by hashing the key and using the hash to determine which `Map` object to use. The default hashing algorithm is `djb2Hash` but you can change it by setting the `storeHashAlgorithm` property in the options. By default we set the amount of `Map` objects to `16`. 
