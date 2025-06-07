@@ -1,8 +1,7 @@
 import {describe, test, expect} from 'vitest';
-import {faker} from '@faker-js/faker';
+import {fa, faker} from '@faker-js/faker';
 import {createWrapKey} from '../src/wrap.js';
-import {CacheableMemory} from '../src/memory.js';
-import {CacheableItem} from '../src/cacheable-item-types.js';
+import {CacheableMemory, StoreHashAlgorithm} from '../src/memory.js';
 import {sleep} from './sleep.js';
 
 const cacheItemList = [
@@ -32,6 +31,119 @@ describe('CacheableMemory Options and Properties', () => {
 		cache.ttl = undefined;
 		expect(cache.ttl).toBe(undefined);
 	});
+	test('should be able to set the hash store size', () => {
+		const cache = new CacheableMemory({storeHashSize: 100});
+		expect(cache.storeHashSize).toBe(100);
+		cache.storeHashSize = 200;
+		expect(cache.storeHashSize).toBe(200);
+	});
+
+	test('should be able to set the storeHashSize', () => {
+		const cache = new CacheableMemory({storeHashSize: 100});
+		expect(cache.storeHashSize).toBe(100);
+		cache.storeHashSize = 200;
+		expect(cache.storeHashSize).toBe(200);
+	});
+
+	test('should be able to get the store via property', () => {
+		const cache = new CacheableMemory();
+		const store = cache.store;
+		expect(store).toBeInstanceOf(Array);
+	});
+
+	test('storeHashSize cannot be 0', () => {
+		const cache = new CacheableMemory({storeHashSize: 0});
+		expect(cache.storeHashSize).toBe(16); // Default size
+	});
+
+	test('should be able to set the storeHashAlgorithm', () => {
+		const cache = new CacheableMemory({storeHashAlgorithm: StoreHashAlgorithm.SHA1});
+		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.SHA1);
+		cache.storeHashAlgorithm = StoreHashAlgorithm.SHA256;
+		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.SHA256);
+
+		const data1 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		const data2 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		cache.set(data1.key, data1.value);
+		cache.set(data2.key, data2.value);
+
+		expect(cache.get(data1.key)).toBe(data1.value);
+		expect(cache.get(data2.key)).toBe(data2.value);
+	});
+
+	test('should be able to set the storeHashAlgorithm md5', () => {
+		const cache = new CacheableMemory({storeHashAlgorithm: StoreHashAlgorithm.MD5});
+		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.MD5);
+
+		const data1 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		const data2 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		cache.set(data1.key, data1.value);
+		cache.set(data2.key, data2.value);
+
+		expect(cache.get(data1.key)).toBe(data1.value);
+		expect(cache.get(data2.key)).toBe(data2.value);
+	});
+
+	test('should be able to set the storeHashAlgorithm sha1', () => {
+		const cache = new CacheableMemory({storeHashAlgorithm: StoreHashAlgorithm.SHA1});
+		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.SHA1);
+
+		const data1 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		const data2 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		cache.set(data1.key, data1.value);
+		cache.set(data2.key, data2.value);
+
+		expect(cache.get(data1.key)).toBe(data1.value);
+		expect(cache.get(data2.key)).toBe(data2.value);
+	});
+
+	test('should be able to set storeHashAlgorithm to function', () => {
+		// eslint-disable-next-line unicorn/prefer-code-point
+		const customHashFunction = (key: string) => key.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
+		const cache = new CacheableMemory({storeHashAlgorithm: customHashFunction});
+		expect(cache.storeHashAlgorithm).toBe(customHashFunction);
+		const data1 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		const data2 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		cache.set(data1.key, data1.value);
+		cache.set(data2.key, data2.value);
+		expect(cache.get(data1.key)).toBe(data1.value);
+		expect(cache.get(data2.key)).toBe(data2.value);
+	});
+});
+
+describe('CacheableMemory Store', () => {
 	test('should be able to get size', () => {
 		const cache = new CacheableMemory();
 		cache.set('key', 'value');
@@ -41,6 +153,19 @@ describe('CacheableMemory Options and Properties', () => {
 		cache.set('key4', 'value');
 		expect(cache.size).toBe(5);
 	});
+
+	test('should be able to set the size of the store to 1', () => {
+		const cache = new CacheableMemory({storeHashSize: 1});
+		cache.set('key', 'value');
+		expect(cache.size).toBe(1);
+		cache.set('key1', 'value1');
+		expect(cache.size).toBe(2);
+		const value = cache.get('key');
+		expect(value).toBe('value');
+		const value1 = cache.get('key1');
+		expect(value1).toBe('value1');
+	});
+
 	test('should be able to get keys', () => {
 		const cache = new CacheableMemory();
 		cache.set('key', 'value');
@@ -55,6 +180,23 @@ describe('CacheableMemory Options and Properties', () => {
 		expect(keys).toContain('key3');
 		expect(keys).toContain('key4');
 	});
+
+	test('should be able to get keys that are not expired', async () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value', 1);
+		cache.set('key1', 'value');
+		cache.set('key2', 'value');
+		cache.set('key3', 'value');
+		cache.set('key4', 'value');
+		await sleep(5);
+		const keys = [...cache.keys];
+		expect(keys).not.toContain('key');
+		expect(keys).toContain('key1');
+		expect(keys).toContain('key2');
+		expect(keys).toContain('key3');
+		expect(keys).toContain('key4');
+	});
+
 	test('should be able to get values', () => {
 		const cache = new CacheableMemory();
 		cache.set('key', 'value');
@@ -63,12 +205,30 @@ describe('CacheableMemory Options and Properties', () => {
 		cache.set('key3', 'value3');
 		cache.set('key4', 'value4');
 		const values = [...cache.items];
-		expect(values[0].value).toBe('value3');
-		expect(values[1].value).toBe('value4');
-		expect(values[2].value).toBe('value1');
-		expect(values[3].value).toBe('value');
-		expect(values[4].value).toBe('value2');
+		expect(values.length).toBe(5);
+		expect(values.find(item => item.value === 'value')?.value).toBe('value');
+		expect(values.find(item => item.value === 'value1')?.value).toBe('value1');
+		expect(values.find(item => item.value === 'value2')?.value).toBe('value2');
+		expect(values.find(item => item.value === 'value3')?.value).toBe('value3');
+		expect(values.find(item => item.value === 'value4')?.value).toBe('value4');
 	});
+
+	test('should be able to get values not expired', async () => {
+		const cache = new CacheableMemory();
+		cache.set('key', 'value', 1);
+		cache.set('key1', 'value1');
+		cache.set('key2', 'value2');
+		cache.set('key3', 'value3');
+		cache.set('key4', 'value4');
+		await sleep(5);
+		const values = [...cache.items];
+		expect(values.find(item => item.value === 'value')?.value).toBeUndefined();
+		expect(values.find(item => item.value === 'value1')?.value).toBe('value1');
+		expect(values.find(item => item.value === 'value2')?.value).toBe('value2');
+		expect(values.find(item => item.value === 'value3')?.value).toBe('value3');
+		expect(values.find(item => item.value === 'value4')?.value).toBe('value4');
+	});
+
 	test('should be able to iterate over cache items', () => {
 		const cache = new CacheableMemory();
 		const list = [];
@@ -363,6 +523,29 @@ describe('CacheableMemory LRU', async () => {
 		cache.lruAddToFront('key1');
 		expect(cache.size).toBe(1);
 	});
+	test('should set the store hash size to 1 via lruSize property', () => {
+		const cache = new CacheableMemory();
+		expect(cache.storeHashSize).toBe(16); // Default size
+		cache.lruSize = 5;
+		expect(cache.storeHashSize).toBe(1);
+
+		const data1 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		const data2 = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(10),
+		};
+
+		cache.set(data1.key, data1.value);
+		cache.set(data2.key, data2.value);
+
+		expect(cache.get(data1.key)).toBe(data1.value);
+		expect(cache.get(data2.key)).toBe(data2.value);
+	});
+
 	test('should not do the resize on lruSize', () => {
 		const cache = new CacheableMemory({lruSize: 5});
 		cache.set('key1', 'value1');
@@ -371,6 +554,7 @@ describe('CacheableMemory LRU', async () => {
 		cache.lruSize = 0;
 		expect(cache.size).toBe(3);
 	});
+
 	test('should do the resize on lruSize', () => {
 		const cache = new CacheableMemory({lruSize: 10});
 		cache.set('key1', 'value1');
@@ -442,14 +626,6 @@ describe('Cacheable Memory ttl parsing', () => {
 		const datePlus45 = Date.now() + (45 * 60 * 1000);
 		cache.set('key', 'value', '1h');
 		expect(cache.getRaw('key')?.expires).toBeGreaterThan(datePlus45);
-	});
-});
-
-describe('cacheable hash method', async () => {
-	test('should hash an object', async () => {
-		const cacheable = new CacheableMemory();
-		const result = cacheable.hash({foo: 'bar'});
-		expect(result).toEqual('7a38bf81f383f69433ad6e900d35b3e2385593f76a7b7ab5d4355b8ba41ee24b');
 	});
 });
 

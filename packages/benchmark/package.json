@@ -34,12 +34,13 @@
 		"prepublish": "pnpm build",
 		"test": "echo 'no tests needed'",
 		"test:ci": "echo 'no tests needed'",
-		"benchmark:memory": "tsx ./memory.ts",
+		"benchmark:memory": "tsx ./memory.ts && tsx ./memory-lru.ts",
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"dependencies": {
 		"@faker-js/faker": "^9.8.0",
 		"@monstermann/tinybench-pretty-printer": "^0.1.0",
+		"bentocache": "^1.4.0",
 		"cache-manager": "workspace:^",
 		"cacheable": "workspace:^",
 		"lru.min": "^1.1.2",
@@ -51,6 +52,7 @@
 		"license"
 	],
 	"devDependencies": {
+		"node-cache": "^5.1.2",
 		"tsx": "^4.19.4"
 	}
 }

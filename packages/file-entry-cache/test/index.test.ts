@@ -711,17 +711,17 @@ describe('renameAbsolutePathKeys()', () => {
 		fileEntryCache.getFileDescriptor(file3);
 		const keys = fileEntryCache.cache.keys();
 		expect(keys.length).toBe(3);
-		expect(keys[0]).toBe(file1);
-		expect(keys[1]).toBe(file2);
-		expect(keys[2]).toBe(file3);
+		expect(keys).toContain(file1);
+		expect(keys).toContain(file2);
+		expect(keys).toContain(file3);
 		const oldFileCacheNamePath = path.resolve(`./${fileCacheName}`);
 		const newFileCacheNamePath = path.resolve(`${fileCacheName}-new`);
 		fileEntryCache.renameAbsolutePathKeys(oldFileCacheNamePath, newFileCacheNamePath);
 		const newKeys = fileEntryCache.cache.keys();
 		expect(newKeys.length).toBe(3);
-		expect(newKeys[0]).toBe(`${newFileCacheNamePath}/test1.txt`);
-		expect(newKeys[1]).toBe(`${newFileCacheNamePath}/test2.txt`);
-		expect(newKeys[2]).toBe(`${newFileCacheNamePath}/test3.txt`);
+		expect(newKeys).toContain(`${newFileCacheNamePath}/test1.txt`);
+		expect(newKeys).toContain(`${newFileCacheNamePath}/test2.txt`);
+		expect(newKeys).toContain(`${newFileCacheNamePath}/test3.txt`);
 	});
 
 	test('should handle rename of absolute paths with reconcile', () => {
@@ -734,18 +734,18 @@ describe('renameAbsolutePathKeys()', () => {
 		fileEntryCache.getFileDescriptor(file3);
 		const keys = fileEntryCache.cache.keys();
 		expect(keys.length).toBe(3);
-		expect(keys[0]).toBe(file1);
-		expect(keys[1]).toBe(file2);
-		expect(keys[2]).toBe(file3);
+		expect(keys).toContain(file1);
+		expect(keys).toContain(file2);
+		expect(keys).toContain(file3);
 		const oldFileCacheNamePath = path.resolve(`./${fileCacheName}`);
 		const newFileCacheNamePath = path.resolve(`${fileCacheName}-new`);
 		fs.renameSync(oldFileCacheNamePath, newFileCacheNamePath);
 		fileEntryCache.renameAbsolutePathKeys(oldFileCacheNamePath, newFileCacheNamePath);
 		const newKeys = fileEntryCache.cache.keys();
 		expect(newKeys.length).toBe(3);
-		expect(newKeys[0]).toBe(`${newFileCacheNamePath}/test1.txt`);
-		expect(newKeys[1]).toBe(`${newFileCacheNamePath}/test2.txt`);
-		expect(newKeys[2]).toBe(`${newFileCacheNamePath}/test3.txt`);
+		expect(newKeys).toContain(`${newFileCacheNamePath}/test1.txt`);
+		expect(newKeys).toContain(`${newFileCacheNamePath}/test2.txt`);
+		expect(newKeys).toContain(`${newFileCacheNamePath}/test3.txt`);
 		fileEntryCache.reconcile();
 		// Should show not changed as it is just a folder rename
 		const fileEntry1 = fileEntryCache.getFileDescriptor(`${newFileCacheNamePath}/test1.txt`);
