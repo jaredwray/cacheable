@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import {Buffer} from 'node:buffer';
 import {
 	describe, test, expect, beforeAll, afterAll, beforeEach, afterEach,
 } from 'vitest';
