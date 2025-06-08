@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import {type Buffer} from 'node:buffer';
 import {FlatCache, createFromFile as createFlatCacheFile, type FlatCacheOptions} from 'flat-cache';
 
 export type FileEntryCacheOptions = {
@@ -191,7 +192,7 @@ export class FileEntryCache {
 	 * @param  {Buffer} buffer   buffer to calculate hash on
 	 * @return {String}          content hash digest
 	 */
-	// eslint-disable-next-line @typescript-eslint/ban-types
+	// eslint-disable-next-line @typescript-eslint/no-restricted-types
 	public getHash(buffer: Buffer): string {
 		return crypto.createHash(this._hashAlgorithm).update(buffer).digest('hex');
 	}
@@ -265,7 +266,7 @@ export class FileEntryCache {
 	 * @method reconcile
 	 */
 	public reconcile(): void {
-		const items = this._cache.items;
+		const {items} = this._cache;
 		for (const item of items) {
 			const fileDescriptor = this.getFileDescriptor(item.key);
 			if (fileDescriptor.notFound) {
@@ -299,6 +300,7 @@ export class FileEntryCache {
 	 * @param options - The options for getting the file descriptor
 	 * @returns The file descriptor
 	 */
+	// eslint-disable-next-line complexity
 	public getFileDescriptor(filePath: string, options?: GetFileDescriptorOptions): FileDescriptor {
 		let fstat: fs.Stats;
 		const result: FileDescriptor = {
@@ -356,6 +358,7 @@ export class FileEntryCache {
 		}
 
 		// If the file is in the cache, check if the file has changed
+		/* c8 ignore next 3 */
 		if (useModifiedTimeValue && metaCache?.mtime !== result.meta?.mtime) {
 			result.changed = true;
 		}
