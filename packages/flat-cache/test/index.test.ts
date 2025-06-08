@@ -171,7 +171,6 @@ describe('flat-cache file cache', () => {
 
 describe('flat-cache load from persisted cache', () => {
 	test('should load the cache from the file', () => {
-		// eslint-disable-next-line unicorn/prevent-abbreviations
 		const cacheDir = '.cachefoo3';
 		const cacheId = 'cache4';
 		const firstCache = new FlatCache({cacheDir, cacheId});
@@ -187,7 +186,6 @@ describe('flat-cache load from persisted cache', () => {
 		firstCache.destroy();
 	});
 	test('should load the cache from the file', () => {
-		// eslint-disable-next-line unicorn/prevent-abbreviations
 		const cacheDir = '.cachefoo3';
 		const cacheId = 'cache4';
 		const firstCache = new FlatCache({cacheDir, cacheId});
@@ -204,7 +202,6 @@ describe('flat-cache load from persisted cache', () => {
 	});
 
 	test('should load the cache from the file with expiration', async () => {
-		// eslint-disable-next-line unicorn/prevent-abbreviations
 		const cacheDir = '.cachefoo3';
 		const cacheId = 'cache4';
 		const firstCache = new FlatCache({cacheDir, cacheId});
