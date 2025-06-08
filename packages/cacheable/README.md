@@ -392,8 +392,8 @@ By default we use lazy expiration deletion which means on `get` and `getMany` ty
 
 Here are some of the main features of `CacheableMemory`:
 * High performance in-memory cache with a robust API and feature set. 🚀
-* Can scale past the `17 million keys` limit of a single `Map` via `hashStoreSize`. Default is `16` Map objects.
-* LRU (Least Recently Used) cache feature to limit the number of keys in the cache via `lruSize`. Limit to `17 million keys` total.
+* Can scale past the `16,777,216 (2^24) keys` limit of a single `Map` via `hashStoreSize`. Default is `16` Map objects.
+* LRU (Least Recently Used) cache feature to limit the number of keys in the cache via `lruSize`. Limit to `16,777,216 (2^24) keys` total.
 * Expiration policy to delete expired keys with lazy deletion or aggressive deletion via `checkInterval`.
 * `Wrap` feature to memoize `sync` and `async` functions with stampede protection.
 * Ability to do many operations at once such as `setMany`, `getMany`, `deleteMany`, and `takeMany`.
@@ -401,9 +401,9 @@ Here are some of the main features of `CacheableMemory`:
 
 ## CacheableMemory Store Hashing
 
-`CacheableMemory` uses `Map` objects to store the keys and values. To make this scale past the `17 million keys` limit of a single `Map` we use a hash to balance the data across multiple `Map` objects. This is done by hashing the key and using the hash to determine which `Map` object to use. The default hashing algorithm is `djb2Hash` but you can change it by setting the `storeHashAlgorithm` property in the options. By default we set the amount of `Map` objects to `16`. 
+`CacheableMemory` uses `Map` objects to store the keys and values. To make this scale past the `16,777,216 (2^24) keys` limit of a single `Map` we use a hash to balance the data across multiple `Map` objects. This is done by hashing the key and using the hash to determine which `Map` object to use. The default hashing algorithm is `djb2Hash` but you can change it by setting the `storeHashAlgorithm` property in the options. By default we set the amount of `Map` objects to `16`. 
 
-NOTE: if you are using the LRU cache feature the `lruSize` no matter how many `Map` objects you have it will be limited to the `17 million keys` limit of a single `Map` object. This is because we use a double linked list to manage the LRU cache and it is not possible to have more than `17 million keys` in a single `Map` object.
+NOTE: if you are using the LRU cache feature the `lruSize` no matter how many `Map` objects you have it will be limited to the `16,777,216 (2^24) keys` limit of a single `Map` object. This is because we use a double linked list to manage the LRU cache and it is not possible to have more than `16,777,216 (2^24) keys` in a single `Map` object.
 
 Here is an example of how to set the number of `Map` objects and the hashing algorithm:
 
@@ -449,7 +449,7 @@ const value = cache.get('key'); // value
 
 You can enable the LRU (Least Recently Used) feature in `CacheableMemory` by setting the `lruSize` property in the options. This will limit the number of keys in the cache to the size you set. When the cache reaches the limit it will remove the least recently used keys from the cache. This is useful if you want to limit the memory usage of the cache.
 
-When you set the `lruSize` we use a double linked list to manage the LRU cache and also set the `hashStoreSize` to `1` which means we will only use a single `Map` object for the LRU cache. This is because the LRU cache is managed by the double linked list and it is not possible to have more than `17 million keys` in a single `Map` object.
+When you set the `lruSize` we use a double linked list to manage the LRU cache and also set the `hashStoreSize` to `1` which means we will only use a single `Map` object for the LRU cache. This is because the LRU cache is managed by the double linked list and it is not possible to have more than `16,777,216 (2^24) keys` in a single `Map` object.
 
 ```javascript
 import { CacheableMemory } from 'cacheable';
@@ -463,9 +463,7 @@ console.log(value2); // value2 if key2 is still in the cache
 console.log(cache.size()); // 1
 ```
 
-NOTE: if you set the `lruSize` property to `0` after it was enabled the `hashStoreSize` will stay at `1` and the LRU cache will be disabled. This means that the cache will not limit the number of keys and will not remove any keys from the cache. If you want to expand the hash store size you can set the `hashStoreSize` property to a value greater than `1` to use multiple `Map` objects for the cache.
-
-```javascript
+NOTE: if you set the `lruSize` property to `0` after it was enabled it will disable the LRU cache feature and will not limit the number of keys in the cache. This will remove the `16,777,216 (2^24) keys` limit of a single `Map` object and will allow you to store more keys in the cache.
 
 ## CacheableMemory Performance
 
@@ -474,18 +472,20 @@ Our goal with `cacheable` and `CacheableMemory` is to provide a high performance
 *Memory Benchmark Results:*
 |                   name                   |  summary  |  ops/sec  |  time/op  |  margin  |  samples  |
 |------------------------------------------|:---------:|----------:|----------:|:--------:|----------:|
-|  Map (v22) - set / get                   |    🥇     |     127K  |      8µs  |  ±0.93%  |     120K  |
-|  Cacheable Memory (v1.10.0) - set / get  |   -1.3%   |     125K  |      8µs  |  ±1.17%  |     118K  |
-|  Node Cache - set / get                  |   -4.8%   |     121K  |      9µs  |  ±1.24%  |     114K  |
-|  bentocache (v1.4.0) - set / get         |   -20%    |     101K  |     10µs  |  ±0.73%  |     100K  |
+|  Map (v22) - set / get                   |    🥇     |     119K  |      9µs  |  ±1.25%  |     111K  |
+|  Cacheable Memory (v1.10.0) - set / get  |   -2.2%   |     116K  |      9µs  |  ±0.78%  |     110K  |
+|  Node Cache - set / get                  |   -4.3%   |     114K  |      9µs  |  ±1.24%  |     108K  |
+|  bentocache (v1.4.0) - set / get         |   -45%    |      65K  |     16µs  |  ±1.04%  |     100K  |
 
 *Memory LRU Benchmark Results:*
 |                   name                   |  summary  |  ops/sec  |  time/op  |  margin  |  samples  |
 |------------------------------------------|:---------:|----------:|----------:|:--------:|----------:|
-|  Map (v22) - set / get                   |    🥇     |     127K  |      8µs  |  ±1.30%  |     120K  |
-|  quick-lru (v7.0.1) - set / get          |   -0.3%   |     126K  |      8µs  |  ±0.87%  |     120K  |
-|  lru.min (v1.1.2) - set / get            |   -1.4%   |     125K  |      8µs  |  ±0.82%  |     119K  |
-|  Cacheable Memory (v1.10.0) - set / get  |   -5.5%   |     120K  |      9µs  |  ±0.83%  |     113K  |
+|  Map (v22) - set / get                   |    🥇     |     118K  |      9µs  |  ±1.13%  |     111K  |
+|  quick-lru (v7.0.1) - set / get          |  -0.02%   |     118K  |      9µs  |  ±0.80%  |     112K  |
+|  lru.min (v1.1.2) - set / get            |  -0.99%   |     117K  |      9µs  |  ±0.87%  |     110K  |
+|  Cacheable Memory (v1.10.0) - set / get  |   -4.7%   |     113K  |      9µs  |  ±0.82%  |     107K  |
+
+As you can see from the benchmarks `CacheableMemory` is on par with other caching engines such as `Map`, `Node Cache`, and `bentocache`. We have also tested it against other LRU caching engines such as `quick-lru` and `lru.min` and it performs well against them too.
 
 ## CacheableMemory Options
 

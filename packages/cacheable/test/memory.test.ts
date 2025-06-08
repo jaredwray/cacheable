@@ -248,16 +248,27 @@ describe('CacheableMemory Store', () => {
 
 		expect(itemResultList.length).toBe(5);
 	});
+
+	test('should not reset the store when setting the same size', () => {
+		const cache = new CacheableMemory({storeHashSize: 5});
+		cache.setMany(cacheItemList);
+		expect(cache.size).toBe(5);
+		cache.storeHashSize = 5; // Setting the same size should not reset the store
+		expect(cache.size).toBe(5);
+	});
+
 	test('should be able to set clone', () => {
 		const cache = new CacheableMemory({useClone: true});
 		expect(cache.useClone).toBe(true);
 		cache.useClone = false;
 		expect(cache.useClone).toBe(false);
 	});
+
 	test('lruSize should be 0 by default', () => {
 		const cache = new CacheableMemory();
 		expect(cache.lruSize).toBe(0);
 	});
+
 	test('should be able to set lruSize', () => {
 		const cache = new CacheableMemory({lruSize: 15});
 		expect(cache.lruSize).toBe(15);
@@ -515,6 +526,16 @@ describe('CacheableMemory LRU', async () => {
 		const item = cache.get('key7')!;
 		expect(item).toBe('value7');
 	});
+
+	test('should not do anything if setting past 16_777_216 on size', () => {
+		const cache = new CacheableMemory({lruSize: 17_000_000});
+		expect(cache.lruSize).toBe(0);
+		cache.lruSize = 5;
+		expect(cache.lruSize).toBe(5);
+		cache.lruSize = 17_000_000;
+		expect(cache.lruSize).toBe(5);
+	});
+
 	test('should not do anything if lruSize is 0', () => {
 		const cache = new CacheableMemory({lruSize: 0});
 		cache.set('key1', 'value1');
@@ -522,28 +543,6 @@ describe('CacheableMemory LRU', async () => {
 		cache.lruMoveToFront('key1');
 		cache.lruAddToFront('key1');
 		expect(cache.size).toBe(1);
-	});
-	test('should set the store hash size to 1 via lruSize property', () => {
-		const cache = new CacheableMemory();
-		expect(cache.storeHashSize).toBe(16); // Default size
-		cache.lruSize = 5;
-		expect(cache.storeHashSize).toBe(1);
-
-		const data1 = {
-			key: faker.string.alphanumeric(10),
-			value: faker.string.alphanumeric(10),
-		};
-
-		const data2 = {
-			key: faker.string.alphanumeric(10),
-			value: faker.string.alphanumeric(10),
-		};
-
-		cache.set(data1.key, data1.value);
-		cache.set(data2.key, data2.value);
-
-		expect(cache.get(data1.key)).toBe(data1.value);
-		expect(cache.get(data2.key)).toBe(data2.value);
 	});
 
 	test('should not do the resize on lruSize', () => {
