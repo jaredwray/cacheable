@@ -40,6 +40,7 @@ export type SetOptions = {
 };
 
 export const defaultStoreHashSize = 16; // Default is 16
+export const maximumMapSize = 16_777_216; // Maximum size of a Map is 16,777,216 (2^24) due to the way JavaScript handles memory allocation
 
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
@@ -72,11 +73,10 @@ export class CacheableMemory extends Hookified {
 		}
 
 		if (options?.lruSize) {
-			this._lruSize = options.lruSize;
-			if (this._lruSize > 0) {
-				this.emit('info', 'using LRU and will reset store size to 1, as we only need one store for LRU');
-				this._storeHashSize = 1; // If we are using LRU, we only need one store
-				this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
+			if (options.lruSize > maximumMapSize) {
+				this.emit('error', new Error(`LRU size cannot be larger than ${maximumMapSize} due to Map limitations.`));
+			} else {
+				this._lruSize = options.lruSize;
 			}
 		}
 
@@ -138,16 +138,19 @@ export class CacheableMemory extends Hookified {
 	 * @param {number} value - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0. If you are using LRU then the limit is based on Map() size 17mm.
 	 */
 	public set lruSize(value: number) {
-		if (value > 0) {
-			if (this._storeHashSize > 1) {
-				this.emit('info', 'using LRU and will reset store size to 1, as we only need one store for LRU');
-				this._storeHashSize = 1; // If we are using LRU, we only need one store
-				this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
-			}
-
-			this._lruSize = value;
-			this.lruResize();
+		if (value > maximumMapSize) {
+			this.emit('error', new Error(`LRU size cannot be larger than ${maximumMapSize} due to Map limitations.`));
+			return;
 		}
+
+		this._lruSize = value;
+
+		if (this._lruSize === 0) {
+			this._lru = new DoublyLinkedList<string>(); // Reset the LRU cache
+			return;
+		}
+
+		this.lruResize();
 	}
 
 	/**
@@ -192,6 +195,10 @@ export class CacheableMemory extends Hookified {
 	 * @param {number} value - The number of hash stores
 	 */
 	public set storeHashSize(value: number) {
+		if (value === this._storeHashSize) {
+			return; // No need to recreate the store if the size is the same
+		}
+
 		this._storeHashSize = value;
 
 		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
@@ -507,7 +514,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {number} - The hashed key as a number
 	 */
 	public getKeyStoreHash(key: string): number {
-		if (this._storeHashSize === 1) {
+		if (this._store.length === 1) {
 			return 0; // If we only have one store, we always return 0
 		}
 
