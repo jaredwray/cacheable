@@ -472,18 +472,18 @@ Our goal with `cacheable` and `CacheableMemory` is to provide a high performance
 *Memory Benchmark Results:*
 |                   name                   |  summary  |  ops/sec  |  time/op  |  margin  |  samples  |
 |------------------------------------------|:---------:|----------:|----------:|:--------:|----------:|
-|  Map (v22) - set / get                   |    🥇     |     119K  |      9µs  |  ±1.25%  |     111K  |
-|  Cacheable Memory (v1.10.0) - set / get  |   -2.2%   |     116K  |      9µs  |  ±0.78%  |     110K  |
-|  Node Cache - set / get                  |   -4.3%   |     114K  |      9µs  |  ±1.24%  |     108K  |
-|  bentocache (v1.4.0) - set / get         |   -45%    |      65K  |     16µs  |  ±1.04%  |     100K  |
+|  Map (v22) - set / get                   |    🥇     |     117K  |      9µs  |  ±1.29%  |     110K  |
+|  Cacheable Memory (v1.10.0) - set / get  |   -1.3%   |     116K  |      9µs  |  ±0.77%  |     110K  |
+|  Node Cache - set / get                  |   -4.1%   |     112K  |      9µs  |  ±1.34%  |     107K  |
+|  bentocache (v1.4.0) - set / get         |   -45%    |      65K  |     17µs  |  ±1.10%  |     100K  |
 
 *Memory LRU Benchmark Results:*
 |                   name                   |  summary  |  ops/sec  |  time/op  |  margin  |  samples  |
 |------------------------------------------|:---------:|----------:|----------:|:--------:|----------:|
-|  Map (v22) - set / get                   |    🥇     |     118K  |      9µs  |  ±1.13%  |     111K  |
-|  quick-lru (v7.0.1) - set / get          |  -0.02%   |     118K  |      9µs  |  ±0.80%  |     112K  |
-|  lru.min (v1.1.2) - set / get            |  -0.99%   |     117K  |      9µs  |  ±0.87%  |     110K  |
-|  Cacheable Memory (v1.10.0) - set / get  |   -4.7%   |     113K  |      9µs  |  ±0.82%  |     107K  |
+|  quick-lru (v7.0.1) - set / get          |    🥇     |     118K  |      9µs  |  ±0.85%  |     112K  |
+|  Map (v22) - set / get                   |  -0.56%   |     117K  |      9µs  |  ±1.35%  |     110K  |
+|  lru.min (v1.1.2) - set / get            |   -1.7%   |     116K  |      9µs  |  ±0.90%  |     110K  |
+|  Cacheable Memory (v1.10.0) - set / get  |   -3.3%   |     114K  |      9µs  |  ±1.16%  |     108K  |
 
 As you can see from the benchmarks `CacheableMemory` is on par with other caching engines such as `Map`, `Node Cache`, and `bentocache`. We have also tested it against other LRU caching engines such as `quick-lru` and `lru.min` and it performs well against them too.
 

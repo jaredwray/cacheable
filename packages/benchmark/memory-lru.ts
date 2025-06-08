@@ -6,7 +6,7 @@ import { createLRU } from 'lru.min';
 const bench = createBenchmark("Memory LRU Benchmark", 100000);
 
 // Cacheable Memory
-const cacheable = new CacheableMemory({lruSize: 80000 });
+const cacheable = new CacheableMemory({ storeHashSize: 1, lruSize: 80000 });
 let cacheableName = getModuleName("Cacheable Memory", "1.10.0");
 
 // QuickLRU
