@@ -75,6 +75,7 @@ export type Cache = {
 };
 
 export type Events = {
+	get: <T>(data: {key: string; value?: T; error?: unknown}) => void;
 	set: <T>(data: {key: string; value: T; error?: unknown}) => void;
 	del: (data: {key: string; error?: unknown}) => void;
 	clear: (error?: unknown) => void;
