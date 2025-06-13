@@ -188,6 +188,46 @@ export class FlatCache extends Hookified {
 		}
 	}
 
+	public loadFileStream(pathToFile: string, onProgress: (progress: number, total: number) => void, onEnd: () => void, onError?: (error: Error) => void) {
+		if (fs.existsSync(pathToFile)) {
+			const stats = fs.statSync(pathToFile);
+			const total = stats.size;
+			let loaded = 0;
+			let streamData = '';
+			const readStream = fs.createReadStream(pathToFile, {encoding: 'utf8'});
+			readStream.on('data', chunk => {
+				loaded += chunk.length;
+				streamData += chunk as string;
+				onProgress(loaded, total);
+			});
+
+			readStream.on('end', () => {
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				const items = this._parse(streamData);
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+				for (const key of Object.keys(items)) {
+					this._cache.set(items[key].key as string, items[key].value, {expire: items[key].expires as number});
+				}
+
+				this._changesSinceLastSave = true;
+				onEnd();
+			});
+			/* c8 ignore next 5 */
+			readStream.on('error', error => {
+				this.emit(FlatCacheEvents.ERROR, error);
+				if (onError) {
+					onError(error);
+				}
+			});
+		} else {
+			const error = new Error(`Cache file ${pathToFile} does not exist`);
+			this.emit(FlatCacheEvents.ERROR, error);
+			if (onError) {
+				onError(error);
+			}
+		}
+	}
+
 	/**
 	 * Returns the entire persisted object
 	 * @method all
