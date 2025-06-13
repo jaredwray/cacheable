@@ -387,13 +387,16 @@ export class Cacheable extends Hookified {
 						const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 
 						let expires = secondaryResults[i].expires;
-						
+
+						// eslint-disable-next-line max-depth
 						if (expires === null) {
 							expires = undefined;
 						}
 
 						const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+
 						const setItem = {key, value: result[i].value, ttl};
+
 						await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
 						await this._primary.set(setItem.key, setItem.value, setItem.ttl);
 					}
