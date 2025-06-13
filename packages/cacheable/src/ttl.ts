@@ -5,7 +5,8 @@ import {shorthandToMilliseconds} from '../src/shorthand-time.js';
  * @param expires - The expires value to convert.
  * @returns {number | undefined} The TTL value in milliseconds, or undefined if the expires value is not valid.
  */
-export function getTtlFromExpires(expires: number | undefined): number | undefined {
+// eslint-disable-next-line @typescript-eslint/ban-types
+export function getTtlFromExpires(expires: number | null | undefined): number | undefined {
 	if (expires === undefined || expires === null) {
 		return undefined;
 	}
