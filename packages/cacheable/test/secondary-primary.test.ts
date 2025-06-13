@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+
 import {expect, test} from 'vitest';
 import {Keyv} from 'keyv';
 import {faker} from '@faker-js/faker';
