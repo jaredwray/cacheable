@@ -44,6 +44,7 @@
 * [CacheableMemory - API](#cacheablememory---api)
 * [Keyv Storage Adapter - KeyvCacheableMemory](#keyv-storage-adapter---keyvcacheablememory)
 * [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
+* [Get Or Set Memoization Function](#get-or-set-memoization-function)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -355,7 +356,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `deleteMany([keys])`: Deletes multiple values from the cache.
 * `clear()`: Clears the cache stores. Be careful with this as it will clear both layer 1 and layer 2.
 * `wrap(function, WrapOptions)`: Wraps an `async` function in a cache.
-* `getOrSet(key, valueFunction, ttl?)`: Gets a value from cache or sets it if not found using the provided function.
+* `getOrSet(GetOrSetKey, valueFunction, GetOrSetFunctionOptions)`: Gets a value from cache or sets it if not found using the provided function.
 * `disconnect()`: Disconnects from the cache stores.
 * `onHook(hook, callback)`: Sets a hook.
 * `removeHook(hook)`: Removes a hook.
@@ -613,6 +614,46 @@ const wrappedFunction = cache.wrap(syncFunction, { ttl: '1h', key: 'syncFunction
 console.log(wrappedFunction()); // error
 console.log(wrappedFunction()); // error from cache
 ```
+
+# Get Or Set Memoization Function
+
+The `getOrSet` method provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value from cache, and if not found, calls the provided function to compute the value and store it in cache before returning it. Here are the options:
+
+```typescript
+export type GetOrSetFunctionOptions = {
+	ttl?: number | string;
+	cacheErrors?: boolean;
+	throwErrors?: boolean;
+};
+```
+
+Here is an example of how to use the `getOrSet` method:
+
+```javascript
+import { Cacheable } from 'cacheable';
+const cache = new Cacheable();
+// Use getOrSet to fetch user data
+const function_ = async () => Math.random() * 100;
+const value = await cache.getOrSet('randomValue', function_, { ttl: '1h' });
+console.log(value); // e.g. 42.123456789
+```
+
+You can also use a function to compute the key for the function:
+
+```javascript
+import { Cacheable, GetOrSetOptions } from 'cacheable';
+const cache = new Cacheable();
+
+// Function to generate a key based on options
+const generateKey = (options?: GetOrSetOptions) => {
+  return `custom_key_:${options?.cacheId || 'default'}`;
+};
+
+const function_ = async () => Math.random() * 100;
+const value = await cache.getOrSet(generateKey(), function_, { ttl: '1h' });
+```
+
+
 
 # How to Contribute
 
