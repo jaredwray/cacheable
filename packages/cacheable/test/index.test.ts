@@ -5,7 +5,7 @@ import {Keyv} from 'keyv';
 import KeyvRedis from '@keyv/redis';
 import {LRUCache} from 'lru-cache';
 import {Cacheable, CacheableHooks} from '../src/index.js';
-import {createWrapKey} from '../src/wrap.js';
+import {createWrapKey, type GetOrSetOptions} from '../src/wrap.js';
 import {sleep} from './sleep.js';
 
 describe('cacheable options and properties', async () => {
@@ -716,5 +716,28 @@ describe('cacheable get or set', () => {
 			cacheable.getOrSet('key2', function_),
 		]);
 		expect(function_).toHaveBeenCalledTimes(2);
+	});
+	test('should throw on getOrSet error', async () => {
+		const cacheable = new Cacheable();
+		const function_ = vi.fn(async () => {
+			throw new Error('Test error');
+		});
+		let errorCaught = false;
+		cacheable.on('error', () => {
+			errorCaught = true;
+		});
+
+		await expect(cacheable.getOrSet('key', function_, {throwErrors: true})).rejects.toThrow('Test error');
+		expect(errorCaught).toBe(true);
+		expect(function_).toHaveBeenCalledTimes(1);
+	});
+
+	test('should generate key via function on getOrSet', async () => {
+		const cacheable = new Cacheable();
+		const generateKey = (options?: GetOrSetOptions) => `custom_key_${options?.cacheId}`;
+		const function_ = vi.fn(async () => Math.random() * 100);
+		const result1 = await cacheable.getOrSet(generateKey, function_);
+		const result2 = await cacheable.getOrSet(generateKey, function_);
+		expect(result1).toBe(result2);
 	});
 });
