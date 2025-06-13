@@ -305,4 +305,36 @@ describe('wrap functions handling thrown errors', () => {
 
 		expect(errorCallCount).toBe(1);
 	});
+
+	it('can use createKey function to generate cache keys', async () => {
+		const cache = new Cacheable();
+		const options: WrapOptions = {
+			cache,
+			keyPrefix: 'test',
+			createKey: (function_, arguments_, options) => `customKey:${options?.keyPrefix}:${arguments_[0]}`,
+		};
+
+		const wrapped = wrap((argument: string) => `Result for ${argument}`, options);
+
+		const result1 = await wrapped('arg1');
+		const result2 = await wrapped('arg1'); // Should hit the cache
+
+		expect(result1).toBe(result2);
+	});
+
+	it('can use createKey function to generate cache keys with wrapSync', () => {
+		const cache = new CacheableMemory();
+		const options: WrapSyncOptions = {
+			cache,
+			keyPrefix: 'test',
+			createKey: (function_, arguments_, options) => `customKey:${options?.keyPrefix}:${arguments_[0]}`,
+		};
+
+		const wrapped = wrapSync((argument: string) => `Result for ${argument}`, options);
+
+		const result1 = wrapped('arg1');
+		const result2 = wrapped('arg1'); // Should hit the cache
+
+		expect(result1).toBe(result2);
+	});
 });
