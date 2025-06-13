@@ -788,5 +788,5 @@ export {
 	type KeyvStoreAdapter, type KeyvOptions, KeyvHooks, Keyv,
 } from 'keyv';
 export {
-	wrap, wrapSync, type WrapOptions, type WrapSyncOptions,
+	wrap, wrapSync, getOrSet, type GetOrSetFunctionOptions, type GetOrSetKey, type GetOrSetOptions, type WrapOptions, type WrapSyncOptions,
 } from './wrap.js';
