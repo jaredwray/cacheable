@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import {expect, test} from 'vitest';
 import {Keyv} from 'keyv';
 import {faker} from '@faker-js/faker';
@@ -30,7 +31,7 @@ test('should set a new ttl when secondary is setting primary', async () => {
 	await cacheable.get(data.key);
 	const primaryResult2 = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult2?.value).toEqual(data.value);
-	// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+
 	const ttlFromExpires = getTtlFromExpires(primaryResult2?.expires as number | undefined);
 	expect(ttlFromExpires).toBeLessThan(12);
 
@@ -62,7 +63,7 @@ test('should use the cacheable default ttl on secondary -> primary', async () =>
 	// Get the value from primary raw to validate it has expires
 	const primaryResult = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult?.value).toEqual(data.value);
-	// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+
 	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires as number | undefined);
 	expect(ttlFromExpires).toBeGreaterThan(95);
 	expect(ttlFromExpires).toBeLessThan(105);
@@ -87,7 +88,7 @@ test('should use the primary ttl on secondary -> primary', async () => {
 	// Get the value from primary raw to validate it has expires
 	const primaryResult = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult?.value).toEqual(data.value);
-	// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+
 	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires as number | undefined);
 	expect(ttlFromExpires).toBeGreaterThan(45);
 	expect(ttlFromExpires).toBeLessThan(55);
@@ -112,7 +113,7 @@ test('should use the secondary ttl on secondary -> primary', async () => {
 	// Get the value from primary raw to validate it has expires
 	const primaryResult = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult?.value).toEqual(data.value);
-	// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+
 	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires as number | undefined);
 	expect(ttlFromExpires).toBeGreaterThan(45);
 	expect(ttlFromExpires).toBeLessThan(55);

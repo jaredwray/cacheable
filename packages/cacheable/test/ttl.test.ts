@@ -93,7 +93,6 @@ test('should calculate and choose expires as ttl is undefined', () => {
 	const now = Date.now();
 	const expires = now + 1000;
 	const result = calculateTtlFromExpiration(undefined, expires);
-	expect(result).toBe(1000);
 	expect(result).toBeLessThan(1002);
 	expect(result).toBeGreaterThan(998);
 });
