@@ -6,7 +6,7 @@ import {CacheableStats} from './stats.js';
 import {type CacheableItem} from './cacheable-item-types.js';
 import {hash} from './hash.js';
 import {
-	getOrSet, type GetOrSetFunctionOptions, type GetOrSetOptions, wrap, type WrapFunctionOptions,
+	getOrSet, type GetOrSetKey, type GetOrSetFunctionOptions, type GetOrSetOptions, wrap, type WrapFunctionOptions,
 } from './wrap.js';
 import {getCascadingTtl, calculateTtlFromExpiration} from './ttl.js';
 
@@ -690,17 +690,19 @@ export class Cacheable extends Hookified {
 	 * Retrieves the value associated with the given key from the cache. If the key is not found,
 	 * invokes the provided function to calculate the value, stores it in the cache, and then returns it.
 	 *
-	 * @param {string} key - The key to retrieve or set in the cache.
+	 * @param {GetOrSetKey} key - The key to retrieve or set in the cache. This can also be a function that returns a string key.
+	 * If a function is provided, it will be called with the cache options to generate the key.
 	 * @param {() => Promise<T>} function_ - The asynchronous function that computes the value to be cached if the key does not exist.
-	 * @param {WrapFunctionOptions} [options] - Optional settings for caching, such as the time to live (TTL) or whether to cache errors.
+	 * @param {GetOrSetFunctionOptions} [options] - Optional settings for caching, such as the time to live (TTL) or whether to cache errors.
 	 * @return {Promise<T | undefined>} - A promise that resolves to the cached or newly computed value, or undefined if an error occurs and caching is not configured for errors.
 	 */
-	public async getOrSet<T>(key: string, function_: () => Promise<T>, options?: GetOrSetFunctionOptions): Promise<T | undefined> {
+	public async getOrSet<T>(key: GetOrSetKey, function_: () => Promise<T>, options?: GetOrSetFunctionOptions): Promise<T | undefined> {
 		const getOrSetOptions: GetOrSetOptions = {
 			cache: this,
 			cacheId: this._cacheId,
 			ttl: options?.ttl ?? this._ttl,
 			cacheErrors: options?.cacheErrors,
+			throwErrors: options?.throwErrors,
 		};
 		return getOrSet(key, function_, getOrSetOptions);
 	}
@@ -786,5 +788,5 @@ export {
 	type KeyvStoreAdapter, type KeyvOptions, KeyvHooks, Keyv,
 } from 'keyv';
 export {
-	wrap, wrapSync, type WrapOptions, type WrapSyncOptions,
+	wrap, wrapSync, getOrSet, type GetOrSetFunctionOptions, type GetOrSetKey, type GetOrSetOptions, type WrapOptions, type WrapSyncOptions,
 } from './wrap.js';

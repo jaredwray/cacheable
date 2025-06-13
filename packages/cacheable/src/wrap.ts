@@ -2,9 +2,12 @@ import {hash} from './hash.js';
 import {coalesceAsync} from './coalesce-async.js';
 import {type Cacheable, type CacheableMemory} from './index.js';
 
+export type GetOrSetKey = string | ((options?: GetOrSetOptions) => string);
+
 export type GetOrSetFunctionOptions = {
 	ttl?: number | string;
 	cacheErrors?: boolean;
+	throwErrors?: boolean;
 };
 
 export type GetOrSetOptions = GetOrSetFunctionOptions & {
@@ -53,20 +56,27 @@ export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): A
 	};
 }
 
-export async function getOrSet<T>(key: string, function_: () => Promise<T>, options: GetOrSetOptions): Promise<T | undefined> {
-	let value = await options.cache.get(key) as T | undefined;
+export async function getOrSet<T>(key: GetOrSetKey, function_: () => Promise<T>, options: GetOrSetOptions): Promise<T | undefined> {
+	const keyString = typeof key === 'function' ? key(options) : key;
+
+	let value = await options.cache.get(keyString) as T | undefined;
+
 	if (value === undefined) {
 		const cacheId = options.cacheId ?? 'default';
-		const coalesceKey = `${cacheId}::${key}`;
+		const coalesceKey = `${cacheId}::${keyString}`;
 		value = await coalesceAsync(coalesceKey, async () => {
 			try {
 				const result = await function_() as T;
-				await options.cache.set(key, result, options.ttl);
+				await options.cache.set(keyString, result, options.ttl);
 				return result;
 			} catch (error) {
 				options.cache.emit('error', error);
 				if (options.cacheErrors) {
-					await options.cache.set(key, error, options.ttl);
+					await options.cache.set(keyString, error, options.ttl);
+				}
+
+				if (options.throwErrors) {
+					throw error;
 				}
 			}
 		});
