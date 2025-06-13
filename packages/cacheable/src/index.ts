@@ -385,7 +385,7 @@ export class Cacheable extends Hookified {
 						result[i] = secondaryResults[i];
 
 						const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
-						// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+
 						const expires = secondaryResults[i].expires as number | undefined;
 						const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 						const setItem = {key, value: result[i].value, ttl};
