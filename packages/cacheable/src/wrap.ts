@@ -15,9 +15,12 @@ export type GetOrSetOptions = GetOrSetFunctionOptions & {
 	cache: Cacheable;
 };
 
+export type CreateWrapKey = (function_: AnyFunction, arguments_: any[], options?: WrapFunctionOptions) => string;
+
 export type WrapFunctionOptions = {
 	ttl?: number | string;
 	keyPrefix?: string;
+	createKey?: CreateWrapKey;
 	cacheErrors?: boolean;
 	cacheId?: string;
 };
@@ -36,7 +39,11 @@ export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): A
 	const {ttl, keyPrefix, cache} = options;
 
 	return function (...arguments_: any[]) {
-		const cacheKey = createWrapKey(function_, arguments_, keyPrefix);
+		let cacheKey = createWrapKey(function_, arguments_, keyPrefix);
+		if (options.createKey) {
+			cacheKey = options.createKey(function_, arguments_, options);
+		}
+
 		let value = cache.get(cacheKey);
 
 		if (value === undefined) {
@@ -89,7 +96,11 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 	const {keyPrefix, cache} = options;
 
 	return async function (...arguments_: any[]) {
-		const cacheKey = createWrapKey(function_, arguments_, keyPrefix);
+		let cacheKey = createWrapKey(function_, arguments_, keyPrefix);
+		if (options.createKey) {
+			cacheKey = options.createKey(function_, arguments_, options);
+		}
+
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return
 		return cache.getOrSet(cacheKey, async (): Promise<T | undefined> => function_(...arguments_), options);
 	};
