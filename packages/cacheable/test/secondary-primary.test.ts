@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+
 import {expect, test} from 'vitest';
 import {Keyv} from 'keyv';
 import {faker} from '@faker-js/faker';
@@ -32,7 +32,7 @@ test('should set a new ttl when secondary is setting primary', async () => {
 	const primaryResult2 = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult2?.value).toEqual(data.value);
 
-	const ttlFromExpires = getTtlFromExpires(primaryResult2?.expires as number | undefined);
+	const ttlFromExpires = getTtlFromExpires(primaryResult2?.expires);
 	expect(ttlFromExpires).toBeLessThan(12);
 
 	// Now make sure that it expires after 10 seconds
@@ -64,7 +64,7 @@ test('should use the cacheable default ttl on secondary -> primary', async () =>
 	const primaryResult = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult?.value).toEqual(data.value);
 
-	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires as number | undefined);
+	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires);
 	expect(ttlFromExpires).toBeGreaterThan(95);
 	expect(ttlFromExpires).toBeLessThan(105);
 });
@@ -89,7 +89,7 @@ test('should use the primary ttl on secondary -> primary', async () => {
 	const primaryResult = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult?.value).toEqual(data.value);
 
-	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires as number | undefined);
+	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires);
 	expect(ttlFromExpires).toBeGreaterThan(45);
 	expect(ttlFromExpires).toBeLessThan(55);
 });
@@ -114,7 +114,7 @@ test('should use the secondary ttl on secondary -> primary', async () => {
 	const primaryResult = await cacheable.primary.get(data.key, {raw: true});
 	expect(primaryResult?.value).toEqual(data.value);
 
-	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires as number | undefined);
+	const ttlFromExpires = getTtlFromExpires(primaryResult?.expires);
 	expect(ttlFromExpires).toBeGreaterThan(45);
 	expect(ttlFromExpires).toBeLessThan(55);
 });

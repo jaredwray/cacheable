@@ -1,5 +1,4 @@
 import {Hookified} from 'hookified';
-import {de} from '@faker-js/faker/.';
 import {wrapSync, type WrapFunctionOptions} from './wrap.js';
 import {DoublyLinkedList} from './memory-lru.js';
 import {shorthandToTime} from './shorthand-time.js';
