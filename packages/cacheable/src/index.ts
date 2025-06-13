@@ -387,9 +387,11 @@ export class Cacheable extends Hookified {
 						const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 
 						let expires = secondaryResults[i].expires;
-						if(expires === null) {
+						
+						if (expires === null) {
 							expires = undefined;
 						}
+
 						const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 						const setItem = {key, value: result[i].value, ttl};
 						await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
