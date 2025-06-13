@@ -239,7 +239,7 @@ export class NodeCacheStore extends Hookified {
 	/**
 	 * Check if a key exists in the cache. If it does exist it will get the value and delete the item from the cache.
 	 * @param {string | number} key
-	 * @returns {any | undefined}
+	 * @returns {T | undefined}
 	 */
 	public async take<T>(key: string | number): Promise<T | undefined> {
 		return this._cache.take<T>(key.toString());
