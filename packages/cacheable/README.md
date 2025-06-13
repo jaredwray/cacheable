@@ -615,6 +615,27 @@ console.log(wrappedFunction()); // error
 console.log(wrappedFunction()); // error from cache
 ```
 
+If you would like to generate your own key for the wrapped function you can set the `createKey` property in the `wrap()` options. This is useful if you want to generate a key based on the arguments of the function or any other criteria.
+
+```javascript
+  const cache = new Cacheable();
+  const options: WrapOptions = {
+    cache,
+    keyPrefix: 'test',
+    createKey: (function_, arguments_, options: WrapOptions) => `customKey:${options?.keyPrefix}:${arguments_[0]}`,
+  };
+
+  const wrapped = wrap((argument: string) => `Result for ${argument}`, options);
+
+  const result1 = await wrapped('arg1');
+  const result2 = await wrapped('arg1'); // Should hit the cache
+
+  console.log(result1); // Result for arg1
+  console.log(result2); // Result for arg1 (from cache)
+```
+
+We will pass in the `function` that is being wrapped, the `arguments` passed to the function, and the `options` used to wrap the function. You can then use these to generate a custom key for the cache.
+
 # Get Or Set Memoization Function
 
 The `getOrSet` method provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value from cache, and if not found, calls the provided function to compute the value and store it in cache before returning it. Here are the options:
