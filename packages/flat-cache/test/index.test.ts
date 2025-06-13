@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import {on} from 'node:events';
 import {describe, test, expect} from 'vitest';
 import defaultFlatCache, {
 	FlatCache, create, createFromFile, clearAll, clearCacheById,
@@ -221,6 +222,65 @@ describe('flat-cache load from persisted cache', () => {
 		await sleep(300);
 		expect(secondCache.getKey('bar')).toBeUndefined();
 		firstCache.destroy(true);
+	});
+
+	test('should load cache via file stream', async () => {
+		let progressCount = 0;
+		const onProgress = (progress: number, total: number) => {
+			progressCount++;
+			expect(progress).toBeGreaterThanOrEqual(0);
+			expect(total).toBeGreaterThan(0);
+		};
+
+		let errorCount = 0;
+		const onError = (error: Error) => {
+			errorCount++;
+			expect(error).toBeInstanceOf(Error);
+		};
+
+		let endCount = 0;
+		const onEnd = () => {
+			endCount++;
+		};
+
+		const cacheDir = '.cachefoo3';
+		const cacheId = 'cache4';
+		const firstCache = new FlatCache({cacheDir, cacheId});
+		firstCache.setKey('foo', 'bar');
+		firstCache.setKey('bar', {foo: 'bar'});
+		firstCache.setKey('baz', [1, 2, 3]);
+		firstCache.save();
+		const secondCache = new FlatCache({cacheDir});
+
+		secondCache.loadFileStream(firstCache.cacheFilePath, onProgress, onEnd, onError);
+
+		await sleep(400);
+
+		expect(secondCache.getKey('foo')).toBe('bar');
+		expect(secondCache.getKey('bar')).toEqual({foo: 'bar'});
+		expect(secondCache.getKey('baz')).toEqual([1, 2, 3]);
+
+		expect(progressCount).toBeGreaterThan(0);
+		expect(endCount).toBe(1);
+		expect(errorCount).toBe(0);
+		fs.rmSync(firstCache.cacheDirPath, {recursive: true, force: true});
+		firstCache.destroy(true);
+	});
+
+	test('should error on file stream load with bad path', async () => {
+		const cache = new FlatCache();
+		let errorMessage;
+
+		const onError = (error: Error) => {
+			errorMessage = error.message;
+		};
+
+		// eslint-disable-next-line @typescript-eslint/no-empty-function
+		cache.loadFileStream('bad/path/to/file', () => {}, () => {}, onError);
+
+		await sleep(10);
+
+		expect(errorMessage).toBeDefined();
 	});
 });
 
