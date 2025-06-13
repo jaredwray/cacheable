@@ -35,6 +35,7 @@
 		"test": "echo 'no tests needed'",
 		"test:ci": "echo 'no tests needed'",
 		"benchmark:memory": "tsx ./memory.ts && tsx ./memory-lru.ts",
+		"benchmark:cache": "tsx ./cache-get-set.ts",
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"dependencies": {
