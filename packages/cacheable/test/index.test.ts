@@ -2,7 +2,8 @@ import {
 	vi, describe, test, expect,
 } from 'vitest';
 import {Keyv} from 'keyv';
-import KeyvRedis from '@keyv/redis';
+import KeyvRedis, {createKeyv} from '@keyv/redis';
+import {createKeyv as createKeyvFromValkey} from '@keyv/valkey';
 import {LRUCache} from 'lru-cache';
 import {Cacheable, CacheableHooks} from '../src/index.js';
 import {createWrapKey, type GetOrSetOptions} from '../src/wrap.js';
