@@ -263,7 +263,14 @@ export class Cacheable extends Hookified {
 	 * @returns {void}
 	 */
 	public setPrimary(primary: Keyv | KeyvStoreAdapter): void {
-		this._primary = primary instanceof Keyv ? primary : new Keyv(primary);
+		// eslint-disable-next-line unicorn/prefer-ternary
+		if (this.isKeyvInstance(primary)) {
+			// If the primary is already a Keyv instance, we can use it directly
+			this._primary = primary as Keyv;
+		} else {
+			this._primary = new Keyv(primary as KeyvStoreAdapter);
+		}
+
 		/* c8 ignore next 3 */
 		this._primary.on('error', (error: unknown) => {
 			this.emit(CacheableEvents.ERROR, error);
@@ -297,7 +304,7 @@ export class Cacheable extends Hookified {
 		}
 
 		// Check if the object has the Keyv methods and properties
-		const keyvMethods = ['generateIterator', 'get', 'getMany', 'set', 'setMany', 'delete', 'deleteMany', 'has', 'hasMany', 'clear', 'disconnect' , 'serialize', 'deserialize'];
+		const keyvMethods = ['generateIterator', 'get', 'getMany', 'set', 'setMany', 'delete', 'deleteMany', 'has', 'hasMany', 'clear', 'disconnect', 'serialize', 'deserialize'];
 		return keyvMethods.every(method => typeof keyv[method] === 'function');
 	}
 
