@@ -22,10 +22,9 @@ Note: `NodeCache` is ready and available for use. `NodeCacheStore` is in progres
 # Table of Contents
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
-* [NodeCache Not Default Export](#nodecache-not-default-export)
 * [NodeCache API](#nodecache-api)
-* [Advanced Usage](#advanced-usage)
 * [NodeCacheStore](#nodecachestore)
+* [NodeCacheStore API](#nodecachestore-api)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -50,8 +49,6 @@ cache.del('foo'); // true
 
 cache.set('bar', 'baz', '35m'); // 35 minutes using shorthand
 ```
-
-# NodeCache Not Default Export
 
 The `NodeCache` is not the default export, so you need to import it like this:
 
@@ -249,27 +246,9 @@ cache.on('set', (key, value) => {
 });
 ```
 
-# Advanced Usage
-
-```javascript
-import {NodeStorageCache} from '@cacheable/node-cache';
-import {Keyv} from 'keyv';
-import {KeyvRedis} from '@keyv/redis';
-
-const storage = new Keyv({store: new KeyvRedis('redis://user:pass@localhost:6379')});
-const cache = new NodeStorageCache(storage);
-
-// with storage you have the same functionality as the NodeCache but will be using async/await
-await cache.set('foo', 'bar');
-await cache.get('foo'); // 'bar'
-
-// if you call getStats() this will now only be for the single instance of the adapter as it is in memory
-cache.getStats(); // {hits: 1, misses: 1, keys: 1, ksize: 2, vsize: 3}
-```
-
 # NodeCacheStore
 
-The `NodeCacheStore` is a class that extends the `NodeCache` and adds the ability to use storage adapters. This is based on the `cacheable` engine and allows you to do layer 1 and layer 2 caching. The storage adapters are based on the [Keyv](https://keyv.org) package. This allows you to use any of the storage adapters that are available.
+`NodeCacheStore` has a similar API to `NodeCache` but it is using `async / await` as it uses the `Keyv` storage adapters under the hood. This means that you can use all the storage adapters that are available in `Keyv` and it will work seamlessly with the `NodeCacheStore`. To learn more about the `Keyv` storage adapters you can check out the [Keyv documentation](https://keyv.org).
 
 ```javascript
 import {NodeCacheStore} from '@cacheable/node-cache';
@@ -279,7 +258,24 @@ await cache.set('foo', 'bar');
 await cache.get('foo'); // 'bar'
 ```
 
-## NodeCacheStoreOptions
+Here is an example of how to use the `NodeCacheStore` with a primary and secondary storage adapter:
+
+```javascript
+import {NodeStorageCache} from '@cacheable/node-cache';
+import {Keyv} from 'keyv';
+import {KeyvRedis} from '@keyv/redis';
+
+const primary = new Keyv(); // In-memory storage as primary
+const secondary = new Keyv({store: new KeyvRedis('redis://user:pass@localhost:6379')});
+const cache = new NodeStorageCache({primary, secondary});
+
+// with storage you have the same functionality as the NodeCache but will be using async/await
+await cache.set('foo', 'bar');
+await cache.get('foo'); // 'bar'
+
+// if you call getStats() this will now only be for the single instance of the adapter as it is in memory
+cache.getStats(); // {hits: 1, misses: 1, keys: 1, ksize: 2, vsize: 3}
+```
 
 When initializing the cache you can pass in the options below:
 
@@ -293,7 +289,7 @@ export type NodeCacheStoreOptions = {
 };
 ```
 
-Note: the `ttl` is now in milliseconds and not seconds like `stdTTL` in `NodeCache`. You can learn more about using shorthand also in the [cacheable documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cacheable/README.md#shorthand-for-time-to-live-ttl). as it is fulling supported. Here is an example:
+Note: the `ttl` is now in milliseconds and not seconds like `stdTTL` in `NodeCache`. You can learn more about using shorthand also in the [cacheable documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cacheable/README.md#shorthand-for-time-to-live-ttl) as it is fully supported. Here is an example:
 
 ```javascript
 const cache = new NodeCacheStore({ttl: 60000 }); // 1 minute as it defaults to milliseconds
@@ -301,7 +297,7 @@ await cache.set('foo', 'bar', '1h'); // 1 hour
 await cache.set('longfoo', 'bar', '1d'); // 1 day
 ```
 
-## Node Cache Store API
+## NodeCacheStore API
 
 * `set(key: string | number, value: any, ttl?: number): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl)
 * `mset(data: Array<NodeCacheItem>): Promise<boolean>` - Set multiple key value pairs at once
