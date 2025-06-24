@@ -60,77 +60,7 @@ cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
 ```
 
-# Advanced Usage
-
-```javascript
-import {NodeStorageCache} from '@cacheable/node-cache';
-import {Keyv} from 'keyv';
-import {KeyvRedis} from '@keyv/redis';
-
-const storage = new Keyv({store: new KeyvRedis('redis://user:pass@localhost:6379')});
-const cache = new NodeStorageCache(storage);
-
-// with storage you have the same functionality as the NodeCache but will be using async/await
-await cache.set('foo', 'bar');
-await cache.get('foo'); // 'bar'
-
-// if you call getStats() this will now only be for the single instance of the adapter as it is in memory
-cache.getStats(); // {hits: 1, misses: 1, keys: 1, ksize: 2, vsize: 3}
-```
-
-# NodeCacheStore
-
-The `NodeCacheStore` is a class that extends the `NodeCache` and adds the ability to use storage adapters. This is based on the `cacheable` engine and allows you to do layer 1 and layer 2 caching. The storage adapters are based on the [Keyv](https://keyv.org) package. This allows you to use any of the storage adapters that are available.
-
-```javascript
-import {NodeCacheStore} from '@cacheable/node-cache';
-
-const cache = new NodeCacheStore();
-await cache.set('foo', 'bar');
-await cache.get('foo'); // 'bar'
-```
-
-## NodeCacheStoreOptions
-
-When initializing the cache you can pass in the options below:
-
-```javascript
-export type NodeCacheStoreOptions = {
-	ttl?: number; // The standard ttl as number in milliseconds for every generated cache element. 0 = unlimited
-	primary?: Keyv; // The primary storage adapter
-	secondary?: Keyv; // The secondary storage adapter
-	maxKeys?: number; // Default is 0 (unlimited). If this is set it will throw and error if you try to set more keys than the max.
-	stats?: boolean; // Default is true, if this is set to false it will not track stats
-};
-```
-
-Note: the `ttl` is now in milliseconds and not seconds like `stdTTL` in `NodeCache`. You can learn more about using shorthand also in the [cacheable documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cacheable/README.md#shorthand-for-time-to-live-ttl). as it is fulling supported. Here is an example:
-
-```javascript
-const cache = new NodeCacheStore({ttl: 60000 }); // 1 minute as it defaults to milliseconds
-await cache.set('foo', 'bar', '1h'); // 1 hour
-await cache.set('longfoo', 'bar', '1d'); // 1 day
-```
-
-## Node Cache Store API
-
-* `set(key: string | number, value: any, ttl?: number): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl)
-* `mset(data: Array<NodeCacheItem>): Promise<boolean>` - Set multiple key value pairs at once
-* `get<T>(key: string | number): Promise<T>` - Get a value from the cache by key
-* `mget(keys: Array<string | number>): Promise<Record<string, unknown>>` - Get multiple values from the cache by keys
-* `take<T>(key: string | number): Promise<T>` - Get a value from the cache by key and delete it
-* `del(key: string | number): Promise<boolean>` - Delete a key
-* `mdel(keys: Array<string | number>): Promise<boolean>` - Delete multiple keys
-* `clear(): Promise<void>` - Clear the cache
-* `setTtl(key: string | number, ttl: number): Promise<boolean>` - Set the ttl of a key
-* `disconnect(): Promise<void>` - Disconnect the storage adapters
-* `stats`: `NodeCacheStats` - Get the stats of the cache
-* `ttl`: `number` | `string` - The standard ttl as number in seconds for every generated cache element. `< 0` or `undefined` = unlimited
-* `primary`: `Keyv` - The primary storage adapter
-* `secondary`: `Keyv` - The secondary storage adapter
-* `maxKeys`: `number` - If this is set it will throw and error if you try to set more keys than the max
-
-# API
+# NodeCache API
 
 ## `constructor(options?: NodeCacheOptions)`
 
@@ -315,6 +245,76 @@ cache.on('set', (key, value) => {
 	console.log(`Key ${key} has been set with value ${value}`);
 });
 ```
+
+# Advanced Usage
+
+```javascript
+import {NodeStorageCache} from '@cacheable/node-cache';
+import {Keyv} from 'keyv';
+import {KeyvRedis} from '@keyv/redis';
+
+const storage = new Keyv({store: new KeyvRedis('redis://user:pass@localhost:6379')});
+const cache = new NodeStorageCache(storage);
+
+// with storage you have the same functionality as the NodeCache but will be using async/await
+await cache.set('foo', 'bar');
+await cache.get('foo'); // 'bar'
+
+// if you call getStats() this will now only be for the single instance of the adapter as it is in memory
+cache.getStats(); // {hits: 1, misses: 1, keys: 1, ksize: 2, vsize: 3}
+```
+
+# NodeCacheStore
+
+The `NodeCacheStore` is a class that extends the `NodeCache` and adds the ability to use storage adapters. This is based on the `cacheable` engine and allows you to do layer 1 and layer 2 caching. The storage adapters are based on the [Keyv](https://keyv.org) package. This allows you to use any of the storage adapters that are available.
+
+```javascript
+import {NodeCacheStore} from '@cacheable/node-cache';
+
+const cache = new NodeCacheStore();
+await cache.set('foo', 'bar');
+await cache.get('foo'); // 'bar'
+```
+
+## NodeCacheStoreOptions
+
+When initializing the cache you can pass in the options below:
+
+```javascript
+export type NodeCacheStoreOptions = {
+	ttl?: number; // The standard ttl as number in milliseconds for every generated cache element. 0 = unlimited
+	primary?: Keyv; // The primary storage adapter
+	secondary?: Keyv; // The secondary storage adapter
+	maxKeys?: number; // Default is 0 (unlimited). If this is set it will throw and error if you try to set more keys than the max.
+	stats?: boolean; // Default is true, if this is set to false it will not track stats
+};
+```
+
+Note: the `ttl` is now in milliseconds and not seconds like `stdTTL` in `NodeCache`. You can learn more about using shorthand also in the [cacheable documentation](https://github.com/jaredwray/cacheable/blob/main/packages/cacheable/README.md#shorthand-for-time-to-live-ttl). as it is fulling supported. Here is an example:
+
+```javascript
+const cache = new NodeCacheStore({ttl: 60000 }); // 1 minute as it defaults to milliseconds
+await cache.set('foo', 'bar', '1h'); // 1 hour
+await cache.set('longfoo', 'bar', '1d'); // 1 day
+```
+
+## Node Cache Store API
+
+* `set(key: string | number, value: any, ttl?: number): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl)
+* `mset(data: Array<NodeCacheItem>): Promise<boolean>` - Set multiple key value pairs at once
+* `get<T>(key: string | number): Promise<T>` - Get a value from the cache by key
+* `mget(keys: Array<string | number>): Promise<Record<string, unknown>>` - Get multiple values from the cache by keys
+* `take<T>(key: string | number): Promise<T>` - Get a value from the cache by key and delete it
+* `del(key: string | number): Promise<boolean>` - Delete a key
+* `mdel(keys: Array<string | number>): Promise<boolean>` - Delete multiple keys
+* `clear(): Promise<void>` - Clear the cache
+* `setTtl(key: string | number, ttl: number): Promise<boolean>` - Set the ttl of a key
+* `disconnect(): Promise<void>` - Disconnect the storage adapters
+* `stats`: `NodeCacheStats` - Get the stats of the cache
+* `ttl`: `number` | `string` - The standard ttl as number in seconds for every generated cache element. `< 0` or `undefined` = unlimited
+* `primary`: `Keyv` - The primary storage adapter
+* `secondary`: `Keyv` - The secondary storage adapter
+* `maxKeys`: `number` - If this is set it will throw and error if you try to set more keys than the max
 
 # How to Contribute
 
