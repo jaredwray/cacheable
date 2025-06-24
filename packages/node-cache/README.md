@@ -22,9 +22,10 @@ Note: `NodeCache` is ready and available for use. `NodeCacheStore` is in progres
 # Table of Contents
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
+* [NodeCache Not Default Export](#nodecache-not-default-export)
+* [NodeCache API](#nodecache-api)
 * [Advanced Usage](#advanced-usage)
 * [NodeCacheStore](#nodecachestore)
-* [API](#api)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -51,6 +52,8 @@ cache.set('bar', 'baz', '35m'); // 35 minutes using shorthand
 ```
 
 # NodeCache Not Default Export
+
+The `NodeCache` is not the default export, so you need to import it like this:
 
 ```javascript
 import {NodeCache} from '@cacheable/node-cache';
@@ -91,20 +94,20 @@ cache.on('expired', (key, value) => {
 });
 ```
 
-## `.set(key: string | number, value: any, ttl?: number): Promise<boolean>`
+## `set(key: string | number, value: any, ttl?: number): boolean`
 
 Set a key value pair with an optional ttl (in seconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl).
 
 ```javascript
-await cache.set('foo', 'bar', 10); // true
+cache.set('foo', 'bar', 10); // true
 ```
 
-## `.mset(data: Array<NodeCacheItem>): Promise<boolean>`
+## `mset(data: Array<NodeCacheItem>): boolean`
 
 Set multiple key value pairs at once. This will take an array of objects with the key, value, and optional ttl.
 
 ```javascript
-await cache.mset([{key: 'foo', value: 'bar', ttl: 10}, {key: 'bar', value: 'baz'}]); // true
+cache.mset([{key: 'foo', value: 'bar', ttl: 10}, {key: 'bar', value: 'baz'}]); // true
 ```
 
 the `NodeCacheItem` is defined as:
@@ -117,7 +120,7 @@ export type NodeCacheItem = {
 };
 ```
 
-## `.get(key: string | number): Promise<any>`
+## `get<T>(key: string | number): T | undefined`
 
 Get a value from the cache by key. If the key does not exist it will return `undefined`.
 
@@ -125,76 +128,76 @@ Get a value from the cache by key. If the key does not exist it will return `und
 cache.get('foo'); // 'bar'
 ```
 
-## `mget(keys: Array<string | number>): Promise<Record<string, unknown>>`
+## `mget<T>(keys: Array<string | number>): Record<string, T | undefined>`
 
 Get multiple values from the cache by keys. This will return an object with the keys and values.
 
 ```javascript
 const obj = { my: 'value', my2: 'value2' };
 const obj2 = { special: 'value3', life: 'value4' };
-await cache.set('my', obj);
-await cache.set('my2', obj2);
-await cache.mget(['my', 'my2']); // { my: { my: 'value', my2: 'value2' }, my2: { special: 'value3', life: 'value4' } }
+cache.set('my', obj);
+cache.set('my2', obj2);
+cache.mget(['my', 'my2']); // { my: { my: 'value', my2: 'value2' }, my2: { special: 'value3', life: 'value4' } }
 ```
 
-## `take(key: string | number): Promise<T>`
+## `take<T>(key: string | number): T | undefined`
 
 Get a value from the cache by key and delete it. If the key does not exist it will return `undefined`.
 
 ```javascript
-await cache.set('foo', 'bar');
-await cache.take('foo'); // 'bar'
-await cache.get('foo'); // undefined
+cache.set('foo', 'bar');
+cache.take('foo'); // 'bar'
+cache.get('foo'); // undefined
 ```
 
-## `del(key: string | number | Array<string | number>): Promise<number>`
+## `del(key: string | number | Array<string | number>): number`
 
 Delete a key from the cache. Will return the number of deleted entries and never fail. You can also pass in an array of keys to delete multiple keys. All examples assume that you have initialized the cache like `const cache = new NodeCache();`.
 
 ```javascript
-await cache.del('foo'); // true
+cache.del('foo'); // true
 ```
 
 passing in an array of keys:
 
 ```javascript
-await cache.del(['foo', 'bar']); // true
+cache.del(['foo', 'bar']); // true
 ```
 
-## `.mdel(keys: Array<string | number>): Promise<number>`
+## `mdel(keys: Array<string | number>): number`
 
 Delete multiple keys from the cache. Will return the number of deleted entries and never fail.
 
 ```javascript
-await cache.mdel(['foo', 'bar']); // true
+cache.mdel(['foo', 'bar']); // true
 ```
 
-## `.ttl(key: string | number, ttl?: number): Promise<boolean>`
+## `ttl(key: string | number, ttl?: number): boolean`
 
 Redefine the ttl of a key. Returns true if the key has been found and changed. Otherwise returns false. If the ttl-argument isn't passed the default-TTL will be used.
 
 ```javascript
-await cache.ttl('foo', 10); // true
+cache.ttl('foo', 10); // true
 ```
 
-## `getTtl(key: string | number): Promise<number | undefined>`
+## `getTtl(key: string | number): number | undefined`
 
 Get the ttl expiration from `Date.now()` of a key. If the key does not exist it will return `undefined`.
 
 ```javascript
-await cache.getTtl('foo'); // 1725993344859
+cache.getTtl('foo'); // 1725993344859
 ```
 
-## `has(key: string | number): Promise<boolean>`
+## `has(key: string | number): boolean`
 
 Check if a key exists in the cache.
 
 ```javascript
-await cache.set('foo', 'bar');
-await cache.has('foo'); // true
+cache.set('foo', 'bar');
+cache.has('foo'); // true
 ```
 
-## `keys(): Promise<Array<string>>`
+## `keys(): string[]`
 
 Get all keys from the cache.
 
