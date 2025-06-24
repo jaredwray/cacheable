@@ -13,15 +13,15 @@
 `@cacheable/node-cache` is compatible with the [node-cache](https://www.npmjs.com/package/node-cache) package with regular maintenance and additional functionality (async/await and storage adapters). The only thing not implemented is the `enableLegacyCallbacks` option and functions. If you need them we are happy to take a PR to add them.
 
 * Fully Compatible with `node-cache` using `{NodeCache}`
+* Faster than the original `node-cache` package 🚀
 * Async/Await functionality with `{NodeCacheStore}`
 * Storage Adapters via [Keyv](https://keyv.org) with `{NodeCacheStore}`
 * Maintained and Updated Regularly! 🎉
 
-Note: `NodeCache` is ready and available for use. `NodeCacheStore` is in progress and will be available soon. Please do not use it until it is released.
-
 # Table of Contents
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
+* [NodeCache Performance](#nodecache-performance)
 * [NodeCache API](#nodecache-api)
 * [NodeCacheStore](#nodecachestore)
 * [NodeCacheStore API](#nodecachestore-api)
@@ -59,6 +59,15 @@ const cache = new NodeCache();
 cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
 ```
+
+# NodeCache Performance
+
+The `NodeCache` is designed to be fast and efficient. It uses a simple in-memory store with a time-to-live (TTL) feature. The performance is comparable to the original `node-cache` package, but with additional features and improvements.
+
+|               name                |  summary  |  ops/sec  |  time/op  |  margin  |  samples  |
+|-----------------------------------|:---------:|----------:|----------:|:--------:|----------:|
+|  Cacheable NodeCache - set / get  |    🥇     |     117K  |      9µs  |  ±1.01%  |     111K  |
+|  Node Cache - set / get           |   -4.6%   |     112K  |      9µs  |  ±1.31%  |     106K  |
 
 # NodeCache API
 
