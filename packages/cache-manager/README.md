@@ -483,7 +483,7 @@ Returns the list of Keyv instances. This can be used to get the list of stores a
 const cache = createCache({cacheId: 'my-cache-id'});
 cache.cacheId(); // => 'my-cache-id'
 ```
-See unit tests in [`test/cache-id.test.ts`](./test/get.test.ts) for more information.
+See unit tests in [`test/cache-id.test.ts`](./test/cache-id.test.ts) for more information.
 
 # Events
 ## set
