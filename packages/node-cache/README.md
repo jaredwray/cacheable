@@ -62,7 +62,7 @@ cache.get('foo'); // 'bar'
 
 # NodeCache Performance
 
-The `NodeCache` is designed to be fast and efficient. It uses a simple in-memory store with a time-to-live (TTL) feature. The performance is comparable to the original `node-cache` package, but with additional features and improvements.
+The performance is comparable if not faster to the original `node-cache` package, but with additional features and improvements.
 
 |               name                |  summary  |  ops/sec  |  time/op  |  margin  |  samples  |
 |-----------------------------------|:---------:|----------:|----------:|:--------:|----------:|
