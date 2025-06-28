@@ -22,7 +22,7 @@ A special thanks to [Tim Phan](https://github.com/timphandev) who took `cache-ma
 
 # Migration from v6 to v7
 
-`v7` has only one breaking change which is changine the return type from `null` to `undefined` when there is no data to return. This is to align with the [Keyv](https://keyv.org) API and to make it more consistent with the rest of the methods. Below is an example of how to migrate from `v6` to `v7`:
+`v7` has only one breaking change which is changing the return type from `null` to `undefined` when there is no data to return. This is to align with the [Keyv](https://keyv.org) API and to make it more consistent with the rest of the methods. Below is an example of how to migrate from `v6` to `v7`:
 
 ```ts
 import { createCache } from 'cache-manager';
