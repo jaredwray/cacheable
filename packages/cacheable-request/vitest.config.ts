@@ -9,7 +9,7 @@ export default defineConfig({
 				'.pnp.*',
 				'.yarn/**',
 				'test/**',
-				'vitest.config.mjs',
+				'vitest.config.ts',
 				'dist/**',
 			],
 		},
