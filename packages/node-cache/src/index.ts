@@ -12,11 +12,11 @@ export type NodeCacheOptions = {
 	 */
 	checkperiod?: number;
 	/**
-	 * If set to true (Default Setting), the cache will clone the returned items via get() functions. 
-	 * This means that every time you set a value into the cache, node-cache makes a deep clone of it. 
-	 * When you get that value back, you receive another deep clone. 
-	 * This mimics the behavior of an external cache like Redis or Memcached, meaning mutations to the 
-	 * returned object do not affect the cached copy (and vice versa). If set to false, the original 
+	 * If set to true (Default Setting), the cache will clone the returned items via get() functions.
+	 * This means that every time you set a value into the cache, node-cache makes a deep clone of it.
+	 * When you get that value back, you receive another deep clone.
+	 * This mimics the behavior of an external cache like Redis or Memcached, meaning mutations to the
+	 * returned object do not affect the cached copy (and vice versa). If set to false, the original
 	 * object will be returned, and mutations will affect the cached copy.
 	 */
 	useClones?: boolean;
