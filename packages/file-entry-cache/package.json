@@ -42,7 +42,7 @@
 		"tsup": "^8.5.0",
 		"typescript": "^5.8.3",
 		"vitest": "^3.2.2",
-		"xo": "^1.1.0"
+		"xo": "^1.1.1"
 	},
 	"dependencies": {
 		"flat-cache": "workspace:^"
