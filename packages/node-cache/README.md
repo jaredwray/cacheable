@@ -77,13 +77,23 @@ Create a new cache instance. You can pass in options to set the configuration:
 
 ```javascript
 export type NodeCacheOptions = {
-	stdTTL?: number; // The standard ttl as number in seconds for every generated cache element. 0 = unlimited. If string, it will be parsed as shorthand and default to milliseconds if it is a number as a string.
-	checkperiod?: number; // Default is 600, 0 means no periodic check
-	useClones?: boolean; // Default is true
-	deleteOnExpire?: boolean; // Default is true, if false it will keep the key and not delete during an interval check and the value on get() will be undefined
-	maxKeys?: number; // Default is -1 (unlimited). If this is set it will throw and error if you try to set more keys than the max.
+	stdTTL?: number; 
+	checkperiod?: number;
+	useClones?: boolean;
+	deleteOnExpire?: boolean;
+	maxKeys?: number;
 };
 ```
+
+Here is a description of the options:
+
+| Option | Default Setting | Description |
+|--------|----------------|-------------|
+| `stdTTL` | `0` | The standard time to live (TTL) in seconds for every generated cache element. If set to `0`, it means unlimited. If a string is provided, it will be parsed as shorthand and default to milliseconds if it is a number as a string. |
+| `checkperiod` | `600` | The interval in seconds to check for expired keys. If set to `0`, it means no periodic check will be performed. |
+| `useClones` | `true` | If set to `true`, the cache will clone the returned items via `get()` functions. This means that every time you set a value into the cache, `node-cache` makes a deep clone of it. When you get that value back, you receive another deep clone. This mimics the behavior of an external cache like Redis or Memcached, meaning mutations to the returned object do not affect the cached copy (and vice versa). If set to `false`, the original object will be returned, and mutations will affect the cached copy. |
+| `deleteOnExpire` | `true` | If set to `true`, the key will be deleted when it expires. If set to `false`, the key will remain in the cache, but the value returned by `get()` will be `undefined`. You can manage the key with the `on('expired')` event. |
+| `maxKeys` | `-1` | If set to a positive number, it will limit the number of keys in the cache. If the number of keys exceeds this limit, it will throw an error when trying to set more keys than the maximum. If set to `-1`, it means unlimited keys are allowed. |
 
 When initializing the cache you can pass in the options to set the configuration like the example below where we set the `stdTTL` to 10 seconds and `checkperiod` to 5 seconds.:
 
