@@ -2,8 +2,8 @@ import {defineConfig} from 'vitest/config';
 
 export default defineConfig({
 	test: {
+		slowTestThreshold: 750,
 		coverage: {
-			provider: 'v8',
 			reporter: ['json', 'text', 'lcov'],
 			exclude: [
 				'test',

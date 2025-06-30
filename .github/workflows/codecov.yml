@@ -44,7 +44,12 @@ jobs:
         run: pnpm test:ci
 
       - name: Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
-          files: ./coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./cache-manager/coverage/lcov.info, \
+           ./cacheable/coverage/lcov.info, \
+           ./cacheable-request/coverage/lcov.info \
+           ./file-entry-cache/coverage/lcov.info, \
+           ./flat-cache/coverage/lcov.info, \
+           ./node-cache/coverage/lcov.info

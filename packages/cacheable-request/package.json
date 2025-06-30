@@ -17,7 +17,7 @@
 	},
 	"scripts": {
 		"test": "xo --fix && vitest run --coverage",
-		"test:ci": "xo && vitest run",
+		"test:ci": "xo && vitest run --coverage",
 		"prepublish": "pnpm run build",
 		"build": "rimraf ./dist && tsc --project tsconfig.build.json",
 		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"
