@@ -55,7 +55,7 @@
 		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
 		"prepublish": "pnpm build",
 		"test": "xo --fix && vitest run --coverage",
-		"test:ci": "xo && vitest run",
+		"test:ci": "xo && vitest run --coverage",
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {

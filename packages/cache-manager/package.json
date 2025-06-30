@@ -19,7 +19,7 @@
   "scripts": {
     "clean": "rimraf ./dist ./coverage ./node_modules",
     "test": "xo --fix && vitest run --coverage",
-    "test:ci": "xo && vitest run",
+    "test:ci": "xo && vitest run --coverage",
     "build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
     "prepublish": "pnpm run build"
   },
