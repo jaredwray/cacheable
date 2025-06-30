@@ -63,7 +63,7 @@ export class DoublyLinkedList<T> {
 		this.head = node;
 
 		// If list was empty, update tail
-		this.tail ||= node;
+		this.tail ??= node;
 	}
 
 	// Get the oldest node (tail)

@@ -17,9 +17,7 @@ export const shorthandToMilliseconds = (shorthand?: string | number): number | u
 			const match = /^([\d.]+)\s*(ms|s|m|h|hr|d)$/i.exec(shorthand);
 
 			if (!match) {
-				throw new Error(
-					`Unsupported time format: "${shorthand}". Use 'ms', 's', 'm', 'h', 'hr', or 'd'.`,
-				);
+				throw new Error(`Unsupported time format: "${shorthand}". Use 'ms', 's', 'm', 'h', 'hr', or 'd'.`);
 			}
 
 			const [, value, unit] = match;
@@ -74,7 +72,7 @@ export const shorthandToMilliseconds = (shorthand?: string | number): number | u
 };
 
 export const shorthandToTime = (shorthand?: string | number, fromDate?: Date): number => {
-	fromDate ||= new Date();
+	fromDate ??= new Date();
 
 	const milliseconds = shorthandToMilliseconds(shorthand);
 	if (milliseconds === undefined) {
