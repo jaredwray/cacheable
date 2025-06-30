@@ -47,7 +47,7 @@ describe('CacheableMemory Options and Properties', () => {
 
 	test('should be able to get the store via property', () => {
 		const cache = new CacheableMemory();
-		const store = cache.store;
+		const {store} = cache;
 		expect(store).toBeInstanceOf(Array);
 	});
 
@@ -122,7 +122,7 @@ describe('CacheableMemory Options and Properties', () => {
 	});
 
 	test('should be able to set storeHashAlgorithm to function', () => {
-		// eslint-disable-next-line unicorn/prefer-code-point
+		// eslint-disable-next-line unicorn/prefer-code-point, unicorn/prefer-spread
 		const customHashFunction = (key: string) => key.split('').reduce((hash, char) => hash + char.charCodeAt(0), 0);
 		const cache = new CacheableMemory({storeHashAlgorithm: customHashFunction});
 		expect(cache.storeHashAlgorithm).toBe(customHashFunction);

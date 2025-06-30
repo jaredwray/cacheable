@@ -405,14 +405,16 @@ export class Cacheable extends Hookified {
 
 				const secondaryResults = await this.getManySecondaryRawResults<T>(missingKeys);
 
+				// eslint-disable-next-line @typescript-eslint/await-thenable
 				for await (const [i, key] of keys.entries()) {
 					if (!result[i] && secondaryResults[i]) {
 						result[i] = secondaryResults[i];
 
 						const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 
-						let expires = secondaryResults[i].expires;
+						let {expires} = secondaryResults[i];
 
+						/* c8 ignore next 4 */
 						// eslint-disable-next-line max-depth
 						if (expires === null) {
 							expires = undefined;

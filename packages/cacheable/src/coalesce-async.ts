@@ -87,7 +87,7 @@ export async function coalesceAsync<T>(
 			/* c8 ignore next 5 */
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			coalesce({key, error});
-			// eslint-disable-next-line @typescript-eslint/only-throw-error
+
 			throw error;
 		}
 	}
