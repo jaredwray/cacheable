@@ -28,7 +28,7 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
-		"@faker-js/faker": "^9.7.0",
+		"@faker-js/faker": "^9.8.0",
 		"@keyv/redis": "^4.4.0",
 		"@keyv/valkey": "^1.0.5",
 		"@types/eslint": "^9.6.1",
