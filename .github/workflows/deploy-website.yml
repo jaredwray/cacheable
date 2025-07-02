@@ -32,9 +32,6 @@ jobs:
 
     - name: Install Modules
       run: pnpm install
-
-    - name: Approve Builds
-      run: pnpm approve-builds
       
     - name: Build Website
       run: pnpm website:build
