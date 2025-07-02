@@ -37,8 +37,5 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Approve Builds
-        run: pnpm approve-builds
-
       - name: Test
         run: pnpm test:ci
