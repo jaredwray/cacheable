@@ -168,7 +168,7 @@ export class NodeCache<T> extends Hookified {
 
 	/**
 	 * Sets multiple key val pairs. It is possible to define a ttl (seconds). Returns true on success.
-	 * @param {NodeCacheItem<T>[]} data an array of key value pairs with optional ttl
+	 * @param {PartialNodeCacheItem<T>[]} data an array of key value pairs with optional ttl
 	 * @returns {boolean}
 	 */
 	public mset(data: Array<PartialNodeCacheItem<T>>): boolean {

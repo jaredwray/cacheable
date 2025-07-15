@@ -159,7 +159,7 @@ export class NodeCacheStore<T> extends Hookified {
 
 	/**
 	 * Set multiple key/value pairs in the cache.
-	 * @param {NodeCacheItem[]} list
+	 * @param {PartialNodeCacheItem[]} list
 	 * @returns {void}
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
