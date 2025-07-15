@@ -60,6 +60,15 @@ cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
 ```
 
+You can also use generics with NodeCache to get the type of the value back:
+
+```javascript
+import {NodeCache} from '@cacheable/node-cache';
+const cache = new NodeCache<string>();
+cache.set('foo', 'bar');
+const value: string | undefined = cache.get('foo'); // 'bar'
+```
+
 # NodeCache Performance
 
 The performance is comparable if not faster to the original `node-cache` package, but with additional features and improvements.
