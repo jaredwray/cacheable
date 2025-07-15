@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 import {CacheableMemory, CacheableStats, shorthandToTime} from 'cacheable';
 import {Hookified} from 'hookified';
 
@@ -31,7 +31,7 @@ export type NodeCacheOptions = {
 	maxKeys?: number;
 };
 
-export type NodeCacheItem = {
+export type PartialNodeCacheItem<T> = {
 	/**
 	 * The key of the item
 	 */
@@ -39,11 +39,18 @@ export type NodeCacheItem = {
 	/**
 	 * The value of the item
 	 */
-	value: unknown;
+	value: T;
 	/**
 	 * The ttl of the item in seconds. 0 = unlimited
 	 */
 	ttl?: number;
+};
+
+export type NodeCacheItem<T> = PartialNodeCacheItem<T> & {
+	/**
+	 * The ttl of the item in milliseconds. 0 = unlimited
+	 */
+	ttl: number;
 };
 
 export enum NodeCacheErrors {
@@ -76,7 +83,7 @@ export type NodeCacheStats = {
 	vsize: number;
 };
 
-export class NodeCache extends Hookified {
+export class NodeCache<T> extends Hookified {
 	public readonly options: NodeCacheOptions = {
 		// eslint-disable-next-line @typescript-eslint/naming-convention
 		stdTTL: 0,
@@ -86,7 +93,7 @@ export class NodeCache extends Hookified {
 		maxKeys: -1,
 	};
 
-	public readonly store = new Map<string, any>();
+	public readonly store = new Map<string, NodeCacheItem<T>>();
 
 	private _stats: CacheableStats = new CacheableStats({enabled: true});
 
@@ -107,11 +114,11 @@ export class NodeCache extends Hookified {
 	/**
 	 * Sets a key value pair. It is possible to define a ttl (in seconds). Returns true on success.
 	 * @param {string | number} key - it will convert the key to a string
-	 * @param {any} value
+	 * @param {T} value
 	 * @param {number | string} [ttl] - this is in seconds and undefined will use the default ttl
 	 * @returns {boolean}
 	 */
-	public set(key: string | number, value: any, ttl?: number | string): boolean {
+	public set(key: string | number, value: T, ttl: number | string = 0): boolean {
 		// Check on key type
 		/* c8 ignore next 3 */
 		if (typeof key !== 'string' && typeof key !== 'number') {
@@ -161,10 +168,10 @@ export class NodeCache extends Hookified {
 
 	/**
 	 * Sets multiple key val pairs. It is possible to define a ttl (seconds). Returns true on success.
-	 * @param {NodeCacheItem[]} data an array of key value pairs with optional ttl
+	 * @param {PartialNodeCacheItem<T>[]} data an array of key value pairs with optional ttl
 	 * @returns {boolean}
 	 */
-	public mset(data: NodeCacheItem[]): boolean {
+	public mset(data: Array<PartialNodeCacheItem<T>>): boolean {
 		// Check on keys type
 		/* c8 ignore next 3 */
 		if (!Array.isArray(data)) {
@@ -183,7 +190,7 @@ export class NodeCache extends Hookified {
 	 * @param {string | number} key if the key is a number it will convert it to a string
 	 * @returns {T} the value or undefined
 	 */
-	public get<T>(key: string | number): T | undefined {
+	public get(key: string | number): T | undefined {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
 			if (result.ttl > 0) {
@@ -203,7 +210,7 @@ export class NodeCache extends Hookified {
 					return this._cacheable.clone(result.value) as T;
 				}
 
-				return result.value as T;
+				return result.value;
 			}
 
 			this._stats.incrementHits();
@@ -211,7 +218,7 @@ export class NodeCache extends Hookified {
 				return this._cacheable.clone(result.value) as T;
 			}
 
-			return result.value as T;
+			return result.value;
 		}
 
 		this._stats.incrementMisses();
@@ -332,7 +339,7 @@ export class NodeCache extends Hookified {
 				return 0;
 			}
 
-			return result.ttl as number;
+			return result.ttl;
 		}
 
 		return undefined;

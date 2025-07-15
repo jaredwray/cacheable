@@ -1,9 +1,9 @@
 import {Cacheable, CacheableMemory, type CacheableItem} from 'cacheable';
 import {Keyv} from 'keyv';
-import {type NodeCacheItem} from 'index.js';
+import {type PartialNodeCacheItem} from 'index.js';
 import {Hookified} from 'hookified';
 
-export type NodeCacheStoreOptions = {
+export type NodeCacheStoreOptions<T> = {
 	/**
 	 * Time to live in milliseconds. This is a breaking change from the original NodeCache.
 	 */
@@ -15,12 +15,12 @@ export type NodeCacheStoreOptions = {
 	/**
 	 * Primary cache store.
 	 */
-	primary?: Keyv;
+	primary?: Keyv<T>;
 	/**
 	 * Secondary cache store. Learn more about the secondary cache store in the cacheable documentation.
 	 * [storage-tiering-and-caching](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable#storage-tiering-and-caching)
 	 */
-	secondary?: Keyv;
+	secondary?: Keyv<T>;
 
 	/**
 	 * Enable stats tracking. This is a breaking change from the original NodeCache.
@@ -28,10 +28,10 @@ export type NodeCacheStoreOptions = {
 	stats?: boolean;
 };
 
-export class NodeCacheStore extends Hookified {
+export class NodeCacheStore<T> extends Hookified {
 	private _maxKeys = 0;
-	private readonly _cache = new Cacheable({primary: new Keyv({store: new CacheableMemory()})});
-	constructor(options?: NodeCacheStoreOptions) {
+	private readonly _cache = new Cacheable({primary: new Keyv<T>({store: new CacheableMemory()})});
+	constructor(options?: NodeCacheStoreOptions<T>) {
 		super();
 		if (options) {
 			const cacheOptions = {
@@ -83,27 +83,27 @@ export class NodeCacheStore extends Hookified {
 
 	/**
 	 * Primary cache store.
-	 * @returns {Keyv}
+	 * @returns {Keyv<T>}
 	 * @readonly
 	 */
-	public get primary(): Keyv {
+	public get primary(): Keyv<T> {
 		return this._cache.primary;
 	}
 
 	/**
 	 * Primary cache store.
-	 * @param {Keyv} primary
+	 * @param {Keyv<T>} primary
 	 */
-	public set primary(primary: Keyv) {
+	public set primary(primary: Keyv<T>) {
 		this._cache.primary = primary;
 	}
 
 	/**
 	 * Secondary cache store. Learn more about the secondary cache store in the
 	 * [cacheable](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable#storage-tiering-and-caching) documentation.
-	 * @returns {Keyv | undefined}
+	 * @returns {Keyv<T> | undefined}
 	 */
-	public get secondary(): Keyv | undefined {
+	public get secondary(): Keyv<T> | undefined {
 		return this._cache.secondary;
 	}
 
@@ -141,11 +141,11 @@ export class NodeCacheStore extends Hookified {
 	/**
 	 * Set a key/value pair in the cache.
 	 * @param {string | number} key
-	 * @param {any} value
+	 * @param {T} value
 	 * @param {number} [ttl]
 	 * @returns {boolean}
 	 */
-	public async set(key: string | number, value: any, ttl?: number): Promise<boolean> {
+	public async set(key: string | number, value: T, ttl?: number): Promise<boolean> {
 		if (this._maxKeys > 0) {
 			// eslint-disable-next-line unicorn/no-lonely-if
 			if (this._cache.stats.count >= this._maxKeys) {
@@ -159,10 +159,10 @@ export class NodeCacheStore extends Hookified {
 
 	/**
 	 * Set multiple key/value pairs in the cache.
-	 * @param {NodeCacheItem[]} list
+	 * @param {PartialNodeCacheItem[]} list
 	 * @returns {void}
 	 */
-	public async mset(list: NodeCacheItem[]): Promise<void> {
+	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
 		const items = new Array<CacheableItem>();
 		for (const item of list) {
 			items.push({key: item.key.toString(), value: item.value, ttl: item.ttl});

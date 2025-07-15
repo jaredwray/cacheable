@@ -4,7 +4,7 @@ import NodeCache from '../src/index.js';
 // eslint-disable-next-line no-promise-executor-return
 const sleep = async (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-const cache = new NodeCache({checkperiod: 0});
+const cache = new NodeCache<string>({checkperiod: 0});
 
 describe('NodeCache', () => {
 	test('should create a new instance of NodeCache', () => {
@@ -275,7 +275,7 @@ describe('NodeCache', () => {
 	});
 
 	test('should not delete if expired even on interval', async () => {
-		const cache = new NodeCache({checkperiod: 1, deleteOnExpire: false});
+		const cache = new NodeCache<string>({checkperiod: 1, deleteOnExpire: false});
 		let expiredKey = '';
 		cache.on('expired', key => {
 			expiredKey = key as string;
@@ -286,7 +286,7 @@ describe('NodeCache', () => {
 		await sleep(1000);
 		expect(cache.getStats().keys).toBe(2);
 		expect(expiredKey).toBe('foo-expired');
-		const expiredValue = cache.get<string>('foo-expired');
+		const expiredValue = cache.get('foo-expired');
 		expect(expiredValue).toBe(undefined);
 		cache.close();
 	});
