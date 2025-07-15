@@ -60,6 +60,16 @@ cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
 ```
 
+`NodeCache` also offers the ability to set the type of values that can be cached in Typescript environments.
+
+```typescript
+import {NodeCache} from '@cacheable/node-cache';
+
+const cache = new NodeCache<string>();
+cache.set('foo', 'bar');
+cache.get('foo'); // 'bar'
+```
+
 You can also use generics with NodeCache to get the type of the value back:
 
 ```javascript
