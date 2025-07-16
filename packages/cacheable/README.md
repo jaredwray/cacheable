@@ -32,6 +32,7 @@
 * [TTL Propagation and Storage Tiering](#ttl-propagation-and-storage-tiering)
 * [Shorthand for Time to Live (ttl)](#shorthand-for-time-to-live-ttl)
 * [Non-Blocking Operations](#non-blocking-operations)
+* [Non-Blocking with @keyv/redis](#non-blocking-with-keyvredis)
 * [CacheSync - Distributed Updates](#cachesync---distributed-updates)
 * [Cacheable Options](#cacheable-options)
 * [Cacheable Statistics (Instance Only)](#cacheable-statistics-instance-only)
