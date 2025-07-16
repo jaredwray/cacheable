@@ -256,6 +256,29 @@ raws.forEach((entry, idx) => {
 
 If you want your layer 2 (secondary) store to be non-blocking you can set the `nonBlocking` property to `true` in the options. This will make the secondary store non-blocking and will not wait for the secondary store to respond on `setting data`, `deleting data`, or `clearing data`. This is useful if you want to have a faster response time and not wait for the secondary store to respond.
 
+# Non-Blocking with @keyv/redis
+
+`@keyv/redis` is one of the most popular storage adapters used with `cacheable`. It provides a Redis-backed cache store that can be used as a secondary store. It is a bit complicated to setup as by default it causes hangs and blocking with its default configuration. To get past this you will need to configure the following:
+
+Construct your own Redis client via the `createClient()` method from `@keyv/redis` with the following options:
+* Set `disableOfflineQueue` to `true`
+* Set `socket.reconnectStrategy` to `false`
+In the KeyvRedis options:
+* Set `throwOnConnectError` to `false`
+In the Cacheable options:
+* Set `nonBlocking` to `true`
+
+We have also build a function to help with this called `createKeyvNonBlocking` inside the `@keyv/redis` package after version `4.6.0`. Here is an example of how to use it:
+
+```javascript
+import { Cacheable } from 'cacheable';
+import { createKeyvNonBlocking } from '@keyv/redis';
+
+const secondary = createKeyvNonBlocking('redis://user:pass@localhost:6379');
+
+const cache = new Cacheable({ secondary, nonBlocking: true });
+```
+
 # GetOrSet
 
 The `getOrSet` method provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value
