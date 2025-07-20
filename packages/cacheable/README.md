@@ -51,7 +51,7 @@
 
 # Getting Started
 
-`cacheable` is primarily used as an extension to you caching engine with a robust storage backend [Keyv](https://keyv.org), Memonization (Wrap), Hooks, Events, and Statistics.
+`cacheable` is primarily used as an extension to your caching engine with a robust storage backend [Keyv](https://keyv.org), Memonization (Wrap), Hooks, Events, and Statistics.
 
 ```bash
 npm install cacheable
