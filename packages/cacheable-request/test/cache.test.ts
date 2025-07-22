@@ -9,7 +9,6 @@ import {
 import getStream from 'get-stream';
 import delay from 'delay';
 import {Keyv} from 'keyv';
-import {b} from 'vitest/dist/chunks/suite.d.FvehnV49.js';
 import CacheableRequest, {CacheValue, onResponse} from '../src/index.js';
 import createTestServer from './create-test-server/index.mjs';
 

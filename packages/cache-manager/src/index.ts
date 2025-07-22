@@ -76,6 +76,7 @@ export type Cache = {
 
 export type Events = {
 	get: <T>(data: {key: string; value?: T; error?: unknown}) => void;
+	mget: <T>(data: {keys: string[]; value?: T[]; error?: unknown}) => void;
 	set: <T>(data: {key: string; value: T; error?: unknown}) => void;
 	del: (data: {key: string; error?: unknown}) => void;
 	clear: (error?: unknown) => void;
@@ -122,11 +123,28 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	};
 
 	const mget = async <T>(keys: string[]): Promise<Array<T | undefined>> => {
-		const result: Array<T | undefined> = [];
+		let result: Array<T | undefined> = keys.map(() => undefined);
 
-		for (const key of keys) {
-			const data = await get<T>(key);
-			result.push(data);
+		if (nonBlocking) {
+			try {
+				result = await Promise.race(stores.map(async store => store.getMany(keys)));
+				eventEmitter.emit('mget', {keys, values: result});
+			} catch (error) {
+				eventEmitter.emit('mget', {keys, error});
+			}
+		} else {
+			for (const store of stores) {
+				try {
+					const cacheValue = await store.getMany<T>(keys);
+					if (cacheValue) {
+						result = cacheValue;
+						eventEmitter.emit('mget', {keys, values: result});
+						break;
+					}
+				} catch (error) {
+					eventEmitter.emit('mget', {keys, error});
+				}
+			}
 		}
 
 		return result;
