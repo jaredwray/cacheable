@@ -343,7 +343,7 @@ test(
 
 test('auth should be in url', async () => testCacheKey({auth: 'user:pass'}, 'GET:http://user:pass@localhost'));
 
-test('should return default url', async () => testCacheKey({method: 'POST'}, 'POST:https://mockhttp.org/post'));
+test('should return default url', async () => testCacheKey({method: 'POST', url: 'https://mockhttp.org/post'}, 'POST:https://mockhttp.org/post'));
 
 test('request options path query is passed through', async () => {
 	const cacheableRequest = new CacheableRequest(request);
