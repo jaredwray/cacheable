@@ -293,10 +293,10 @@ test(
 	'hostname over host',
 	async () => testCacheKey(
 		{
-			host: 'www.example.com',
-			hostname: 'xyz.example.com',
+			host: 'mockhttp.org',
+			hostname: 'xyz.mockhttp.org',
 		},
-		'GET:http://xyz.example.com',
+		'GET:http://xyz.mockhttp.org',
 	),
 );
 
@@ -343,7 +343,7 @@ test(
 
 test('auth should be in url', async () => testCacheKey({auth: 'user:pass'}, 'GET:http://user:pass@localhost'));
 
-test('should return default url', async () => testCacheKey({method: 'POST'}, 'POST:http://localhost'));
+test('should return default url', async () => testCacheKey({method: 'POST'}, 'POST:https://mockhttp.org/post'));
 
 test('request options path query is passed through', async () => {
 	const cacheableRequest = new CacheableRequest(request);
