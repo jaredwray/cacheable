@@ -254,12 +254,12 @@ test(
 	'return without slash',
 	async () => testCacheKey(
 		{
-			protocol: 'http:',
-			host: 'www.example.com',
+			protocol: 'https:',
+			host: 'mockhttp.org',
 			port: 80,
 			path: '/',
 		},
-		'GET:http://www.example.com',
+		'GET:https://mockhttp.org',
 	),
 );
 
@@ -267,11 +267,11 @@ test(
 	'return without port',
 	async () => testCacheKey(
 		{
-			hostname: 'www.example.com',
+			hostname: 'localhost',
 			port: 80,
 			path: '/',
 		},
-		'GET:http://www.example.com',
+		'GET:http://localhost',
 	),
 );
 
@@ -279,15 +279,15 @@ test(
 	'return with url and port',
 	async () => testCacheKey(
 		{
-			hostname: 'www.example.com',
+			hostname: 'localhost',
 			port: 8080,
 			path: '/',
 		},
-		'GET:http://www.example.com:8080',
+		'GET:http://localhost:8080',
 	),
 );
 
-test('return with protocol', async () => testCacheKey({host: 'www.example.com'}, 'GET:http://www.example.com'));
+test('return with protocol', async () => testCacheKey({host: 'mockhttp.org'}, 'GET:https://mockhttp.org'));
 
 test(
 	'hostname over host',
