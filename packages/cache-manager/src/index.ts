@@ -78,6 +78,7 @@ export type Events = {
 	get: <T>(data: {key: string; value?: T; error?: unknown}) => void;
 	mget: <T>(data: {keys: string[]; value?: T[]; error?: unknown}) => void;
 	set: <T>(data: {key: string; value: T; error?: unknown}) => void;
+	mset: <T>(data: {list: Array<{key: string; value: T; ttl?: number}>; error?: unknown}) => void;
 	del: (data: {key: string; error?: unknown}) => void;
 	clear: (error?: unknown) => void;
 	refresh: <T>(data: {key: string; value: T; error?: unknown}) => void;
@@ -202,13 +203,10 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		}
 	};
 
-	const mset = async <T>(stores: Keyv[], list: Array<{key: string; value: T; ttl?: number}>) => {
-		const items = list.map(({key, value, ttl}) => ({key, value, ttl}));
+	const mset = async <T>(stores: Keyv[], rawList: Array<{key: string; value: T; ttl?: number}>) => {
+		const list = rawList.map(({key, value, ttl}) => ({key, value, ttl: ttl ?? options?.ttl}));
 		try {
-			const promises: Array<Promise<boolean>> = [];
-			for (const item of list) {
-				promises.push(...stores.map(async store => store.set(item.key, item.value, item.ttl)));
-			}
+			const promises = stores.map(store => store.setMany(list));
 
 			if (nonBlocking) {
 				// eslint-disable-next-line @typescript-eslint/no-floating-promises
