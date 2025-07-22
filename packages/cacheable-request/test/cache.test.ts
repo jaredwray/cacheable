@@ -9,7 +9,6 @@ import {
 import getStream from 'get-stream';
 import delay from 'delay';
 import {Keyv} from 'keyv';
-import {b} from 'vitest/dist/chunks/suite.d.FvehnV49.js';
 import CacheableRequest, {CacheValue, onResponse} from '../src/index.js';
 import createTestServer from './create-test-server/index.mjs';
 
@@ -232,21 +231,21 @@ const testCacheKey = async (input: any, expected: string) => {
 	await expect(cacheableRequestHelper(input)).rejects.toThrow();
 };
 
-test('return with GET', async () => testCacheKey('http://www.example.com', 'GET:http://www.example.com'));
+test('return with GET', async () => testCacheKey('https://mockhttp.org', 'GET:https://mockhttp.org'));
 
 test(
 	'strips default path',
-	async () => testCacheKey('http://www.example.com/', 'GET:http://www.example.com'),
+	async () => testCacheKey('https://mockhttp.org/', 'GET:https://mockhttp.org'),
 );
 
 test(
 	'keeps trailing /',
-	async () => testCacheKey('http://www.example.com/test/', 'GET:http://www.example.com/test/'),
+	async () => testCacheKey('https://mockhttp.org/test/', 'GET:https://mockhttp.org/test/'),
 );
 
 test(
 	'return with GET.',
-	async () => testCacheKey(new url.URL('http://www.example.com'), 'GET:http://www.example.com'),
+	async () => testCacheKey(new url.URL('https://mockhttp.org'), 'GET:https://mockhttp.org'),
 );
 
 test('no required properties', async () => testCacheKey({}, 'GET:http://localhost'));
