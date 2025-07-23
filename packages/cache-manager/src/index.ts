@@ -129,24 +129,35 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		if (nonBlocking) {
 			try {
 				result = await Promise.race(stores.map(async store => store.getMany(keys)));
-				eventEmitter.emit('mget', {keys, values: result});
 			} catch (error) {
 				eventEmitter.emit('mget', {keys, error});
 			}
 		} else {
 			for (const store of stores) {
 				try {
-					const cacheValue = await store.getMany<T>(keys);
-					if (cacheValue) {
-						result = cacheValue;
-						eventEmitter.emit('mget', {keys, values: result});
+					const missingValues = result.map((value, index) => (value === undefined ? {originalIndex: index, key: keys[index]} : undefined)).filter(v => v !== undefined);
+					if (missingValues.length === 0) {
 						break;
+					}
+
+					const missingKeys = missingValues.map(v => v.key);
+					const cacheValue = await store.getMany<T>(missingKeys);
+					for (const [index, value] of cacheValue.entries()) {
+						// eslint-disable-next-line max-depth
+						if (value === undefined) {
+							continue;
+						}
+
+						const {originalIndex} = missingValues[index];
+						result[originalIndex] = value;
 					}
 				} catch (error) {
 					eventEmitter.emit('mget', {keys, error});
 				}
 			}
 		}
+
+		eventEmitter.emit('mget', {keys, values: result});
 
 		return result;
 	};
