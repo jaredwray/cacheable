@@ -494,7 +494,7 @@ export function createFromFile(filePath: string, options?: FlatCacheOptions) {
 }
 
 /**
- * Clear the cache identified by the given Id
+ * Clear the cache identified by the given Id. This will only remove the cache from disk.
  * @method clearCacheById
  * @param cacheId {String} the id of the cache
  * @param cacheDirectory {String} directory for the cache entry
