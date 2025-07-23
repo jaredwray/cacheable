@@ -206,7 +206,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const mset = async <T>(stores: Keyv[], rawList: Array<{key: string; value: T; ttl?: number}>) => {
 		const list = rawList.map(({key, value, ttl}) => ({key, value, ttl: ttl ?? options?.ttl}));
 		try {
-			const promises = stores.map(store => store.setMany(list));
+			const promises = stores.map(async store => store.setMany(list));
 
 			if (nonBlocking) {
 				// eslint-disable-next-line @typescript-eslint/no-floating-promises
