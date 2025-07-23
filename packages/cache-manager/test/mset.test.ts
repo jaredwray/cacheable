@@ -36,25 +36,25 @@ describe('mset', () => {
 			{key: faker.string.alpha(20), value: faker.string.sample()},
 		];
 
-		let resolveSet: (value: boolean) => void = () => undefined;
-		const setPromise = new Promise<boolean>(_resolve => {
-			resolveSet = _resolve;
+		let resolveSetMany: (value: boolean[]) => void = () => undefined;
+		const setManyPromise = new Promise<boolean[]>(_resolve => {
+			resolveSetMany = _resolve;
 		});
 
 		const cache = createCache({stores: [keyv], nonBlocking: false});
-		const setHandler = vi.spyOn(keyv, 'set').mockReturnValue(setPromise);
+		const setManyHandler = vi.spyOn(keyv, 'setMany').mockReturnValue(setManyPromise);
 		const setResolved = vi.fn();
 		const setRejected = vi.fn();
 		cache.mset(list).catch(setRejected).then(setResolved);
 
-		expect(setHandler).toBeCalledTimes(list.length);
+		expect(setManyHandler).toHaveBeenCalledOnce();
 
 		await sleep(200);
 
 		expect(setResolved).not.toBeCalled();
 		expect(setRejected).not.toBeCalled();
 
-		resolveSet(true);
+		resolveSetMany(list.map(() => true));
 		await sleep(1);
 
 		expect(setResolved).toBeCalled();
@@ -68,17 +68,17 @@ describe('mset', () => {
 			{key: faker.string.alpha(20), value: faker.string.sample()},
 		];
 
-		const setPromise = new Promise<boolean>(_resolve => {
+		const setManyPromise = new Promise<boolean[]>(_resolve => {
 			// Do nothing, this will be a never resolved promise
 		});
 
 		const cache = createCache({stores: [keyv], nonBlocking: true});
-		const setHandler = vi.spyOn(keyv, 'set').mockReturnValue(setPromise);
+		const setManyHandler = vi.spyOn(keyv, 'setMany').mockReturnValue(setManyPromise);
 		const setResolved = vi.fn();
 		const setRejected = vi.fn();
 		cache.mset(list).catch(setRejected).then(setResolved);
 
-		expect(setHandler).toBeCalledTimes(list.length);
+		expect(setManyHandler).toHaveBeenCalledOnce();
 
 		await sleep(1);
 
