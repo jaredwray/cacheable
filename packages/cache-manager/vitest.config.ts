@@ -4,7 +4,7 @@ export default defineConfig({
 	test: {
 		coverage: {
 			reporter: ['json', 'text'],
-			exclude: ['test', 'vite.config.ts', 'dist', 'node_modules'],
+			exclude: ['test', 'vitest.config.ts', 'dist', 'node_modules'],
 		},
 	},
 });
