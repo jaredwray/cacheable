@@ -1,6 +1,6 @@
 import fs from 'node:fs';
-import {on} from 'node:events';
 import {describe, test, expect} from 'vitest';
+import {faker} from '@faker-js/faker';
 import defaultFlatCache, {
 	FlatCache, create, createFromFile, clearAll, clearCacheById,
 } from '../src/index.js';
@@ -317,11 +317,17 @@ describe('flat-cache exported functions', () => {
 		expect(fs.existsSync(cache2.cacheFilePath)).toBe(false);
 	});
 	test('should clear cache by id', () => {
-		const cache1 = create({cacheId: 'cache1'});
-		const cache2 = create({cacheId: 'cache2'});
-		clearCacheById('cache1');
-		expect(cache1.cache.size).toBe(0);
-		expect(fs.existsSync(cache1.cacheFilePath)).toBe(false);
+		const cacheId = faker.string.alphanumeric(10);
+		const cache = create({cacheId});
+		const data = {
+			key: faker.string.alphanumeric(10),
+			value: faker.string.alphanumeric(20),
+		};
+		cache.set(data.key, data.value);
+		cache.save();
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(true);
+		clearCacheById(cacheId);
+		expect(fs.existsSync(cache.cacheFilePath)).toBe(false);
 	});
 });
 
