@@ -76,7 +76,9 @@ export type Cache = {
 
 export type Events = {
 	get: <T>(data: {key: string; value?: T; error?: unknown}) => void;
+	mget: <T>(data: {keys: string[]; value?: T[]; error?: unknown}) => void;
 	set: <T>(data: {key: string; value: T; error?: unknown}) => void;
+	mset: <T>(data: {list: Array<{key: string; value: T; ttl?: number}>; error?: unknown}) => void;
 	del: (data: {key: string; error?: unknown}) => void;
 	clear: (error?: unknown) => void;
 	refresh: <T>(data: {key: string; value: T; error?: unknown}) => void;
@@ -122,12 +124,40 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	};
 
 	const mget = async <T>(keys: string[]): Promise<Array<T | undefined>> => {
-		const result: Array<T | undefined> = [];
+		let result: Array<T | undefined> = keys.map(() => undefined);
 
-		for (const key of keys) {
-			const data = await get<T>(key);
-			result.push(data);
+		if (nonBlocking) {
+			try {
+				result = await Promise.race(stores.map(async store => store.getMany(keys)));
+			} catch (error) {
+				eventEmitter.emit('mget', {keys, error});
+			}
+		} else {
+			for (const store of stores) {
+				try {
+					const missingValues = result.map((value, index) => (value === undefined ? {originalIndex: index, key: keys[index]} : undefined)).filter(v => v !== undefined);
+					if (missingValues.length === 0) {
+						break;
+					}
+
+					const missingKeys = missingValues.map(v => v.key);
+					const cacheValue = await store.getMany<T>(missingKeys);
+					for (const [index, value] of cacheValue.entries()) {
+						// eslint-disable-next-line max-depth
+						if (value === undefined) {
+							continue;
+						}
+
+						const {originalIndex} = missingValues[index];
+						result[originalIndex] = value;
+					}
+				} catch (error) {
+					eventEmitter.emit('mget', {keys, error});
+				}
+			}
 		}
+
+		eventEmitter.emit('mget', {keys, values: result});
 
 		return result;
 	};
@@ -184,13 +214,10 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		}
 	};
 
-	const mset = async <T>(stores: Keyv[], list: Array<{key: string; value: T; ttl?: number}>) => {
-		const items = list.map(({key, value, ttl}) => ({key, value, ttl}));
+	const mset = async <T>(stores: Keyv[], rawList: Array<{key: string; value: T; ttl?: number}>) => {
+		const list = rawList.map(({key, value, ttl}) => ({key, value, ttl: ttl ?? options?.ttl}));
 		try {
-			const promises: Array<Promise<boolean>> = [];
-			for (const item of list) {
-				promises.push(...stores.map(async store => store.set(item.key, item.value, item.ttl)));
-			}
+			const promises = stores.map(async store => store.setMany(list));
 
 			if (nonBlocking) {
 				// eslint-disable-next-line @typescript-eslint/no-floating-promises
