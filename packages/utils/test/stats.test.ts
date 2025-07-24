@@ -134,6 +134,10 @@ describe('cacheable stats', () => {
 		expect(stats.vsize).toBe(6);
 		expect(stats.ksize).toBe(6);
 		expect(stats.count).toBe(1);
+		stats.resetStoreValues();
+		expect(stats.vsize).toBe(0);
+		expect(stats.ksize).toBe(0);
+		expect(stats.count).toBe(0);
 	});
 	test('should get the rough size of the stats object', () => {
 		const stats = new Stats();
