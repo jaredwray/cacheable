@@ -108,11 +108,10 @@ If you want to get a number hash you can use the `hashToNumber` function:
 ```typescript
 import { hash, hashToNumber } from '@cacheable/utils';
 
-const hashValue = hash({foo: 'bar'}, HashAlgorithm.DJB2);
 const min = 0;
 const max = 10;
 
-const result = hashToNumber(hashValue, min, max);
+const result = hashToNumber({foo: 'bar'}, min, max, HashAlgorithm.DJB2);
 console.log(result); // A number between 0 and 10 based on the hash value
 ```
 
