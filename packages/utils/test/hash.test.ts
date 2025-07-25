@@ -1,11 +1,11 @@
 import {describe, test, expect} from 'vitest';
-import {hash, hashToNumber} from '../src/hash.js';
+import {hash, hashToNumber, HashAlgorithm} from '../src/hash.js';
 
 describe('hash', () => {
 	test('hashes an object using the specified algorithm', () => {
 		// Arrange
 		const object = {foo: 'bar'};
-		const algorithm = 'sha256';
+		const algorithm = HashAlgorithm.SHA256;
 
 		// Act
 		const result = hash(object, algorithm);
@@ -36,15 +36,47 @@ describe('hash', () => {
 	});
 
 	test('throws an error when the algorithm is not supported', () => {
-		// Arrange
-		const object = {foo: 'bar'};
-		const algorithm = 'md5foo';
-
-		// Act & Assert
-		expect(() => hashToNumber(object, 0, 100, algorithm)).toThrowError('Unsupported hash algorithm: \'md5foo\'');
+		// @ts-expect-error testing unsupported algorithm
+		expect(() => hash('foo', 'md5foo')).toThrowError('Unsupported hash algorithm: \'md5foo\'');
 	});
 
-	test('throws an error when the algorithm is not supported', () => {
-		expect(() => hash('foo', 'md5foo')).toThrowError('Unsupported hash algorithm: \'md5foo\'');
+	test('hashes an object using the DJB2 algorithm', () => {
+		// Arrange
+		const object = {foo: 'bar'};
+		const algorithm = HashAlgorithm.DJB2;
+
+		// Act
+		const result = hash(object, algorithm);
+
+		// Assert
+		expect(result).toBe('717564430');
+	});
+
+	test('hashToNumber returns a number within the specified range', () => {
+		// Arrange
+		const hashValue = hash({foo: 'bar'}, HashAlgorithm.DJB2);
+		const min = 0;
+		const max = 10;
+
+		// Act
+		const result = hashToNumber(hashValue, min, max);
+
+		// Assert
+		expect(result).toBeGreaterThanOrEqual(min);
+		expect(result).toBeLessThanOrEqual(max);
+	});
+
+	test('hashToNumber the same number for the same object', () => {
+		// Arrange
+		const hashValue = hash({foo: 'bar'}, HashAlgorithm.DJB2);
+		const min = 0;
+		const max = 10;
+
+		// Act
+		const result = hashToNumber(hashValue, min, max);
+		const result2 = hashToNumber(hashValue, min, max);
+
+		// Assert
+		expect(result).toBe(result2);
 	});
 });

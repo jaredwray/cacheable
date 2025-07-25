@@ -13,9 +13,13 @@ export enum HashAlgorithm {
  * @param algorithm The hash algorithm to use
  * @returns {string} The hash of the object
  */
-export function hash(object: any, algorithm = 'sha256'): string {
+export function hash(object: any, algorithm: HashAlgorithm = HashAlgorithm.SHA256): string {
 	// Convert the object to a string
 	const objectString = JSON.stringify(object);
+
+	if (algorithm === HashAlgorithm.DJB2) {
+		return djb2Hash(objectString);
+	}
 
 	// Check if the algorithm is supported
 	if (!crypto.getHashes().includes(algorithm)) {
@@ -27,24 +31,9 @@ export function hash(object: any, algorithm = 'sha256'): string {
 	return hasher.digest('hex');
 }
 
-export function hashToNumber(object: any, min = 0, max = 10, algorithm = 'sha256'): number {
-	// Convert the object to a string
-	const objectString = JSON.stringify(object);
-
-	// Check if the algorithm is supported
-	if (!crypto.getHashes().includes(algorithm)) {
-		throw new Error(`Unsupported hash algorithm: '${algorithm}'`);
-	}
-
-	// Create a hasher and update it with the object string
-	const hasher = crypto.createHash(algorithm);
-	hasher.update(objectString);
-
-	// Get the hash as a hexadecimal string
-	const hashHex = hasher.digest('hex');
-
+export function hashToNumber(hash: string, min = 0, max = 10): number {
 	// Convert the hex string to a number (base 16)
-	const hashNumber = Number.parseInt(hashHex, 16);
+	const hashNumber = Number.parseInt(hash, 16);
 
 	// Calculate the range size
 	const range = max - min + 1;
@@ -53,7 +42,7 @@ export function hashToNumber(object: any, min = 0, max = 10, algorithm = 'sha256
 	return min + (hashNumber % range);
 }
 
-export function djb2Hash(string_: string, min = 0, max = 10): number {
+export function djb2Hash(string_: string): string {
 	// DJB2 hash algorithm
 	let hash = 5381;
 	for (let i = 0; i < string_.length; i++) {
@@ -61,9 +50,6 @@ export function djb2Hash(string_: string, min = 0, max = 10): number {
 		hash = (hash * 33) ^ string_.charCodeAt(i); // 33 is a prime multiplier
 	}
 
-	// Calculate the range size
-	const range = max - min + 1;
-
 	// Return a value within the specified range
-	return min + (Math.abs(hash) % range);
+	return hash.toString();
 }
