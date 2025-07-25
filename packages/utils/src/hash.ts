@@ -31,9 +31,12 @@ export function hash(object: any, algorithm: HashAlgorithm = HashAlgorithm.SHA25
 	return hasher.digest('hex');
 }
 
-export function hashToNumber(hash: string, min = 0, max = 10): number {
+export function hashToNumber(object: any, min = 0, max = 10, algorithm: HashAlgorithm = HashAlgorithm.SHA256): number {
+	// Create hash of the object
+	const hashResult = hash(object, algorithm);
+
 	// Convert the hex string to a number (base 16)
-	const hashNumber = Number.parseInt(hash, 16);
+	const hashNumber = Number.parseInt(hashResult, 16);
 
 	// Calculate the range size
 	const range = max - min + 1;
