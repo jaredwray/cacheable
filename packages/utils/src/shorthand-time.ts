@@ -1,4 +1,11 @@
-
+/**
+ * Converts a shorthand time string or number into milliseconds.
+ * The shorthand can be a string like '1s', '2m', '3h', '4d', or a number representing milliseconds.
+ * If the input is undefined, it returns undefined.
+ * If the input is a string that does not match the expected format, it throws an error.
+ * @param shorthand - A shorthand time string or number representing milliseconds.
+ * @returns The equivalent time in milliseconds or undefined.
+ */
 export const shorthandToMilliseconds = (shorthand?: string | number): number | undefined => {
 	let milliseconds: number;
 
@@ -71,6 +78,14 @@ export const shorthandToMilliseconds = (shorthand?: string | number): number | u
 	return milliseconds;
 };
 
+/**
+ * Converts a shorthand time string or number into a timestamp.
+ * If the shorthand is undefined, it returns the current date's timestamp.
+ * If the shorthand is a valid time format, it adds that duration to the current date's timestamp.
+ * @param shorthand - A shorthand time string or number representing milliseconds.
+ * @param fromDate - An optional Date object to calculate from. Defaults to the current date if not provided.
+ * @returns The timestamp in milliseconds since epoch.
+ */
 export const shorthandToTime = (shorthand?: string | number, fromDate?: Date): number => {
 	fromDate ??= new Date();
 
