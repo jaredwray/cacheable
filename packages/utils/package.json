@@ -15,7 +15,7 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/jaredwray/cacheable.git",
-		"directory": "packages/cacheable"
+		"directory": "packages/utils"
 	},
 	"author": "Jared Wray <me@jaredwray.com>",
 	"license": "MIT",
@@ -43,29 +43,11 @@
 	},
 	"keywords": [
 		"cacheable",
-		"high performance",
-		"layer 1 caching",
-		"layer 2 caching",
-		"distributed caching",
-		"Keyv storage engine",
-		"memory caching",
-		"LRU cache",
-		"expiration",
-		"CacheableMemory",
-		"offline support",
-		"distributed sync",
-		"secondary store",
-		"primary store",
-		"non-blocking operations",
-		"cache statistics",
-		"layered caching",
-		"fault tolerant",
-		"scalable cache",
-		"in-memory cache",
-		"distributed cache",
-		"lruSize",
-		"lru",
-		"multi-tier cache"
+		"caching",
+		"utilities",
+		"hashing",
+		"keyv",
+		"cache utils"
 	],
 	"files": [
 		"dist",
