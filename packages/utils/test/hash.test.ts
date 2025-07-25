@@ -1,4 +1,5 @@
 import {describe, test, expect} from 'vitest';
+import {faker} from '@faker-js/faker';
 import {hash, hashToNumber, HashAlgorithm} from '../src/hash.js';
 
 describe('hash', () => {
@@ -54,12 +55,11 @@ describe('hash', () => {
 
 	test('hashToNumber returns a number within the specified range', () => {
 		// Arrange
-		const hashValue = hash({foo: 'bar'}, HashAlgorithm.DJB2);
 		const min = 0;
 		const max = 10;
 
 		// Act
-		const result = hashToNumber(hashValue, min, max);
+		const result = hashToNumber({foo: 'bar'}, min, max, HashAlgorithm.DJB2);
 
 		// Assert
 		expect(result).toBeGreaterThanOrEqual(min);
@@ -68,13 +68,14 @@ describe('hash', () => {
 
 	test('hashToNumber the same number for the same object', () => {
 		// Arrange
-		const hashValue = hash({foo: 'bar'}, HashAlgorithm.DJB2);
 		const min = 0;
 		const max = 10;
 
+		const value = faker.string.alphanumeric(10);
+
 		// Act
-		const result = hashToNumber(hashValue, min, max);
-		const result2 = hashToNumber(hashValue, min, max);
+		const result = hashToNumber({foo: value}, min, max, HashAlgorithm.DJB2);
+		const result2 = hashToNumber({foo: value}, min, max, HashAlgorithm.DJB2);
 
 		// Assert
 		expect(result).toBe(result2);
