@@ -49,4 +49,6 @@ jobs:
            ./packages/cacheable-request/coverage/lcov.info, \
            ./packages/file-entry-cache/coverage/lcov.info, \
            ./packages/flat-cache/coverage/lcov.info, \
-           ./packages/node-cache/coverage/lcov.info
+           ./packages/node-cache/coverage/lcov.info, \
+           ./packages/memoize/coverage/lcov.info, \
+           ./packages/utils/coverage/lcov.info
