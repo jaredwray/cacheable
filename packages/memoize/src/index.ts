@@ -1,17 +1,17 @@
 import {hash, coalesceAsync} from '@cacheable/utils';
 
-export type CacheInstance<T> = {
-	get: (key: string) => Promise<T | undefined>;
+export type CacheInstance = {
+	get: (key: string) => Promise<any | undefined>;
 	has: (key: string) => Promise<boolean>;
-	set: (key: string, value: T, ttl?: number | string) => Promise<boolean>;
+	set: (key: string, value: any, ttl?: number | string) => Promise<void>;
 	on: (event: string, listener: (...args: any[]) => void) => void;
 	emit: (event: string, ...args: any[]) => boolean;
 };
 
-export type CacheSyncInstance<T> = {
-	get: (key: string) => T | undefined;
+export type CacheSyncInstance = {
+	get: (key: string) => any | undefined;
 	has: (key: string) => boolean;
-	set: (key: string, value: T, ttl?: number | string) => boolean;
+	set: (key: string, value: any, ttl?: number | string) => void;
 	on: (event: string, listener: (...args: any[]) => void) => void;
 	emit: (event: string, ...args: any[]) => boolean;
 };
@@ -26,7 +26,7 @@ export type GetOrSetFunctionOptions = {
 
 export type GetOrSetOptions = GetOrSetFunctionOptions & {
 	cacheId?: string;
-	cache: CacheInstance<any>;
+	cache: CacheInstance;
 };
 
 export type CreateWrapKey = (function_: AnyFunction, arguments_: any[], options?: WrapFunctionOptions) => string;
@@ -40,11 +40,11 @@ export type WrapFunctionOptions = {
 };
 
 export type WrapOptions = WrapFunctionOptions & {
-	cache: CacheInstance<any>;
+	cache: CacheInstance;
 };
 
 export type WrapSyncOptions = WrapFunctionOptions & {
-	cache: CacheSyncInstance<any>;
+	cache: CacheSyncInstance;
 };
 
 export type AnyFunction = (...arguments_: any[]) => any;

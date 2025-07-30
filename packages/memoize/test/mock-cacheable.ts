@@ -1,7 +1,7 @@
 import {type CacheableStoreItem} from '@cacheable/utils';
 import {type CacheInstance, type CacheSyncInstance} from '../src/index.js';
 
-export class MockCacheable implements CacheInstance<any> {
+export class MockCacheable implements CacheInstance {
 	private readonly cache = new Map<string, CacheableStoreItem>();
 	private readonly listeners: Record<string, Array<(...args: any[]) => void>> = {};
 
@@ -19,7 +19,7 @@ export class MockCacheable implements CacheInstance<any> {
 		return await this.get(key) !== undefined;
 	}
 
-	async set(key: string, value: any, ttl?: number | string): Promise<boolean> {
+	async set(key: string, value: any, ttl?: number | string): Promise<void> {
 		let expires: number | undefined;
 		if (ttl && typeof ttl === 'number' && ttl > 0) {
 			expires = Date.now() + ttl;
@@ -27,7 +27,6 @@ export class MockCacheable implements CacheInstance<any> {
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		this.cache.set(key, {key, value, expires});
-		return true;
 	}
 
 	on(event: string, listener: (...args: any[]) => void): void {
@@ -49,7 +48,7 @@ export class MockCacheable implements CacheInstance<any> {
 	}
 }
 
-export class MockCacheableMemory implements CacheSyncInstance<any> {
+export class MockCacheableMemory implements CacheSyncInstance {
 	private readonly cache = new Map<string, CacheableStoreItem>();
 	private readonly listeners: Record<string, Array<(...args: any[]) => void>> = {};
 
@@ -67,7 +66,7 @@ export class MockCacheableMemory implements CacheSyncInstance<any> {
 		return this.get(key) !== undefined;
 	}
 
-	set(key: string, value: any, ttl?: number | string): boolean {
+	set(key: string, value: any, ttl?: number | string): void {
 		let expires: number | undefined;
 		if (ttl && typeof ttl === 'number' && ttl > 0) {
 			expires = Date.now() + ttl;
@@ -75,7 +74,6 @@ export class MockCacheableMemory implements CacheSyncInstance<any> {
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 		this.cache.set(key, {key, value, expires});
-		return true;
 	}
 
 	on(event: string, listener: (...args: any[]) => void): void {

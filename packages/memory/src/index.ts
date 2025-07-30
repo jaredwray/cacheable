@@ -1,11 +1,9 @@
 import {Hookified} from 'hookified';
-import {wrapSync, type WrapFunctionOptions} from '@cacheabe/memoize';
+import {type CacheSyncInstance, wrapSync, type WrapFunctionOptions} from '@cacheable/memoize';
+import {
+	shorthandToTime, type CacheableStoreItem, type CacheableItem, hash, hashToNumber, HashAlgorithm,
+} from '@cacheable/utils';
 import {DoublyLinkedList} from './memory-lru.js';
-import {shorthandToTime} from '@cacheable/utils';
-import {type CacheableStoreItem, type CacheableItem} from '@cacheable/utils';
-import {hash, hashToNumber, HashAlgorithm} from '@cacheable/utils';
-
-export {HashAlgorithm};
 
 export type StoreHashAlgorithmFunction = (key: string, storeHashSize: number) => number;
 
@@ -39,7 +37,7 @@ export const maximumMapSize = 16_777_216; // Maximum size of a Map is 16,777,216
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
 	private _storeHashSize = defaultStoreHashSize;
-	private _storeHashAlgorithm: StoreHashAlgorithm | ((key: string, storeHashSize: number) => number) = StoreHashAlgorithm.djb2Hash; // Default is djb2Hash
+	private _storeHashAlgorithm: HashAlgorithm | ((key: string, storeHashSize: number) => number) = HashAlgorithm.DJB2; // Default is djb2Hash
 	private _store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
 	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
@@ -512,11 +510,6 @@ export class CacheableMemory extends Hookified {
 			return 0; // If we only have one store, we always return 0
 		}
 
-		// Most used and should default to this
-		if (this._storeHashAlgorithm === StoreHashAlgorithm.djb2Hash) {
-			return djb2Hash(key, 0, this._storeHashSize);
-		}
-
 		// If we have a function, we call it with the store hash size
 		if (typeof this._storeHashAlgorithm === 'function') {
 			return this._storeHashAlgorithm(key, this._storeHashSize);
@@ -634,7 +627,7 @@ export class CacheableMemory extends Hookified {
 		const wrapOptions = {
 			ttl: options?.ttl ?? this._ttl,
 			keyPrefix: options?.keyPrefix,
-			cache: this,
+			cache: this as CacheSyncInstance,
 		};
 
 		return wrapSync<T>(function_, wrapOptions);
@@ -674,4 +667,6 @@ export class CacheableMemory extends Hookified {
 	}
 }
 
-export type {CacheableItem, CacheableStoreItem} from './cacheable-item-types.js';
+export type {CacheableItem, CacheableStoreItem} from '@cacheable/utils';
+
+export {HashAlgorithm} from '@cacheable/utils';
