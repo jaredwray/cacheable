@@ -1,12 +1,12 @@
 import {
 	describe, test, expect, vi,
 } from 'vitest';
-import {Cacheable} from 'cacheable';
 import {getOrSet, type GetOrSetOptions} from '../src/index.js';
+import {MockCacheable, MockCacheableMemory} from './mock-cacheable.js';
 
 describe('cacheable get or set', () => {
 	test('should cache results', async () => {
-		const cacheable = new Cacheable();
+		const cacheable = new MockCacheable();
 		const function_ = vi.fn(async () => 1 + 2);
 		const result = await getOrSet('one_plus_two', function_, {cache: cacheable});
 		await getOrSet('one_plus_two', function_, {cache: cacheable});
@@ -15,7 +15,7 @@ describe('cacheable get or set', () => {
 	});
 
 	test('should prevent stampede', async () => {
-		const cacheable = new Cacheable();
+		const cacheable = new MockCacheable();
 		const function_ = vi.fn(async () => 42);
 		await Promise.all([
 			getOrSet('key1', function_, {cache: cacheable}),
@@ -27,7 +27,7 @@ describe('cacheable get or set', () => {
 	});
 
 	test('should throw on getOrSet error', async () => {
-		const cacheable = new Cacheable();
+		const cacheable = new MockCacheable();
 		const function_ = vi.fn(async () => {
 			throw new Error('Test error');
 		});
@@ -37,7 +37,7 @@ describe('cacheable get or set', () => {
 	});
 
 	test('should throw on getOrSet error with cache errors true', async () => {
-		const cacheable = new Cacheable();
+		const cacheable = new MockCacheable();
 		const function_ = vi.fn(async () => {
 			throw new Error('Test error');
 		});
@@ -47,7 +47,7 @@ describe('cacheable get or set', () => {
 	});
 
 	test('should generate key via function on getOrSet', async () => {
-		const cacheable = new Cacheable();
+		const cacheable = new MockCacheable();
 		const generateKey = (options?: GetOrSetOptions) => `custom_key_${options?.cacheId}`;
 		const function_ = vi.fn(async () => Math.random() * 100);
 		const result1 = await getOrSet(generateKey, function_, {cache: cacheable});
