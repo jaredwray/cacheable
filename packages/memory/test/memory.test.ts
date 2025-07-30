@@ -1,7 +1,7 @@
 import {describe, test, expect} from 'vitest';
 import {fa, faker} from '@faker-js/faker';
 import {createWrapKey} from '../src/wrap.js';
-import {CacheableMemory, StoreHashAlgorithm} from '../src/memory.js';
+import {CacheableMemory, StoreHashAlgorithm} from '../src/index.js';
 import {sleep} from './sleep.js';
 
 const cacheItemList = [

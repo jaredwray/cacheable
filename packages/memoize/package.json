@@ -58,6 +58,7 @@
 		"LICENSE"
 	],
 	"dependencies": {
-		"@cacheable/utils": "workspace:^"
+		"@cacheable/utils": "workspace:^",
+		"cacheable": "workspace:^"
 	}
 }

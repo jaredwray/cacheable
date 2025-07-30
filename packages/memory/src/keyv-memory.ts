@@ -1,7 +1,7 @@
 import {
 	Keyv, type KeyvOptions, type KeyvStoreAdapter, type StoredData,
 } from 'keyv';
-import {CacheableMemory, type CacheableMemoryOptions} from './memory.js';
+import {CacheableMemory, type CacheableMemoryOptions} from './index.js';
 
 export type KeyvCacheableMemoryOptions = CacheableMemoryOptions & {
 	namespace?: string;

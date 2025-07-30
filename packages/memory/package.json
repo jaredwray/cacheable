@@ -1,7 +1,7 @@
 {
-	"name": "cacheable",
+	"name": "@cacheable/memory",
 	"version": "1.10.3",
-	"description": "High Performance Layer 1 / Layer 2 Caching with Keyv Storage",
+	"description": "High Performance In-Memory Cache for Node.js",
 	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
@@ -42,6 +42,8 @@
 		"xo": "^1.2.1"
 	},
 	"dependencies": {
+		"@cacheable/memoize": "workspace:^",
+		"@cacheable/utils": "workspace:^",
 		"hookified": "^1.10.0",
 		"keyv": "^5.4.0"
 	},

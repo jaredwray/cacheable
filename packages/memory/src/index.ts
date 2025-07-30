@@ -1,18 +1,13 @@
 import {Hookified} from 'hookified';
-import {wrapSync, type WrapFunctionOptions} from './wrap.js';
+import {wrapSync, type WrapFunctionOptions} from '@cacheabe/memoize';
 import {DoublyLinkedList} from './memory-lru.js';
-import {shorthandToTime} from './shorthand-time.js';
-import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
-import {djb2Hash, hashToNumber} from './hash.js';
+import {shorthandToTime} from '@cacheable/utils';
+import {type CacheableStoreItem, type CacheableItem} from '@cacheable/utils';
+import {hash, hashToNumber, HashAlgorithm} from '@cacheable/utils';
 
-export enum StoreHashAlgorithm {
-	SHA256 = 'sha256',
-	SHA1 = 'sha1',
-	MD5 = 'md5',
-	djb2Hash = 'djb2Hash',
-}
+export {HashAlgorithm};
 
-export type StoreHashAlgorithmFunction = ((key: string, storeHashSize: number) => number);
+export type StoreHashAlgorithmFunction = (key: string, storeHashSize: number) => number;
 
 /**
  * @typedef {Object} CacheableMemoryOptions
@@ -30,7 +25,7 @@ export type CacheableMemoryOptions = {
 	lruSize?: number;
 	checkInterval?: number;
 	storeHashSize?: number;
-	storeHashAlgorithm?: StoreHashAlgorithm | ((key: string, storeHashSize: number) => number);
+	storeHashAlgorithm?: HashAlgorithm | ((key: string, storeHashSize: number) => number);
 };
 
 export type SetOptions = {
@@ -205,17 +200,17 @@ export class CacheableMemory extends Hookified {
 
 	/**
 	 * Gets the store hash algorithm
-	 * @returns {StoreHashAlgorithm | StoreHashAlgorithmFunction} - The store hash algorithm
+	 * @returns {HashAlgorithm | StoreHashAlgorithmFunction} - The store hash algorithm
 	 */
-	public get storeHashAlgorithm(): StoreHashAlgorithm | StoreHashAlgorithmFunction {
+	public get storeHashAlgorithm(): HashAlgorithm | StoreHashAlgorithmFunction {
 		return this._storeHashAlgorithm;
 	}
 
 	/**
 	 * Sets the store hash algorithm. This will recreate the store and all data will be cleared
-	 * @param {StoreHashAlgorithm | StoreHashAlgorithmFunction} value - The store hash algorithm
+	 * @param {HashAlgorithm | HashAlgorithmFunction} value - The store hash algorithm
 	 */
-	public set storeHashAlgorithm(value: StoreHashAlgorithm | StoreHashAlgorithmFunction) {
+	public set storeHashAlgorithm(value: HashAlgorithm | StoreHashAlgorithmFunction) {
 		this._storeHashAlgorithm = value;
 	}
 
