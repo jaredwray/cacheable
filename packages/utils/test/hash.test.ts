@@ -80,4 +80,25 @@ describe('hash', () => {
 		// Assert
 		expect(result).toBe(result2);
 	});
+
+	test('hashToNumber the same number for the same object with djb2', () => {
+		// Arrange
+		const min = 0;
+		const max = 10;
+
+		const data = Array.from({length: 500}, () => ({key: faker.string.uuid(), value: faker.string.alphanumeric(10)}));
+		let outOfRange = false;
+
+		for (const item of data) {
+			const result = hashToNumber(item, min, max, HashAlgorithm.DJB2);
+			expect(result).toBeGreaterThanOrEqual(min);
+			expect(result).toBeLessThanOrEqual(max);
+			if (result > max || result < min) {
+				outOfRange = true;
+			}
+		}
+
+		// Assert
+		expect(outOfRange).toBe(false);
+	});
 });

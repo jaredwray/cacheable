@@ -515,7 +515,10 @@ export class CacheableMemory extends Hookified {
 			return this._storeHashAlgorithm(key, this._storeHashSize);
 		}
 
-		return hashToNumber(key, 0, this._storeHashSize, this._storeHashAlgorithm);
+		const storeHashSize = this._storeHashSize - 1;
+
+		const hash = hashToNumber(key, 0, storeHashSize, this._storeHashAlgorithm);
+		return hash;
 	}
 
 	/**
