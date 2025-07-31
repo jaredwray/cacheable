@@ -45,6 +45,7 @@
 		"bentocache": "^1.4.0",
 		"cache-manager": "workspace:^",
 		"cacheable": "workspace:^",
+		"@cacheable/memory": "workspace:^",
 		"lru.min": "^1.1.2",
 		"quick-lru": "^7.0.1",
 		"tinybench": "^4.0.1"

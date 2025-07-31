@@ -1,7 +1,7 @@
 import {Hookified} from 'hookified';
 import {type CacheSyncInstance, wrapSync, type WrapFunctionOptions} from '@cacheable/memoize';
 import {
-	shorthandToTime, type CacheableStoreItem, type CacheableItem, hash, hashToNumber, HashAlgorithm,
+	shorthandToTime, type CacheableStoreItem, type CacheableItem, hashToNumber, HashAlgorithm,
 } from '@cacheable/utils';
 import {DoublyLinkedList} from './memory-lru.js';
 
@@ -670,6 +670,4 @@ export class CacheableMemory extends Hookified {
 	}
 }
 
-export type {CacheableItem, CacheableStoreItem} from '@cacheable/utils';
-
-export {HashAlgorithm} from '@cacheable/utils';
+export {HashAlgorithm, hash, hashToNumber, type CacheableItem, type CacheableStoreItem} from '@cacheable/utils';

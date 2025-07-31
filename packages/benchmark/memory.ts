@@ -1,5 +1,5 @@
 import { createBenchmark, getModuleName, printToConsole, generateAlphaNumeric } from "index.js";
-import { CacheableMemory } from "cacheable";
+import { CacheableMemory } from "@cacheable/memory";
 import NodeCache from 'node-cache';
 import { BentoCache, bentostore } from 'bentocache';
 import { memoryDriver } from 'bentocache/drivers/memory';
@@ -7,7 +7,7 @@ import { memoryDriver } from 'bentocache/drivers/memory';
 const bench = createBenchmark("Memory Benchmark", 100000);
 
 // Cacheable Memory
-const cacheable = new CacheableMemory();
+const cacheable = new CacheableMemory({storeHashSize: 1});
 let cacheableName = getModuleName("Cacheable Memory", "1.10.0");
 
 // Node Cache
