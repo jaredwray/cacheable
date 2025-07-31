@@ -1,6 +1,6 @@
 {
 	"name": "@cacheable/memoize",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "Memoization utilities for cacheable",
 	"type": "module",
 	"main": "./dist/index.cjs",
