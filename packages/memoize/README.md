@@ -7,8 +7,6 @@
 [![npm](https://img.shields.io/npm/dm/@cacheable/memoize.svg)](https://www.npmjs.com/package/@cacheable/memoize)
 [![npm](https://img.shields.io/npm/v/@cacheable/memoize)](https://www.npmjs.com/package/@cacheable/memoize)
 [![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
-[![npm](https://img.shields.io/npm/v/@cacheable/memoize)](https://www.npmjs.com/package/@cacheable/memoize)
-[![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
 
 # Table of Contents
 - [Getting Started](#getting-started)
