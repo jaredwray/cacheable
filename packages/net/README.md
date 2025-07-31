@@ -15,8 +15,11 @@ Features:
 * `request` from [undici](https://github.com/nodejs/undici) cache enabled via `cacheable`
 * HTTP/1.1 and HTTP/2 caching support via Node.js `http` and `https` modules
 * [RFC 7234](http://httpwg.org/specs/rfc7234.html) compliant HTTP caching for native Node.js HTTP/HTTPS requests
+* Drop in replacement for `http` `https`, `fetch` modules with caching enabled
 * DNS caching for `dns.lookup` and `dns.resolve` methods via `cacheable`
 * WHOIS caching for `whois.lookup` method via `cacheable`
+* Advanced key generation via built in hashing and custom key generation functions
+* Benchmarks for performance comparison
 * All the features of [cacheable](https://npmjs.com/package/cacheable) - layered caching, LRU, expiration, hooks, backed by Keyv, and more!
 * Highly Tested and Maintained on a regular basis with a focus on performance and reliability
 
