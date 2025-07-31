@@ -670,4 +670,6 @@ export class CacheableMemory extends Hookified {
 	}
 }
 
-export {HashAlgorithm, hash, hashToNumber, type CacheableItem, type CacheableStoreItem} from '@cacheable/utils';
+export {
+	HashAlgorithm, hash, hashToNumber, type CacheableItem, type CacheableStoreItem,
+} from '@cacheable/utils';
