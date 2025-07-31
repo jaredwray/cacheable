@@ -16,6 +16,9 @@
 | [flat-cache](https://github.com/jaredwray/cacheable/tree/main/packages/flat-cache) | [![npm](https://img.shields.io/npm/dm/flat-cache.svg)](https://www.npmjs.com/package/flat-cache) | Fast In-Memory Caching with file store persistence |
 | [file-entry-cache](https://github.com/jaredwray/cacheable/tree/main/packages/file-entry-cache) | [![npm](https://img.shields.io/npm/dm/file-entry-cache.svg)](https://www.npmjs.com/package/file-entry-cache) | A lightweight cache for file metadata, ideal for processes that work on a specific set of files and only need to reprocess files that have changed since the last run |
 | [@cacheable/node-cache](https://github.com/jaredwray/cacheable/tree/main/packages/node-cache) | [![npm](https://img.shields.io/npm/dm/@cacheable/node-cache.svg)](https://www.npmjs.com/package/@cacheable/node-cache) | Maintained built in replacement of `node-cache` |
+| [@cacheable/memory](https://github.com/jaredwray/cacheable/tree/main/packages/memory) | [![npm](https://img.shields.io/npm/dm/@cacheable/memory.svg)](https://www.npmjs.com/package/@cacheable/memory) | In-Memory Caching with LRU support |
+| [@cacheable/memoize](https://github.com/jaredwray/cacheable/tree/main/packages/memoize) | [![npm](https://img.shields.io/npm/dm/@cacheable/memoize.svg)](https://www.npmjs.com/package/@cacheable/memoize) | Memoization with `wrap` and `getOrSet` functionality |
+| [@cacheable/utils](https://github.com/jaredwray/cacheable/tree/main/packages/utils) | [![npm](https://img.shields.io/npm/dm/@cacheable/utils.svg)](https://www.npmjs.com/package/@cacheable/utils) | Utility functions for cacheable with `hashing`, `shorthand time`, and more |
 
 The website documentation for https://cacheable.org is included in this repository [here](https://github.com/jaredwray/cacheable/tree/main/packages/website).
 
