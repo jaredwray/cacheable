@@ -42,7 +42,17 @@ export function hashToNumber(object: any, min = 0, max = 10, algorithm: HashAlgo
 	const range = max - min + 1;
 
 	// Return a number within the specified range
-	return min + (hashNumber % range);
+	const result = min + (hashNumber % range);
+	if (result < min) {
+		return min;
+	}
+
+	/* c8 ignore next 4 */
+	if (result > max) {
+		return max;
+	}
+
+	return result;
 }
 
 export function djb2Hash(string_: string): string {

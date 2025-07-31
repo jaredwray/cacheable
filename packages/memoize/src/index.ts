@@ -1,5 +1,20 @@
 import {hash, coalesceAsync} from '@cacheable/utils';
-import type {Cacheable, CacheableMemory} from 'cacheable';
+
+export type CacheInstance = {
+	get: (key: string) => Promise<any | undefined>;
+	has: (key: string) => Promise<boolean>;
+	set: (key: string, value: any, ttl?: number | string) => Promise<void>;
+	on: (event: string, listener: (...args: any[]) => void) => void;
+	emit: (event: string, ...args: any[]) => boolean;
+};
+
+export type CacheSyncInstance = {
+	get: (key: string) => any | undefined;
+	has: (key: string) => boolean;
+	set: (key: string, value: any, ttl?: number | string) => void;
+	on: (event: string, listener: (...args: any[]) => void) => void;
+	emit: (event: string, ...args: any[]) => boolean;
+};
 
 export type GetOrSetKey = string | ((options?: GetOrSetOptions) => string);
 
@@ -11,7 +26,7 @@ export type GetOrSetFunctionOptions = {
 
 export type GetOrSetOptions = GetOrSetFunctionOptions & {
 	cacheId?: string;
-	cache: Cacheable;
+	cache: CacheInstance;
 };
 
 export type CreateWrapKey = (function_: AnyFunction, arguments_: any[], options?: WrapFunctionOptions) => string;
@@ -25,11 +40,11 @@ export type WrapFunctionOptions = {
 };
 
 export type WrapOptions = WrapFunctionOptions & {
-	cache: Cacheable;
+	cache: CacheInstance;
 };
 
 export type WrapSyncOptions = WrapFunctionOptions & {
-	cache: CacheableMemory;
+	cache: CacheSyncInstance;
 };
 
 export type AnyFunction = (...arguments_: any[]) => any;
@@ -43,12 +58,12 @@ export function wrapSync<T>(function_: AnyFunction, options: WrapSyncOptions): A
 			cacheKey = options.createKey(function_, arguments_, options);
 		}
 
-		let value = cache.get(cacheKey);
+		let value = cache.get(cacheKey) as T | undefined;
 
 		if (value === undefined) {
 			try {
 				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-				value = function_(...arguments_);
+				value = function_(...arguments_) as T;
 				cache.set(cacheKey, value, ttl);
 			} catch (error) {
 				cache.emit('error', error);
@@ -101,7 +116,7 @@ export function wrap<T>(function_: AnyFunction, options: WrapOptions): AnyFuncti
 		}
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return
-		return cache.getOrSet(cacheKey, async (): Promise<T | undefined> => function_(...arguments_), options);
+		return getOrSet(cacheKey, async (): Promise<T | undefined> => function_(...arguments_), options);
 	};
 }
 

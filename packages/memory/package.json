@@ -1,7 +1,7 @@
 {
-	"name": "@cacheable/memoize",
+	"name": "@cacheable/memory",
 	"version": "1.0.0",
-	"description": "Memoization utilities for cacheable",
+	"description": "High Performance In-Memory Cache for Node.js",
 	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.js",
@@ -15,7 +15,7 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/jaredwray/cacheable.git",
-		"directory": "packages/memoize"
+		"directory": "packages/cacheable"
 	},
 	"author": "Jared Wray <me@jaredwray.com>",
 	"license": "MIT",
@@ -41,22 +41,41 @@
 		"vitest": "^3.2.4",
 		"xo": "^1.2.1"
 	},
+	"dependencies": {
+		"@cacheable/memoize": "workspace:^",
+		"@cacheable/utils": "workspace:^",
+		"@keyv/bigmap": "^1.0.0",
+		"hookified": "^1.10.0",
+		"keyv": "^5.4.0"
+	},
 	"keywords": [
 		"cacheable",
-		"caching",
-		"keyv",
-		"memoization",
-		"memoize",
-		"performance",
-		"wrapper",
-		"wrap",
-		"getOrSet"
+		"high performance",
+		"layer 1 caching",
+		"layer 2 caching",
+		"distributed caching",
+		"Keyv storage engine",
+		"memory caching",
+		"LRU cache",
+		"expiration",
+		"CacheableMemory",
+		"offline support",
+		"distributed sync",
+		"secondary store",
+		"primary store",
+		"non-blocking operations",
+		"cache statistics",
+		"layered caching",
+		"fault tolerant",
+		"scalable cache",
+		"in-memory cache",
+		"distributed cache",
+		"lruSize",
+		"lru",
+		"multi-tier cache"
 	],
 	"files": [
 		"dist",
 		"LICENSE"
-	],
-	"dependencies": {
-		"@cacheable/utils": "workspace:^"
-	}
+	]
 }

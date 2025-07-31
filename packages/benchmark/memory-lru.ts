@@ -1,5 +1,5 @@
 import { createBenchmark, getModuleName, printToConsole, generateAlphaNumeric } from "index.js";
-import { CacheableMemory } from "cacheable";
+import { CacheableMemory } from "@cacheable/memory";
 import QuickLRU from 'quick-lru';
 import { createLRU } from 'lru.min';
 
