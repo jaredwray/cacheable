@@ -4,8 +4,8 @@
 
 [![codecov](https://codecov.io/gh/jaredwray/cacheable/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cacheable)
 [![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
-[![npm](https://img.shields.io/npm/dm/cacheable.svg)](https://www.npmjs.com/package/cacheable)
-[![npm](https://img.shields.io/npm/v/cacheable)](https://www.npmjs.com/package/cacheable)
+[![npm](https://img.shields.io/npm/dm/@cacheable/memory.svg)](https://www.npmjs.com/package/@cacheable/memory)
+[![npm](https://img.shields.io/npm/v/@cacheable/memory.svg)](https://www.npmjs.com/package/@cacheable/memory)
 [![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
 
 You can use `CacheableMemory` as a standalone cache or as a primary store for `cacheable`. You can also set the `useClones` property to `false` if you want to use the same reference for the values. This is useful if you are using large objects and want to save memory. The `lruSize` property is the size of the LRU cache and is set to `0` by default which is unlimited. When setting the `lruSize` property it will limit the number of keys in the cache.
