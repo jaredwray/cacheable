@@ -3,9 +3,6 @@ import {Agent, request} from 'node:http';
 import url from 'node:url';
 import util, {promisify as pm} from 'node:util';
 import {gzip, gunzip} from 'node:zlib';
-import path from 'node:path';
-import {mock} from 'node:test';
-import {hostname} from 'node:os';
 import {
 	test, beforeAll, afterAll, expect,
 } from 'vitest';
@@ -14,6 +11,8 @@ import delay from 'delay';
 import {Keyv} from 'keyv';
 import CacheableRequest, {CacheValue, onResponse} from '../src/index.js';
 import createTestServer from './create-test-server/index.mjs';
+
+const testTimeout = 10_000;
 
 // Promisify cacheableRequest
 const promisify = (cacheableRequest: any) => async (options: any) => new Promise((resolve, reject) => {
@@ -262,7 +261,7 @@ test('return with GET', async () => {
 	const expectKey = `cacheable-request:${expected}`;
 	const actualKey = await testCacheKeyReturn('http://mockhttp.org');
 	expect(actualKey).toBe(expectKey);
-});
+}, testTimeout);
 
 test('strips default path', async () => {
 	const expected = 'GET:http://mockhttp.org';
