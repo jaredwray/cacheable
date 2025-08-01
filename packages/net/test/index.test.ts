@@ -62,7 +62,7 @@ describe('Cacheable Net', () => {
 	});
 
 	test('should fetch data using CacheableNet fetch method', async () => {
-		const net = new CacheableNet();
+		const net = new Net();
 		const url = `${testUrl}/get`;
 		const options = {
 			method: 'GET',
