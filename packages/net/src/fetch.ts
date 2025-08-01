@@ -8,3 +8,6 @@ export type FetchOptions = RequestInit & {
 export async function fetch(url: string, options?: FetchOptions): Promise<UndiciResponse> {
 	return undiciFetch(url, options);
 }
+
+export type Response = UndiciResponse;
+export type {RequestInit} from 'undici';

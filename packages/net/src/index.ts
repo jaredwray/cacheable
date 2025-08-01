@@ -1,6 +1,8 @@
 import {Hookified, type HookifiedOptions} from 'hookified';
 import {Cacheable, type CacheableOptions} from 'cacheable';
-import {fetch, type FetchOptions} from './fetch.js';
+import {
+	fetch, type FetchOptions, type Response as FetchResponse, type RequestInit,
+} from './fetch.js';
 
 export type CacheableNetOptions = {
 	cache?: Cacheable | CacheableOptions;
@@ -24,8 +26,17 @@ export class CacheableNet extends Hookified {
 	public set cache(value: Cacheable) {
 		this._cache = value;
 	}
+
+	public async fetch(url: string, options?: RequestInit): Promise<FetchResponse> {
+		const fetchOptions: FetchOptions = {
+			cacheable: this._cache,
+			...options,
+		};
+
+		return fetch(url, fetchOptions);
+	}
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const Net = CacheableNet;
-export {fetch, type FetchOptions} from './fetch.js';
+export {fetch, type FetchOptions, type Response as FetchResponse} from './fetch.js';
