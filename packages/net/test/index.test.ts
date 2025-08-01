@@ -1,8 +1,13 @@
 
+import process from 'node:process';
 import {describe, test, expect} from 'vitest';
 import {faker} from '@faker-js/faker';
 import {Cacheable} from 'cacheable';
-import {CacheableNet, Net, type CacheableNetOptions} from '../src/index.js';
+import {
+	CacheableNet, fetch, Net, type CacheableNetOptions, type FetchOptions,
+} from '../src/index.js';
+
+const testUrl = process.env.TEST_URL ?? 'https://mockhttp.org';
 
 describe('Cacheable Net', () => {
 	test('should create an instance of CacheableNet', () => {
@@ -44,5 +49,14 @@ describe('Cacheable Net', () => {
 		const newCache = new Cacheable({ttl: '3h'});
 		net.cache = newCache;
 		expect(net.cache).toBe(newCache);
+	});
+	test('should fetch data using fetch method', async () => {
+		const url = `${testUrl}/get`;
+		const options: FetchOptions = {
+			method: 'GET',
+			cacheable: new Cacheable(),
+		};
+		const response = await fetch(url, options);
+		expect(response).toBeDefined();
 	});
 });

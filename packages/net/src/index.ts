@@ -1,5 +1,6 @@
 import {Hookified, type HookifiedOptions} from 'hookified';
 import {Cacheable, type CacheableOptions} from 'cacheable';
+import {fetch, type FetchOptions} from './fetch.js';
 
 export type CacheableNetOptions = {
 	cache?: Cacheable | CacheableOptions;
@@ -27,3 +28,4 @@ export class CacheableNet extends Hookified {
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const Net = CacheableNet;
+export {fetch, type FetchOptions} from './fetch.js';
