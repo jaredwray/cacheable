@@ -10,4 +10,4 @@ export async function fetch(url: string, options?: FetchOptions): Promise<Undici
 }
 
 export type Response = UndiciResponse;
-export type {RequestInit} from 'undici';
+export type {RequestInit as FetchRequestInit} from 'undici';

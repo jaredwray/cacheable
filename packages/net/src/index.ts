@@ -1,7 +1,7 @@
 import {Hookified, type HookifiedOptions} from 'hookified';
 import {Cacheable, type CacheableOptions} from 'cacheable';
 import {
-	fetch, type FetchOptions, type Response as FetchResponse, type RequestInit,
+	fetch, type FetchOptions, type Response as FetchResponse, type FetchRequestInit,
 } from './fetch.js';
 
 export type CacheableNetOptions = {
@@ -27,7 +27,13 @@ export class CacheableNet extends Hookified {
 		this._cache = value;
 	}
 
-	public async fetch(url: string, options?: RequestInit): Promise<FetchResponse> {
+	/**
+     * Fetch data from a URL with optional request options. Will use the cache that is already set in the instance.
+     * @param {string} url The URL to fetch.
+     * @param {FetchRequestInit} options Optional request options.
+     * @returns {Promise<FetchResponse>} The response from the fetch.
+     */
+	public async fetch(url: string, options?: FetchRequestInit): Promise<FetchResponse> {
 		const fetchOptions: FetchOptions = {
 			cacheable: this._cache,
 			...options,
@@ -39,4 +45,6 @@ export class CacheableNet extends Hookified {
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const Net = CacheableNet;
-export {fetch, type FetchOptions, type Response as FetchResponse} from './fetch.js';
+export {
+	fetch, type FetchOptions, type Response as FetchResponse, type FetchRequestInit,
+} from './fetch.js';
