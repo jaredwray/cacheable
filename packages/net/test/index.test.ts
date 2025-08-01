@@ -1,7 +1,7 @@
 
 import {describe, test, expect} from 'vitest';
 import {faker} from '@faker-js/faker';
-import {Cacheable, type CacheableOptions} from 'cacheable';
+import {Cacheable} from 'cacheable';
 import {CacheableNet, Net, type CacheableNetOptions} from '../src/index.js';
 
 describe('Cacheable Net', () => {
