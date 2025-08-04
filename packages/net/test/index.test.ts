@@ -56,7 +56,7 @@ describe('Cacheable Net', () => {
 		const url = `${testUrl}/get`;
 		const options: FetchOptions = {
 			method: 'GET',
-			cacheable: new Cacheable(),
+			cache: new Cacheable(),
 		};
 		const response = await fetch(url, options);
 		expect(response).toBeDefined();

@@ -12,9 +12,24 @@ describe('Fetch', () => {
 		const url = `${testUrl}/get`;
 		const options: FetchOptions = {
 			method: 'GET',
-			cacheable: new Cacheable(),
+			cache: new Cacheable(),
 		};
 		const response = await fetch(url, options);
 		expect(response).toBeDefined();
+	}, testTimeout);
+	
+	test('should fetch data successfully from cache', async () => {
+		const cache = new Cacheable({stats: true});
+		const url = `${testUrl}/get`;
+		const options: FetchOptions = {
+			method: 'GET',
+			cache,
+		};
+		const response = await fetch(url, options);
+		expect(response).toBeDefined();
+		await fetch(url, options); // Fetch again to test cache
+		expect(cache.stats.hits).toBe(1);
+		await fetch(url, options); // Fetch again to test cache
+		expect(cache.stats.hits).toBe(2);
 	}, testTimeout);
 });
