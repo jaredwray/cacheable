@@ -35,8 +35,8 @@ export class CacheableNet extends Hookified {
      */
 	public async fetch(url: string, options?: FetchRequestInit): Promise<FetchResponse> {
 		const fetchOptions: FetchOptions = {
-			cacheable: this._cache,
 			...options,
+			cache: this._cache,
 		};
 
 		return fetch(url, fetchOptions);

@@ -53,10 +53,11 @@ describe('Cacheable Net', () => {
 	});
 
 	test('should fetch data using fetch method', async () => {
+		const cache = new Cacheable();
 		const url = `${testUrl}/get`;
 		const options: FetchOptions = {
 			method: 'GET',
-			cache: new Cacheable(),
+			cache,
 		};
 		const response = await fetch(url, options);
 		expect(response).toBeDefined();

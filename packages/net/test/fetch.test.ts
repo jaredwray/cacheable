@@ -17,7 +17,7 @@ describe('Fetch', () => {
 		const response = await fetch(url, options);
 		expect(response).toBeDefined();
 	}, testTimeout);
-	
+
 	test('should fetch data successfully from cache', async () => {
 		const cache = new Cacheable({stats: true});
 		const url = `${testUrl}/get`;
