@@ -8,7 +8,7 @@ export type FetchOptions = RequestInit & {
 /**
  * Fetch data from a URL with optional request options.
  * @param {string} url The URL to fetch.
- * @param {FetchOptions} options Optional request options. The `cacheable` property is required and should be an 
+ * @param {FetchOptions} options Optional request options. The `cacheable` property is required and should be an
  * instance of `Cacheable` or a `CacheableOptions` object.
  * @returns {Promise<UndiciResponse>} The response from the fetch.
  */

@@ -8,6 +8,7 @@ import {
 } from '../src/index.js';
 
 const testUrl = process.env.TEST_URL ?? 'https://mockhttp.org';
+const testTimeout = 10_000; // 10 seconds
 
 describe('Cacheable Net', () => {
 	test('should create an instance of CacheableNet', () => {
@@ -69,5 +70,5 @@ describe('Cacheable Net', () => {
 		};
 		const response = await net.fetch(url, options);
 		expect(response).toBeDefined();
-	});
+	}, testTimeout);
 });

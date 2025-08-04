@@ -5,6 +5,7 @@ import {Cacheable} from 'cacheable';
 import {fetch, type FetchOptions} from '../src/fetch.js';
 
 const testUrl = process.env.TEST_URL ?? 'https://mockhttp.org';
+const testTimeout = 10_000; // 10 seconds
 
 describe('Fetch', () => {
 	test('should fetch data successfully', async () => {
@@ -15,5 +16,5 @@ describe('Fetch', () => {
 		};
 		const response = await fetch(url, options);
 		expect(response).toBeDefined();
-	});
+	}, testTimeout);
 });
