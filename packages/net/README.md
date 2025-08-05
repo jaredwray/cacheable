@@ -25,7 +25,6 @@ Features:
 
 # Table of Contents
 * [Getting Started](#getting-started)
-
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
