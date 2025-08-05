@@ -32,4 +32,13 @@ describe('Fetch', () => {
 		await fetch(url, options); // Fetch again to test cache
 		expect(cache.stats.hits).toBe(2);
 	}, testTimeout);
+
+	test('should throw an error if cache is not provided', async () => {
+		const url = `${testUrl}/get`;
+		const options: FetchOptions = {
+			method: 'GET',
+			cache: undefined as unknown as Cacheable, // Force error
+		};
+		await expect(fetch(url, options)).rejects.toThrow('Fetch options must include a cache instance or options.');
+	}, testTimeout);
 });
