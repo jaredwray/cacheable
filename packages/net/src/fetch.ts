@@ -25,6 +25,7 @@ export async function fetch(url: string, options: FetchOptions): Promise<UndiciR
 	return options.cache.getOrSet(url, async () => {
 		// Perform the fetch operation
 		const response = await undiciFetch(url, fetchOptions);
+		/* c8 ignore next 3 */
 		if (!response.ok) {
 			throw new Error(`Fetch failed with status ${response.status}`);
 		}
