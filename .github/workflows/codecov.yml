@@ -52,4 +52,5 @@ jobs:
            ./packages/node-cache/coverage/lcov.info, \
            ./packages/memoize/coverage/lcov.info, \
            ./packages/memory/coverage/lcov.info, \
+           ./packages/net/coverage/lcov.info, \
            ./packages/utils/coverage/lcov.info

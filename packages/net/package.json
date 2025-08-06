@@ -1,0 +1,77 @@
+{
+	"name": "@cacheable/net",
+	"version": "1.0.0",
+	"description": "High Performance Network Caching for Node.js with fetch, request, http 1.1, and http 2 support",
+	"type": "module",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.js"
+		}
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jaredwray/cacheable.git",
+		"directory": "packages/cacheable"
+	},
+	"author": "Jared Wray <me@jaredwray.com>",
+	"license": "MIT",
+	"private": false,
+	"scripts": {
+		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
+		"prepublish": "pnpm build",
+		"test": "xo --fix && vitest run --coverage",
+		"test:ci": "xo && vitest run --coverage",
+		"clean": "rimraf ./dist ./coverage ./node_modules"
+	},
+	"devDependencies": {
+		"@faker-js/faker": "^9.9.0",
+		"@types/eslint": "^9.6.1",
+		"@types/node": "^24.1.0",
+		"@vitest/coverage-v8": "^3.2.4",
+		"rimraf": "^6.0.1",
+		"tsup": "^8.5.0",
+		"typescript": "^5.8.3",
+		"vitest": "^3.2.4",
+		"xo": "^1.2.1"
+	},
+	"dependencies": {
+		"cacheable": "workspace:^",
+		"hookified": "^1.10.0",
+		"undici": "^7.13.0"
+	},
+	"keywords": [
+		"cacheable",
+		"http caching",
+		"fetch caching",
+		"request caching",
+		"http 1.1 caching",
+		"http 2 caching",
+		"dns caching",
+		"whois caching",
+		"high performance",
+		"layer 1 caching",
+		"layer 2 caching",
+		"distributed caching",
+		"keyv",
+		"expiration",
+		"CacheableMemory",
+		"distributed sync",
+		"secondary store",
+		"primary store",
+		"cache statistics",
+		"layered caching",
+		"fault tolerant",
+		"in-memory cache",
+		"distributed cache",
+		"lru",
+		"multi-tier cache"
+	],
+	"files": [
+		"dist",
+		"LICENSE"
+	]
+}
