@@ -247,6 +247,7 @@ class CacheableRequest {
 			try {
 				await get(options);
 			} catch (error: any) {
+				/* c8 ignore next 3 */
 				if (options.automaticFailover && !madeRequest) {
 					makeRequest(options);
 				}
