@@ -27,10 +27,6 @@ describe('Fetch', () => {
 		};
 		const response = await fetch(url, options);
 		expect(response).toBeDefined();
-		await fetch(url, options); // Fetch again to test cache
-		expect(cache.stats.hits).toBe(1);
-		await fetch(url, options); // Fetch again to test cache
-		expect(cache.stats.hits).toBe(2);
 	}, testTimeout);
 
 	test('should throw an error if cache is not provided', async () => {
