@@ -1,27 +1,25 @@
-import {Keyv} from 'keyv';
-import {createKeyv} from '@keyv/redis';
-import {
-	describe, expect, it,
-} from 'vitest';
-import {simpleFaker} from '@faker-js/faker';
-import {createCache} from '../src/index.js';
+import { simpleFaker } from "@faker-js/faker";
+import { createKeyv } from "@keyv/redis";
+import { Keyv } from "keyv";
+import { describe, expect, it } from "vitest";
+import { createCache } from "../src/index.js";
 
-describe('stores', () => {
-	it('can get the keyv store', () => {
+describe("stores", () => {
+	it("can get the keyv store", () => {
 		const cache = createCache();
 		expect(cache.stores.length).toEqual(1);
 	});
 
-	it('can see multiple stores', () => {
+	it("can see multiple stores", () => {
 		const keyv = new Keyv();
 		const redis = createKeyv();
-		const cache = createCache({stores: [keyv, redis]});
+		const cache = createCache({ stores: [keyv, redis] });
 		expect(cache.stores.length).toEqual(2);
 		expect(cache.stores[0]).toEqual(keyv);
 		expect(cache.stores[1]).toEqual(redis);
 	});
 
-	it('can get the keyv store and do iterator', async () => {
+	it("can get the keyv store and do iterator", async () => {
 		const cache = createCache();
 		expect(cache.stores.length).toEqual(1);
 		const keyName = simpleFaker.string.uuid();
@@ -30,6 +28,7 @@ describe('stores', () => {
 		const keyv = cache.stores[0];
 		expect(keyv).toBeInstanceOf(Keyv);
 
+		// biome-ignore lint/suspicious/noImplicitAnyLet: test file
 		let returnValue;
 
 		if (keyv?.iterator) {

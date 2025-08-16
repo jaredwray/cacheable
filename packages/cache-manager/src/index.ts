@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/prefer-promise-reject-errors, unicorn/no-useless-promise-resolve-reject, no-await-in-loop, unicorn/prefer-event-target */
-import EventEmitter from 'node:events';
-import {Keyv, type StoredDataRaw} from 'keyv';
-import {coalesceAsync} from './coalesce-async.js';
-import {isObject} from './is-object.js';
-import {runIfFn} from './run-if-fn.js';
-import {lt} from './lt.js';
+import EventEmitter from "node:events";
+import { Keyv, type StoredDataRaw } from "keyv";
+import { coalesceAsync } from "./coalesce-async.js";
+import { isObject } from "./is-object.js";
+import { lt } from "./lt.js";
+import { runIfFn } from "./run-if-fn.js";
 
 export type CreateCacheOptions = {
 	stores?: Keyv[];
@@ -34,7 +33,7 @@ export type Cache = {
 			key: string;
 			value: T;
 			ttl?: number;
-		}>
+		}>,
 	) => Promise<
 		Array<{
 			key: string;
@@ -45,14 +44,8 @@ export type Cache = {
 	del: (key: string) => Promise<boolean>;
 	mdel: (keys: string[]) => Promise<boolean>;
 	clear: () => Promise<boolean>;
-	on: <E extends keyof Events>(
-		event: E,
-		listener: Events[E]
-	) => EventEmitter;
-	off: <E extends keyof Events>(
-		event: E,
-		listener: Events[E]
-	) => EventEmitter;
+	on: <E extends keyof Events>(event: E, listener: Events[E]) => EventEmitter;
+	off: <E extends keyof Events>(event: E, listener: Events[E]) => EventEmitter;
 	disconnect: () => Promise<undefined>;
 	cacheId: () => string;
 	stores: Keyv[];
@@ -60,28 +53,31 @@ export type Cache = {
 		key: string,
 		fnc: () => T | Promise<T>,
 		ttl?: number | ((value: T) => number),
-		refreshThreshold?: number | ((value: T) => number)
+		refreshThreshold?: number | ((value: T) => number),
 	): Promise<T>;
 	wrap<T>(
 		key: string,
 		fnc: () => T | Promise<T>,
-		options: WrapOptions<T>
+		options: WrapOptions<T>,
 	): Promise<T>;
 	wrap<T>(
 		key: string,
 		fnc: () => T | Promise<T>,
-		options: WrapOptionsRaw<T>
+		options: WrapOptionsRaw<T>,
 	): Promise<StoredDataRaw<T>>;
 };
 
 export type Events = {
-	get: <T>(data: {key: string; value?: T; error?: unknown}) => void;
-	mget: <T>(data: {keys: string[]; value?: T[]; error?: unknown}) => void;
-	set: <T>(data: {key: string; value: T; error?: unknown}) => void;
-	mset: <T>(data: {list: Array<{key: string; value: T; ttl?: number}>; error?: unknown}) => void;
-	del: (data: {key: string; error?: unknown}) => void;
+	get: <T>(data: { key: string; value?: T; error?: unknown }) => void;
+	mget: <T>(data: { keys: string[]; value?: T[]; error?: unknown }) => void;
+	set: <T>(data: { key: string; value: T; error?: unknown }) => void;
+	mset: <T>(data: {
+		list: Array<{ key: string; value: T; ttl?: number }>;
+		error?: unknown;
+	}) => void;
+	del: (data: { key: string; error?: unknown }) => void;
 	clear: (error?: unknown) => void;
-	refresh: <T>(data: {key: string; value: T; error?: unknown}) => void;
+	refresh: <T>(data: { key: string; value: T; error?: unknown }) => void;
 };
 
 export const createCache = (options?: CreateCacheOptions): Cache => {
@@ -94,16 +90,19 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const _cacheId = options?.cacheId ?? Math.random().toString(36).slice(2);
 
 	const get = async <T>(key: string): Promise<T | undefined> => {
+		// biome-ignore lint/suspicious/noImplicitAnyLet: need to fix
 		let result;
 
 		if (nonBlocking) {
 			try {
-				result = await Promise.race(stores.map(async store => store.get<T>(key)));
+				result = await Promise.race(
+					stores.map(async (store) => store.get<T>(key)),
+				);
 				if (result === undefined) {
 					return undefined;
 				}
 			} catch (error) {
-				eventEmitter.emit('get', {key, error});
+				eventEmitter.emit("get", { key, error });
 			}
 		} else {
 			for (const store of stores) {
@@ -111,11 +110,11 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 					const cacheValue = await store.get<T>(key);
 					if (cacheValue !== undefined) {
 						result = cacheValue;
-						eventEmitter.emit('get', {key, value: result});
+						eventEmitter.emit("get", { key, value: result });
 						break;
 					}
 				} catch (error) {
-					eventEmitter.emit('get', {key, error});
+					eventEmitter.emit("get", { key, error });
 				}
 			}
 		}
@@ -128,63 +127,73 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 		if (nonBlocking) {
 			try {
-				result = await Promise.race(stores.map(async store => store.getMany(keys)));
+				result = await Promise.race(
+					stores.map(async (store) => store.getMany(keys)),
+				);
 			} catch (error) {
-				eventEmitter.emit('mget', {keys, error});
+				eventEmitter.emit("mget", { keys, error });
 			}
 		} else {
 			for (const store of stores) {
 				try {
-					const missingValues = result.map((value, index) => (value === undefined ? {originalIndex: index, key: keys[index]} : undefined)).filter(v => v !== undefined);
+					const missingValues = result
+						.map((value, index) =>
+							value === undefined
+								? { originalIndex: index, key: keys[index] }
+								: undefined,
+						)
+						.filter((v) => v !== undefined);
 					if (missingValues.length === 0) {
 						break;
 					}
 
-					const missingKeys = missingValues.map(v => v.key);
+					const missingKeys = missingValues.map((v) => v.key);
 					const cacheValue = await store.getMany<T>(missingKeys);
 					for (const [index, value] of cacheValue.entries()) {
-						// eslint-disable-next-line max-depth
 						if (value === undefined) {
 							continue;
 						}
 
-						const {originalIndex} = missingValues[index];
+						const { originalIndex } = missingValues[index];
 						result[originalIndex] = value;
 					}
 				} catch (error) {
-					eventEmitter.emit('mget', {keys, error});
+					eventEmitter.emit("mget", { keys, error });
 				}
 			}
 		}
 
-		eventEmitter.emit('mget', {keys, values: result});
+		eventEmitter.emit("mget", { keys, values: result });
 
 		return result;
 	};
 
 	const ttl = async (key: string): Promise<number | undefined> => {
+		// biome-ignore lint/suspicious/noImplicitAnyLet: need to fix
 		let result;
 
 		if (nonBlocking) {
 			try {
-				result = await Promise.race(stores.map(async store => store.get(key, {raw: true})));
+				result = await Promise.race(
+					stores.map(async (store) => store.get(key, { raw: true })),
+				);
 				if (result === undefined) {
 					return undefined;
 				}
 			} catch (error) {
-				eventEmitter.emit('ttl', {key, error});
+				eventEmitter.emit("ttl", { key, error });
 			}
 		} else {
 			for (const store of stores) {
 				try {
-					const cacheValue = await store.get(key, {raw: true});
+					const cacheValue = await store.get(key, { raw: true });
 					if (cacheValue !== undefined) {
 						result = cacheValue;
-						eventEmitter.emit('ttl', {key, value: result});
+						eventEmitter.emit("ttl", { key, value: result });
 						break;
 					}
 				} catch (error) {
-					eventEmitter.emit('ttl', {key, error});
+					eventEmitter.emit("ttl", { key, error });
 				}
 			}
 		}
@@ -196,42 +205,58 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		return undefined;
 	};
 
-	const set = async <T>(stores: Keyv[], key: string, value: T, ttl?: number): Promise<T> => {
+	const set = async <T>(
+		stores: Keyv[],
+		key: string,
+		value: T,
+		ttl?: number,
+	): Promise<T> => {
 		try {
 			if (nonBlocking) {
-				// eslint-disable-next-line @typescript-eslint/no-floating-promises
-				Promise.all(stores.map(async store => store.set(key, value, ttl ?? options?.ttl)));
-				eventEmitter.emit('set', {key, value});
+				Promise.all(
+					stores.map(async (store) =>
+						store.set(key, value, ttl ?? options?.ttl),
+					),
+				);
+				eventEmitter.emit("set", { key, value });
 				return value;
 			}
 
-			await Promise.all(stores.map(async store => store.set(key, value, ttl ?? options?.ttl)));
-			eventEmitter.emit('set', {key, value});
+			await Promise.all(
+				stores.map(async (store) => store.set(key, value, ttl ?? options?.ttl)),
+			);
+			eventEmitter.emit("set", { key, value });
 			return value;
 		} catch (error) {
-			eventEmitter.emit('set', {key, value, error});
+			eventEmitter.emit("set", { key, value, error });
 			return Promise.reject(error);
 		}
 	};
 
-	const mset = async <T>(stores: Keyv[], rawList: Array<{key: string; value: T; ttl?: number}>) => {
-		const list = rawList.map(({key, value, ttl}) => ({key, value, ttl: ttl ?? options?.ttl}));
+	const mset = async <T>(
+		stores: Keyv[],
+		rawList: Array<{ key: string; value: T; ttl?: number }>,
+	) => {
+		const list = rawList.map(({ key, value, ttl }) => ({
+			key,
+			value,
+			ttl: ttl ?? options?.ttl,
+		}));
 		try {
-			const promises = stores.map(async store => store.setMany(list));
+			const promises = stores.map(async (store) => store.setMany(list));
 
 			if (nonBlocking) {
-				// eslint-disable-next-line @typescript-eslint/no-floating-promises
 				Promise.all(promises);
-				eventEmitter.emit('mset', {list});
+				eventEmitter.emit("mset", { list });
 				return list;
 			}
 
 			await Promise.all(promises);
-			eventEmitter.emit('mset', {list});
+			eventEmitter.emit("mset", { list });
 			return list;
 			/* c8 ignore next 4 */
 		} catch (error) {
-			eventEmitter.emit('mset', {list, error});
+			eventEmitter.emit("mset", { list, error });
 			return Promise.reject(error);
 		}
 	};
@@ -239,17 +264,16 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const del = async (key: string) => {
 		try {
 			if (nonBlocking) {
-				// eslint-disable-next-line @typescript-eslint/no-floating-promises
-				Promise.all(stores.map(async store => store.delete(key)));
-				eventEmitter.emit('del', {key});
+				Promise.all(stores.map(async (store) => store.delete(key)));
+				eventEmitter.emit("del", { key });
 				return true;
 			}
 
-			await Promise.all(stores.map(async store => store.delete(key)));
-			eventEmitter.emit('del', {key});
+			await Promise.all(stores.map(async (store) => store.delete(key)));
+			eventEmitter.emit("del", { key });
 			return true;
 		} catch (error) {
-			eventEmitter.emit('del', {key, error});
+			eventEmitter.emit("del", { key, error });
 			return Promise.reject(error);
 		}
 	};
@@ -258,22 +282,21 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		try {
 			const promises: Array<Promise<boolean>> = [];
 			for (const key of keys) {
-				promises.push(...stores.map(async store => store.delete(key)));
+				promises.push(...stores.map(async (store) => store.delete(key)));
 			}
 
 			if (nonBlocking) {
-				// eslint-disable-next-line @typescript-eslint/no-floating-promises
 				Promise.all(promises);
-				eventEmitter.emit('mdel', {keys});
+				eventEmitter.emit("mdel", { keys });
 				return true;
 			}
 
 			await Promise.all(promises);
-			eventEmitter.emit('mdel', {keys});
+			eventEmitter.emit("mdel", { keys });
 			return true;
 			/* c8 ignore next 4 */
 		} catch (error) {
-			eventEmitter.emit('mdel', {keys, error});
+			eventEmitter.emit("mdel", { keys, error });
 			return Promise.reject(error);
 		}
 	};
@@ -281,17 +304,16 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const clear = async () => {
 		try {
 			if (nonBlocking) {
-				// eslint-disable-next-line @typescript-eslint/no-floating-promises
-				Promise.all(stores.map(async store => store.clear()));
-				eventEmitter.emit('clear');
+				Promise.all(stores.map(async (store) => store.clear()));
+				eventEmitter.emit("clear");
 				return true;
 			}
 
-			await Promise.all(stores.map(async store => store.clear()));
-			eventEmitter.emit('clear');
+			await Promise.all(stores.map(async (store) => store.clear()));
+			eventEmitter.emit("clear");
 			return true;
 		} catch (error) {
-			eventEmitter.emit('clear', error);
+			eventEmitter.emit("clear", error);
 			return Promise.reject(error);
 		}
 	};
@@ -301,71 +323,84 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		fnc: () => T | Promise<T>,
 		ttlOrOptions?: number | ((value: T) => number) | Partial<WrapOptionsRaw<T>>,
 		refreshThresholdParameter?: number | ((value: T) => number),
-	): Promise<T | StoredDataRaw<T>> => coalesceAsync(`${_cacheId}::${key}`, async () => {
-		let value: T | undefined;
-		let rawData: StoredDataRaw<T> | undefined;
-		let i = 0;
-		let remainingTtl: number | undefined;
-		const {ttl, refreshThreshold, raw} = isObject(ttlOrOptions) ? ttlOrOptions : {ttl: ttlOrOptions, refreshThreshold: refreshThresholdParameter};
-		const resolveTtl = (result: T) => runIfFn(ttl, result) ?? options?.ttl;
+	): Promise<T | StoredDataRaw<T>> =>
+		coalesceAsync(`${_cacheId}::${key}`, async () => {
+			let value: T | undefined;
+			let rawData: StoredDataRaw<T> | undefined;
+			let i = 0;
+			let remainingTtl: number | undefined;
+			const { ttl, refreshThreshold, raw } = isObject(ttlOrOptions)
+				? ttlOrOptions
+				: { ttl: ttlOrOptions, refreshThreshold: refreshThresholdParameter };
+			const resolveTtl = (result: T) => runIfFn(ttl, result) ?? options?.ttl;
 
-		for (; i < stores.length; i++) {
-			try {
-				const data = await stores[i].get<T>(key, {raw: true});
-				if (data !== undefined) {
-					value = data.value;
-					rawData = data;
-					if (typeof data.expires === 'number') {
-						remainingTtl = Math.max(0, data.expires - Date.now());
+			for (; i < stores.length; i++) {
+				try {
+					const data = await stores[i].get<T>(key, { raw: true });
+					if (data !== undefined) {
+						value = data.value;
+						rawData = data;
+						if (typeof data.expires === "number") {
+							remainingTtl = Math.max(0, data.expires - Date.now());
+						}
+
+						break;
 					}
-
-					break;
+				} catch {
+					//
 				}
-			} catch {
-				//
 			}
-		}
 
-		if (value === undefined) {
-			const result = await fnc();
-			const ttl = resolveTtl(result)!;
-			await set(stores, key, result, ttl);
-			return raw ? {value: result, expires: Date.now() + ttl} : result;
-		}
+			if (value === undefined) {
+				const result = await fnc();
+				// biome-ignore lint/style/noNonNullAssertion: need to fix
+				const ttl = resolveTtl(result)!;
+				await set(stores, key, result, ttl);
+				return raw ? { value: result, expires: Date.now() + ttl } : result;
+			}
 
-		const shouldRefresh = lt(remainingTtl, runIfFn(refreshThreshold, value) ?? options?.refreshThreshold);
+			const shouldRefresh = lt(
+				remainingTtl,
+				runIfFn(refreshThreshold, value) ?? options?.refreshThreshold,
+			);
 
-		if (shouldRefresh) {
-			coalesceAsync(`+++${_cacheId}__${key}`, fnc)
-				// eslint-disable-next-line promise/prefer-await-to-then
-				.then(async result => {
-					try {
-						await set(options?.refreshAllStores ? stores : stores.slice(0, i + 1), key, result, resolveTtl(result));
-						eventEmitter.emit('refresh', {key, value: result});
-					} catch (error) {
-						eventEmitter.emit('refresh', {key, value, error});
-					}
-				})
-			// eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable, promise/prefer-await-to-then
-				.catch(error => {
-					eventEmitter.emit('refresh', {key, value, error});
-				});
-		}
+			if (shouldRefresh) {
+				coalesceAsync(`+++${_cacheId}__${key}`, fnc)
+					.then(async (result) => {
+						try {
+							await set(
+								options?.refreshAllStores ? stores : stores.slice(0, i + 1),
+								key,
+								result,
+								resolveTtl(result),
+							);
+							eventEmitter.emit("refresh", { key, value: result });
+						} catch (error) {
+							eventEmitter.emit("refresh", { key, value, error });
+						}
+					})
+					.catch((error) => {
+						eventEmitter.emit("refresh", { key, value, error });
+					});
+			}
 
-		if (!shouldRefresh && i > 0) {
-			await set(stores.slice(0, i), key, value, resolveTtl(value));
-		}
+			if (!shouldRefresh && i > 0) {
+				await set(stores.slice(0, i), key, value, resolveTtl(value));
+			}
 
-		return raw ? rawData : value;
-	});
+			return raw ? rawData : value;
+		});
 
-	const on = <E extends keyof Events>(event: E, listener: Events[E]) => eventEmitter.addListener(event, listener);
+	const on = <E extends keyof Events>(event: E, listener: Events[E]) =>
+		eventEmitter.addListener(event, listener);
 
-	const off = <E extends keyof Events>(event: E, listener: Events[E]) => eventEmitter.removeListener(event, listener);
+	const off = <E extends keyof Events>(event: E, listener: Events[E]) =>
+		/* c8 ignore next */
+		eventEmitter.removeListener(event, listener);
 
 	const disconnect = async () => {
 		try {
-			await Promise.all(stores.map(async store => store.disconnect()));
+			await Promise.all(stores.map(async (store) => store.disconnect()));
 		} catch (error) {
 			return Promise.reject(error);
 		}
@@ -377,8 +412,10 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		get,
 		mget,
 		ttl,
-		set: async <T>(key: string, value: T, ttl?: number) => set(stores, key, value, ttl),
-		mset: async <T>(list: Array<{key: string; value: T; ttl?: number}>) => mset(stores, list),
+		set: async <T>(key: string, value: T, ttl?: number) =>
+			set(stores, key, value, ttl),
+		mset: async <T>(list: Array<{ key: string; value: T; ttl?: number }>) =>
+			mset(stores, list),
 		del,
 		mdel,
 		clear,
@@ -391,4 +428,4 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	};
 };
 
-export {KeyvAdapter, type CacheManagerStore} from './keyv-adapter.js';
+export { type CacheManagerStore, KeyvAdapter } from "./keyv-adapter.js";
