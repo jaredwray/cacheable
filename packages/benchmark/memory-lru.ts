@@ -1,25 +1,30 @@
-import { createBenchmark, getModuleName, printToConsole, generateAlphaNumeric } from "index.js";
 import { CacheableMemory } from "@cacheable/memory";
-import QuickLRU from 'quick-lru';
-import { createLRU } from 'lru.min';
+import {
+	createBenchmark,
+	generateAlphaNumeric,
+	getModuleName,
+	printToConsole,
+} from "index.js";
+import { createLRU } from "lru.min";
+import QuickLRU from "quick-lru";
 
 const bench = createBenchmark("Memory LRU Benchmark", 100000);
 
 // Cacheable Memory
 const cacheable = new CacheableMemory({ storeHashSize: 1, lruSize: 80000 });
-let cacheableName = getModuleName("Cacheable Memory", "1.10.0");
+const cacheableName = getModuleName("Cacheable Memory", "1.10.0");
 
 // QuickLRU
-const quickLRU = new QuickLRU({maxSize: 80000});
-let quickLRUName = getModuleName("quick-lru");
+const quickLRU = new QuickLRU({ maxSize: 80000 });
+const quickLRUName = getModuleName("quick-lru");
 
 // lru.min
 const lruMin = createLRU({ max: 80000 });
-let lruMinName = getModuleName("lru.min");
+const lruMinName = getModuleName("lru.min");
 
 // Map
 const map = new Map<string, string>();
-let mapName = getModuleName("Map", "22");
+const mapName = getModuleName("Map", "22");
 
 bench.add(`${cacheableName} - set / get`, async () => {
 	const alphaNumericData = generateAlphaNumeric();

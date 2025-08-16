@@ -32,6 +32,7 @@
 	"scripts": {
 		"build": "echo 'no build needed'",
 		"prepublish": "pnpm build",
+		"lint": "biome check --write",
 		"test": "echo 'no tests needed'",
 		"test:ci": "echo 'no tests needed'",
 		"benchmark:memory": "tsx ./memory.ts && tsx ./memory-lru.ts",
@@ -40,12 +41,12 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"dependencies": {
+		"@cacheable/memory": "workspace:^",
 		"@faker-js/faker": "^9.8.0",
 		"@monstermann/tinybench-pretty-printer": "^0.1.0",
 		"bentocache": "^1.4.0",
 		"cache-manager": "workspace:^",
 		"cacheable": "workspace:^",
-		"@cacheable/memory": "workspace:^",
 		"lru.min": "^1.1.2",
 		"quick-lru": "^7.0.1",
 		"tinybench": "^4.0.1"
@@ -55,6 +56,7 @@
 		"license"
 	],
 	"devDependencies": {
+		"@biomejs/biome": "^2.2.0",
 		"@cacheable/node-cache": "^1.5.6",
 		"node-cache": "^5.1.2",
 		"tsx": "^4.19.4"

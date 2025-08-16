@@ -1,34 +1,38 @@
-import { createBenchmark, getModuleName, printToConsole, generateAlphaNumeric } from "index.js";
 import { CacheableMemory } from "@cacheable/memory";
-import NodeCache from 'node-cache';
-import { BentoCache, bentostore } from 'bentocache';
-import { memoryDriver } from 'bentocache/drivers/memory';
+import { BentoCache, bentostore } from "bentocache";
+import { memoryDriver } from "bentocache/drivers/memory";
+import {
+	createBenchmark,
+	generateAlphaNumeric,
+	getModuleName,
+	printToConsole,
+} from "index.js";
+import NodeCache from "node-cache";
 
 const bench = createBenchmark("Memory Benchmark", 100000);
 
 // Cacheable Memory
-const cacheable = new CacheableMemory({storeHashSize: 1});
-let cacheableName = getModuleName("Cacheable Memory", "1.10.0");
+const cacheable = new CacheableMemory({ storeHashSize: 1 });
+const cacheableName = getModuleName("Cacheable Memory", "1.10.0");
 
 // Node Cache
 const nodeCache = new NodeCache();
-let nodeCacheName = getModuleName("Node Cache");
+const nodeCacheName = getModuleName("Node Cache");
 
 // BentoCache with Memory Driver
 const bento = new BentoCache({
-  default: 'myCache',
-  stores: {
-    // A first cache store named "myCache" using 
-    // only L1 in-memory cache
-    myCache: bentostore()
-      .useL1Layer(memoryDriver({ maxSize: '10mb' }))
-  }
+	default: "myCache",
+	stores: {
+		// A first cache store named "myCache" using
+		// only L1 in-memory cache
+		myCache: bentostore().useL1Layer(memoryDriver({ maxSize: "10mb" })),
+	},
 });
-let bentoName = getModuleName("BentoCache");
+const bentoName = getModuleName("BentoCache");
 
 // Map
 const map = new Map<string, string>();
-let mapName = getModuleName("Map", "22");
+const mapName = getModuleName("Map", "22");
 
 bench.add(`${cacheableName} - set / get`, async () => {
 	const alphaNumericData = generateAlphaNumeric();
@@ -44,8 +48,8 @@ bench.add(`${nodeCacheName} - set / get`, async () => {
 
 bench.add(`${bentoName} - set / get`, async () => {
 	const alphaNumericData = generateAlphaNumeric();
-	await bento.set({ key: alphaNumericData.key, value: alphaNumericData.value});
-	await bento.get({ key: alphaNumericData.key});
+	await bento.set({ key: alphaNumericData.key, value: alphaNumericData.value });
+	await bento.get({ key: alphaNumericData.key });
 });
 
 bench.add(`${mapName} - set / get`, async () => {

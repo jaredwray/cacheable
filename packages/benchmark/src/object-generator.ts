@@ -1,4 +1,4 @@
-import { faker } from '@faker-js/faker';
+import { faker } from "@faker-js/faker";
 
 interface User {
 	id: string;
@@ -70,10 +70,6 @@ interface Comment {
 }
 
 export class ObjectGenerator {
-	constructor() {
-		// Initialize the object generator
-	}
-
 	public generateFakeUser(): User {
 		return {
 			id: faker.string.uuid(),
@@ -97,7 +93,9 @@ export class ObjectGenerator {
 		return {
 			id: faker.string.uuid(),
 			userId: faker.string.uuid(),
-			productIds: Array.from({ length: productCount }, () => faker.string.uuid()),
+			productIds: Array.from({ length: productCount }, () =>
+				faker.string.uuid(),
+			),
 			total: parseFloat(faker.commerce.price()),
 			createdAt: faker.date.past(),
 		};
@@ -135,7 +133,10 @@ export class ObjectGenerator {
 			id: faker.string.uuid(),
 			make: faker.vehicle.manufacturer(),
 			model: faker.vehicle.model(),
-			year: parseInt(faker.date.past({ years: 30 }).getFullYear().toString()),
+			year: parseInt(
+				faker.date.past({ years: 30 }).getFullYear().toString(),
+				10,
+			),
 		};
 	}
 
