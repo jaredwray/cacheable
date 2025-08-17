@@ -1,22 +1,27 @@
-import {type KeyvStoreAdapter, type StoredData} from 'keyv';
+import type { KeyvStoreAdapter, StoredData } from "keyv";
 
 export type CacheManagerStore = {
 	name: string;
 	isCacheable?: (value: unknown) => boolean;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	get(key: string): Promise<any>;
 	mget(...keys: string[]): Promise<unknown[]>;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	set(key: string, value: any, ttl?: number): Promise<any>;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	mset(data: Record<string, any>, ttl?: number): Promise<void>;
 	del(key: string): Promise<void>;
 	mdel(...keys: string[]): Promise<void>;
 	ttl(key: string, ttl?: number): Promise<number>;
 	keys(): Promise<string[]>;
 	reset?(): Promise<void>;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	on?(event: string, listener: (...arguments_: any[]) => void): void;
 	disconnect?(): Promise<void>;
 };
 
 export class KeyvAdapter implements KeyvStoreAdapter {
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	opts: any;
 	namespace?: string | undefined;
 	private readonly _cache: CacheManagerStore;
@@ -33,6 +38,7 @@ export class KeyvAdapter implements KeyvStoreAdapter {
 		return undefined;
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	async set(key: string, value: any, ttl?: number) {
 		await this._cache.set(key, value, ttl);
 		return true;
@@ -57,8 +63,9 @@ export class KeyvAdapter implements KeyvStoreAdapter {
 	}
 
 	async getMany?<T>(keys: string[]): Promise<Array<StoredData<T | undefined>>> {
-		// eslint-disable-next-line promise/prefer-await-to-then
-		return this._cache.mget(...keys).then(values => values.map(value => (value as T)));
+		return this._cache
+			.mget(...keys)
+			.then((values) => values.map((value) => value as T));
 	}
 
 	async deleteMany?(key: string[]): Promise<boolean> {
@@ -67,6 +74,7 @@ export class KeyvAdapter implements KeyvStoreAdapter {
 	}
 
 	/* c8 ignore next 5 */
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	on(event: string, listener: (...arguments_: any[]) => void) {
 		this._cache.on?.(event, listener);
 

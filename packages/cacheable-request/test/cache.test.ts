@@ -1,53 +1,55 @@
-/* eslint-disable @typescript-eslint/no-deprecated */
-import {Agent, request} from 'node:http';
-import url from 'node:url';
-import util, {promisify as pm} from 'node:util';
-import {gzip, gunzip} from 'node:zlib';
-import {
-	test, beforeAll, afterAll, expect,
-} from 'vitest';
-import getStream from 'get-stream';
-import delay from 'delay';
-import {Keyv} from 'keyv';
-import CacheableRequest, {CacheValue, onResponse} from '../src/index.js';
-import createTestServer from './create-test-server/index.mjs';
+// biome-ignore-all lint/suspicious/noImplicitAnyLet: legacy format
+// biome-ignore-all lint/suspicious/noExplicitAny: legacy format
+import { Agent, request } from "node:http";
+import url from "node:url";
+import util, { promisify as pm } from "node:util";
+import { gunzip, gzip } from "node:zlib";
+import delay from "delay";
+import getStream from "get-stream";
+import { Keyv } from "keyv";
+import { afterAll, beforeAll, expect, test } from "vitest";
+import CacheableRequest, { type CacheValue, onResponse } from "../src/index.js";
+import createTestServer from "./create-test-server/index.mjs";
 
 const testTimeout = 10_000;
 
 // Promisify cacheableRequest
-const promisify = (cacheableRequest: any) => async (options: any) => new Promise((resolve, reject) => {
-	cacheableRequest(options, async (response: any) => {
-		const body = await getStream(response);
-		response.body = body;
-		// Give the cache time to update
-		await delay(100);
-		resolve(response);
-	})
-		.on('request', (request_: any) => request_.end())
-		.once('error', reject);
-});
+const promisify = (cacheableRequest: any) => async (options: any) =>
+	new Promise((resolve, reject) => {
+		cacheableRequest(options, async (response: any) => {
+			const body = await getStream(response);
+			response.body = body;
+			// Give the cache time to update
+			await delay(100);
+			resolve(response);
+		})
+			.on("request", (request_: any) => request_.end())
+			.once("error", reject);
+	});
 let s: any;
 beforeAll(async () => {
 	s = await createTestServer();
 	console.log(`Test server running at ${s.url}`);
 	let noStoreIndex = 0;
-	s.get('/no-store', (request_: any, response_: any) => {
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: legacy
+	s.get("/no-store", (request_: any, response_: any) => {
 		noStoreIndex++;
-		response_.setHeader('Cache-Control', 'public, no-cache, no-store');
+		response_.setHeader("Cache-Control", "public, no-cache, no-store");
 		response_.end(noStoreIndex.toString());
 	});
 	let cacheIndex = 0;
-	s.get('/cache', (request_: any, response_: any) => {
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: legacy
+	s.get("/cache", (request_: any, response_: any) => {
 		cacheIndex++;
-		response_.setHeader('Cache-Control', 'public, max-age=60');
+		response_.setHeader("Cache-Control", "public, max-age=60");
 		response_.end(cacheIndex.toString());
 	});
-	s.get('/last-modified', (request_: any, response_: any) => {
-		response_.setHeader('Cache-Control', 'public, max-age=0');
-		response_.setHeader('Last-Modified', 'Wed, 21 Oct 2015 07:28:00 GMT');
-		let responseBody: any = 'last-modified';
+	s.get("/last-modified", (request_: any, response_: any) => {
+		response_.setHeader("Cache-Control", "public, max-age=0");
+		response_.setHeader("Last-Modified", "Wed, 21 Oct 2015 07:28:00 GMT");
+		let responseBody: any = "last-modified";
 		if (
-			request_.headers['if-modified-since'] === 'Wed, 21 Oct 2015 07:28:00 GMT'
+			request_.headers["if-modified-since"] === "Wed, 21 Oct 2015 07:28:00 GMT"
 		) {
 			response_.statusCode = 304;
 			responseBody = null;
@@ -56,68 +58,72 @@ beforeAll(async () => {
 		response_.end(responseBody);
 	});
 	let date = Date.now() + 200;
-	s.get('/stale-revalidate', (request_: any, response_: any) => {
-		response_.setHeader('Cache-Control', 'public, max-age=0.05');
-		response_.setHeader('stale-if-error', '0.01');
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: legacy
+	s.get("/stale-revalidate", (request_: any, response_: any) => {
+		response_.setHeader("Cache-Control", "public, max-age=0.05");
+		response_.setHeader("stale-if-error", "0.01");
 		if (Date.now() <= date) {
 			response_.statusCode = 200;
-			response_.end('fresh');
+			response_.end("fresh");
 		} else if (Date.now() <= date + 600) {
 			response_.statusCode = 200;
-			response_.end('stale');
+			response_.end("stale");
 		} else {
 			response_.statusCode = 200;
-			response_.end('new');
+			response_.end("new");
 		}
 
 		response_.statusCode = 200;
-		response_.end('stale-revalidated');
+		response_.end("stale-revalidated");
 	});
 	date = Date.now() + 200;
-	s.get('/stale-if-error-success', (request_: any, response_: any) => {
-		response_.setHeader('Cache-Control', 'public, max-age=0.05');
-		response_.setHeader('stale-if-error', '0.01');
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: legacy
+	s.get("/stale-if-error-success", (request_: any, response_: any) => {
+		response_.setHeader("Cache-Control", "public, max-age=0.05");
+		response_.setHeader("stale-if-error", "0.01");
 		if (Date.now() <= date) {
 			response_.statusCode = 200;
-			response_.end('fresh');
+			response_.end("fresh");
 		} else if (Date.now() <= date + 600) {
 			response_.statusCode = 200;
-			response_.end('stale');
+			response_.end("stale");
 		} else {
 			response_.statusCode = 200;
-			response_.end('new');
+			response_.end("new");
 		}
 	});
 	date = Date.now() + 200 + 300;
-	s.get('/stale-error', (request_: any, response_: any) => {
-		response_.setHeader('Cache-Control', 'public, max-age=0.05');
-		response_.setHeader('stale-if-error', '0.01');
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: legacy
+	s.get("/stale-error", (request_: any, response_: any) => {
+		response_.setHeader("Cache-Control", "public, max-age=0.05");
+		response_.setHeader("stale-if-error", "0.01");
 		if (Date.now() <= date) {
 			response_.statusCode = 200;
-			response_.end('fresh');
+			response_.end("fresh");
 		} else if (Date.now() <= date + 300) {
 			response_.statusCode = 500;
-			response_.end('stale');
+			response_.end("stale");
 		}
 	});
 	let calledFirstError = false;
-	s.get('/first-error', (request_: any, response_: any) => {
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: legacy
+	s.get("/first-error", (request_: any, response_: any) => {
 		if (calledFirstError) {
-			response_.end('ok');
+			response_.end("ok");
 			return;
 		}
 
 		calledFirstError = true;
 		response_.statusCode = 502;
-		response_.end('received 502');
+		response_.end("received 502");
 	});
-	s.get('/etag', (request_: any, response_: any) => {
-		response_.setHeader('Cache-Control', 'public, max-age=0');
-		response_.setHeader('ETag', '33a64df551425fcc55e4d42a148795d9f25f89d4');
-		let responseBody: string | undefined = 'etag';
+	s.get("/etag", (request_: any, response_: any) => {
+		response_.setHeader("Cache-Control", "public, max-age=0");
+		response_.setHeader("ETag", "33a64df551425fcc55e4d42a148795d9f25f89d4");
+		let responseBody: string | undefined = "etag";
 		if (
-			request_.headers['if-none-match']
-			=== '33a64df551425fcc55e4d42a148795d9f25f89d4'
+			request_.headers["if-none-match"] ===
+			"33a64df551425fcc55e4d42a148795d9f25f89d4"
 		) {
 			response_.statusCode = 304;
 			responseBody = null;
@@ -125,32 +131,36 @@ beforeAll(async () => {
 
 		response_.end(responseBody);
 	});
-	s.get('/revalidate-modified', (request_: any, response_: any) => {
-		response_.setHeader('Cache-Control', 'public, max-age=0');
-		response_.setHeader('ETag', '33a64df551425fcc55e4d42a148795d9f25f89d4');
-		let responseBody = 'revalidate-modified';
+	s.get("/revalidate-modified", (request_: any, response_: any) => {
+		response_.setHeader("Cache-Control", "public, max-age=0");
+		response_.setHeader("ETag", "33a64df551425fcc55e4d42a148795d9f25f89d4");
+		let responseBody = "revalidate-modified";
 		if (
-			request_.headers['if-none-match']
-			=== '33a64df551425fcc55e4d42a148795d9f25f89d4'
+			request_.headers["if-none-match"] ===
+			"33a64df551425fcc55e4d42a148795d9f25f89d4"
 		) {
-			response_.setHeader('ETag', '0000000000000000000000000000000000');
-			responseBody = 'new-body';
+			response_.setHeader("ETag", "0000000000000000000000000000000000");
+			responseBody = "new-body";
 		}
 
 		response_.end(responseBody);
 	});
 	let cacheThenNoStoreIndex = 0;
-	s.get('/cache-then-no-store-on-revalidate', (request_: any, response_: any) => {
-		const cc
-						= cacheThenNoStoreIndex === 0
-							? 'public, max-age=0'
-							: 'public, no-cache, no-store';
-		cacheThenNoStoreIndex++;
-		response_.setHeader('Cache-Control', cc);
-		response_.end('cache-then-no-store-on-revalidate');
-	});
-	s.get('/echo', (request_: any, response_: any) => {
-		const {headers, query, path, originalUrl, body} = request_;
+	s.get(
+		"/cache-then-no-store-on-revalidate",
+		// biome-ignore lint/correctness/noUnusedFunctionParameters: legacy
+		(request_: any, response_: any) => {
+			const cc =
+				cacheThenNoStoreIndex === 0
+					? "public, max-age=0"
+					: "public, no-cache, no-store";
+			cacheThenNoStoreIndex++;
+			response_.setHeader("Cache-Control", cc);
+			response_.end("cache-then-no-store-on-revalidate");
+		},
+	);
+	s.get("/echo", (request_: any, response_: any) => {
+		const { headers, query, path, originalUrl, body } = request_;
 		response_.json({
 			headers,
 			query,
@@ -159,19 +169,19 @@ beforeAll(async () => {
 			body,
 		});
 	});
-	const etag = 'foobar';
+	const etag = "foobar";
 
-	const payload = JSON.stringify({foo: 'bar'});
+	const payload = JSON.stringify({ foo: "bar" });
 	const compressed = await pm(gzip)(payload);
 
-	s.get('/compress', (request: any, response: any) => {
-		if (request.headers['if-none-match'] === etag) {
+	s.get("/compress", (request: any, response: any) => {
+		if (request.headers["if-none-match"] === etag) {
 			response.statusCode = 304;
 			response.end();
 		} else {
-			response.setHeader('content-encoding', 'gzip');
-			response.setHeader('cache-control', 'public, max-age: 60');
-			response.setHeader('etag', 'foobar');
+			response.setHeader("content-encoding", "gzip");
+			response.setHeader("cache-control", "public, max-age: 60");
+			response.setHeader("etag", "foobar");
 			response.end(compressed);
 		}
 	});
@@ -180,20 +190,24 @@ afterAll(async () => {
 	await s.close();
 });
 
-test('Non cacheable responses are not cached', async () => {
-	const endpoint = '/no-store';
+test("Non cacheable responses are not cached", async () => {
+	const endpoint = "/no-store";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const firstResponseIntBody: any = await cacheableRequestHelper(s.url + endpoint);
+	const firstResponseIntBody: any = await cacheableRequestHelper(
+		s.url + endpoint,
+	);
 	const firstResponseInt = Number(firstResponseIntBody.body);
-	const secondResponseIntBody: any = await cacheableRequestHelper(s.url + endpoint);
+	const secondResponseIntBody: any = await cacheableRequestHelper(
+		s.url + endpoint,
+	);
 	const secondResponseInt = Number(secondResponseIntBody.body);
 	expect(cache.size).toBe(0);
 	expect(firstResponseInt < secondResponseInt).toBeTruthy();
 });
-test('Cacheable responses are cached', async () => {
-	const endpoint = '/cache';
+test("Cacheable responses are cached", async () => {
+	const endpoint = "/cache";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -202,20 +216,26 @@ test('Cacheable responses are cached', async () => {
 	expect(cache.size).toBe(1);
 	expect(firstResponse.body).toBe(secondResponse.body);
 });
-test('Cacheable responses have unique cache key', async () => {
-	const endpoint = '/cache';
+test("Cacheable responses have unique cache key", async () => {
+	const endpoint = "/cache";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const firstResponse: any = await cacheableRequestHelper(s.url + endpoint + '?foo');
-	const secondResponse: any = await cacheableRequestHelper(s.url + endpoint + '?bar');
+	const firstResponse: any = await cacheableRequestHelper(
+		// biome-ignore lint/style/useTemplate: legacy
+		s.url + endpoint + "?foo",
+	);
+	const secondResponse: any = await cacheableRequestHelper(
+		// biome-ignore lint/style/useTemplate: legacy
+		s.url + endpoint + "?bar",
+	);
 	expect(cache.size).toBe(2);
 	expect(firstResponse.body).not.toBe(secondResponse.body);
 });
 
 const testCacheKey = async (input: any, expected: string) => {
 	const expectKey = `cacheable-request:${expected}`;
-	const okMessage = `OK ${expectKey}`;
+	// biome-ignore lint/correctness/noUnusedVariables: legacy
 	let actualKey: string | undefined;
 	const store = new Map();
 	const cache = {
@@ -223,7 +243,7 @@ const testCacheKey = async (input: any, expected: string) => {
 			actualKey = key;
 			expect(key).toBe(expectKey);
 		},
-		set(key: any, value: any, ttl: number) {
+		set(key: any, value: any) {
 			// Expect(ttl).toBe(1000);
 			actualKey = key;
 			return store.set(key, value);
@@ -243,7 +263,7 @@ const testCacheKeyReturn = async (input: any) => {
 		get(key: string) {
 			actualKey = key;
 		},
-		set(key: any, value: any, ttl: number) {
+		set(key: any, value: any) {
 			actualKey = key;
 			return store.set(key, value);
 		},
@@ -256,131 +276,130 @@ const testCacheKeyReturn = async (input: any) => {
 	return actualKey;
 };
 
-test('return with GET', async () => {
-	const expected = 'GET:http://mockhttp.org';
-	const expectKey = `cacheable-request:${expected}`;
-	const actualKey = await testCacheKeyReturn('http://mockhttp.org');
-	expect(actualKey).toBe(expectKey);
-}, testTimeout);
-
-test('strips default path', async () => {
-	const expected = 'GET:http://mockhttp.org';
-	const expectKey = `cacheable-request:${expected}`;
-	const actualKey = await testCacheKeyReturn('http://mockhttp.org/');
-	expect(actualKey).toBe(expectKey);
-});
-
 test(
-	'keeps trailing /',
+	"return with GET",
 	async () => {
-		const expected = 'GET:http://mockhttp.org/test/';
+		const expected = "GET:http://mockhttp.org";
 		const expectKey = `cacheable-request:${expected}`;
-		const actualKey = await testCacheKeyReturn('http://mockhttp.org/test/');
+		const actualKey = await testCacheKeyReturn("http://mockhttp.org");
 		expect(actualKey).toBe(expectKey);
 	},
+	testTimeout,
 );
 
-test('return without slash', async () => {
+test("strips default path", async () => {
+	const expected = "GET:http://mockhttp.org";
+	const expectKey = `cacheable-request:${expected}`;
+	const actualKey = await testCacheKeyReturn("http://mockhttp.org/");
+	expect(actualKey).toBe(expectKey);
+});
+
+test("keeps trailing /", async () => {
+	const expected = "GET:http://mockhttp.org/test/";
+	const expectKey = `cacheable-request:${expected}`;
+	const actualKey = await testCacheKeyReturn("http://mockhttp.org/test/");
+	expect(actualKey).toBe(expectKey);
+});
+
+test("return without slash", async () => {
 	const options = {
-		protocol: 'http:',
-		host: 'mockhttp.org',
+		protocol: "http:",
+		host: "mockhttp.org",
 		port: 80,
-		path: '/',
+		path: "/",
 	};
-	const expected = 'GET:http://mockhttp.org';
+	const expected = "GET:http://mockhttp.org";
 	const expectKey = `cacheable-request:${expected}`;
 	const actualKey = await testCacheKeyReturn(options);
 	expect(actualKey).toBe(expectKey);
 });
 
-test('return without port', async () => {
+test("return without port", async () => {
 	const options = {
-		hostname: 'mockhttp.org',
+		hostname: "mockhttp.org",
 		port: 80,
-		path: '/',
+		path: "/",
 	};
-	const expected = 'GET:http://mockhttp.org';
+	const expected = "GET:http://mockhttp.org";
 	const expectKey = `cacheable-request:${expected}`;
 	const actualKey = await testCacheKeyReturn(options);
 	expect(actualKey).toBe(expectKey);
 });
 
-test('return with url and port', async () => {
+test("return with url and port", async () => {
 	const options = {
-		hostname: 'mockhttp.org',
+		hostname: "mockhttp.org",
 		port: 8080,
-		path: '/',
+		path: "/",
 	};
-	const expected = 'GET:http://mockhttp.org:8080';
+	const expected = "GET:http://mockhttp.org:8080";
 	const expectKey = `cacheable-request:${expected}`;
 	const actualKey = await testCacheKeyReturn(options);
 	expect(actualKey).toBe(expectKey);
 });
 
-test('return with protocol', async () => {
+test("return with protocol", async () => {
 	const options = {
-		host: 'mockhttp.org',
+		host: "mockhttp.org",
 	};
-	const expected = 'GET:http://mockhttp.org';
+	const expected = "GET:http://mockhttp.org";
 	const expectKey = `cacheable-request:${expected}`;
 	const actualKey = await testCacheKeyReturn(options);
 	expect(actualKey).toBe(expectKey);
 });
 
-test('hostname over host', async () => {
+test("hostname over host", async () => {
 	const options = {
-		host: 'mockhttp.org',
-		hostname: 'cacheable.org',
+		host: "mockhttp.org",
+		hostname: "cacheable.org",
 	};
-	const expected = 'GET:http://cacheable.org';
+	const expected = "GET:http://cacheable.org";
 	const expectKey = `cacheable-request:${expected}`;
 	const actualKey = await testCacheKeyReturn(options);
 	expect(actualKey).toBe(expectKey);
 });
 
-test(
-	'ignores pathname',
-	async () => testCacheKey(
+test("ignores pathname", async () =>
+	testCacheKey(
 		{
-			hostname: 'mockhttp.org',
-			path: '/get',
-			pathname: '/bar',
+			hostname: "mockhttp.org",
+			path: "/get",
+			pathname: "/bar",
 		},
-		'GET:http://mockhttp.org/get',
-	),
-);
+		"GET:http://mockhttp.org/get",
+	));
 
-test(
-	'ignores search',
-	async () => testCacheKey(
+test("ignores search", async () =>
+	testCacheKey(
 		{
 			hostname: s.hostname,
 			port: s.port,
-			path: '/?foo=bar',
-			search: '?bar=baz',
+			path: "/?foo=bar",
+			search: "?bar=baz",
 		},
 		`GET:localhost:${s.port}/?foo=bar`,
-	),
-);
+	));
 
-test(
-	'ignores query',
-	async () => testCacheKey(
+test("ignores query", async () =>
+	testCacheKey(
 		{
 			hostname: s.hostname,
 			port: s.port,
-			path: '/?foo=bar',
-			query: {bar: 'baz'},
+			path: "/?foo=bar",
+			query: { bar: "baz" },
 		},
 		`GET:localhost:${s.port}/?foo=bar`,
-	),
-);
+	));
 
 // Test('auth should be in url', async () => testCacheKey({auth: 'user:pass'}, 'GET:user:pass@localhost'));
 
-test('should return post', async () => testCacheKey({hostname: 'mockhttp.org', path: '/post', method: 'POST'}, 'POST:http://mockhttp.org/post'));
+test("should return post", async () =>
+	testCacheKey(
+		{ hostname: "mockhttp.org", path: "/post", method: "POST" },
+		"POST:http://mockhttp.org/post",
+	));
 
-test('request options path query is passed through', async () => {
+test("request options path query is passed through", async () => {
 	const cacheableRequest = new CacheableRequest(request);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const argumentString = `${s.url}/echo?foo=bar`;
@@ -393,25 +412,25 @@ test('request options path query is passed through', async () => {
 	};
 	const inputs = [argumentString, argumentUrl, argumentOptions];
 	for (const input of inputs) {
-		// eslint-disable-next-line no-await-in-loop
 		const response: any = await cacheableRequestHelper(input);
 		const body = JSON.parse(response.body);
+		// biome-ignore lint/correctness/noUnusedVariables: legacy
 		const message = util.format(
-			'when request arg is %s(%j)',
+			"when request arg is %s(%j)",
 			input.constructor.name,
 			input,
 		);
-		expect(body.originalUrl).toBe('/echo?foo=bar');
+		expect(body.originalUrl).toBe("/echo?foo=bar");
 	}
 });
 
-test('Setting opts.cache to false bypasses cache for a single request', async () => {
-	const endpoint = '/cache';
+test("Setting opts.cache to false bypasses cache for a single request", async () => {
+	const endpoint = "/cache";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const options = url.parse(s.url + endpoint);
-	const optionsNoCache = {cache: false, ...options};
+	const optionsNoCache = { cache: false, ...options };
 	const firstResponse: any = await cacheableRequestHelper(options);
 	const secondResponse: any = await cacheableRequestHelper(options);
 	const thirdResponse: any = await cacheableRequestHelper(optionsNoCache);
@@ -421,14 +440,14 @@ test('Setting opts.cache to false bypasses cache for a single request', async ()
 	expect(thirdResponse.fromCache).toBeFalsy();
 	expect(fourthResponse.fromCache).toBeTruthy();
 });
-test('TTL is passed to cache', async () => {
+test("TTL is passed to cache", async () => {
 	expect.assertions(2);
-	const endpoint = '/cache';
+	const endpoint = "/cache";
 	const store = new Map();
 	const cache = {
 		get: store.get.bind(store),
 		set(key: any, value: any, ttl: number) {
-			expect(typeof ttl).toBe('number');
+			expect(typeof ttl).toBe("number");
 			expect(ttl > 0).toBeTruthy();
 			return store.set(key, value);
 		},
@@ -437,12 +456,12 @@ test('TTL is passed to cache', async () => {
 	};
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const options = {strictTtl: true, ...url.parse(s.url + endpoint)};
+	const options = { strictTtl: true, ...url.parse(s.url + endpoint) };
 	await cacheableRequestHelper(options);
 });
-test('TTL is not passed to cache if strictTtl is false', async () => {
+test("TTL is not passed to cache if strictTtl is false", async () => {
 	expect.assertions(1);
-	const endpoint = '/cache';
+	const endpoint = "/cache";
 	const store = new Map();
 	const cache = {
 		get: store.get.bind(store),
@@ -455,12 +474,12 @@ test('TTL is not passed to cache if strictTtl is false', async () => {
 	};
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const options = {strictTtl: false, ...url.parse(s.url + endpoint)};
+	const options = { strictTtl: false, ...url.parse(s.url + endpoint) };
 	await cacheableRequestHelper(options);
 });
-test('Setting opts.maxTtl will limit the TTL', async () => {
+test("Setting opts.maxTtl will limit the TTL", async () => {
 	expect.assertions(1);
-	const endpoint = '/cache';
+	const endpoint = "/cache";
 	const store = new Map();
 	const cache = {
 		get: store.get.bind(store),
@@ -479,9 +498,9 @@ test('Setting opts.maxTtl will limit the TTL', async () => {
 	};
 	await cacheableRequestHelper(options);
 });
-test('Setting opts.maxTtl when opts.strictTtl is true will use opts.maxTtl if it\'s smaller', async () => {
+test("Setting opts.maxTtl when opts.strictTtl is true will use opts.maxTtl if it's smaller", async () => {
 	expect.assertions(1);
-	const endpoint = '/cache';
+	const endpoint = "/cache";
 	const store = new Map();
 	const cache = {
 		get: store.get.bind(store),
@@ -501,9 +520,9 @@ test('Setting opts.maxTtl when opts.strictTtl is true will use opts.maxTtl if it
 	};
 	await cacheableRequestHelper(options);
 });
-test('Setting opts.maxTtl when opts.strictTtl is true will use remote TTL if it\'s smaller', async () => {
+test("Setting opts.maxTtl when opts.strictTtl is true will use remote TTL if it's smaller", async () => {
 	expect.assertions(1);
-	const endpoint = '/cache';
+	const endpoint = "/cache";
 	const store = new Map();
 	const cache = {
 		get: store.get.bind(store),
@@ -523,8 +542,8 @@ test('Setting opts.maxTtl when opts.strictTtl is true will use remote TTL if it\
 	};
 	await cacheableRequestHelper(options);
 });
-test('Stale cache entries with Last-Modified headers are revalidated', async () => {
-	const endpoint = '/last-modified';
+test("Stale cache entries with Last-Modified headers are revalidated", async () => {
+	const endpoint = "/last-modified";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -535,28 +554,28 @@ test('Stale cache entries with Last-Modified headers are revalidated', async () 
 	expect(secondResponse.statusCode).toBe(200);
 	expect(firstResponse.fromCache).toBeFalsy();
 	expect(secondResponse.fromCache).toBeTruthy();
-	expect(firstResponse.body).toBe('last-modified');
+	expect(firstResponse.body).toBe("last-modified");
 	expect(firstResponse.body).toBe(secondResponse.body);
 });
 
-test('Stale cache entries with stale-if-error-success should send response as expected', async () => {
-	const endpoint = '/stale-if-error-success';
+test("Stale cache entries with stale-if-error-success should send response as expected", async () => {
+	const endpoint = "/stale-if-error-success";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const firstResponse: any = await cacheableRequestHelper(s.url + endpoint);
 	expect(firstResponse.statusCode).toBe(200);
 	expect(firstResponse.fromCache).toBeFalsy();
-	expect(firstResponse.body).toBe('new');
+	expect(firstResponse.body).toBe("new");
 	expect(cache.size).toBe(1);
 	await delay(500);
 	const secondResponse: any = await cacheableRequestHelper(s.url + endpoint);
 	expect(secondResponse.statusCode).toBe(200);
 	expect(secondResponse.fromCache).toBeFalsy();
-	expect(secondResponse.body).toBe('new');
+	expect(secondResponse.body).toBe("new");
 });
-test('Stale cache entries with ETag headers are revalidated', async () => {
-	const endpoint = '/etag';
+test("Stale cache entries with ETag headers are revalidated", async () => {
+	const endpoint = "/etag";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -567,11 +586,11 @@ test('Stale cache entries with ETag headers are revalidated', async () => {
 	expect(secondResponse.statusCode).toBe(200);
 	expect(firstResponse.fromCache).toBeFalsy();
 	expect(secondResponse.fromCache).toBeTruthy();
-	expect(firstResponse.body).toBe('etag');
+	expect(firstResponse.body).toBe("etag");
 	expect(firstResponse.body).toBe(secondResponse.body);
 });
-test('Stale cache entries that can\'t be revalidate are deleted from cache', async () => {
-	const endpoint = '/cache-then-no-store-on-revalidate';
+test("Stale cache entries that can't be revalidate are deleted from cache", async () => {
+	const endpoint = "/cache-then-no-store-on-revalidate";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -581,11 +600,11 @@ test('Stale cache entries that can\'t be revalidate are deleted from cache', asy
 	expect(cache.size).toBe(0);
 	expect(firstResponse.statusCode).toBe(200);
 	expect(secondResponse.statusCode).toBe(200);
-	expect(firstResponse.body).toBe('cache-then-no-store-on-revalidate');
+	expect(firstResponse.body).toBe("cache-then-no-store-on-revalidate");
 	expect(firstResponse.body).toBe(secondResponse.body);
 });
-test('Response objects have fromCache property set correctly', async () => {
-	const endpoint = '/cache';
+test("Response objects have fromCache property set correctly", async () => {
+	const endpoint = "/cache";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -594,8 +613,8 @@ test('Response objects have fromCache property set correctly', async () => {
 	expect(response.fromCache).toBeFalsy();
 	expect(cachedResponse.fromCache).toBeTruthy();
 });
-test('Revalidated responses that are modified are passed through', async () => {
-	const endpoint = '/revalidate-modified';
+test("Revalidated responses that are modified are passed through", async () => {
+	const endpoint = "/revalidate-modified";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -603,11 +622,11 @@ test('Revalidated responses that are modified are passed through', async () => {
 	const secondResponse: any = await cacheableRequestHelper(s.url + endpoint);
 	expect(firstResponse.statusCode).toBe(200);
 	expect(secondResponse.statusCode).toBe(200);
-	expect(firstResponse.body).toBe('revalidate-modified');
-	expect(secondResponse.body).toBe('new-body');
+	expect(firstResponse.body).toBe("revalidate-modified");
+	expect(secondResponse.body).toBe("new-body");
 });
-test('Undefined callback parameter inside cache logic is handled', async () => {
-	const endpoint = '/cache';
+test("Undefined callback parameter inside cache logic is handled", async () => {
+	const endpoint = "/cache";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -615,9 +634,9 @@ test('Undefined callback parameter inside cache logic is handled', async () => {
 	await delay(500);
 	expect(true).toBeTruthy();
 });
-test('Custom Keyv instance adapters used', async () => {
+test("Custom Keyv instance adapters used", async () => {
 	const cache = new Keyv();
-	const endpoint = '/cache';
+	const endpoint = "/cache";
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const response: any = await cacheableRequestHelper(s.url + endpoint);
@@ -625,8 +644,8 @@ test('Custom Keyv instance adapters used', async () => {
 	const cached = await cache.get(expected);
 	expect(response.body).toBe(cached.body.toString());
 });
-test('ability to force refresh', async () => {
-	const endpoint = '/cache';
+test("ability to force refresh", async () => {
+	const endpoint = "/cache";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -640,36 +659,39 @@ test('ability to force refresh', async () => {
 	expect(firstResponse.body).not.toBe(secondResponse.body);
 	expect(secondResponse.body).toBe(thirdResponse.body);
 });
-test('checks status codes when comparing cache & response', async () => {
-	const endpoint = '/first-error';
+test("checks status codes when comparing cache & response", async () => {
+	const endpoint = "/first-error";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const options = url.parse(s.url + endpoint);
 	const firstResponse: any = await cacheableRequestHelper(options);
 	const secondResponse: any = await cacheableRequestHelper(options);
-	expect(firstResponse.body).toBe('received 502');
-	expect(secondResponse.body).toBe('ok');
+	expect(firstResponse.body).toBe("received 502");
+	expect(secondResponse.body).toBe("ok");
 });
 
-test('304 responses with forceRefresh do not clobber cache', async () => {
-	const endpoint = '/etag';
+test("304 responses with forceRefresh do not clobber cache", async () => {
+	const endpoint = "/etag";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const options = url.parse(s.url + endpoint);
 
 	const firstResponse: any = await cacheableRequestHelper(options);
-	const secondResponse: any = await cacheableRequestHelper({...options, forceRefresh: true});
-	expect(firstResponse.body).toBe('etag');
-	expect(secondResponse.body).toBe('etag');
+	const secondResponse: any = await cacheableRequestHelper({
+		...options,
+		forceRefresh: true,
+	});
+	expect(firstResponse.body).toBe("etag");
+	expect(secondResponse.body).toBe("etag");
 });
 
-test('decompresses cached responses', async () => {
-	const endpoint = '/compress';
+test("decompresses cached responses", async () => {
+	const endpoint = "/compress";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
-	cacheableRequest.addHook('response', async (value: CacheValue) => {
+	cacheableRequest.addHook("response", async (value: CacheValue) => {
 		const buffer = await pm(gunzip)(value.body);
 		value.body = buffer.toString();
 		return value;
@@ -678,12 +700,12 @@ test('decompresses cached responses', async () => {
 	const response: any = await cacheableRequestHelper(s.url + endpoint);
 	expect(response.statusCode).toBe(200);
 	const iterator = cache.values();
-	const {value} = JSON.parse(iterator.next().value);
+	const { value } = JSON.parse(iterator.next().value);
 	expect(value.body).toBe('{"foo":"bar"}');
 });
 
-test('cache status message', async () => {
-	const endpoint = '/etag';
+test("cache status message", async () => {
+	const endpoint = "/etag";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -697,13 +719,13 @@ test('cache status message', async () => {
 	const response: any = await cacheableRequestHelper(s.url + endpoint);
 	const expectedCacheKey = `cacheable-request:GET:${s.url}/etag`;
 	const cacheValue = JSON.parse(await cache.get(expectedCacheKey));
-	expect(cacheValue.value.statusMessage).toBe('OK');
+	expect(cacheValue.value.statusMessage).toBe("OK");
 	expect(response.statusCode).toBe(200);
 	cacheableRequest.removeHook(onResponse);
 });
 
-test('do not cache status message', async () => {
-	const endpoint = '/etag';
+test("do not cache status message", async () => {
+	const endpoint = "/etag";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
@@ -713,17 +735,18 @@ test('do not cache status message', async () => {
 	expect(cacheValue.value.statusMessage).toBeUndefined();
 	expect(response.statusCode).toBe(200);
 });
-test('socket within keepAlive Agent has been free\'d after cache revalidation', async () => {
-	const endpoint = '/last-modified';
+test("socket within keepAlive Agent has been free'd after cache revalidation", async () => {
+	const endpoint = "/last-modified";
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const agent = new Agent({
 		keepAlive: true,
 	});
-	const options = {agent, ...url.parse(s.url + endpoint)};
+	const options = { agent, ...url.parse(s.url + endpoint) };
 	try {
 		expect(Object.keys(agent.freeSockets)).toHaveLength(0);
+		// biome-ignore lint/correctness/noUnusedVariables: legacy
 		let response: any = await cacheableRequestHelper(options); // 200
 		expect(Object.keys(agent.sockets)).toHaveLength(0);
 		expect(Object.keys(agent.freeSockets)).toHaveLength(1);

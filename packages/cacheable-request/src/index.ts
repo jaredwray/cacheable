@@ -1,24 +1,31 @@
-
-import EventEmitter from 'node:events';
-import urlLib, {URL} from 'node:url';
-import crypto from 'node:crypto';
-import stream, {PassThrough as PassThroughStream} from 'node:stream';
-import {IncomingMessage} from 'node:http';
-import normalizeUrl from 'normalize-url';
-import {getStreamAsBuffer} from 'get-stream';
-import CachePolicy from 'http-cache-semantics';
-import Response from 'responselike';
-import {Keyv} from 'keyv';
-import mimicResponse from 'mimic-response';
+// biome-ignore-all lint/suspicious/noImplicitAnyLet: legacy format
+// biome-ignore-all lint/suspicious/noExplicitAny: legacy format
+import crypto from "node:crypto";
+import EventEmitter from "node:events";
+import type { IncomingMessage } from "node:http";
+import stream, { PassThrough as PassThroughStream } from "node:stream";
+import urlLib, { URL } from "node:url";
+import { getStreamAsBuffer } from "get-stream";
+import CachePolicy from "http-cache-semantics";
+import { Keyv } from "keyv";
+import mimicResponse from "mimic-response";
+import normalizeUrl from "normalize-url";
+import Response from "responselike";
 import {
-	RequestFn, CacheResponse, CacheValue, CacheableOptions, UrlOption, CacheError, RequestError, Emitter, CacheableRequestFunction,
-} from './types.js';
+	type CacheableOptions,
+	CacheError,
+	type CacheResponse,
+	type CacheValue,
+	type Emitter,
+	RequestError,
+	type RequestFn,
+	type UrlOption,
+} from "./types.js";
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 type Function_ = (...arguments_: any[]) => any;
 
 class CacheableRequest {
-	cache: Keyv = new Keyv<any>({namespace: 'cacheable-request'});
+	cache: Keyv = new Keyv<any>({ namespace: "cacheable-request" });
 	cacheRequest: RequestFn;
 	hooks: Map<string, Function_> = new Map<string, Function_>();
 	constructor(cacheRequest: RequestFn, cacheAdapter?: any) {
@@ -28,7 +35,7 @@ class CacheableRequest {
 			} else {
 				this.cache = new Keyv({
 					store: cacheAdapter,
-					namespace: 'cacheable-request',
+					namespace: "cacheable-request",
 				});
 			}
 		}
@@ -37,227 +44,262 @@ class CacheableRequest {
 		this.cacheRequest = cacheRequest;
 	}
 
-	request = () => (
-		options: CacheableOptions,
-		callback?: (response: CacheResponse) => void,
-	): Emitter => {
-		let url;
-		if (typeof options === 'string') {
-			url = normalizeUrlObject(parseWithWhatwg(options));
-			options = {};
-		} else if (options instanceof urlLib.URL) {
-			url = normalizeUrlObject(parseWithWhatwg(options.toString()));
-			options = {};
-		} else {
-			const [pathname, ...searchParts] = (options.path ?? '').split('?');
-			const search = searchParts.length > 0
-				? `?${searchParts.join('?')}`
-				: '';
-			url = normalizeUrlObject({...options, pathname, search});
-		}
-
-		options = {
-			headers: {},
-			method: 'GET',
-			cache: true,
-			strictTtl: false,
-			automaticFailover: false,
-			...options,
-			...urlObjectToRequestOptions(url),
-		};
-		options.headers = Object.fromEntries(entries(options.headers).map(([key, value]) => [(key as string).toLowerCase(), value]));
-		const ee: Emitter = new EventEmitter() as Emitter;
-		const normalizedUrlString = normalizeUrl(urlLib.format(url), {
-			stripWWW: false, // eslint-disable-line @typescript-eslint/naming-convention
-			removeTrailingSlash: false,
-			stripAuthentication: false,
-		});
-		let key = `${options.method}:${normalizedUrlString}`;
-		// POST, PATCH, and PUT requests may be cached, depending on the response
-		// cache-control headers. As a result, the body of the request should be
-		// added to the cache key in order to avoid collisions.
-		if (options.body && options.method !== undefined && ['POST', 'PATCH', 'PUT'].includes(options.method)) {
-			if (options.body instanceof stream.Readable) {
-				// Streamed bodies should completely skip the cache because they may
-				// or may not be hashable and in either case the stream would need to
-				// close before the cache key could be generated.
-				options.cache = false;
+	request =
+		() =>
+		(
+			options: CacheableOptions,
+			callback?: (response: CacheResponse) => void,
+		): Emitter => {
+			let url;
+			if (typeof options === "string") {
+				url = normalizeUrlObject(parseWithWhatwg(options));
+				options = {};
+			} else if (options instanceof urlLib.URL) {
+				url = normalizeUrlObject(parseWithWhatwg(options.toString()));
+				options = {};
 			} else {
-				key += `:${crypto.createHash('md5').update(options.body).digest('hex')}`;
+				const [pathname, ...searchParts] = (options.path ?? "").split("?");
+				const search =
+					searchParts.length > 0 ? `?${searchParts.join("?")}` : "";
+				url = normalizeUrlObject({ ...options, pathname, search });
 			}
-		}
 
-		let revalidate: any = false;
-		let madeRequest = false;
-		const makeRequest = (options_: any) => {
-			madeRequest = true;
-			let requestErrored = false;
-			let requestErrorCallback: (...arguments_: any[]) => void = () => {/* do nothing */};
+			options = {
+				headers: {},
+				method: "GET",
+				cache: true,
+				strictTtl: false,
+				automaticFailover: false,
+				...options,
+				...urlObjectToRequestOptions(url),
+			};
+			options.headers = Object.fromEntries(
+				entries(options.headers).map(([key, value]) => [
+					(key as string).toLowerCase(),
+					value,
+				]),
+			);
+			const ee: Emitter = new EventEmitter() as Emitter;
+			const normalizedUrlString = normalizeUrl(urlLib.format(url), {
+				stripWWW: false,
+				removeTrailingSlash: false,
+				stripAuthentication: false,
+			});
+			let key = `${options.method}:${normalizedUrlString}`;
+			// POST, PATCH, and PUT requests may be cached, depending on the response
+			// cache-control headers. As a result, the body of the request should be
+			// added to the cache key in order to avoid collisions.
+			if (
+				options.body &&
+				options.method !== undefined &&
+				["POST", "PATCH", "PUT"].includes(options.method)
+			) {
+				if (options.body instanceof stream.Readable) {
+					// Streamed bodies should completely skip the cache because they may
+					// or may not be hashable and in either case the stream would need to
+					// close before the cache key could be generated.
+					options.cache = false;
+				} else {
+					key += `:${crypto.createHash("md5").update(options.body).digest("hex")}`;
+				}
+			}
 
-			const requestErrorPromise = new Promise<void>(resolve => {
-				requestErrorCallback = () => {
-					if (!requestErrored) {
-						requestErrored = true;
-						resolve();
+			let revalidate: any = false;
+			let madeRequest = false;
+			const makeRequest = (options_: any) => {
+				madeRequest = true;
+				let requestErrored = false;
+				/* c8 ignore next 4 */
+				let requestErrorCallback: (...arguments_: any[]) => void = () => {
+					/* do nothing */
+				};
+
+				const requestErrorPromise = new Promise<void>((resolve) => {
+					requestErrorCallback = () => {
+						if (!requestErrored) {
+							requestErrored = true;
+							resolve();
+						}
+					};
+				});
+				const handler = async (response: any) => {
+					if (revalidate) {
+						response.status = response.statusCode;
+						const revalidatedPolicy = CachePolicy.fromObject(
+							revalidate.cachePolicy,
+						).revalidatedPolicy(options_, response);
+						if (!revalidatedPolicy.modified) {
+							response.resume();
+							await new Promise((resolve) => {
+								// Skipping 'error' handler cause 'error' event should't be emitted for 304 response
+								response.once("end", resolve);
+							});
+							const headers = convertHeaders(
+								revalidatedPolicy.policy.responseHeaders(),
+							);
+							response = new Response({
+								statusCode: revalidate.statusCode,
+								headers,
+								body: revalidate.body,
+								url: revalidate.url,
+							});
+							response.cachePolicy = revalidatedPolicy.policy;
+							response.fromCache = true;
+						}
+					}
+
+					if (!response.fromCache) {
+						response.cachePolicy = new CachePolicy(
+							options_,
+							response,
+							options_,
+						);
+						response.fromCache = false;
+					}
+
+					let clonedResponse;
+					if (options_.cache && response.cachePolicy.storable()) {
+						clonedResponse = cloneResponse(response);
+						(async () => {
+							try {
+								const bodyPromise = getStreamAsBuffer(response);
+								await Promise.race([
+									requestErrorPromise,
+									new Promise((resolve) => response.once("end", resolve)),
+									new Promise((resolve) => response.once("close", resolve)),
+								]);
+								const body = await bodyPromise;
+								let value: CacheValue = {
+									url: response.url,
+									statusCode: response.fromCache
+										? revalidate.statusCode
+										: response.statusCode,
+									body,
+									cachePolicy: response.cachePolicy.toObject(),
+								};
+								let ttl = options_.strictTtl
+									? response.cachePolicy.timeToLive()
+									: undefined;
+								if (options_.maxTtl) {
+									ttl = ttl ? Math.min(ttl, options_.maxTtl) : options_.maxTtl;
+								}
+
+								if (this.hooks.size > 0) {
+									for (const key_ of this.hooks.keys()) {
+										value = await this.runHook(key_, value, response);
+									}
+								}
+
+								await this.cache.set(key, value, ttl);
+							} catch (error: any) {
+								/* c8 ignore next 2 */
+								ee.emit("error", new CacheError(error));
+							}
+						})();
+					} else if (options_.cache && revalidate) {
+						(async () => {
+							try {
+								await this.cache.delete(key);
+							} catch (error: any) {
+								/* c8 ignore next 2 */
+								ee.emit("error", new CacheError(error));
+							}
+						})();
+					}
+
+					ee.emit("response", clonedResponse ?? response);
+					if (typeof callback === "function") {
+						callback(clonedResponse ?? response);
 					}
 				};
-			});
-			const handler = async (response: any) => {
-				if (revalidate) {
-					response.status = response.statusCode;
-					const revalidatedPolicy = CachePolicy.fromObject(revalidate.cachePolicy).revalidatedPolicy(options_, response);
-					if (!revalidatedPolicy.modified) {
-						response.resume();
-						await new Promise(resolve => {
-							// Skipping 'error' handler cause 'error' event should't be emitted for 304 response
-							response
-								.once('end', resolve);
+
+				try {
+					const request_ = this.cacheRequest(options_, handler);
+					request_.once("error", requestErrorCallback);
+					request_.once("abort", requestErrorCallback);
+					request_.once("destroy", requestErrorCallback);
+					ee.emit("request", request_);
+				} catch (error: any) {
+					ee.emit("error", new RequestError(error));
+				}
+			};
+
+			(async () => {
+				const get = async (options_: any) => {
+					await Promise.resolve();
+					const cacheEntry = options_.cache
+						? await this.cache.get(key)
+						: undefined;
+
+					if (cacheEntry === undefined && !options_.forceRefresh) {
+						makeRequest(options_);
+						return;
+					}
+
+					const policy = CachePolicy.fromObject(
+						(cacheEntry as CacheValue).cachePolicy,
+					);
+					if (
+						policy.satisfiesWithoutRevalidation(options_) &&
+						!options_.forceRefresh
+					) {
+						const headers = convertHeaders(policy.responseHeaders());
+						const bodyBuffer = (cacheEntry as CacheValue).body;
+						const body = Buffer.from(bodyBuffer as string);
+						const response: any = new Response({
+							statusCode: (cacheEntry as CacheValue).statusCode,
+							headers,
+							body,
+							url: (cacheEntry as CacheValue).url,
 						});
-						const headers = convertHeaders(revalidatedPolicy.policy.responseHeaders());
-						response = new Response({
-							statusCode: revalidate.statusCode, headers, body: revalidate.body, url: revalidate.url,
-						});
-						response.cachePolicy = revalidatedPolicy.policy;
+						response.cachePolicy = policy;
 						response.fromCache = true;
+						ee.emit("response", response);
+						if (typeof callback === "function") {
+							callback(response);
+						}
+					} else if (
+						policy.satisfiesWithoutRevalidation(options_) &&
+						Date.now() >= policy.timeToLive() &&
+						options_.forceRefresh
+					) {
+						await this.cache.delete(key);
+						options_.headers = policy.revalidationHeaders(options_);
+						makeRequest(options_);
+					} else {
+						revalidate = cacheEntry;
+						options_.headers = policy.revalidationHeaders(options_);
+						makeRequest(options_);
 					}
-				}
+				};
 
-				if (!response.fromCache) {
-					response.cachePolicy = new CachePolicy(options_, response, options_);
-					response.fromCache = false;
-				}
-
-				let clonedResponse;
-				if (options_.cache && response.cachePolicy.storable()) {
-					clonedResponse = cloneResponse(response);
-					(async () => {
-						try {
-							const bodyPromise = getStreamAsBuffer(response);
-							await Promise.race([
-								requestErrorPromise,
-								new Promise(resolve => response.once('end', resolve)), // eslint-disable-line no-promise-executor-return
-								new Promise(resolve => response.once('close', resolve)), // eslint-disable-line no-promise-executor-return
-							]);
-							const body = await bodyPromise;
-							let value: CacheValue = {
-								url: response.url,
-								statusCode: response.fromCache ? revalidate.statusCode : response.statusCode,
-								body,
-								cachePolicy: response.cachePolicy.toObject(),
-							};
-							let ttl = options_.strictTtl ? response.cachePolicy.timeToLive() : undefined;
-							if (options_.maxTtl) {
-								ttl = ttl ? Math.min(ttl, options_.maxTtl) : options_.maxTtl;
-							}
-
-							if (this.hooks.size > 0) {
-								/* eslint-disable no-await-in-loop */
-								for (const key_ of this.hooks.keys()) {
-									value = await this.runHook(key_, value, response);
-								}
-								/* eslint-enable no-await-in-loop */
-							}
-
-							await this.cache.set(key, value, ttl);
-						} catch (error: any) {
-							/* c8 ignore next 2 */
-							ee.emit('error', new CacheError(error));
-						}
-					})();
-				} else if (options_.cache && revalidate) {
-					(async () => {
-						try {
-							await this.cache.delete(key);
-						} catch (error: any) {
-							/* c8 ignore next 2 */
-							ee.emit('error', new CacheError(error));
-						}
-					})();
-				}
-
-				ee.emit('response', clonedResponse ?? response);
-				if (typeof callback === 'function') {
-					callback(clonedResponse ?? response);
-				}
-			};
-
-			try {
-				const request_ = this.cacheRequest(options_, handler);
-				request_.once('error', requestErrorCallback);
-				// eslint-disable-next-line @typescript-eslint/no-deprecated
-				request_.once('abort', requestErrorCallback);
-				request_.once('destroy', requestErrorCallback);
-				ee.emit('request', request_);
-			} catch (error: any) {
-				ee.emit('error', new RequestError(error));
-			}
-		};
-
-		(async () => {
-			const get = async (options_: any) => {
-				await Promise.resolve();
-				const cacheEntry = options_.cache ? await this.cache.get(key) : undefined;
-
-				if (cacheEntry === undefined && !options_.forceRefresh) {
-					makeRequest(options_);
-					return;
-				}
-
-				const policy = CachePolicy.fromObject((cacheEntry as CacheValue).cachePolicy);
-				if (policy.satisfiesWithoutRevalidation(options_) && !options_.forceRefresh) {
-					const headers = convertHeaders(policy.responseHeaders());
-					const bodyBuffer = (cacheEntry as CacheValue).body;
-					// eslint-disable-next-line n/prefer-global/buffer
-					const body = Buffer.from(bodyBuffer as string);
-					const response: any = new Response({
-						statusCode: (cacheEntry as CacheValue).statusCode,
-						headers,
-						body,
-						url: (cacheEntry as CacheValue).url,
+				const errorHandler = (error: Error) =>
+					ee.emit("error", new CacheError(error));
+				if (this.cache instanceof Keyv) {
+					const cachek = this.cache;
+					cachek.once("error", errorHandler);
+					ee.on("error", () => {
+						cachek.removeListener("error", errorHandler);
 					});
-					response.cachePolicy = policy;
-					response.fromCache = true;
-					ee.emit('response', response);
-					if (typeof callback === 'function') {
-						callback(response);
+					ee.on("response", () => {
+						cachek.removeListener("error", errorHandler);
+					});
+				}
+
+				try {
+					await get(options);
+				} catch (error: any) {
+					/* c8 ignore next 3 */
+					if (options.automaticFailover && !madeRequest) {
+						makeRequest(options);
 					}
-				} else if (policy.satisfiesWithoutRevalidation(options_) && Date.now() >= policy.timeToLive() && options_.forceRefresh) {
-					await this.cache.delete(key);
-					options_.headers = policy.revalidationHeaders(options_);
-					makeRequest(options_);
-				} else {
-					revalidate = cacheEntry;
-					options_.headers = policy.revalidationHeaders(options_);
-					makeRequest(options_);
+
+					ee.emit("error", new CacheError(error));
 				}
-			};
+			})();
 
-			const errorHandler = (error: Error) => ee.emit('error', new CacheError(error));
-			if (this.cache instanceof Keyv) {
-				const cachek = this.cache;
-				cachek.once('error', errorHandler);
-				ee.on('error', () => {
-					cachek.removeListener('error', errorHandler);
-				});
-				ee.on('response', () => {
-					cachek.removeListener('error', errorHandler);
-				});
-			}
-
-			try {
-				await get(options);
-			} catch (error: any) {
-				/* c8 ignore next 3 */
-				if (options.automaticFailover && !madeRequest) {
-					makeRequest(options);
-				}
-
-				ee.emit('error', new CacheError(error));
-			}
-		})();
-
-		return ee;
-	};
+			return ee;
+		};
 
 	addHook = (name: string, function_: Function_) => {
 		if (!this.hooks.has(name)) {
@@ -269,38 +311,41 @@ class CacheableRequest {
 
 	getHook = (name: string) => this.hooks.get(name);
 
-	runHook = async (name: string, ...arguments_: any[]): Promise<CacheValue> => this.hooks.get(name)?.(...arguments_);
+	runHook = async (name: string, ...arguments_: any[]): Promise<CacheValue> =>
+		this.hooks.get(name)?.(...arguments_);
 }
 
-const entries = Object.entries as <T>(object: T) => Array<[keyof T, T[keyof T]]>;
+const entries = Object.entries as <T>(
+	object: T,
+) => Array<[keyof T, T[keyof T]]>;
 
 const cloneResponse = (response: IncomingMessage) => {
-	const clone = new PassThroughStream({autoDestroy: false});
+	const clone = new PassThroughStream({ autoDestroy: false });
 	mimicResponse(response, clone);
 
 	return response.pipe(clone);
 };
 
 const urlObjectToRequestOptions = (url: any) => {
-	const options: UrlOption = {...url};
-	options.path = `${url.pathname || '/'}${url.search || ''}`;
+	const options: UrlOption = { ...url };
+	options.path = `${url.pathname || "/"}${url.search || ""}`;
 	delete options.pathname;
 	delete options.search;
 	return options;
 };
 
 const normalizeUrlObject = (url: any) =>
-// If url was parsed by url.parse or new URL:
-// - hostname will be set
-// - host will be hostname[:port]
-// - port will be set if it was explicit in the parsed string
-// Otherwise, url was from request options:
-// - hostname or host may be set
-// - host shall not have port encoded
+	// If url was parsed by url.parse or new URL:
+	// - hostname will be set
+	// - host will be hostname[:port]
+	// - port will be set if it was explicit in the parsed string
+	// Otherwise, url was from request options:
+	// - hostname or host may be set
+	// - host shall not have port encoded
 	({
 		protocol: url.protocol,
 		auth: url.auth,
-		hostname: url.hostname || url.host || 'localhost',
+		hostname: url.hostname || url.host || "localhost",
 		port: url.port,
 		pathname: url.pathname,
 		search: url.search,
@@ -323,9 +368,7 @@ export const parseWithWhatwg = (raw: string) => {
 		protocol: u.protocol, // E.g. 'https:'
 		slashes: true, // Always true for WHATWG URLs
 		/* c8 ignore next 3 */
-		auth: u.username || u.password
-			? `${u.username}:${u.password}`
-			: undefined,
+		auth: u.username || u.password ? `${u.username}:${u.password}` : undefined,
 		host: u.host, // E.g. 'example.com:8080'
 		port: u.port, // E.g. '8080'
 		hostname: u.hostname, // E.g. 'example.com'
@@ -339,5 +382,5 @@ export const parseWithWhatwg = (raw: string) => {
 };
 
 export default CacheableRequest;
-export * from './types.js';
-export const onResponse = 'onResponse';
+export * from "./types.js";
+export const onResponse = "onResponse";

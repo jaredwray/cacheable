@@ -1,29 +1,34 @@
-import {Keyv, type StoredDataRaw, type KeyvStoreAdapter} from 'keyv';
-import {Hookified} from 'hookified';
-import {shorthandToMilliseconds} from './shorthand-time.js';
-import {createKeyv} from './keyv-memory.js';
-import {CacheableStats} from './stats.js';
-import {type CacheableItem} from './cacheable-item-types.js';
-import {hash} from './hash.js';
+import { Hookified } from "hookified";
+import { Keyv, type KeyvStoreAdapter, type StoredDataRaw } from "keyv";
+import type { CacheableItem } from "./cacheable-item-types.js";
+import { hash } from "./hash.js";
+import { createKeyv } from "./keyv-memory.js";
+import { shorthandToMilliseconds } from "./shorthand-time.js";
+import { CacheableStats } from "./stats.js";
+import { calculateTtlFromExpiration, getCascadingTtl } from "./ttl.js";
 import {
-	getOrSet, type GetOrSetKey, type GetOrSetFunctionOptions, type GetOrSetOptions, wrap, type WrapFunctionOptions,
-} from './wrap.js';
-import {getCascadingTtl, calculateTtlFromExpiration} from './ttl.js';
+	type GetOrSetFunctionOptions,
+	type GetOrSetKey,
+	type GetOrSetOptions,
+	getOrSet,
+	type WrapFunctionOptions,
+	wrap,
+} from "./wrap.js";
 
 export enum CacheableHooks {
-	BEFORE_SET = 'BEFORE_SET',
-	AFTER_SET = 'AFTER_SET',
-	BEFORE_SET_MANY = 'BEFORE_SET_MANY',
-	AFTER_SET_MANY = 'AFTER_SET_MANY',
-	BEFORE_GET = 'BEFORE_GET',
-	AFTER_GET = 'AFTER_GET',
-	BEFORE_GET_MANY = 'BEFORE_GET_MANY',
-	AFTER_GET_MANY = 'AFTER_GET_MANY',
-	BEFORE_SECONDARY_SETS_PRIMARY = 'BEFORE_SECONDARY_SETS_PRIMARY',
+	BEFORE_SET = "BEFORE_SET",
+	AFTER_SET = "AFTER_SET",
+	BEFORE_SET_MANY = "BEFORE_SET_MANY",
+	AFTER_SET_MANY = "AFTER_SET_MANY",
+	BEFORE_GET = "BEFORE_GET",
+	AFTER_GET = "AFTER_GET",
+	BEFORE_GET_MANY = "BEFORE_GET_MANY",
+	AFTER_GET_MANY = "AFTER_GET_MANY",
+	BEFORE_SECONDARY_SETS_PRIMARY = "BEFORE_SECONDARY_SETS_PRIMARY",
 }
 
 export enum CacheableEvents {
-	ERROR = 'error',
+	ERROR = "error",
 }
 
 export type CacheableOptions = {
@@ -66,7 +71,7 @@ export class Cacheable extends Hookified {
 	private _secondary: Keyv | undefined;
 	private _nonBlocking = false;
 	private _ttl?: number | string;
-	private readonly _stats = new CacheableStats({enabled: false});
+	private readonly _stats = new CacheableStats({ enabled: false });
 	private _namespace?: string | (() => string);
 	private _cacheId: string = Math.random().toString(36).slice(2);
 
@@ -263,7 +268,6 @@ export class Cacheable extends Hookified {
 	 * @returns {void}
 	 */
 	public setPrimary(primary: Keyv | KeyvStoreAdapter): void {
-		// eslint-disable-next-line unicorn/prefer-ternary
 		if (this.isKeyvInstance(primary)) {
 			// If the primary is already a Keyv instance, we can use it directly
 			this._primary = primary as Keyv;
@@ -272,7 +276,7 @@ export class Cacheable extends Hookified {
 		}
 
 		/* c8 ignore next 3 */
-		this._primary.on('error', (error: unknown) => {
+		this._primary.on("error", (error: unknown) => {
 			this.emit(CacheableEvents.ERROR, error);
 		});
 	}
@@ -283,7 +287,6 @@ export class Cacheable extends Hookified {
 	 * @returns {void}
 	 */
 	public setSecondary(secondary: Keyv | KeyvStoreAdapter): void {
-		// eslint-disable-next-line unicorn/prefer-ternary
 		if (this.isKeyvInstance(secondary)) {
 			// If the secondary is already a Keyv instance, we can use it directly
 			this._secondary = secondary as Keyv;
@@ -292,11 +295,12 @@ export class Cacheable extends Hookified {
 		}
 
 		/* c8 ignore next 3 */
-		this._secondary.on('error', (error: unknown) => {
+		this._secondary.on("error", (error: unknown) => {
 			this.emit(CacheableEvents.ERROR, error);
 		});
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	public isKeyvInstance(keyv: any): boolean {
 		// Check if the object is an instance of Keyv
 		if (keyv instanceof Keyv) {
@@ -304,12 +308,26 @@ export class Cacheable extends Hookified {
 		}
 
 		// Check if the object has the Keyv methods and properties
-		const keyvMethods = ['generateIterator', 'get', 'getMany', 'set', 'setMany', 'delete', 'deleteMany', 'has', 'hasMany', 'clear', 'disconnect', 'serialize', 'deserialize'];
-		return keyvMethods.every(method => typeof keyv[method] === 'function');
+		const keyvMethods = [
+			"generateIterator",
+			"get",
+			"getMany",
+			"set",
+			"setMany",
+			"delete",
+			"deleteMany",
+			"has",
+			"hasMany",
+			"clear",
+			"disconnect",
+			"serialize",
+			"deserialize",
+		];
+		return keyvMethods.every((method) => typeof keyv[method] === "function");
 	}
 
 	public getNameSpace(): string | undefined {
-		if (typeof this._namespace === 'function') {
+		if (typeof this._namespace === "function") {
 			return this._namespace();
 		}
 
@@ -317,28 +335,38 @@ export class Cacheable extends Hookified {
 	}
 
 	/**
-   * Retrieves an entry from the cache, with an optional “raw” mode.
-   *
-   * Checks the primary store first; if not found and a secondary store is configured,
-   * it will fetch from the secondary, repopulate the primary, and return the result.
-   *
-   * @typeParam T - The expected type of the stored value.
-   * @param {string} key - The cache key to retrieve.
-   * @param {{ raw?: boolean }} [opts] - Options for retrieval.
-   * @param {boolean} [opts.raw=false] - If `true`, returns the full raw data object
-   *                                      (`StoredDataRaw<T>`); otherwise returns just the value.
-   * @returns {Promise<T | StoredDataRaw<T> | undefined>}
-   *   A promise that resolves to the cached value (or raw data) if found, or `undefined`.
-   */
-	public async get<T>(key: string, options?: {raw?: false}): Promise<T | undefined>;
-	public async get<T>(key: string, options: {raw: true}): Promise<StoredDataRaw<T>>;
-	public async get<T>(key: string, options: {raw?: boolean} = {}): Promise<T | StoredDataRaw<T>> {
+	 * Retrieves an entry from the cache, with an optional “raw” mode.
+	 *
+	 * Checks the primary store first; if not found and a secondary store is configured,
+	 * it will fetch from the secondary, repopulate the primary, and return the result.
+	 *
+	 * @typeParam T - The expected type of the stored value.
+	 * @param {string} key - The cache key to retrieve.
+	 * @param {{ raw?: boolean }} [opts] - Options for retrieval.
+	 * @param {boolean} [opts.raw=false] - If `true`, returns the full raw data object
+	 *                                      (`StoredDataRaw<T>`); otherwise returns just the value.
+	 * @returns {Promise<T | StoredDataRaw<T> | undefined>}
+	 *   A promise that resolves to the cached value (or raw data) if found, or `undefined`.
+	 */
+	public async get<T>(
+		key: string,
+		options?: { raw?: false },
+	): Promise<T | undefined>;
+	public async get<T>(
+		key: string,
+		options: { raw: true },
+	): Promise<StoredDataRaw<T>>;
+	public async get<T>(
+		key: string,
+		options: { raw?: boolean } = {},
+	): Promise<T | StoredDataRaw<T>> {
 		let result: StoredDataRaw<T>;
-		const {raw = false} = options;
+		const { raw = false } = options;
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
-			result = await this._primary.get(key, {raw: true});
+			result = await this._primary.get(key, { raw: true });
+			// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 			let ttl;
 			if (!result && this._secondary) {
 				const secondaryResult = await this.getSecondaryRawResults<T>(key);
@@ -347,13 +375,16 @@ export class Cacheable extends Hookified {
 					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 					const expires = secondaryResult.expires ?? undefined;
 					ttl = calculateTtlFromExpiration(cascadeTtl, expires);
-					const setItem = {key, value: result.value, ttl};
-					await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
+					const setItem = { key, value: result.value, ttl };
+					await this.hook(
+						CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
+						setItem,
+					);
 					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
 				}
 			}
 
-			await this.hook(CacheableHooks.AFTER_GET, {key, result, ttl});
+			await this.hook(CacheableHooks.AFTER_GET, { key, result, ttl });
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
@@ -372,29 +403,38 @@ export class Cacheable extends Hookified {
 	}
 
 	/**
-   * Retrieves multiple entries from the cache.
-   * Checks the primary store for each key; if a key is missing and a secondary store is configured,
-   * it will fetch from the secondary store, repopulate the primary store, and return the results.
-   *
-   * @typeParam T - The expected type of the stored values.
-   * @param {string[]} keys - The cache keys to retrieve.
-   * @param {{ raw?: boolean }} [options] - Options for retrieval.
-   * @param {boolean} [options.raw=false] - When `true`, returns an array of raw data objects (`StoredDataRaw<T>`);
-   *                                        when `false`, returns an array of unwrapped values (`T`) or `undefined` for misses.
-   * @returns {Promise<Array<T | undefined>> | Promise<Array<StoredDataRaw<T>>>}
-   *   A promise that resolves to:
-   *   - `Array<T | undefined>` if `raw` is `false` (default).
-   *   - `Array<StoredDataRaw<T>>` if `raw` is `true`.
-   */
-	public async getMany<T>(keys: string[], options?: {raw?: false}): Promise<Array<T | undefined>>;
-	public async getMany<T>(keys: string[], options: {raw: true}): Promise<Array<StoredDataRaw<T>>>;
-	public async getMany<T>(keys: string[], options: {raw?: boolean} = {}): Promise<Array<T | StoredDataRaw<T>>> {
+	 * Retrieves multiple entries from the cache.
+	 * Checks the primary store for each key; if a key is missing and a secondary store is configured,
+	 * it will fetch from the secondary store, repopulate the primary store, and return the results.
+	 *
+	 * @typeParam T - The expected type of the stored values.
+	 * @param {string[]} keys - The cache keys to retrieve.
+	 * @param {{ raw?: boolean }} [options] - Options for retrieval.
+	 * @param {boolean} [options.raw=false] - When `true`, returns an array of raw data objects (`StoredDataRaw<T>`);
+	 *                                        when `false`, returns an array of unwrapped values (`T`) or `undefined` for misses.
+	 * @returns {Promise<Array<T | undefined>> | Promise<Array<StoredDataRaw<T>>>}
+	 *   A promise that resolves to:
+	 *   - `Array<T | undefined>` if `raw` is `false` (default).
+	 *   - `Array<StoredDataRaw<T>>` if `raw` is `true`.
+	 */
+	public async getMany<T>(
+		keys: string[],
+		options?: { raw?: false },
+	): Promise<Array<T | undefined>>;
+	public async getMany<T>(
+		keys: string[],
+		options: { raw: true },
+	): Promise<Array<StoredDataRaw<T>>>;
+	public async getMany<T>(
+		keys: string[],
+		options: { raw?: boolean } = {},
+	): Promise<Array<T | StoredDataRaw<T>>> {
 		let result: Array<StoredDataRaw<T>> = [];
-		const {raw = false} = options;
+		const { raw = false } = options;
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET_MANY, keys);
-			result = await this._primary.get(keys, {raw: true});
+			result = await this._primary.get(keys, { raw: true });
 			if (this._secondary) {
 				const missingKeys = [];
 				for (const [i, key] of keys.entries()) {
@@ -403,34 +443,36 @@ export class Cacheable extends Hookified {
 					}
 				}
 
-				const secondaryResults = await this.getManySecondaryRawResults<T>(missingKeys);
+				const secondaryResults =
+					await this.getManySecondaryRawResults<T>(missingKeys);
 
-				// eslint-disable-next-line @typescript-eslint/await-thenable
 				for await (const [i, key] of keys.entries()) {
 					if (!result[i] && secondaryResults[i]) {
 						result[i] = secondaryResults[i];
 
 						const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 
-						let {expires} = secondaryResults[i];
+						let { expires } = secondaryResults[i];
 
 						/* c8 ignore next 4 */
-						// eslint-disable-next-line max-depth
 						if (expires === null) {
 							expires = undefined;
 						}
 
 						const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 
-						const setItem = {key, value: result[i].value, ttl};
+						const setItem = { key, value: result[i].value, ttl };
 
-						await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
+						await this.hook(
+							CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
+							setItem,
+						);
 						await this._primary.set(setItem.key, setItem.value, setItem.ttl);
 					}
 				}
 			}
 
-			await this.hook(CacheableHooks.AFTER_GET_MANY, {keys, result});
+			await this.hook(CacheableHooks.AFTER_GET_MANY, { keys, result });
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
@@ -447,7 +489,7 @@ export class Cacheable extends Hookified {
 			this.stats.incrementGets();
 		}
 
-		return raw ? result : result.map(item => item?.value);
+		return raw ? result : result.map((item) => item?.value);
 	}
 
 	/**
@@ -458,11 +500,15 @@ export class Cacheable extends Hookified {
 	 * format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means that it will use the default time-to-live.
 	 * @returns {boolean} Whether the value was set
 	 */
-	public async set<T>(key: string, value: T, ttl?: number | string): Promise<boolean> {
+	public async set<T>(
+		key: string,
+		value: T,
+		ttl?: number | string,
+	): Promise<boolean> {
 		let result = false;
 		const finalTtl = shorthandToMilliseconds(ttl ?? this._ttl);
 		try {
-			const item = {key, value, ttl: finalTtl};
+			const item = { key, value, ttl: finalTtl };
 			await this.hook(CacheableHooks.BEFORE_SET, item);
 			const promises = [];
 			promises.push(this._primary.set(item.key, item.value, item.ttl));
@@ -504,7 +550,6 @@ export class Cacheable extends Hookified {
 			result = await this.setManyKeyv(this._primary, items);
 			if (this._secondary) {
 				if (this._nonBlocking) {
-					// eslint-disable-next-line @typescript-eslint/no-floating-promises
 					this.setManyKeyv(this._secondary, items);
 				} else {
 					await this.setManyKeyv(this._secondary, items);
@@ -589,7 +634,7 @@ export class Cacheable extends Hookified {
 
 		if (missingKeys.length > 0 && this._secondary) {
 			const secondary = await this.hasManyKeyv(this._secondary, keys);
-			for (const [i, key] of keys.entries()) {
+			for (const [i, _key] of keys.entries()) {
 				if (!result[i] && secondary[i]) {
 					result[i] = secondary[i];
 				}
@@ -639,7 +684,7 @@ export class Cacheable extends Hookified {
 	 */
 	public async deleteMany(keys: string[]): Promise<boolean> {
 		if (this.stats.enabled) {
-			const statResult = await this._primary.get(keys) as unknown;
+			const statResult = (await this._primary.get(keys)) as unknown;
 			for (const key of keys) {
 				this.stats.decreaseKSize(key);
 				this.stats.decreaseVSize(statResult);
@@ -651,7 +696,6 @@ export class Cacheable extends Hookified {
 		const result = await this.deleteManyKeyv(this._primary, keys);
 		if (this._secondary) {
 			if (this._nonBlocking) {
-				// eslint-disable-next-line @typescript-eslint/no-floating-promises
 				this.deleteManyKeyv(this._secondary, keys);
 			} else {
 				await this.deleteManyKeyv(this._secondary, keys);
@@ -702,7 +746,11 @@ export class Cacheable extends Hookified {
 	 * @param {WrapOptions} [options] The options for the wrap function
 	 * @returns {Function} The wrapped function
 	 */
-	public wrap<T, Arguments extends any[]>(function_: (...arguments_: Arguments) => T, options?: WrapFunctionOptions): (...arguments_: Arguments) => T {
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	public wrap<T, Arguments extends any[]>(
+		function_: (...arguments_: Arguments) => T,
+		options?: WrapFunctionOptions,
+	): (...arguments_: Arguments) => T {
 		const wrapOptions = {
 			ttl: options?.ttl ?? this._ttl,
 			keyPrefix: options?.keyPrefix,
@@ -723,7 +771,11 @@ export class Cacheable extends Hookified {
 	 * @param {GetOrSetFunctionOptions} [options] - Optional settings for caching, such as the time to live (TTL) or whether to cache errors.
 	 * @return {Promise<T | undefined>} - A promise that resolves to the cached or newly computed value, or undefined if an error occurs and caching is not configured for errors.
 	 */
-	public async getOrSet<T>(key: GetOrSetKey, function_: () => Promise<T>, options?: GetOrSetFunctionOptions): Promise<T | undefined> {
+	public async getOrSet<T>(
+		key: GetOrSetKey,
+		function_: () => Promise<T>,
+		options?: GetOrSetFunctionOptions,
+	): Promise<T | undefined> {
 		const getOrSetOptions: GetOrSetOptions = {
 			cache: this,
 			cacheId: this._cacheId,
@@ -740,24 +792,30 @@ export class Cacheable extends Hookified {
 	 * @param {string} algorithm the hash algorithm to use. The default is 'sha256'
 	 * @returns {string} the hash of the object
 	 */
-	public hash(object: any, algorithm = 'sha256'): string {
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	public hash(object: any, algorithm = "sha256"): string {
 		return hash(object, algorithm);
 	}
 
-	private async getSecondaryRawResults<T>(key: string): Promise<StoredDataRaw<T> | undefined> {
+	private async getSecondaryRawResults<T>(
+		key: string,
+	): Promise<StoredDataRaw<T> | undefined> {
+		// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 		let result;
 		if (this._secondary) {
-			result = await this._secondary.get(key, {raw: true});
+			result = await this._secondary.get(key, { raw: true });
 		}
 
 		return result;
 	}
 
-	private async getManySecondaryRawResults<T>(keys: string[]): Promise<Array<StoredDataRaw<T>>> {
-		let result = new Array<StoredDataRaw<T>>();
+	private async getManySecondaryRawResults<T>(
+		keys: string[],
+	): Promise<Array<StoredDataRaw<T>>> {
+		let result: StoredDataRaw<T>[] = [];
 
 		if (this._secondary) {
-			result = await this._secondary.get(keys, {raw: true});
+			result = await this._secondary.get(keys, { raw: true });
 		}
 
 		return result;
@@ -774,7 +832,10 @@ export class Cacheable extends Hookified {
 		return true;
 	}
 
-	private async setManyKeyv(keyv: Keyv, items: CacheableItem[]): Promise<boolean> {
+	private async setManyKeyv(
+		keyv: Keyv,
+		items: CacheableItem[],
+	): Promise<boolean> {
 		const promises = [];
 		for (const item of items) {
 			const finalTtl = shorthandToMilliseconds(item.ttl ?? this._ttl);
@@ -796,7 +857,7 @@ export class Cacheable extends Hookified {
 	}
 
 	private setTtl(ttl: number | string | undefined): void {
-		if (typeof ttl === 'string' || ttl === undefined) {
+		if (typeof ttl === "string" || ttl === undefined) {
 			this._ttl = ttl;
 		} else if (ttl > 0) {
 			this._ttl = ttl;
@@ -806,14 +867,19 @@ export class Cacheable extends Hookified {
 	}
 }
 
-export {CacheableStats} from './stats.js';
-export {CacheableMemory, type CacheableMemoryOptions} from './memory.js';
-export {KeyvCacheableMemory, createKeyv} from './keyv-memory.js';
-export {shorthandToMilliseconds, shorthandToTime} from './shorthand-time.js';
-export type {CacheableItem} from './cacheable-item-types.js';
+export { Keyv, KeyvHooks, type KeyvOptions, type KeyvStoreAdapter } from "keyv";
+export type { CacheableItem } from "./cacheable-item-types.js";
+export { createKeyv, KeyvCacheableMemory } from "./keyv-memory.js";
+export { CacheableMemory, type CacheableMemoryOptions } from "./memory.js";
+export { shorthandToMilliseconds, shorthandToTime } from "./shorthand-time.js";
+export { CacheableStats } from "./stats.js";
 export {
-	type KeyvStoreAdapter, type KeyvOptions, KeyvHooks, Keyv,
-} from 'keyv';
-export {
-	wrap, wrapSync, getOrSet, type GetOrSetFunctionOptions, type GetOrSetKey, type GetOrSetOptions, type WrapOptions, type WrapSyncOptions,
-} from './wrap.js';
+	type GetOrSetFunctionOptions,
+	type GetOrSetKey,
+	type GetOrSetOptions,
+	getOrSet,
+	type WrapOptions,
+	type WrapSyncOptions,
+	wrap,
+	wrapSync,
+} from "./wrap.js";

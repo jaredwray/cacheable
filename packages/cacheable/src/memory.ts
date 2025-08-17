@@ -1,18 +1,25 @@
-import {Hookified} from 'hookified';
-import {wrapSync, type WrapFunctionOptions} from './wrap.js';
-import {DoublyLinkedList} from './memory-lru.js';
-import {shorthandToTime} from './shorthand-time.js';
-import {type CacheableStoreItem, type CacheableItem} from './cacheable-item-types.js';
-import {djb2Hash, hashToNumber} from './hash.js';
+// biome-ignore-all lint/suspicious/noExplicitAny: type format
+import { Hookified } from "hookified";
+import type {
+	CacheableItem,
+	CacheableStoreItem,
+} from "./cacheable-item-types.js";
+import { djb2Hash, hashToNumber } from "./hash.js";
+import { DoublyLinkedList } from "./memory-lru.js";
+import { shorthandToTime } from "./shorthand-time.js";
+import { type WrapFunctionOptions, wrapSync } from "./wrap.js";
 
 export enum StoreHashAlgorithm {
-	SHA256 = 'sha256',
-	SHA1 = 'sha1',
-	MD5 = 'md5',
-	djb2Hash = 'djb2Hash',
+	SHA256 = "sha256",
+	SHA1 = "sha1",
+	MD5 = "md5",
+	djb2Hash = "djb2Hash",
 }
 
-export type StoreHashAlgorithmFunction = ((key: string, storeHashSize: number) => number);
+export type StoreHashAlgorithmFunction = (
+	key: string,
+	storeHashSize: number,
+) => number;
 
 /**
  * @typedef {Object} CacheableMemoryOptions
@@ -30,7 +37,9 @@ export type CacheableMemoryOptions = {
 	lruSize?: number;
 	checkInterval?: number;
 	storeHashSize?: number;
-	storeHashAlgorithm?: StoreHashAlgorithm | ((key: string, storeHashSize: number) => number);
+	storeHashAlgorithm?:
+		| StoreHashAlgorithm
+		| ((key: string, storeHashSize: number) => number);
 };
 
 export type SetOptions = {
@@ -44,8 +53,14 @@ export const maximumMapSize = 16_777_216; // Maximum size of a Map is 16,777,216
 export class CacheableMemory extends Hookified {
 	private _lru = new DoublyLinkedList<string>();
 	private _storeHashSize = defaultStoreHashSize;
-	private _storeHashAlgorithm: StoreHashAlgorithm | ((key: string, storeHashSize: number) => number) = StoreHashAlgorithm.djb2Hash; // Default is djb2Hash
-	private _store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
+	private _storeHashAlgorithm:
+		| StoreHashAlgorithm
+		| ((key: string, storeHashSize: number) => number) =
+		StoreHashAlgorithm.djb2Hash; // Default is djb2Hash
+	private _store = Array.from(
+		{ length: this._storeHashSize },
+		() => new Map<string, CacheableStoreItem>(),
+	);
 	private _ttl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
 	private _lruSize = 0; // Turned off by default
@@ -73,7 +88,12 @@ export class CacheableMemory extends Hookified {
 
 		if (options?.lruSize) {
 			if (options.lruSize > maximumMapSize) {
-				this.emit('error', new Error(`LRU size cannot be larger than ${maximumMapSize} due to Map limitations.`));
+				this.emit(
+					"error",
+					new Error(
+						`LRU size cannot be larger than ${maximumMapSize} due to Map limitations.`,
+					),
+				);
 			} else {
 				this._lruSize = options.lruSize;
 			}
@@ -87,7 +107,10 @@ export class CacheableMemory extends Hookified {
 			this._storeHashAlgorithm = options.storeHashAlgorithm;
 		}
 
-		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
+		this._store = Array.from(
+			{ length: this._storeHashSize },
+			() => new Map<string, CacheableStoreItem>(),
+		);
 
 		this.startIntervalCheck();
 	}
@@ -138,7 +161,12 @@ export class CacheableMemory extends Hookified {
 	 */
 	public set lruSize(value: number) {
 		if (value > maximumMapSize) {
-			this.emit('error', new Error(`LRU size cannot be larger than ${maximumMapSize} due to Map limitations.`));
+			this.emit(
+				"error",
+				new Error(
+					`LRU size cannot be larger than ${maximumMapSize} due to Map limitations.`,
+				),
+			);
 			return;
 		}
 
@@ -200,14 +228,19 @@ export class CacheableMemory extends Hookified {
 
 		this._storeHashSize = value;
 
-		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
+		this._store = Array.from(
+			{ length: this._storeHashSize },
+			() => new Map<string, CacheableStoreItem>(),
+		);
 	}
 
 	/**
 	 * Gets the store hash algorithm
 	 * @returns {StoreHashAlgorithm | StoreHashAlgorithmFunction} - The store hash algorithm
 	 */
-	public get storeHashAlgorithm(): StoreHashAlgorithm | StoreHashAlgorithmFunction {
+	public get storeHashAlgorithm():
+		| StoreHashAlgorithm
+		| StoreHashAlgorithmFunction {
 		return this._storeHashAlgorithm;
 	}
 
@@ -215,7 +248,9 @@ export class CacheableMemory extends Hookified {
 	 * Sets the store hash algorithm. This will recreate the store and all data will be cleared
 	 * @param {StoreHashAlgorithm | StoreHashAlgorithmFunction} value - The store hash algorithm
 	 */
-	public set storeHashAlgorithm(value: StoreHashAlgorithm | StoreHashAlgorithmFunction) {
+	public set storeHashAlgorithm(value:
+		| StoreHashAlgorithm
+		| StoreHashAlgorithmFunction) {
 		this._storeHashAlgorithm = value;
 	}
 
@@ -224,7 +259,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {IterableIterator<string>} - The keys
 	 */
 	public get keys(): IterableIterator<string> {
-		const keys = new Array<string>();
+		const keys: string[] = [];
 		for (const store of this._store) {
 			for (const key of store.keys()) {
 				const item = store.get(key);
@@ -245,7 +280,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {IterableIterator<CacheableStoreItem>} - The items
 	 */
 	public get items(): IterableIterator<CacheableStoreItem> {
-		const items = new Array<CacheableStoreItem>();
+		const items: CacheableStoreItem[] = [];
 		for (const store of this._store) {
 			for (const item of store.values()) {
 				if (this.hasExpired(item)) {
@@ -275,6 +310,7 @@ export class CacheableMemory extends Hookified {
 	 */
 	public get<T>(key: string): T | undefined {
 		const store = this.getStore(key);
+		// biome-ignore lint/style/noNonNullAssertion: need to fix
 		const item = store.get(key)!;
 		if (!item) {
 			return undefined;
@@ -300,7 +336,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {T[]} - The values of the keys
 	 */
 	public getMany<T>(keys: string[]): T[] {
-		const result = new Array<T>();
+		const result: T[] = [];
 		for (const key of keys) {
 			result.push(this.get(key) as T);
 		}
@@ -315,6 +351,7 @@ export class CacheableMemory extends Hookified {
 	 */
 	public getRaw(key: string): CacheableStoreItem | undefined {
 		const store = this.getStore(key);
+		// biome-ignore lint/style/noNonNullAssertion: need to fix
 		const item = store.get(key)!;
 		if (!item) {
 			return undefined;
@@ -335,7 +372,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {CacheableStoreItem[]} - The raw values of the keys
 	 */
 	public getManyRaw(keys: string[]): Array<CacheableStoreItem | undefined> {
-		const result = new Array<CacheableStoreItem | undefined>();
+		const result: (CacheableStoreItem | undefined)[] = [];
 		for (const key of keys) {
 			result.push(this.getRaw(key));
 		}
@@ -352,13 +389,19 @@ export class CacheableMemory extends Hookified {
 	 * If you set undefined, it will use the default time-to-live. If both are undefined then it will not have a time-to-live.
 	 * @returns {void}
 	 */
-	public set(key: string, value: any, ttl?: number | string | SetOptions): void {
+	public set(
+		key: string,
+		value: any,
+		ttl?: number | string | SetOptions,
+	): void {
 		const store = this.getStore(key);
+		// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 		let expires;
 		if (ttl !== undefined || this._ttl !== undefined) {
-			if (typeof ttl === 'object') {
+			if (typeof ttl === "object") {
 				if (ttl.expire) {
-					expires = typeof ttl.expire === 'number' ? ttl.expire : ttl.expire.getTime();
+					expires =
+						typeof ttl.expire === "number" ? ttl.expire : ttl.expire.getTime();
 				}
 
 				if (ttl.ttl) {
@@ -391,12 +434,8 @@ export class CacheableMemory extends Hookified {
 			}
 		}
 
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-		const item = {key, value, expires};
-		store.set(
-			key,
-			item,
-		);
+		const item = { key, value, expires };
+		store.set(key, item);
 	}
 
 	/**
@@ -426,7 +465,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {boolean[]} - If true, the key exists. If false, the key does not exist.
 	 */
 	public hasMany(keys: string[]): boolean[] {
-		const result = new Array<boolean>();
+		const result: boolean[] = [];
 		for (const key of keys) {
 			const item = this.get(key);
 			result.push(Boolean(item));
@@ -456,7 +495,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {T[]} - The values of the keys
 	 */
 	public takeMany<T>(keys: string[]): T[] {
-		const result = new Array<any>();
+		const result: any[] = [];
 		for (const key of keys) {
 			result.push(this.take(key) as T);
 		}
@@ -490,7 +529,10 @@ export class CacheableMemory extends Hookified {
 	 * @returns {void}
 	 */
 	public clear(): void {
-		this._store = Array.from({length: this._storeHashSize}, () => new Map<string, CacheableStoreItem>());
+		this._store = Array.from(
+			{ length: this._storeHashSize },
+			() => new Map<string, CacheableStoreItem>(),
+		);
 		this._lru = new DoublyLinkedList<string>();
 	}
 
@@ -523,7 +565,7 @@ export class CacheableMemory extends Hookified {
 		}
 
 		// If we have a function, we call it with the store hash size
-		if (typeof this._storeHashAlgorithm === 'function') {
+		if (typeof this._storeHashAlgorithm === "function") {
 			return this._storeHashAlgorithm(key, this._storeHashSize);
 		}
 
@@ -635,7 +677,10 @@ export class CacheableMemory extends Hookified {
 	 * @param {Object} [options] - The options to wrap
 	 * @returns {Function} - The wrapped function
 	 */
-	public wrap<T, Arguments extends any[]>(function_: (...arguments_: Arguments) => T, options?: WrapFunctionOptions): (...arguments_: Arguments) => T {
+	public wrap<T, Arguments extends any[]>(
+		function_: (...arguments_: Arguments) => T,
+		options?: WrapFunctionOptions,
+	): (...arguments_: Arguments) => T {
 		const wrapOptions = {
 			ttl: options?.ttl ?? this._ttl,
 			keyPrefix: options?.keyPrefix,
@@ -653,7 +698,11 @@ export class CacheableMemory extends Hookified {
 			return true;
 		}
 
-		if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+		if (
+			typeof value === "string" ||
+			typeof value === "number" ||
+			typeof value === "boolean"
+		) {
 			return true;
 		}
 
@@ -661,7 +710,7 @@ export class CacheableMemory extends Hookified {
 	}
 
 	private setTtl(ttl: number | string | undefined): void {
-		if (typeof ttl === 'string' || ttl === undefined) {
+		if (typeof ttl === "string" || ttl === undefined) {
 			this._ttl = ttl;
 		} else if (ttl > 0) {
 			this._ttl = ttl;
@@ -679,4 +728,7 @@ export class CacheableMemory extends Hookified {
 	}
 }
 
-export type {CacheableItem, CacheableStoreItem} from './cacheable-item-types.js';
+export type {
+	CacheableItem,
+	CacheableStoreItem,
+} from "./cacheable-item-types.js";

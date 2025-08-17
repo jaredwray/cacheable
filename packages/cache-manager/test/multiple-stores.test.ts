@@ -1,49 +1,47 @@
-import {Keyv} from 'keyv';
-import {
-	beforeEach, describe, expect, it, vi,
-} from 'vitest';
-import {faker} from '@faker-js/faker';
-import {createCache} from '../src/index.js';
-import {sleep} from './sleep.js';
+import { faker } from "@faker-js/faker";
+import { Keyv } from "keyv";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createCache } from "../src/index.js";
+import { sleep } from "./sleep.js";
 
-describe('multiple stores', () => {
+describe("multiple stores", () => {
 	let keyv1: Keyv;
 	let keyv2: Keyv;
 	let cache: ReturnType<typeof createCache>;
 	let ttl = 500;
-	const data = {key: '', value: ''};
+	const data = { key: "", value: "" };
 
 	beforeEach(async () => {
 		data.key = faker.string.alpha(20);
 		data.value = faker.string.sample();
-		ttl = faker.number.int({min: 500, max: 1000});
+		ttl = faker.number.int({ min: 500, max: 1000 });
 		keyv1 = new Keyv();
 		keyv2 = new Keyv();
-		cache = createCache({stores: [keyv1, keyv2]});
+		cache = createCache({ stores: [keyv1, keyv2] });
 	});
 
-	it('set', async () => {
+	it("set", async () => {
 		await cache.set(data.key, data.value, ttl);
 		await expect(keyv1.get(data.key)).resolves.toEqual(data.value);
 		await expect(keyv2.get(data.key)).resolves.toEqual(data.value);
 		await expect(cache.get(data.key)).resolves.toEqual(data.value);
 	});
 
-	it('get - 1 store error', async () => {
+	it("get - 1 store error", async () => {
 		await cache.set(data.key, data.value, ttl);
 
 		keyv1.get = () => {
-			throw new Error('store 1 get error');
+			throw new Error("store 1 get error");
 		};
 
 		await expect(cache.get(data.key)).resolves.toEqual(data.value);
 	});
 
-	it('get - 2 stores error', async () => {
+	it("get - 2 stores error", async () => {
 		await cache.set(data.key, data.value, ttl);
 
 		const getError = () => {
-			throw new Error('store 1 get error');
+			throw new Error("store 1 get error");
 		};
 
 		keyv1.get = getError;
@@ -52,7 +50,7 @@ describe('multiple stores', () => {
 		await expect(cache.get(data.key)).resolves.toBeUndefined();
 	});
 
-	it('del', async () => {
+	it("del", async () => {
 		await cache.set(data.key, data.value, ttl);
 
 		await expect(keyv1.get(data.key)).resolves.toEqual(data.value);
@@ -64,7 +62,7 @@ describe('multiple stores', () => {
 		await expect(keyv2.get(data.key)).resolves.toBeUndefined();
 	});
 
-	it('wrap', async () => {
+	it("wrap", async () => {
 		await cache.wrap(data.key, () => data.value, ttl);
 
 		await expect(keyv1.get(data.key)).resolves.toEqual(data.value);
@@ -72,19 +70,20 @@ describe('multiple stores', () => {
 
 		// Store 1 get error
 		keyv1.get = () => {
-			throw new Error('store 1 get error');
+			throw new Error("store 1 get error");
 		};
 
-		// eslint-disable-next-line @typescript-eslint/no-empty-function
 		const listener = vi.fn(() => {});
-		cache.on('set', listener);
+		cache.on("set", listener);
 
-		await expect(cache.wrap(data.key, () => data.value, ttl)).resolves.toEqual(data.value);
+		await expect(cache.wrap(data.key, () => data.value, ttl)).resolves.toEqual(
+			data.value,
+		);
 		await vi.waitUntil(() => listener.mock.calls.length > 0);
-		expect(listener).toBeCalledWith({key: data.key, value: data.value});
+		expect(listener).toBeCalledWith({ key: data.key, value: data.value });
 	});
 
-	it('wrap - refresh', async () => {
+	it("wrap - refresh", async () => {
 		const refreshThreshold = ttl / 2;
 		await cache.wrap(data.key, () => data.value, ttl, refreshThreshold);
 
@@ -94,18 +93,22 @@ describe('multiple stores', () => {
 		// Store 1 get error
 		const getOk = keyv1.get;
 		const getError = () => {
-			throw new Error('store 1 get error');
+			throw new Error("store 1 get error");
 		};
 
 		keyv1.get = getError;
 
 		await sleep(ttl - refreshThreshold + 100);
 
-		await expect(cache.wrap(data.key, () => 'new', ttl, refreshThreshold)).resolves.toEqual(data.value);
+		await expect(
+			cache.wrap(data.key, () => "new", ttl, refreshThreshold),
+		).resolves.toEqual(data.value);
 
 		keyv1.get = getOk;
 		// Store 1 has been updated the latest value
-		await expect(keyv1.get(data.key)).resolves.toEqual('new');
-		await expect(cache.wrap(data.key, () => 'latest', ttl)).resolves.toEqual('new');
+		await expect(keyv1.get(data.key)).resolves.toEqual("new");
+		await expect(cache.wrap(data.key, () => "latest", ttl)).resolves.toEqual(
+			"new",
+		);
 	});
 });

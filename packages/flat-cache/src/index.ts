@@ -1,8 +1,8 @@
-import path from 'node:path';
-import fs from 'node:fs';
-import {CacheableMemory} from 'cacheable';
-import {parse, stringify} from 'flatted';
-import {Hookified} from 'hookified';
+import fs from "node:fs";
+import path from "node:path";
+import { CacheableMemory } from "cacheable";
+import { parse, stringify } from "flatted";
+import { Hookified } from "hookified";
 
 export type FlatCacheOptions = {
 	ttl?: number | string;
@@ -12,24 +12,26 @@ export type FlatCacheOptions = {
 	persistInterval?: number;
 	cacheDir?: string;
 	cacheId?: string;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	deserialize?: (data: string) => any;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	serialize?: (data: any) => string;
 };
 
 export enum FlatCacheEvents {
-	SAVE = 'save',
-	LOAD = 'load',
-	DELETE = 'delete',
-	CLEAR = 'clear',
-	DESTROY = 'destroy',
-	ERROR = 'error',
-	EXPIRED = 'expired',
+	SAVE = "save",
+	LOAD = "load",
+	DELETE = "delete",
+	CLEAR = "clear",
+	DESTROY = "destroy",
+	ERROR = "error",
+	EXPIRED = "expired",
 }
 
 export class FlatCache extends Hookified {
 	private readonly _cache = new CacheableMemory();
-	private _cacheDir = '.cache';
-	private _cacheId = 'cache1';
+	private _cacheDir = ".cache";
+	private _cacheId = "cache1";
 	private _persistInterval = 0;
 	private _persistTimer: NodeJS.Timeout | undefined;
 	private _changesSinceLastSave = false;
@@ -159,10 +161,12 @@ export class FlatCache extends Hookified {
 
 	public load(cacheId?: string, cacheDir?: string) {
 		try {
-			const filePath = path.resolve(`${cacheDir ?? this._cacheDir}/${cacheId ?? this._cacheId}`);
+			const filePath = path.resolve(
+				`${cacheDir ?? this._cacheDir}/${cacheId ?? this._cacheId}`,
+			);
 			this.loadFile(filePath);
 			this.emit(FlatCacheEvents.LOAD);
-		/* c8 ignore next 4 */
+			/* c8 ignore next 4 */
 		} catch (error) {
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
@@ -176,44 +180,49 @@ export class FlatCache extends Hookified {
 
 	public loadFile(pathToFile: string) {
 		if (fs.existsSync(pathToFile)) {
-			const data = fs.readFileSync(pathToFile, 'utf8');
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			const data = fs.readFileSync(pathToFile, "utf8");
 			const items = this._parse(data);
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 			for (const key of Object.keys(items)) {
-				this._cache.set(items[key].key as string, items[key].value, {expire: items[key].expires as number});
+				this._cache.set(items[key].key as string, items[key].value, {
+					expire: items[key].expires as number,
+				});
 			}
 
 			this._changesSinceLastSave = true;
 		}
 	}
 
-	public loadFileStream(pathToFile: string, onProgress: (progress: number, total: number) => void, onEnd: () => void, onError?: (error: Error) => void) {
+	public loadFileStream(
+		pathToFile: string,
+		onProgress: (progress: number, total: number) => void,
+		onEnd: () => void,
+		onError?: (error: Error) => void,
+	) {
 		if (fs.existsSync(pathToFile)) {
 			const stats = fs.statSync(pathToFile);
 			const total = stats.size;
 			let loaded = 0;
-			let streamData = '';
-			const readStream = fs.createReadStream(pathToFile, {encoding: 'utf8'});
-			readStream.on('data', chunk => {
+			let streamData = "";
+			const readStream = fs.createReadStream(pathToFile, { encoding: "utf8" });
+			readStream.on("data", (chunk) => {
 				loaded += chunk.length;
 				streamData += chunk as string;
 				onProgress(loaded, total);
 			});
 
-			readStream.on('end', () => {
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+			readStream.on("end", () => {
 				const items = this._parse(streamData);
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
 				for (const key of Object.keys(items)) {
-					this._cache.set(items[key].key as string, items[key].value, {expire: items[key].expires as number});
+					this._cache.set(items[key].key as string, items[key].value, {
+						expire: items[key].expires as number,
+					});
 				}
 
 				this._changesSinceLastSave = true;
 				onEnd();
 			});
 			/* c8 ignore next 5 */
-			readStream.on('error', error => {
+			readStream.on("error", (error) => {
 				this.emit(FlatCacheEvents.ERROR, error);
 				if (onError) {
 					onError(error);
@@ -234,10 +243,10 @@ export class FlatCache extends Hookified {
 	 * @returns {*}
 	 */
 	public all() {
+		// biome-ignore lint/suspicious/noExplicitAny: type format
 		const result: Record<string, any> = {};
 		const items = [...this._cache.items];
 		for (const item of items) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			result[item.key] = item.value;
 		}
 
@@ -286,6 +295,7 @@ export class FlatCache extends Hookified {
 	 * @param key {string} the key to set
 	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
 	 */
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	public setKey(key: string, value: any, ttl?: number | string) {
 		this.set(key, value, ttl);
 	}
@@ -297,6 +307,7 @@ export class FlatCache extends Hookified {
 	 * @param value {object} the value of the key. Could be any object that can be serialized with JSON.stringify
 	 * @param [ttl] {number} the time to live in milliseconds
 	 */
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	public set(key: string, value: any, ttl?: number | string) {
 		this._cache.set(key, value, ttl);
 		this._changesSinceLastSave = true;
@@ -323,11 +334,11 @@ export class FlatCache extends Hookified {
 	}
 
 	/**
-	* (Legacy) Return the value of the provided key. This method will be deprecated in the future
-	* @method getKey<T>
-	* @param key {String} the name of the key to retrieve
-	* @returns {*} at T the value from the key
-	*/
+	 * (Legacy) Return the value of the provided key. This method will be deprecated in the future
+	 * @method getKey<T>
+	 * @param key {String} the name of the key to retrieve
+	 * @returns {*} at T the value from the key
+	 */
 	public getKey<T>(key: string) {
 		return this.get<T>(key);
 	}
@@ -352,7 +363,7 @@ export class FlatCache extends Hookified {
 			this._changesSinceLastSave = true;
 			this.save();
 			this.emit(FlatCacheEvents.CLEAR);
-		/* c8 ignore next 4 */
+			/* c8 ignore next 4 */
 		} catch (error) {
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
@@ -372,14 +383,14 @@ export class FlatCache extends Hookified {
 
 				// Ensure the directory exists
 				if (!fs.existsSync(this._cacheDir)) {
-					fs.mkdirSync(this._cacheDir, {recursive: true});
+					fs.mkdirSync(this._cacheDir, { recursive: true });
 				}
 
 				fs.writeFileSync(filePath, data);
 				this._changesSinceLastSave = false;
 				this.emit(FlatCacheEvents.SAVE);
 			}
-		/* c8 ignore next 4 */
+			/* c8 ignore next 4 */
 		} catch (error) {
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
@@ -396,7 +407,7 @@ export class FlatCache extends Hookified {
 				fs.rmSync(this.cacheFilePath);
 				return true;
 			}
-		/* c8 ignore next 4 */
+			/* c8 ignore next 4 */
 		} catch (error) {
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
@@ -415,14 +426,14 @@ export class FlatCache extends Hookified {
 			this._cache.clear();
 			this.stopAutoPersist();
 			if (includeCacheDirectory) {
-				fs.rmSync(this.cacheDirPath, {recursive: true, force: true});
+				fs.rmSync(this.cacheDirPath, { recursive: true, force: true });
 			} else {
-				fs.rmSync(this.cacheFilePath, {recursive: true, force: true});
+				fs.rmSync(this.cacheFilePath, { recursive: true, force: true });
 			}
 
 			this._changesSinceLastSave = false;
 			this.emit(FlatCacheEvents.DESTROY);
-		/* c8 ignore next 4 */
+			/* c8 ignore next 4 */
 		} catch (error) {
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
@@ -456,7 +467,8 @@ export class FlatCache extends Hookified {
 		}
 	}
 }
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class, unicorn/no-static-only-class
+
+// biome-ignore lint/complexity/noStaticOnlyClass: legacy
 export default class FlatCacheDefault {
 	static create = create;
 	static createFromFile = createFromFile;
@@ -500,7 +512,7 @@ export function createFromFile(filePath: string, options?: FlatCacheOptions) {
  * @param cacheDirectory {String} directory for the cache entry
  */
 export function clearCacheById(cacheId: string, cacheDirectory?: string) {
-	const cache = new FlatCache({cacheId, cacheDir: cacheDirectory});
+	const cache = new FlatCache({ cacheId, cacheDir: cacheDirectory });
 	cache.destroy();
 }
 
@@ -510,5 +522,5 @@ export function clearCacheById(cacheId: string, cacheDirectory?: string) {
  * @param cacheDir {String} directory for the cache entry
  */
 export function clearAll(cacheDirectory?: string) {
-	fs.rmSync(cacheDirectory ?? '.cache', {recursive: true, force: true});
+	fs.rmSync(cacheDirectory ?? ".cache", { recursive: true, force: true });
 }

@@ -16,8 +16,8 @@
 		"node": ">=18"
 	},
 	"scripts": {
-		"test": "xo --fix && vitest run --coverage",
-		"test:ci": "xo && vitest run --coverage",
+		"test": "biome check --write && vitest run --coverage",
+		"test:ci": "biome check && vitest run --coverage",
 		"prepublish": "pnpm run build",
 		"build": "rimraf ./dist && tsc --project tsconfig.build.json",
 		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"
@@ -51,6 +51,7 @@
 		"responselike": "^3.0.0"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "^2.2.0",
 		"@keyv/sqlite": "^4.0.5",
 		"@types/express": "^5.0.3",
 		"@types/node": "^24.2.0",
@@ -64,32 +65,6 @@
 		"sqlite3": "^5.1.7",
 		"tsup": "^8.5.0",
 		"typescript": "^5.9.2",
-		"vitest": "^3.2.4",
-		"xo": "^1.2.1"
-	},
-	"xo": {
-		"rules": {
-			"@typescript-eslint/triple-slash-reference": 0,
-			"@typescript-eslint/no-namespace": 0,
-			"@typescript-eslint/no-unsafe-assignment": 0,
-			"@typescript-eslint/no-unsafe-call": 0,
-			"@typescript-eslint/ban-types": 0,
-			"@typescript-eslint/restrict-template-expressions": 0,
-			"@typescript-eslint/no-unsafe-return": 0,
-			"@typescript-eslint/no-unsafe-argument": 0,
-			"new-cap": 0,
-			"unicorn/no-abusive-eslint-disable": 0,
-			"@typescript-eslint/restrict-plus-operands": 0,
-			"@typescript-eslint/no-implicit-any-catch": 0,
-			"@typescript-eslint/consistent-type-imports": 0,
-			"@typescript-eslint/consistent-type-definitions": 0,
-			"@typescript-eslint/prefer-nullish-coalescing": 0,
-			"n/prefer-global/url": 0,
-			"n/no-deprecated-api": 0,
-			"unicorn/prefer-event-target": 0,
-			"@typescript-eslint/no-unnecessary-type-assertion": 0,
-			"promise/prefer-await-to-then": 0,
-			"@typescript-eslint/no-unnecessary-boolean-literal-compare": 0
-		}
+		"vitest": "^3.2.4"
 	}
 }

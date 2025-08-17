@@ -1,4 +1,4 @@
-
+// biome-ignore-all lint/suspicious/noExplicitAny: allowed
 export type StatsOptions = {
 	enabled?: boolean;
 };
@@ -155,7 +155,6 @@ export class Stats {
 		this._clears++;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public incrementVSize(value: any): void {
 		if (!this._enabled) {
 			return;
@@ -164,7 +163,6 @@ export class Stats {
 		this._vsize += this.roughSizeOfObject(value);
 	}
 
-	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public decreaseVSize(value: any): void {
 		if (!this._enabled) {
 			return;
@@ -173,7 +171,6 @@ export class Stats {
 		this._vsize -= this.roughSizeOfObject(value);
 	}
 
-	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public incrementKSize(key: string): void {
 		if (!this._enabled) {
 			return;
@@ -182,7 +179,6 @@ export class Stats {
 		this._ksize += this.roughSizeOfString(key);
 	}
 
-	// eslint-disable-next-line @typescript-eslint/naming-convention
 	public decreaseKSize(key: string): void {
 		if (!this._enabled) {
 			return;
@@ -226,20 +222,22 @@ export class Stats {
 		let bytes = 0;
 
 		while (stack.length > 0) {
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			const value = stack.pop();
 
-			if (typeof value === 'boolean') {
+			if (typeof value === "boolean") {
 				bytes += 4; // Booleans are 4 bytes
-			} else if (typeof value === 'string') {
+			} else if (typeof value === "string") {
 				bytes += value.length * 2; // Each character is 2 bytes (UTF-16 encoding)
-			} else if (typeof value === 'number') {
+			} else if (typeof value === "number") {
 				bytes += 8; // Numbers are 8 bytes (IEEE 754 format)
-			} else if (typeof value === 'object' && value !== null && !objectList.includes(value)) {
+			} else if (
+				typeof value === "object" &&
+				value !== null &&
+				!objectList.includes(value)
+			) {
 				objectList.push(value);
 
 				// Estimate object overhead, and then recursively estimate the size of properties
-				// eslint-disable-next-line guard-for-in
 				for (const key in value) {
 					bytes += key.length * 2; // Keys are strings (UTF-16)
 					stack.push(value[key]); // Add values to the stack to compute their size

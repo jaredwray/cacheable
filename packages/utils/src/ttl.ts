@@ -1,11 +1,13 @@
-import {shorthandToMilliseconds} from '../src/shorthand-time.js';
+import { shorthandToMilliseconds } from "../src/shorthand-time.js";
 
 /**
  * Converts a exspires value to a TTL value.
  * @param expires - The expires value to convert.
  * @returns {number | undefined} The TTL value in milliseconds, or undefined if the expires value is not valid.
  */
-export function getTtlFromExpires(expires: number | undefined): number | undefined {
+export function getTtlFromExpires(
+	expires: number | undefined,
+): number | undefined {
 	if (expires === undefined || expires === null) {
 		return undefined;
 	}
@@ -25,7 +27,11 @@ export function getTtlFromExpires(expires: number | undefined): number | undefin
  * @param secondaryTtl - The secondaryTtl value to use.
  * @returns {number | undefined} The TTL value in milliseconds, or undefined if all values are undefined.
  */
-export function getCascadingTtl(cacheableTtl?: number | string, primaryTtl?: number, secondaryTtl?: number): number | undefined {
+export function getCascadingTtl(
+	cacheableTtl?: number | string,
+	primaryTtl?: number,
+	secondaryTtl?: number,
+): number | undefined {
 	return secondaryTtl ?? primaryTtl ?? shorthandToMilliseconds(cacheableTtl);
 }
 
@@ -36,7 +42,10 @@ export function getCascadingTtl(cacheableTtl?: number | string, primaryTtl?: num
  * @param expires
  * @returns
  */
-export function calculateTtlFromExpiration(ttl: number | undefined, expires: number | undefined): number | undefined {
+export function calculateTtlFromExpiration(
+	ttl: number | undefined,
+	expires: number | undefined,
+): number | undefined {
 	const ttlFromExpires = getTtlFromExpires(expires);
 	const expiresFromTtl = ttl ? Date.now() + ttl : undefined;
 	if (ttlFromExpires === undefined) {
@@ -47,7 +56,7 @@ export function calculateTtlFromExpiration(ttl: number | undefined, expires: num
 		return ttlFromExpires;
 	}
 
-	if (expires! > expiresFromTtl) {
+	if (expires && expires > expiresFromTtl) {
 		return ttl;
 	}
 

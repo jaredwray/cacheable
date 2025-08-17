@@ -1,3 +1,4 @@
+// biome-ignore lint/suspicious/noExplicitAny: type format
 type PromiseCallback<T = any, E = Error> = {
 	resolve: (value: T | PromiseLike<T>) => void;
 	reject: (reason: E) => void;
@@ -30,7 +31,7 @@ function getCallbacksByKey<T>(key: string): Array<PromiseCallback<T>> {
 
 async function enqueue<T>(key: string): Promise<T> {
 	return new Promise<T>((resolve, reject) => {
-		const callback: PromiseCallback<T> = {resolve, reject};
+		const callback: PromiseCallback<T> = { resolve, reject };
 		addCallbackToKey(key, callback);
 	});
 }
@@ -41,8 +42,12 @@ function dequeue<T>(key: string): Array<PromiseCallback<T>> {
 	return stash;
 }
 
-function coalesce<T>(options: {key: string; error?: Error; result?: T}): void {
-	const {key, error, result} = options;
+function coalesce<T>(options: {
+	key: string;
+	error?: Error;
+	result?: T;
+}): void {
+	const { key, error, result } = options;
 
 	for (const callback of dequeue(key)) {
 		/* c8 ignore next 1 */
@@ -68,25 +73,25 @@ function coalesce<T>(options: {key: string; error?: Error; result?: T}): void {
  */
 export async function coalesceAsync<T>(
 	/**
-   * Any identifier to group requests together.
-   */
+	 * Any identifier to group requests together.
+	 */
 	key: string,
 	/**
-   * The function to run.
-   */
+	 * The function to run.
+	 */
 	fnc: () => T | PromiseLike<T>,
 ): Promise<T> {
 	if (!hasKey(key)) {
 		addKey(key);
 		try {
 			const result = await Promise.resolve(fnc());
-			coalesce({key, result});
+			coalesce({ key, result });
 			return result;
-		/* c8 ignore next 1 */
+			/* c8 ignore next 1 */
+			// biome-ignore lint/suspicious/noExplicitAny: type format
 		} catch (error: any) {
 			/* c8 ignore next 5 */
-			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			coalesce({key, error});
+			coalesce({ key, error });
 
 			throw error;
 		}

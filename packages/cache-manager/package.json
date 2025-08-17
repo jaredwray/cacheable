@@ -18,8 +18,8 @@
   ],
   "scripts": {
     "clean": "rimraf ./dist ./coverage ./node_modules",
-    "test": "xo --fix && vitest run --coverage",
-    "test:ci": "xo && vitest run --coverage",
+    "test": "biome check --write && vitest run --coverage",
+    "test:ci": "biome check && vitest run --coverage",
     "build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
     "prepublish": "pnpm run build"
   },
@@ -60,6 +60,7 @@
     "keyv": "^5.5.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.0",
     "@faker-js/faker": "^9.9.0",
     "@keyv/redis": "^5.1.0",
     "@types/node": "^24.2.0",
@@ -70,13 +71,6 @@
     "rimraf": "^6.0.1",
     "tsup": "^8.5.0",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4",
-    "xo": "^1.2.1"
-  },
-  "xo": {
-    "rules": {
-      "@typescript-eslint/no-unsafe-call": "off",
-      "@typescript-eslint/no-unsafe-assignment": "off"
-    }
+    "vitest": "^3.2.4"
   }
 }

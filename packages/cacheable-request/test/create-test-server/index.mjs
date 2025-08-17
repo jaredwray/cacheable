@@ -1,4 +1,3 @@
-/* eslint-disable */
 'use strict';
 
 import http from 'node:http';
