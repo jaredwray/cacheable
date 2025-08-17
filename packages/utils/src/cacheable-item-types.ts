@@ -1,4 +1,3 @@
-
 /**
  * CacheableItem
  * @typedef {Object} CacheableItem
@@ -10,6 +9,7 @@
  */
 export type CacheableItem = {
 	key: string;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	value: any;
 	ttl?: number | string;
 };
@@ -23,6 +23,7 @@ export type CacheableItem = {
  */
 export type CacheableStoreItem = {
 	key: string;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
 	value: any;
 	expires?: number;
 };
