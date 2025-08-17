@@ -1,7 +1,6 @@
-import {
-	Keyv, type KeyvOptions, type KeyvStoreAdapter, type StoredData,
-} from 'keyv';
-import {CacheableMemory, type CacheableMemoryOptions} from './memory.js';
+// biome-ignore-all lint/suspicious/noExplicitAny: type format
+import { Keyv, type KeyvStoreAdapter, type StoredData } from "keyv";
+import { CacheableMemory, type CacheableMemoryOptions } from "./memory.js";
 
 export type KeyvCacheableMemoryOptions = CacheableMemoryOptions & {
 	namespace?: string;
@@ -52,7 +51,9 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 		return undefined;
 	}
 
-	async getMany<Value>(keys: string[]): Promise<Array<StoredData<Value | undefined>>> {
+	async getMany<Value>(
+		keys: string[],
+	): Promise<Array<StoredData<Value | undefined>>> {
 		const result = this.getStore(this._namespace).getMany<Value>(keys);
 
 		return result;
@@ -62,7 +63,9 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 		this.getStore(this._namespace).set(key, value, ttl);
 	}
 
-	async setMany(values: Array<{key: string; value: any; ttl?: number}>): Promise<void> {
+	async setMany(
+		values: Array<{ key: string; value: any; ttl?: number }>,
+	): Promise<void> {
 		this.getStore(this._namespace).setMany(values);
 	}
 
@@ -98,6 +101,7 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 			this._nCache.set(namespace, new CacheableMemory(this.opts));
 		}
 
+		// biome-ignore lint/style/noNonNullAssertion: need to fix
 		return this._nCache.get(namespace)!;
 	}
 }
@@ -111,12 +115,13 @@ export function createKeyv(options?: KeyvCacheableMemoryOptions): Keyv {
 	const store = new KeyvCacheableMemory(options);
 	const namespace = options?.namespace;
 
+	// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 	let ttl;
 	if (options?.ttl && Number.isInteger(options.ttl)) {
 		ttl = options?.ttl as number;
 	}
 
-	const keyv = new Keyv({store, namespace, ttl});
+	const keyv = new Keyv({ store, namespace, ttl });
 	// Remove seriazlize/deserialize
 	keyv.serialize = undefined;
 	keyv.deserialize = undefined;

@@ -1,14 +1,15 @@
-
-export const shorthandToMilliseconds = (shorthand?: string | number): number | undefined => {
+export const shorthandToMilliseconds = (
+	shorthand?: string | number,
+): number | undefined => {
 	let milliseconds: number;
 
 	if (shorthand === undefined) {
 		return undefined;
 	}
 
-	if (typeof shorthand === 'number') {
+	if (typeof shorthand === "number") {
 		milliseconds = shorthand;
-	} else if (typeof shorthand === 'string') {
+	} else if (typeof shorthand === "string") {
 		shorthand = shorthand.trim();
 
 		// Check if the string is purely numeric
@@ -17,7 +18,9 @@ export const shorthandToMilliseconds = (shorthand?: string | number): number | u
 			const match = /^([\d.]+)\s*(ms|s|m|h|hr|d)$/i.exec(shorthand);
 
 			if (!match) {
-				throw new Error(`Unsupported time format: "${shorthand}". Use 'ms', 's', 'm', 'h', 'hr', or 'd'.`);
+				throw new Error(
+					`Unsupported time format: "${shorthand}". Use 'ms', 's', 'm', 'h', 'hr', or 'd'.`,
+				);
 			}
 
 			const [, value, unit] = match;
@@ -25,32 +28,32 @@ export const shorthandToMilliseconds = (shorthand?: string | number): number | u
 			const unitLower = unit.toLowerCase();
 
 			switch (unitLower) {
-				case 'ms': {
+				case "ms": {
 					milliseconds = numericValue;
 					break;
 				}
 
-				case 's': {
+				case "s": {
 					milliseconds = numericValue * 1000;
 					break;
 				}
 
-				case 'm': {
+				case "m": {
 					milliseconds = numericValue * 1000 * 60;
 					break;
 				}
 
-				case 'h': {
+				case "h": {
 					milliseconds = numericValue * 1000 * 60 * 60;
 					break;
 				}
 
-				case 'hr': {
+				case "hr": {
 					milliseconds = numericValue * 1000 * 60 * 60;
 					break;
 				}
 
-				case 'd': {
+				case "d": {
 					milliseconds = numericValue * 1000 * 60 * 60 * 24;
 					break;
 				}
@@ -65,13 +68,16 @@ export const shorthandToMilliseconds = (shorthand?: string | number): number | u
 			milliseconds = Number(shorthand);
 		}
 	} else {
-		throw new TypeError('Time must be a string or a number.');
+		throw new TypeError("Time must be a string or a number.");
 	}
 
 	return milliseconds;
 };
 
-export const shorthandToTime = (shorthand?: string | number, fromDate?: Date): number => {
+export const shorthandToTime = (
+	shorthand?: string | number,
+	fromDate?: Date,
+): number => {
 	fromDate ??= new Date();
 
 	const milliseconds = shorthandToMilliseconds(shorthand);
@@ -81,4 +87,3 @@ export const shorthandToTime = (shorthand?: string | number, fromDate?: Date): n
 
 	return fromDate.getTime() + milliseconds;
 };
-
