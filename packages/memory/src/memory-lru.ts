@@ -1,5 +1,4 @@
 export class ListNode<T> {
-	// eslint-disable-next-line @typescript-eslint/parameter-properties
 	value: T;
 	prev: ListNode<T> | undefined = undefined;
 	next: ListNode<T> | undefined = undefined;
@@ -23,7 +22,6 @@ export class DoublyLinkedList<T> {
 			this.head.prev = newNode;
 			this.head = newNode;
 		} else {
-			// eslint-disable-next-line no-multi-assign
 			this.head = this.tail = newNode;
 		}
 
@@ -83,9 +81,8 @@ export class DoublyLinkedList<T> {
 		if (this.tail.prev) {
 			this.tail = this.tail.prev;
 			this.tail.next = undefined;
-		/* c8 ignore next 4 */
+			/* c8 ignore next 4 */
 		} else {
-			// eslint-disable-next-line no-multi-assign
 			this.head = this.tail = undefined;
 		}
 
