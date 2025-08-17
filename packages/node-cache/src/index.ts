@@ -1,6 +1,5 @@
-
-import {CacheableMemory, CacheableStats, shorthandToTime} from 'cacheable';
-import {Hookified} from 'hookified';
+import { CacheableMemory, CacheableStats, shorthandToTime } from "cacheable";
+import { Hookified } from "hookified";
 
 export type NodeCacheOptions = {
 	/**
@@ -54,10 +53,10 @@ export type NodeCacheItem<T> = PartialNodeCacheItem<T> & {
 };
 
 export enum NodeCacheErrors {
-	ECACHEFULL = 'Cache max keys amount exceeded',
-	EKEYTYPE = 'The key argument has to be of type `string` or `number`. Found: `__key`',
-	EKEYSTYPE = 'The keys argument has to be an array.',
-	ETTLTYPE = 'The ttl argument has to be a number or a string for shorthand ttl.',
+	ECACHEFULL = "Cache max keys amount exceeded",
+	EKEYTYPE = "The key argument has to be of type `string` or `number`. Found: `__key`",
+	EKEYSTYPE = "The keys argument has to be an array.",
+	ETTLTYPE = "The ttl argument has to be a number or a string for shorthand ttl.",
 }
 
 export type NodeCacheStats = {
@@ -85,7 +84,6 @@ export type NodeCacheStats = {
 
 export class NodeCache<T> extends Hookified {
 	public readonly options: NodeCacheOptions = {
-		// eslint-disable-next-line @typescript-eslint/naming-convention
 		stdTTL: 0,
 		checkperiod: 600,
 		useClones: true,
@@ -95,7 +93,7 @@ export class NodeCache<T> extends Hookified {
 
 	public readonly store = new Map<string, NodeCacheItem<T>>();
 
-	private _stats: CacheableStats = new CacheableStats({enabled: true});
+	private _stats: CacheableStats = new CacheableStats({ enabled: true });
 
 	private readonly _cacheable = new CacheableMemory();
 
@@ -105,7 +103,7 @@ export class NodeCache<T> extends Hookified {
 		super();
 
 		if (options) {
-			this.options = {...this.options, ...options};
+			this.options = { ...this.options, ...options };
 		}
 
 		this.startInterval();
@@ -118,16 +116,20 @@ export class NodeCache<T> extends Hookified {
 	 * @param {number | string} [ttl] - this is in seconds and undefined will use the default ttl
 	 * @returns {boolean}
 	 */
-	public set(key: string | number, value: T, ttl: number | string = 0): boolean {
+	public set(
+		key: string | number,
+		value: T,
+		ttl: number | string = 0,
+	): boolean {
 		// Check on key type
 		/* c8 ignore next 3 */
-		if (typeof key !== 'string' && typeof key !== 'number') {
+		if (typeof key !== "string" && typeof key !== "number") {
 			throw this.createError(NodeCacheErrors.EKEYTYPE, key);
 		}
 
 		// Check on ttl type
 		/* c8 ignore next 3 */
-		if (ttl && typeof ttl !== 'number' && typeof ttl !== 'string') {
+		if (ttl && typeof ttl !== "number" && typeof ttl !== "string") {
 			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
 		}
 
@@ -148,16 +150,20 @@ export class NodeCache<T> extends Hookified {
 
 		// Check on max key size
 		if (this.options.maxKeys) {
-			const {maxKeys} = this.options;
+			const { maxKeys } = this.options;
 			if (maxKeys > -1 && this.store.size >= maxKeys) {
 				throw this.createError(NodeCacheErrors.ECACHEFULL, this.formatKey(key));
 			}
 		}
 
-		this.store.set(keyValue, {key: keyValue, value, ttl: expirationTimestamp});
+		this.store.set(keyValue, {
+			key: keyValue,
+			value,
+			ttl: expirationTimestamp,
+		});
 
 		// Event
-		this.emit('set', keyValue, value, ttlValue);
+		this.emit("set", keyValue, value, ttlValue);
 
 		// Add the bytes to the stats
 		this._stats.incrementKSize(keyValue);
@@ -201,7 +207,7 @@ export class NodeCache<T> extends Hookified {
 
 					this._stats.incrementMisses();
 					// Event
-					this.emit('expired', this.formatKey(key), result.value);
+					this.emit("expired", this.formatKey(key), result.value);
 					return undefined;
 				}
 
@@ -281,7 +287,7 @@ export class NodeCache<T> extends Hookified {
 			this.store.delete(keyValue);
 
 			// Event
-			this.emit('del', keyValue, result.value);
+			this.emit("del", keyValue, result.value);
 
 			// Remove the bytes from the stats
 			this._stats.decreaseKSize(keyValue);
@@ -317,6 +323,7 @@ export class NodeCache<T> extends Hookified {
 	public ttl(key: string | number, ttl?: number | string): boolean {
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
+			// biome-ignore lint/style/noNonNullAssertion: need to fix
 			const ttlValue = ttl ?? this.options.stdTTL!;
 			result.ttl = this.getExpirationTimestamp(ttlValue);
 			this.store.set(this.formatKey(key), result);
@@ -392,7 +399,7 @@ export class NodeCache<T> extends Hookified {
 		this.store.clear();
 		this.flushStats();
 		// Event
-		this.emit('flush');
+		this.emit("flush");
 	}
 
 	/**
@@ -400,9 +407,9 @@ export class NodeCache<T> extends Hookified {
 	 * @returns {void}
 	 */
 	public flushStats(): void {
-		this._stats = new CacheableStats({enabled: true});
+		this._stats = new CacheableStats({ enabled: true });
 		// Event
-		this.emit('flush_stats');
+		this.emit("flush_stats");
 	}
 
 	/**
@@ -426,7 +433,7 @@ export class NodeCache<T> extends Hookified {
 	}
 
 	private getExpirationTimestamp(ttlInSeconds: number | string): number {
-		if (typeof ttlInSeconds === 'string') {
+		if (typeof ttlInSeconds === "string") {
 			return shorthandToTime(ttlInSeconds);
 		}
 
@@ -456,7 +463,7 @@ export class NodeCache<T> extends Hookified {
 					this.del(key);
 				}
 
-				this.emit('expired', this.formatKey(key), value.value);
+				this.emit("expired", this.formatKey(key), value.value);
 			}
 		}
 	}
@@ -472,12 +479,12 @@ export class NodeCache<T> extends Hookified {
 		let error = errorCode;
 		/* c8 ignore next 3 */
 		if (key) {
-			error = error.replace('__key', key);
+			error = error.replace("__key", key);
 		}
 
 		return new Error(error);
 	}
 }
 
-export {NodeCacheStore, type NodeCacheStoreOptions} from './store.js';
+export { NodeCacheStore, type NodeCacheStoreOptions } from "./store.js";
 export default NodeCache;

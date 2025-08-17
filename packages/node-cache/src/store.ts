@@ -1,7 +1,7 @@
-import {Cacheable, CacheableMemory, type CacheableItem} from 'cacheable';
-import {Keyv} from 'keyv';
-import {type PartialNodeCacheItem} from 'index.js';
-import {Hookified} from 'hookified';
+import { Cacheable, type CacheableItem, CacheableMemory } from "cacheable";
+import { Hookified } from "hookified";
+import type { PartialNodeCacheItem } from "index.js";
+import { Keyv } from "keyv";
 
 export type NodeCacheStoreOptions<T> = {
 	/**
@@ -30,7 +30,9 @@ export type NodeCacheStoreOptions<T> = {
 
 export class NodeCacheStore<T> extends Hookified {
 	private _maxKeys = 0;
-	private readonly _cache = new Cacheable({primary: new Keyv<T>({store: new CacheableMemory()})});
+	private readonly _cache = new Cacheable({
+		primary: new Keyv<T>({ store: new CacheableMemory() }),
+	});
 	constructor(options?: NodeCacheStoreOptions<T>) {
 		super();
 		if (options) {
@@ -49,9 +51,9 @@ export class NodeCacheStore<T> extends Hookified {
 		}
 
 		// Hook up the cacheable events
-		this._cache.on('error', (error: Error) => {
+		this._cache.on("error", (error: Error) => {
 			/* c8 ignore next 1 */
-			this.emit('error', error);
+			this.emit("error", error);
 		});
 	}
 
@@ -145,9 +147,12 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @param {number} [ttl]
 	 * @returns {boolean}
 	 */
-	public async set(key: string | number, value: T, ttl?: number): Promise<boolean> {
+	public async set(
+		key: string | number,
+		value: T,
+		ttl?: number,
+	): Promise<boolean> {
 		if (this._maxKeys > 0) {
-			// eslint-disable-next-line unicorn/no-lonely-if
 			if (this._cache.stats.count >= this._maxKeys) {
 				return false;
 			}
@@ -163,9 +168,13 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {void}
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
-		const items = new Array<CacheableItem>();
+		const items: CacheableItem[] = [];
 		for (const item of list) {
-			items.push({key: item.key.toString(), value: item.value, ttl: item.ttl});
+			items.push({
+				key: item.key.toString(),
+				value: item.value,
+				ttl: item.ttl,
+			});
 		}
 
 		await this._cache.setMany(items);
@@ -185,10 +194,11 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @param {Array<string | number>} keys
 	 * @returns {Record<string, any | undefined>}
 	 */
-	public async mget<T>(keys: Array<string | number>): Promise<Record<string, T | undefined>> {
+	public async mget<T>(
+		keys: Array<string | number>,
+	): Promise<Record<string, T | undefined>> {
 		const result: Record<string, T | undefined> = {};
 		for (const key of keys) {
-			// eslint-disable-next-line no-await-in-loop
 			result[key.toString()] = await this._cache.get<T>(key.toString());
 		}
 
@@ -210,7 +220,7 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {boolean}
 	 */
 	public async mdel(keys: Array<string | number>): Promise<boolean> {
-		return this._cache.deleteMany(keys.map(key => key.toString()));
+		return this._cache.deleteMany(keys.map((key) => key.toString()));
 	}
 
 	/**
