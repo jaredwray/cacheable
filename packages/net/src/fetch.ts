@@ -1,7 +1,11 @@
-import {type Cacheable, type CacheableOptions} from 'cacheable';
-import {fetch as undiciFetch, type RequestInit, type Response as UndiciResponse} from 'undici';
+import type { Cacheable } from "cacheable";
+import {
+	type RequestInit,
+	type Response as UndiciResponse,
+	fetch as undiciFetch,
+} from "undici";
 
-export type FetchOptions = Omit<RequestInit, 'cache'> & {
+export type FetchOptions = Omit<RequestInit, "cache"> & {
 	cache: Cacheable;
 };
 
@@ -12,14 +16,17 @@ export type FetchOptions = Omit<RequestInit, 'cache'> & {
  * instance of `Cacheable` or a `CacheableOptions` object.
  * @returns {Promise<UndiciResponse>} The response from the fetch.
  */
-export async function fetch(url: string, options: FetchOptions): Promise<UndiciResponse> {
+export async function fetch(
+	url: string,
+	options: FetchOptions,
+): Promise<UndiciResponse> {
 	if (!options.cache) {
-		throw new Error('Fetch options must include a cache instance or options.');
+		throw new Error("Fetch options must include a cache instance or options.");
 	}
 
 	const fetchOptions: RequestInit = {
 		...options,
-		cache: 'no-cache',
+		cache: "no-cache",
 	};
 
 	return options.cache.getOrSet(url, async () => {
@@ -35,4 +42,4 @@ export async function fetch(url: string, options: FetchOptions): Promise<UndiciR
 }
 
 export type Response = UndiciResponse;
-export type {RequestInit as FetchRequestInit} from 'undici';
+export type { RequestInit as FetchRequestInit } from "undici";
