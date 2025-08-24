@@ -702,6 +702,22 @@ describe("cacheable wrap", async () => {
 		expect(result).toBe(result2); // Cached
 	});
 
+	test("CacheableMemory.wrap() passes createKey option through", () => {
+		const cacheable = new CacheableMemory();
+		let createKeyCalled = false;
+		const testFunction = (argument: string) => `Result for ${argument}`;
+		const options = {
+			createKey: () => {
+				createKeyCalled = true;
+				return "testKey";
+			},
+		};
+
+		const wrapped = cacheable.wrap(testFunction, options);
+		wrapped("arg1");
+		expect(createKeyCalled).toBe(true);
+	});
+
 	test("should be able to pass in expiration time", async () => {
 		const cacheable = new CacheableMemory();
 		const expire = Date.now() + 100;

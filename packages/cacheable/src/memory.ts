@@ -684,6 +684,7 @@ export class CacheableMemory extends Hookified {
 		const wrapOptions = {
 			ttl: options?.ttl ?? this._ttl,
 			keyPrefix: options?.keyPrefix,
+			createKey: options?.createKey,
 			cache: this,
 		};
 

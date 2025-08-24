@@ -754,6 +754,7 @@ export class Cacheable extends Hookified {
 		const wrapOptions = {
 			ttl: options?.ttl ?? this._ttl,
 			keyPrefix: options?.keyPrefix,
+			createKey: options?.createKey,
 			cache: this,
 			cacheId: this._cacheId,
 		};

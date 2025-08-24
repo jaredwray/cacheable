@@ -378,4 +378,20 @@ describe("wrap functions handling thrown errors", () => {
 
 		expect(result1).toBe(result2);
 	});
+
+	it("CacheableMemory.wrap() passes createKey option through", () => {
+		const cache = new CacheableMemory();
+		let createKeyCalled = false;
+		const testFunction = (argument: string) => `Result for ${argument}`;
+		const options = {
+			createKey: () => {
+				createKeyCalled = true;
+				return "testKey";
+			},
+		};
+
+		const wrapped = cache.wrap(testFunction, options);
+		wrapped("arg1");
+		expect(createKeyCalled).toBe(true);
+	});
 });

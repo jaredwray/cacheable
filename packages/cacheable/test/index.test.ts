@@ -708,6 +708,22 @@ describe("cacheable wrap", async () => {
 		const result3 = await wrapped(1);
 		expect(result3).not.toBe(result2);
 	});
+
+	test("Cacheable.wrap() passes createKey option through", async () => {
+		const cacheable = new Cacheable();
+		let createKeyCalled = false;
+		const asyncFunction = async (argument: string) => `Result for ${argument}`;
+		const options = {
+			createKey: () => {
+				createKeyCalled = true;
+				return "testKey";
+			},
+		};
+
+		const wrapped = cacheable.wrap(asyncFunction, options);
+		await wrapped("arg1");
+		expect(createKeyCalled).toBe(true);
+	});
 });
 
 describe("cacheable namespace", async () => {
