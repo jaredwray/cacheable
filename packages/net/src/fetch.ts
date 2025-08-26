@@ -29,7 +29,10 @@ export async function fetch(
 		cache: "no-cache",
 	};
 
-	return options.cache.getOrSet(url, async () => {
+	// Create a cache key that includes the method
+	const cacheKey = `${options.method || "GET"}:${url}`;
+
+	const cachedData = await options.cache.getOrSet(cacheKey, async () => {
 		// Perform the fetch operation
 		const response = await undiciFetch(url, fetchOptions);
 		/* c8 ignore next 3 */
@@ -37,8 +40,27 @@ export async function fetch(
 			throw new Error(`Fetch failed with status ${response.status}`);
 		}
 
-		return response;
-	}) as Promise<UndiciResponse>;
+		// Convert response to cacheable format
+		const body = await response.text();
+		return {
+			body,
+			status: response.status,
+			statusText: response.statusText,
+			headers: Object.fromEntries(response.headers.entries()),
+		};
+	});
+
+	// Reconstruct Response object from cached data
+	/* c8 ignore next 3 */
+	if (!cachedData) {
+		throw new Error("Failed to get or set cache data");
+	}
+
+	return new Response(cachedData.body, {
+		status: cachedData.status,
+		statusText: cachedData.statusText,
+		headers: cachedData.headers,
+	}) as UndiciResponse;
 }
 
 export type Response = UndiciResponse;
