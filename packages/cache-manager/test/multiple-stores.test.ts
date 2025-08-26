@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: test file
 import { faker } from "@faker-js/faker";
 import { Keyv } from "keyv";
 import { beforeEach, describe, expect, it, vi } from "vitest";
