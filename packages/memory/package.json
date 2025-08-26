@@ -44,7 +44,7 @@
 		"@cacheable/utils": "workspace:^",
 		"@keyv/bigmap": "^1.0.0",
 		"hookified": "^1.10.0",
-		"keyv": "^5.4.0"
+		"keyv": "^5.5.0"
 	},
 	"keywords": [
 		"cacheable",
