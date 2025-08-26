@@ -41,7 +41,7 @@
 	"dependencies": {
 		"cacheable": "workspace:^",
 		"hookified": "^1.12.0",
-		"undici": "^7.13.0"
+		"undici": "^7.15.0"
 	},
 	"keywords": [
 		"cacheable",
