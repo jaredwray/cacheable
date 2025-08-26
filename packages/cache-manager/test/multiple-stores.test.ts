@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noExplicitAny: test file
 import { faker } from "@faker-js/faker";
 import { Keyv } from "keyv";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -110,5 +111,53 @@ describe("multiple stores", () => {
 		await expect(cache.wrap(data.key, () => "latest", ttl)).resolves.toEqual(
 			"new",
 		);
+	});
+
+	it("event: get emits store id for secondary hit", async () => {
+		const events: any[] = [];
+
+		cache.on("get", (e: any) => events.push(e));
+
+		await keyv2.set(data.key, data.value);
+		await expect(cache.get(data.key)).resolves.toEqual(data.value);
+
+		const rec = events.find((e) => e.key === data.key);
+
+		expect(rec).toBeTruthy();
+		expect(typeof rec.store).toBe("string");
+		expect(rec.store).not.toBe("primary");
+	});
+
+	it("event: set emits store id per layer (primary + secondary)", async () => {
+		const events: any[] = [];
+
+		cache.on("set", (e: any) => events.push(e));
+
+		await cache.set(data.key, data.value, ttl);
+
+		const stores = events.filter((e) => e.key === data.key).map((e) => e.store);
+
+		expect(stores.length).toBeGreaterThanOrEqual(2);
+		expect(new Set(stores).size).toBeGreaterThanOrEqual(2);
+		expect(stores).toContain("primary");
+		expect(stores).toContain("secondary:0");
+	});
+
+	it("event: get includes store for deeper layers (secondary:1)", async () => {
+		const l1 = new Keyv();
+		const l2 = new Keyv();
+		const l3 = new Keyv();
+
+		const cache = createCache({ stores: [l1, l2, l3] });
+
+		const events: any[] = [];
+		cache.on("get", (e: any) => events.push(e));
+
+		await l3.set(data.key, data.value);
+		await expect(cache.get(data.key)).resolves.toEqual(data.value);
+
+		const rec = events.find((e) => e.key === data.key);
+
+		expect(rec.store).toBe("secondary:1");
 	});
 });

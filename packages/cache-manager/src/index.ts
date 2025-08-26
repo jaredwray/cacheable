@@ -5,6 +5,8 @@ import { isObject } from "./is-object.js";
 import { lt } from "./lt.js";
 import { runIfFn } from "./run-if-fn.js";
 
+const _storeLabel = (i: number) => (i === 0 ? "primary" : `secondary:${i - 1}`);
+
 export type CreateCacheOptions = {
 	stores?: Keyv[];
 	ttl?: number;
@@ -105,16 +107,21 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 				eventEmitter.emit("get", { key, error });
 			}
 		} else {
-			for (const store of stores) {
+			for (let i = 0; i < stores.length; i++) {
+				const store = stores[i];
 				try {
 					const cacheValue = await store.get<T>(key);
 					if (cacheValue !== undefined) {
 						result = cacheValue;
-						eventEmitter.emit("get", { key, value: result });
+						eventEmitter.emit("get", {
+							key,
+							value: result,
+							store: _storeLabel(i),
+						});
 						break;
 					}
 				} catch (error) {
-					eventEmitter.emit("get", { key, error });
+					eventEmitter.emit("get", { key, error, store: _storeLabel(i) });
 				}
 			}
 		}
@@ -212,19 +219,18 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		ttl?: number,
 	): Promise<T> => {
 		try {
+			const promises = stores.map(async (store, i) => {
+				await store.set(key, value, ttl ?? options?.ttl);
+				eventEmitter.emit("set", { key, value, store: _storeLabel(i) });
+			});
+
 			if (nonBlocking) {
-				Promise.all(
-					stores.map(async (store) =>
-						store.set(key, value, ttl ?? options?.ttl),
-					),
-				);
+				Promise.all(promises);
 				eventEmitter.emit("set", { key, value });
 				return value;
 			}
 
-			await Promise.all(
-				stores.map(async (store) => store.set(key, value, ttl ?? options?.ttl)),
-			);
+			await Promise.all(promises);
 			eventEmitter.emit("set", { key, value });
 			return value;
 		} catch (error) {
