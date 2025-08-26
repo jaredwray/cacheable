@@ -16,8 +16,9 @@
 		"node": ">=18"
 	},
 	"scripts": {
-		"test": "biome check --write && vitest run --coverage",
-		"test:ci": "biome check && vitest run --coverage",
+		"lint": "biome check --write --error-on-warnings",
+		"test": "pnpm lint && vitest run --coverage",
+		"test:ci": "biome check --error-on-warnings && vitest run --coverage",
 		"prepublish": "pnpm run build",
 		"build": "rimraf ./dist && tsc --project tsconfig.build.json",
 		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"

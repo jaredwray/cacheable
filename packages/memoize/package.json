@@ -23,8 +23,9 @@
 	"scripts": {
 		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
 		"prepublish": "pnpm build",
-		"test": "biome check --write && vitest run --coverage",
-		"test:ci": "biome && vitest run --coverage",
+		"lint": "biome check --write --error-on-warnings",
+		"test": "pnpm lint && vitest run --coverage",
+		"test:ci": "biome check --error-on-warnings && vitest run --coverage",
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
