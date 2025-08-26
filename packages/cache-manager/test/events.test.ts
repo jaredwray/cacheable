@@ -132,4 +132,44 @@ describe("events", () => {
 			error,
 		});
 	});
+
+	it("event: get includes store and value", async () => {
+		const listener = vi.fn();
+
+		cache.on("get", listener);
+
+		await cache.set(data.key, data.value);
+		await cache.get(data.key);
+
+		expect(listener).toHaveBeenCalled();
+
+		const payload = listener.mock.calls[0][0];
+
+		expect(payload).toMatchObject({
+			key: data.key,
+			value: data.value,
+			store: "primary",
+		});
+	});
+
+	it("event: get error includes store", async () => {
+		const l1 = new Keyv();
+		const l2 = new Keyv();
+
+		const cache = createCache({ stores: [l1, l2] });
+		const events: any[] = [];
+
+		cache.on("get", (e: any) => events.push(e));
+
+		l1.get = () => {
+			throw new Error("boom");
+		};
+
+		await expect(cache.get("nope")).resolves.toBeUndefined();
+
+		const errEvt = events.find((e) => e.error);
+
+		expect(errEvt).toBeTruthy();
+		expect(errEvt.store).toBe("primary");
+	});
 });
