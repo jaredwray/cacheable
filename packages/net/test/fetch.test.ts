@@ -1,7 +1,7 @@
 import process from "node:process";
 import { Cacheable } from "cacheable";
 import { describe, expect, test } from "vitest";
-import { type FetchOptions, fetch } from "../src/fetch.js";
+import { type FetchOptions, fetch, get } from "../src/fetch.js";
 
 const testUrl = process.env.TEST_URL ?? "https://mockhttp.org";
 const testTimeout = 10_000; // 10 seconds
@@ -55,6 +55,42 @@ describe("Fetch", () => {
 			await expect(fetch(url, options)).rejects.toThrow(
 				"Fetch options must include a cache instance or options.",
 			);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using get helper",
+		async () => {
+			const url = `${testUrl}/get`;
+			const options = {
+				cache: new Cacheable(),
+			};
+			const response = await get(url, options);
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should cache data using get helper",
+		async () => {
+			const cache = new Cacheable({ stats: true });
+			const url = `${testUrl}/get`;
+			const options = {
+				cache,
+			};
+			const response = await get(url, options);
+			const response2 = await get(url, options);
+			expect(response).toBeDefined();
+			expect(response2).toBeDefined();
+			expect(cache.stats).toBeDefined();
+			expect(cache.stats.hits).toBe(1);
+			// Verify that both responses have the same text content
+			const text1 = await response.text();
+			const text2 = await response2.text();
+			expect(text1).toEqual(text2);
 		},
 		testTimeout,
 	);

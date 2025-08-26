@@ -63,5 +63,18 @@ export async function fetch(
 	}) as UndiciResponse;
 }
 
+/**
+ * Perform a GET request to a URL with optional request options.
+ * @param {string} url The URL to fetch.
+ * @param {Omit<FetchOptions, 'method'>} options Optional request options. The `cache` property is required.
+ * @returns {Promise<UndiciResponse>} The response from the fetch.
+ */
+export async function get(
+	url: string,
+	options: Omit<FetchOptions, "method">,
+): Promise<UndiciResponse> {
+	return fetch(url, { ...options, method: "GET" });
+}
+
 export type Response = UndiciResponse;
 export type { RequestInit as FetchRequestInit } from "undici";

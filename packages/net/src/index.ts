@@ -50,6 +50,19 @@ export class CacheableNet extends Hookified {
 
 		return fetch(url, fetchOptions);
 	}
+
+	/**
+	 * Perform a GET request to a URL with optional request options. Will use the cache that is already set in the instance.
+	 * @param {string} url The URL to fetch.
+	 * @param {Omit<FetchRequestInit, 'method'>} options Optional request options (method will be set to GET).
+	 * @returns {Promise<FetchResponse>} The response from the fetch.
+	 */
+	public async get(
+		url: string,
+		options?: Omit<FetchRequestInit, "method">,
+	): Promise<FetchResponse> {
+		return this.fetch(url, { ...options, method: "GET" });
+	}
 }
 
 export const Net = CacheableNet;
@@ -57,5 +70,6 @@ export {
 	type FetchOptions,
 	type FetchRequestInit,
 	fetch,
+	get,
 	type Response as FetchResponse,
 } from "./fetch.js";
