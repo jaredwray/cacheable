@@ -130,6 +130,37 @@ cache.onHook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, (data) => {
 ```
 This is called when the secondary store sets the value in the primary store. This is useful if you want to do something before the value is set in the primary store such as manipulating the ttl or the value.
 
+The following events are provided:
+
+- `error`: Emitted when an error occurs.
+- `cache:hit`: Emitted when a cache hit occurs.
+- `cache:miss`: Emitted when a cache miss occurs.
+
+Here is an example of using the `error` event:
+
+```javascript
+import { Cacheable, CacheableEvents } from 'cacheable';
+
+const cacheable = new Cacheable();
+cacheable.on(CacheableEvents.ERROR, (error) => {
+  console.error(`Cacheable error: ${error.message}`);
+});
+```
+
+We also offer `cache:hit` and `cache:miss` events. These events are emitted when a cache hit or miss occurs, respectively. Here is how to use them:
+
+```javascript
+import { Cacheable, CacheableEvents } from 'cacheable';
+
+const cacheable = new Cacheable();
+cacheable.on(CacheableEvents.CACHE_HIT, (data) => {
+  console.log(`Cache hit: ${data.key} ${data.value} ${data.store}`); // the store will say primary or secondary
+});
+cacheable.on(CacheableEvents.CACHE_MISS, (data) => {
+  console.log(`Cache miss: ${data.key} ${data.store}`); // the store will say primary or secondary
+});
+```
+
 # Storage Tiering and Caching
 
 `cacheable` is built as a layer 1 and layer 2 caching engine by default. The purpose is to have your layer 1 be fast and your layer 2 be more persistent. The primary store is the layer 1 cache and the secondary store is the layer 2 cache. By adding the secondary store you are enabling layer 2 caching. By default the operations are blocking but fault tolerant:
@@ -697,8 +728,6 @@ const generateKey = (options?: GetOrSetOptions) => {
 const function_ = async () => Math.random() * 100;
 const value = await cache.getOrSet(generateKey(), function_, { ttl: '1h' });
 ```
-
-
 
 # How to Contribute
 
