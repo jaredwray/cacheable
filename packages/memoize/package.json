@@ -29,7 +29,7 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.0",
+		"@biomejs/biome": "^2.2.2",
 		"@faker-js/faker": "^9.9.0",
 		"@keyv/redis": "^5.0.0",
 		"@keyv/valkey": "^1.0.7",
