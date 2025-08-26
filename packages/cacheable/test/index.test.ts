@@ -2,7 +2,7 @@ import KeyvRedis from "@keyv/redis";
 import { Keyv } from "keyv";
 import { LRUCache } from "lru-cache";
 import { describe, expect, test, vi } from "vitest";
-import { Cacheable, CacheableHooks } from "../src/index.js";
+import { Cacheable, CacheableEvents, CacheableHooks } from "../src/index.js";
 import { createWrapKey, type GetOrSetOptions } from "../src/wrap.js";
 import { sleep } from "./sleep.js";
 
@@ -794,5 +794,174 @@ describe("cacheable get or set", () => {
 		const result1 = await cacheable.getOrSet(generateKey, function_);
 		const result2 = await cacheable.getOrSet(generateKey, function_);
 		expect(result1).toBe(result2);
+	});
+});
+
+describe("cacheable events", async () => {
+	test("should emit cache:hit event when getting value from primary store", async () => {
+		const cacheable = new Cacheable();
+		const events: Array<{ key: string; value: unknown; store: string }> = [];
+
+		cacheable.on(CacheableEvents.CACHE_HIT, (event) => {
+			events.push(event);
+		});
+
+		await cacheable.set("test-key", "test-value");
+		const value = await cacheable.get("test-key");
+
+		expect(value).toBe("test-value");
+		expect(events).toHaveLength(1);
+		expect(events[0]).toEqual({
+			key: "test-key",
+			value: "test-value",
+			store: "primary",
+		});
+	});
+
+	test("should emit cache:hit event when getting value from secondary store", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary });
+		const events: Array<{ key: string; value: unknown; store: string }> = [];
+
+		cacheable.on(CacheableEvents.CACHE_HIT, (event) => {
+			events.push(event);
+		});
+
+		// Set directly in secondary store
+		await secondary.set("test-key2", "secondary-value");
+
+		// Get should retrieve from secondary and emit event
+		const value = await cacheable.get("test-key2");
+
+		expect(value).toBe("secondary-value");
+		expect(events).toHaveLength(1);
+		expect(events[0]).toEqual({
+			key: "test-key2",
+			value: "secondary-value",
+			store: "secondary",
+		});
+
+		// Verify it was copied to primary
+		const primaryValue = await cacheable.primary.get("test-key2");
+		expect(primaryValue).toBe("secondary-value");
+	});
+
+	test("should emit cache:miss event when key not found", async () => {
+		const cacheable = new Cacheable();
+		const events: Array<{ key: string; store?: string }> = [];
+
+		cacheable.on(CacheableEvents.CACHE_MISS, (event) => {
+			events.push(event);
+		});
+
+		const value = await cacheable.get("non-existent-key");
+
+		expect(value).toBeUndefined();
+		expect(events).toHaveLength(1);
+		expect(events[0]).toEqual({
+			key: "non-existent-key",
+			store: "primary",
+		});
+	});
+
+	test("should emit cache:miss for both stores when key not found", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary });
+		const events: Array<{ key: string; store?: string }> = [];
+
+		cacheable.on(CacheableEvents.CACHE_MISS, (event) => {
+			events.push(event);
+		});
+
+		const value = await cacheable.get("non-existent-key");
+
+		expect(value).toBeUndefined();
+		expect(events).toHaveLength(2);
+		expect(events[0]).toEqual({
+			key: "non-existent-key",
+			store: "primary",
+		});
+		expect(events[1]).toEqual({
+			key: "non-existent-key",
+			store: "secondary",
+		});
+	});
+
+	test("should emit cache:hit and cache:miss events in getMany", async () => {
+		const cacheable = new Cacheable();
+		const hitEvents: Array<{ key: string; value: unknown; store: string }> = [];
+		const missEvents: Array<{ key: string; store?: string }> = [];
+
+		cacheable.on(CacheableEvents.CACHE_HIT, (event) => {
+			hitEvents.push(event);
+		});
+
+		cacheable.on(CacheableEvents.CACHE_MISS, (event) => {
+			missEvents.push(event);
+		});
+
+		// Set some keys
+		await cacheable.set("key1", "value1");
+		await cacheable.set("key2", "value2");
+
+		// Get multiple keys including some that don't exist
+		const values = await cacheable.getMany(["key1", "key2", "key3", "key4"]);
+
+		expect(values).toEqual(["value1", "value2", undefined, undefined]);
+
+		// Check hit events
+		expect(hitEvents).toHaveLength(2);
+		expect(hitEvents[0]).toEqual({
+			key: "key1",
+			value: "value1",
+			store: "primary",
+		});
+		expect(hitEvents[1]).toEqual({
+			key: "key2",
+			value: "value2",
+			store: "primary",
+		});
+
+		// Check miss events - only primary store misses since no secondary
+		expect(missEvents).toHaveLength(2);
+		expect(missEvents[0]).toEqual({ key: "key3", store: "primary" });
+		expect(missEvents[1]).toEqual({ key: "key4", store: "primary" });
+	});
+
+	test("should emit cache:hit event from secondary store in getMany", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary });
+		const hitEvents: Array<{ key: string; value: unknown; store: string }> = [];
+		const missEvents: Array<{ key: string; store?: string }> = [];
+
+		cacheable.on(CacheableEvents.CACHE_HIT, (event) => {
+			hitEvents.push(event);
+		});
+
+		cacheable.on(CacheableEvents.CACHE_MISS, (event) => {
+			missEvents.push(event);
+		});
+
+		// Set key only in secondary store
+		await secondary.set("secondary-key", "secondary-value");
+
+		// Get single key that only exists in secondary
+		const values = await cacheable.getMany(["secondary-key"]);
+
+		expect(values).toEqual(["secondary-value"]);
+
+		// Should have one miss from primary and one hit from secondary
+		expect(missEvents).toHaveLength(1);
+		expect(missEvents[0]).toEqual({
+			key: "secondary-key",
+			store: "primary",
+		});
+
+		expect(hitEvents).toHaveLength(1);
+		expect(hitEvents[0]).toEqual({
+			key: "secondary-key",
+			value: "secondary-value",
+			store: "secondary",
+		});
 	});
 });

@@ -29,6 +29,8 @@ export enum CacheableHooks {
 
 export enum CacheableEvents {
 	ERROR = "error",
+	CACHE_HIT = "cache:hit",
+	CACHE_MISS = "cache:miss",
 }
 
 export type CacheableOptions = {
@@ -368,10 +370,27 @@ export class Cacheable extends Hookified {
 			result = await this._primary.get(key, { raw: true });
 			// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 			let ttl;
+			// Emit cache hit or miss for primary store
+			if (result) {
+				this.emit(CacheableEvents.CACHE_HIT, {
+					key,
+					value: result.value,
+					store: "primary",
+				});
+			} else {
+				this.emit(CacheableEvents.CACHE_MISS, { key, store: "primary" });
+			}
+
 			if (!result && this._secondary) {
 				const secondaryResult = await this.getSecondaryRawResults<T>(key);
 				if (secondaryResult?.value) {
 					result = secondaryResult;
+					// Emit cache hit for secondary store
+					this.emit(CacheableEvents.CACHE_HIT, {
+						key,
+						value: result.value,
+						store: "secondary",
+					});
 					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 					const expires = secondaryResult.expires ?? undefined;
 					ttl = calculateTtlFromExpiration(cascadeTtl, expires);
@@ -381,6 +400,9 @@ export class Cacheable extends Hookified {
 						setItem,
 					);
 					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+				} else {
+					// Emit cache miss for secondary store
+					this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
 				}
 			}
 
@@ -435,6 +457,18 @@ export class Cacheable extends Hookified {
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET_MANY, keys);
 			result = await this._primary.get(keys, { raw: true });
+			// Emit cache hits and misses for primary store
+			for (const [i, key] of keys.entries()) {
+				if (result[i]) {
+					this.emit(CacheableEvents.CACHE_HIT, {
+						key,
+						value: result[i].value,
+						store: "primary",
+					});
+				} else {
+					this.emit(CacheableEvents.CACHE_MISS, { key, store: "primary" });
+				}
+			}
 			if (this._secondary) {
 				const missingKeys = [];
 				for (const [i, key] of keys.entries()) {
@@ -446,28 +480,45 @@ export class Cacheable extends Hookified {
 				const secondaryResults =
 					await this.getManySecondaryRawResults<T>(missingKeys);
 
+				let secondaryIndex = 0;
 				for await (const [i, key] of keys.entries()) {
-					if (!result[i] && secondaryResults[i]) {
-						result[i] = secondaryResults[i];
+					if (!result[i]) {
+						const secondaryResult = secondaryResults[secondaryIndex];
+						if (secondaryResult && secondaryResult.value !== undefined) {
+							result[i] = secondaryResult;
+							// Emit cache hit for secondary store
+							this.emit(CacheableEvents.CACHE_HIT, {
+								key,
+								value: secondaryResult.value,
+								store: "secondary",
+							});
 
-						const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+							const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
 
-						let { expires } = secondaryResults[i];
+							let { expires } = secondaryResult;
 
-						/* c8 ignore next 4 */
-						if (expires === null) {
-							expires = undefined;
+							/* c8 ignore next 4 */
+							if (expires === null) {
+								expires = undefined;
+							}
+
+							const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+
+							const setItem = { key, value: secondaryResult.value, ttl };
+
+							await this.hook(
+								CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
+								setItem,
+							);
+							await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+						} else {
+							// Emit cache miss for secondary store
+							this.emit(CacheableEvents.CACHE_MISS, {
+								key,
+								store: "secondary",
+							});
 						}
-
-						const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
-
-						const setItem = { key, value: result[i].value, ttl };
-
-						await this.hook(
-							CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
-							setItem,
-						);
-						await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+						secondaryIndex++;
 					}
 				}
 			}

@@ -13,3 +13,6 @@ packages/website/site/docs/*.md
 packages/cacheable-request/test/testdb.sqlite
 packages/flat-cache/.cache
 packages/file-entry-cache/.cache
+
+# AI
+.claude
