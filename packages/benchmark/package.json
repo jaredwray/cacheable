@@ -32,9 +32,9 @@
 	"scripts": {
 		"build": "echo 'no build needed'",
 		"prepublish": "pnpm build",
-		"lint": "biome check --write",
-		"test": "echo 'no tests needed'",
-		"test:ci": "echo 'no tests needed'",
+		"lint": "biome check --write --error-on-warnings",
+		"test": "pnpm lint && echo 'no tests needed'",
+		"test:ci": "biome check --error-on-warnings && echo 'no tests needed'",
 		"benchmark:memory": "tsx ./memory.ts && tsx ./memory-lru.ts",
 		"benchmark:cache": "tsx ./cache-get-set.ts",
 		"benchmark:nodecache": "tsx ./node-cache.ts",
