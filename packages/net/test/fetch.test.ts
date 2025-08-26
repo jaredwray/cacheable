@@ -31,7 +31,15 @@ describe("Fetch", () => {
 				cache,
 			};
 			const response = await fetch(url, options);
+			const response2 = await fetch(url, options);
 			expect(response).toBeDefined();
+			expect(response2).toBeDefined();
+			expect(cache.stats).toBeDefined();
+			expect(cache.stats.hits).toBe(1);
+			// Verify that both responses have the same text content
+			const text1 = await response.text();
+			const text2 = await response2.text();
+			expect(text1).toEqual(text2);
 		},
 		testTimeout,
 	);

@@ -350,10 +350,10 @@ test("return with protocol", async () => {
 
 test("hostname over host", async () => {
 	const options = {
-		host: "mockhttp.org",
-		hostname: "cacheable.org",
+		host: "example.org",
+		hostname: "mockhttp.org",
 	};
-	const expected = "GET:http://cacheable.org";
+	const expected = "GET:http://mockhttp.org";
 	const expectKey = `cacheable-request:${expected}`;
 	const actualKey = await testCacheKeyReturn(options);
 	expect(actualKey).toBe(expectKey);
