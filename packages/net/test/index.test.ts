@@ -7,6 +7,7 @@ import {
 	type CacheableNetOptions,
 	type FetchOptions,
 	fetch,
+	get,
 	Net,
 } from "../src/index.js";
 
@@ -76,6 +77,32 @@ describe("Cacheable Net", () => {
 			};
 			const response = await net.fetch(url, options);
 			expect(response).toBeDefined();
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using CacheableNet get method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/get`;
+			const response = await net.get(url);
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using standalone get function",
+		async () => {
+			const url = `${testUrl}/get`;
+			const options = {
+				cache: new Cacheable(),
+			};
+			const response = await get(url, options);
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
 		},
 		testTimeout,
 	);
