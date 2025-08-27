@@ -1,11 +1,11 @@
 import { Cacheable, type CacheableOptions } from "cacheable";
 import { Hookified, type HookifiedOptions } from "hookified";
 import {
+	type DataResponse,
 	type FetchOptions,
 	type FetchRequestInit,
 	type Response as FetchResponse,
 	fetch,
-	type GetResponse,
 } from "./fetch.js";
 
 export type CacheableNetOptions = {
@@ -56,13 +56,47 @@ export class CacheableNet extends Hookified {
 	 * Perform a GET request to a URL with optional request options. Will use the cache that is already set in the instance.
 	 * @param {string} url The URL to fetch.
 	 * @param {Omit<FetchRequestInit, 'method'>} options Optional request options (method will be set to GET).
-	 * @returns {Promise<GetResponse<T>>} The typed data and response from the fetch.
+	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
 	 */
 	public async get<T = unknown>(
 		url: string,
 		options?: Omit<FetchRequestInit, "method">,
-	): Promise<GetResponse<T>> {
+	): Promise<DataResponse<T>> {
 		const response = await this.fetch(url, { ...options, method: "GET" });
+		const text = await response.text();
+		let data: T;
+
+		try {
+			data = JSON.parse(text) as T;
+		} catch {
+			// If not JSON, return as is
+			data = text as T;
+		}
+
+		// Create a new response with the text already consumed
+		const newResponse = new Response(text, {
+			status: response.status,
+			statusText: response.statusText,
+			headers: response.headers as HeadersInit,
+		}) as FetchResponse;
+
+		return {
+			data,
+			response: newResponse,
+		};
+	}
+
+	/**
+	 * Perform a POST request to a URL with optional request options. Will use the cache that is already set in the instance.
+	 * @param {string} url The URL to fetch.
+	 * @param {Omit<FetchRequestInit, 'method'>} options Optional request options (method will be set to POST).
+	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
+	 */
+	public async post<T = unknown>(
+		url: string,
+		options?: Omit<FetchRequestInit, "method">,
+	): Promise<DataResponse<T>> {
+		const response = await this.fetch(url, { ...options, method: "POST" });
 		const text = await response.text();
 		let data: T;
 
@@ -89,10 +123,12 @@ export class CacheableNet extends Hookified {
 
 export const Net = CacheableNet;
 export {
+	type DataResponse,
 	type FetchOptions,
 	type FetchRequestInit,
 	fetch,
 	type GetResponse,
 	get,
+	post,
 	type Response as FetchResponse,
 } from "./fetch.js";
