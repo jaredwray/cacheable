@@ -63,22 +63,59 @@ export async function fetch(
 	}) as UndiciResponse;
 }
 
-export type GetResponse<T = unknown> = {
+export type DataResponse<T = unknown> = {
 	data: T;
 	response: UndiciResponse;
 };
+
+// Keep GetResponse as an alias for backward compatibility
+export type GetResponse<T = unknown> = DataResponse<T>;
 
 /**
  * Perform a GET request to a URL with optional request options.
  * @param {string} url The URL to fetch.
  * @param {Omit<FetchOptions, 'method'>} options Optional request options. The `cache` property is required.
- * @returns {Promise<GetResponse<T>>} The typed data and response from the fetch.
+ * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
  */
 export async function get<T = unknown>(
 	url: string,
 	options: Omit<FetchOptions, "method">,
-): Promise<GetResponse<T>> {
+): Promise<DataResponse<T>> {
 	const response = await fetch(url, { ...options, method: "GET" });
+	const text = await response.text();
+	let data: T;
+
+	try {
+		data = JSON.parse(text) as T;
+	} catch {
+		// If not JSON, return as is
+		data = text as T;
+	}
+
+	// Create a new response with the text already consumed
+	const newResponse = new Response(text, {
+		status: response.status,
+		statusText: response.statusText,
+		headers: response.headers as HeadersInit,
+	}) as UndiciResponse;
+
+	return {
+		data,
+		response: newResponse,
+	};
+}
+
+/**
+ * Perform a POST request to a URL with optional request options.
+ * @param {string} url The URL to fetch.
+ * @param {Omit<FetchOptions, 'method'>} options Optional request options. The `cache` property is required.
+ * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
+ */
+export async function post<T = unknown>(
+	url: string,
+	options: Omit<FetchOptions, "method">,
+): Promise<DataResponse<T>> {
+	const response = await fetch(url, { ...options, method: "POST" });
 	const text = await response.text();
 	let data: T;
 

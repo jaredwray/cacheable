@@ -9,6 +9,7 @@ import {
 	fetch,
 	get,
 	Net,
+	post,
 } from "../src/index.js";
 
 const testUrl = process.env.TEST_URL ?? "https://mockhttp.org";
@@ -144,6 +145,92 @@ describe("Cacheable Net", () => {
 			expect(typeof result.data).toBe("string");
 			expect(result.response).toBeDefined();
 			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using CacheableNet post method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const options = {
+				body: JSON.stringify({ test: "data" }),
+				headers: {
+					"Content-Type": "application/json",
+				},
+			};
+			const result = await net.post(url, options);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using standalone post function",
+		async () => {
+			const url = `${testUrl}/post`;
+			const options = {
+				cache: new Cacheable(),
+				body: JSON.stringify({ test: "data" }),
+				headers: {
+					"Content-Type": "application/json",
+				},
+			};
+			const result = await post(url, options);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle non-JSON response in CacheableNet post method",
+		async () => {
+			const net = new Net();
+			// Use httpbin's status endpoint that returns non-JSON
+			const url = "https://httpbin.org/status/201";
+			const options = {
+				body: "test data",
+			};
+			const result = await net.post(url, options);
+			expect(result).toBeDefined();
+			// Status endpoint returns empty body
+			expect(result.data).toBe("");
+			expect(typeof result.data).toBe("string");
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(201);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch typed data using post with generics",
+		async () => {
+			interface PostResponse {
+				method: string;
+				data: string;
+			}
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const result = await net.post<PostResponse>(url, {
+				body: JSON.stringify({ test: "data" }),
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			// TypeScript will ensure result.data has the PostResponse type
+			if (typeof result.data === "object" && result.data !== null) {
+				expect(result.data).toHaveProperty("method");
+			}
 		},
 		testTimeout,
 	);
