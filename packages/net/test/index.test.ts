@@ -8,6 +8,7 @@ import {
 	type FetchOptions,
 	fetch,
 	get,
+	head,
 	Net,
 	patch,
 	post,
@@ -212,6 +213,55 @@ describe("Cacheable Net", () => {
 			expect(result.data).toBeDefined();
 			expect(result.response).toBeDefined();
 			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using CacheableNet head method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/get`;
+			const response = await net.head(url);
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
+			// Headers should still be present
+			expect(response.headers).toBeDefined();
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using standalone head function",
+		async () => {
+			const url = `${testUrl}/get`;
+			const options = {
+				cache: new Cacheable(),
+			};
+			const response = await head(url, options);
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
+			// Headers should still be present
+			expect(response.headers).toBeDefined();
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle head with options in CacheableNet",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/get`;
+			const options = {
+				headers: {
+					"User-Agent": "test-agent",
+				},
+			};
+			const response = await net.head(url, options);
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
+			// Headers should still be present
+			expect(response.headers).toBeDefined();
 		},
 		testTimeout,
 	);

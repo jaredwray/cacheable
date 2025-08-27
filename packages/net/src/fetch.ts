@@ -239,5 +239,19 @@ export async function patch<T = unknown>(
 	};
 }
 
+/**
+ * Perform a HEAD request to a URL with optional request options.
+ * @param {string} url The URL to fetch.
+ * @param {Omit<FetchOptions, 'method'>} options Optional request options. The `cache` property is required.
+ * @returns {Promise<UndiciResponse>} The response from the fetch (no body).
+ */
+export async function head(
+	url: string,
+	options: Omit<FetchOptions, "method">,
+): Promise<UndiciResponse> {
+	const response = await fetch(url, { ...options, method: "HEAD" });
+	return response;
+}
+
 export type Response = UndiciResponse;
 export type { RequestInit as FetchRequestInit } from "undici";

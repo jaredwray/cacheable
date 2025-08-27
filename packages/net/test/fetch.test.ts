@@ -1,7 +1,14 @@
 import process from "node:process";
 import { Cacheable } from "cacheable";
 import { describe, expect, test } from "vitest";
-import { type FetchOptions, fetch, get, patch, post } from "../src/fetch.js";
+import {
+	type FetchOptions,
+	fetch,
+	get,
+	head,
+	patch,
+	post,
+} from "../src/fetch.js";
 
 const testUrl = process.env.TEST_URL ?? "https://mockhttp.org";
 const testTimeout = 10_000; // 10 seconds
@@ -171,6 +178,43 @@ describe("Fetch", () => {
 			// Verify response objects are valid
 			expect(result1.response.status).toBe(200);
 			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using head helper",
+		async () => {
+			const url = `${testUrl}/get`;
+			const options = {
+				cache: new Cacheable(),
+			};
+			const response = await head(url, options);
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
+			// Headers should still be present
+			expect(response.headers).toBeDefined();
+		},
+		testTimeout,
+	);
+
+	test(
+		"should cache HEAD requests",
+		async () => {
+			const cache = new Cacheable({ stats: true });
+			const url = `${testUrl}/get`;
+			const options = {
+				cache,
+			};
+			const response1 = await head(url, options);
+			const response2 = await head(url, options);
+			expect(response1).toBeDefined();
+			expect(response2).toBeDefined();
+			expect(cache.stats).toBeDefined();
+			expect(cache.stats.hits).toBe(1);
+			// Both responses should have the same status
+			expect(response1.status).toBe(200);
+			expect(response2.status).toBe(200);
 		},
 		testTimeout,
 	);
