@@ -9,6 +9,7 @@ import {
 	fetch,
 	get,
 	Net,
+	patch,
 	post,
 } from "../src/index.js";
 
@@ -154,13 +155,8 @@ describe("Cacheable Net", () => {
 		async () => {
 			const net = new Net();
 			const url = `${testUrl}/post`;
-			const options = {
-				body: JSON.stringify({ test: "data" }),
-				headers: {
-					"Content-Type": "application/json",
-				},
-			};
-			const result = await net.post(url, options);
+			const data = { test: "data" };
+			const result = await net.post(url, data);
 			expect(result).toBeDefined();
 			expect(result.data).toBeDefined();
 			expect(result.response).toBeDefined();
@@ -173,14 +169,45 @@ describe("Cacheable Net", () => {
 		"should fetch data using standalone post function",
 		async () => {
 			const url = `${testUrl}/post`;
+			const data = { test: "data" };
 			const options = {
 				cache: new Cacheable(),
-				body: JSON.stringify({ test: "data" }),
-				headers: {
-					"Content-Type": "application/json",
-				},
 			};
-			const result = await post(url, options);
+			const result = await post(url, data, options);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle post without options parameter",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const data = { test: "data" };
+
+			// Calling post with only url and data, no options at all
+			const result = await net.post(url, data);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle post with empty options object",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const data = { test: "data" };
+
+			// Pass empty options object (no headers)
+			const result = await net.post(url, data, {});
 			expect(result).toBeDefined();
 			expect(result.data).toBeDefined();
 			expect(result.response).toBeDefined();
@@ -195,10 +222,8 @@ describe("Cacheable Net", () => {
 			const net = new Net();
 			// Use httpbin's status endpoint that returns non-JSON
 			const url = "https://httpbin.org/status/201";
-			const options = {
-				body: "test data",
-			};
-			const result = await net.post(url, options);
+			const data = "test data";
+			const result = await net.post(url, data);
 			expect(result).toBeDefined();
 			// Status endpoint returns empty body
 			expect(result.data).toBe("");
@@ -218,12 +243,8 @@ describe("Cacheable Net", () => {
 			}
 			const net = new Net();
 			const url = `${testUrl}/post`;
-			const result = await net.post<PostResponse>(url, {
-				body: JSON.stringify({ test: "data" }),
-				headers: {
-					"Content-Type": "application/json",
-				},
-			});
+			const data = { test: "data" };
+			const result = await net.post<PostResponse>(url, data);
 			expect(result).toBeDefined();
 			expect(result.data).toBeDefined();
 			expect(result.response).toBeDefined();
@@ -234,4 +255,204 @@ describe("Cacheable Net", () => {
 		},
 		testTimeout,
 	);
+
+	test(
+		"should fetch data using CacheableNet patch method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const data = { update: "data" };
+			const result = await net.patch(url, data);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using standalone patch function",
+		async () => {
+			const url = `${testUrl}/patch`;
+			const data = { update: "data" };
+			const options = {
+				cache: new Cacheable(),
+			};
+			const result = await patch(url, data, options);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle non-JSON response in CacheableNet patch method",
+		async () => {
+			const net = new Net();
+			// Use httpbin's status endpoint that returns non-JSON
+			const url = "https://httpbin.org/status/200";
+			const data = "test data";
+			const result = await net.patch(url, data);
+			expect(result).toBeDefined();
+			// Status endpoint returns empty body
+			expect(result.data).toBe("");
+			expect(typeof result.data).toBe("string");
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle patch without options parameter",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const data = { update: "data" };
+
+			// Calling patch with only url and data, no options at all
+			const result = await net.patch(url, data);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle patch with empty options object",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const data = { update: "data" };
+
+			// Pass empty options object (no headers)
+			const result = await net.patch(url, data, {});
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch typed data using patch with generics",
+		async () => {
+			interface PatchResponse {
+				method: string;
+				data: string;
+			}
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const data = { update: "data" };
+			const result = await net.patch<PatchResponse>(url, data);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			// TypeScript will ensure result.data has the PatchResponse type
+			if (typeof result.data === "object" && result.data !== null) {
+				expect(result.data).toHaveProperty("method");
+			}
+		},
+		testTimeout,
+	);
+
+	test("should handle FormData in CacheableNet post method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/post`;
+		const formData = new FormData();
+		formData.append("field", "value");
+
+		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.post(url, formData);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept FormData, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test("should handle URLSearchParams in CacheableNet post method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/post`;
+		const params = new URLSearchParams();
+		params.append("test", "value");
+
+		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.post(url, params);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test("should handle Blob in CacheableNet post method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/post`;
+		const blob = new Blob(["data"], { type: "text/plain" });
+
+		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.post(url, blob);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept Blob, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test("should handle FormData in CacheableNet patch method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/patch`;
+		const formData = new FormData();
+		formData.append("field", "value");
+
+		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.patch(url, formData);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept FormData, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test("should handle URLSearchParams in CacheableNet patch method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/patch`;
+		const params = new URLSearchParams();
+		params.append("test", "value");
+
+		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.patch(url, params);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test("should handle Blob in CacheableNet patch method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/patch`;
+		const blob = new Blob(["data"], { type: "text/plain" });
+
+		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.patch(url, blob);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept Blob, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
 });

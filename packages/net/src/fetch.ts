@@ -29,6 +29,16 @@ export async function fetch(
 		cache: "no-cache",
 	};
 
+	// Skip caching for POST and PATCH requests
+	if (options.method === "POST" || options.method === "PATCH") {
+		const response = await undiciFetch(url, fetchOptions);
+		/* c8 ignore next 3 */
+		if (!response.ok) {
+			throw new Error(`Fetch failed with status ${response.status}`);
+		}
+		return response;
+	}
+
 	// Create a cache key that includes the method
 	const cacheKey = `${options.method || "GET"}:${url}`;
 
@@ -106,24 +116,52 @@ export async function get<T = unknown>(
 }
 
 /**
- * Perform a POST request to a URL with optional request options.
+ * Perform a POST request to a URL with data and optional request options.
  * @param {string} url The URL to fetch.
- * @param {Omit<FetchOptions, 'method'>} options Optional request options. The `cache` property is required.
+ * @param {unknown} data The data to send in the request body.
+ * @param {Omit<FetchOptions, 'method' | 'body'>} options Optional request options. The `cache` property is required.
  * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
  */
 export async function post<T = unknown>(
 	url: string,
-	options: Omit<FetchOptions, "method">,
+	data: unknown,
+	options: Omit<FetchOptions, "method" | "body">,
 ): Promise<DataResponse<T>> {
-	const response = await fetch(url, { ...options, method: "POST" });
+	// Automatically stringify data if it's an object and set appropriate headers
+	let body: BodyInit | undefined;
+	const headers = { ...options.headers } as Record<string, string>;
+
+	if (typeof data === "string") {
+		body = data;
+	} else if (
+		data instanceof FormData ||
+		data instanceof URLSearchParams ||
+		data instanceof Blob
+	) {
+		body = data as BodyInit;
+	} else {
+		// Assume it's JSON data
+		body = JSON.stringify(data);
+		// Set Content-Type to JSON if not already set
+		if (!headers["Content-Type"] && !headers["content-type"]) {
+			headers["Content-Type"] = "application/json";
+		}
+	}
+
+	const response = await fetch(url, {
+		...options,
+		headers,
+		body: body as RequestInit["body"],
+		method: "POST",
+	});
 	const text = await response.text();
-	let data: T;
+	let responseData: T;
 
 	try {
-		data = JSON.parse(text) as T;
+		responseData = JSON.parse(text) as T;
 	} catch {
 		// If not JSON, return as is
-		data = text as T;
+		responseData = text as T;
 	}
 
 	// Create a new response with the text already consumed
@@ -134,7 +172,69 @@ export async function post<T = unknown>(
 	}) as UndiciResponse;
 
 	return {
-		data,
+		data: responseData,
+		response: newResponse,
+	};
+}
+
+/**
+ * Perform a PATCH request to a URL with data and optional request options.
+ * @param {string} url The URL to fetch.
+ * @param {unknown} data The data to send in the request body.
+ * @param {Omit<FetchOptions, 'method' | 'body'>} options Optional request options. The `cache` property is required.
+ * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
+ */
+export async function patch<T = unknown>(
+	url: string,
+	data: unknown,
+	options: Omit<FetchOptions, "method" | "body">,
+): Promise<DataResponse<T>> {
+	// Automatically stringify data if it's an object and set appropriate headers
+	let body: BodyInit | undefined;
+	const headers = { ...options.headers } as Record<string, string>;
+
+	if (typeof data === "string") {
+		body = data;
+	} else if (
+		data instanceof FormData ||
+		data instanceof URLSearchParams ||
+		data instanceof Blob
+	) {
+		body = data as BodyInit;
+	} else {
+		// Assume it's JSON data
+		body = JSON.stringify(data);
+		// Set Content-Type to JSON if not already set
+		if (!headers["Content-Type"] && !headers["content-type"]) {
+			headers["Content-Type"] = "application/json";
+		}
+	}
+
+	const response = await fetch(url, {
+		...options,
+		headers,
+		body: body as RequestInit["body"],
+		method: "PATCH",
+	});
+	const text = await response.text();
+	let responseData: T;
+
+	try {
+		responseData = JSON.parse(text) as T;
+	} catch {
+		// If not JSON, return as is
+		responseData = text as T;
+	}
+
+	// Create a new response with the text already consumed
+	const newResponse = new Response(text, {
+		status: response.status,
+		statusText: response.statusText,
+		headers: response.headers as HeadersInit,
+	}) as UndiciResponse;
+
+	return {
+		data: responseData,
 		response: newResponse,
 	};
 }
