@@ -223,11 +223,76 @@ export class CacheableNet extends Hookified {
 			response: newResponse,
 		};
 	}
+
+	/**
+	 * Perform a DELETE request to a URL with optional data and request options. Will use the cache that is already set in the instance.
+	 * @param {string} url The URL to fetch.
+	 * @param {unknown} data Optional data to send in the request body.
+	 * @param {Omit<FetchRequestInit, 'method' | 'body'>} options Optional request options (method and body will be set).
+	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
+	 */
+	public async delete<T = unknown>(
+		url: string,
+		data?: unknown,
+		options?: Omit<FetchRequestInit, "method" | "body">,
+	): Promise<DataResponse<T>> {
+		// Automatically stringify data if it's provided and set appropriate headers
+		let body: BodyInit | undefined;
+		const headers = { ...options?.headers } as Record<string, string>;
+
+		if (data !== undefined) {
+			if (typeof data === "string") {
+				body = data;
+			} else if (
+				data instanceof FormData ||
+				data instanceof URLSearchParams ||
+				data instanceof Blob
+			) {
+				body = data as BodyInit;
+			} else {
+				// Assume it's JSON data
+				body = JSON.stringify(data);
+				// Set Content-Type to JSON if not already set
+				if (!headers["Content-Type"] && !headers["content-type"]) {
+					headers["Content-Type"] = "application/json";
+				}
+			}
+		}
+
+		const response = await this.fetch(url, {
+			...options,
+			headers,
+			body: body as FetchRequestInit["body"],
+			method: "DELETE",
+		});
+		const text = await response.text();
+		let responseData: T;
+
+		try {
+			responseData = JSON.parse(text) as T;
+		} catch {
+			// If not JSON, return as is
+			responseData = text as T;
+		}
+
+		// Create a new response with the text already consumed
+		const newResponse = new Response(text, {
+			status: response.status,
+			statusText: response.statusText,
+			headers: response.headers as HeadersInit,
+		}) as FetchResponse;
+
+		return {
+			data: responseData,
+			response: newResponse,
+		};
+	}
 }
 
 export const Net = CacheableNet;
 export {
 	type DataResponse,
+	del,
 	type FetchOptions,
 	type FetchRequestInit,
 	fetch,
