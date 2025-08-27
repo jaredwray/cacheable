@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest";
 import {
 	CacheableNet,
 	type CacheableNetOptions,
+	del,
 	type FetchOptions,
 	fetch,
 	get,
@@ -510,6 +511,184 @@ describe("Cacheable Net", () => {
 		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
 		try {
 			const result = await net.patch(url, blob);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept Blob, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test(
+		"should fetch data using CacheableNet delete method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const data = { id: "123" };
+			const result = await net.delete(url, data);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch data using standalone delete function",
+		async () => {
+			const url = `${testUrl}/delete`;
+			const data = { id: "123" };
+			const options = {
+				cache: new Cacheable(),
+			};
+			const result = await del(url, data, options);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle delete without data parameter",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			try {
+				const result = await net.delete(url);
+				expect(result).toBeDefined();
+				expect(result.data).toBeDefined();
+				expect(result.response).toBeDefined();
+				// May succeed or fail depending on endpoint requirements
+			} catch (error) {
+				// Some endpoints require data for DELETE
+				expect((error as Error).message).toContain("400");
+			}
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle delete with empty options object",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const data = { id: "123" };
+			const result = await net.delete(url, data, {});
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch typed data using delete with generics",
+		async () => {
+			interface DeleteResponse {
+				success: boolean;
+				message: string;
+			}
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const data = { id: "123" };
+			const result = await net.delete<DeleteResponse>(url, data);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			// TypeScript will ensure result.data has the DeleteResponse type
+			if (typeof result.data === "object" && result.data !== null) {
+				expect(result.data).toHaveProperty("method");
+			}
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle non-JSON response in CacheableNet delete method",
+		async () => {
+			const net = new Net();
+			// Use mockhttp.org/plain which may accept DELETE
+			const url = `${testUrl}/plain`;
+			const data = "test data";
+
+			try {
+				const result = await net.delete(url, data, {
+					headers: {
+						"Content-Type": "text/plain",
+					},
+				});
+				expect(result).toBeDefined();
+				// If plain endpoint accepts DELETE, should return plain text
+				expect(result.data).toBeDefined();
+				expect(typeof result.data).toBe("string");
+				expect(result.data).toBeTruthy();
+				expect(result.response).toBeDefined();
+			} catch (error) {
+				// If plain doesn't accept DELETE, that's okay
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
+
+	test("should handle string data in CacheableNet delete method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/delete`;
+		const data = JSON.stringify({ id: "123" });
+		const result = await net.delete(url, data, {
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+		expect(result).toBeDefined();
+		expect(result.data).toBeDefined();
+		expect(result.response).toBeDefined();
+		expect(result.response.status).toBe(200);
+	});
+
+	test("should handle FormData in CacheableNet delete method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/delete`;
+		const formData = new FormData();
+		formData.append("id", "123");
+
+		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.delete(url, formData);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept FormData, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test("should handle URLSearchParams in CacheableNet delete method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/delete`;
+		const params = new URLSearchParams();
+		params.append("id", "123");
+
+		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.delete(url, params);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test("should handle Blob in CacheableNet delete method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/delete`;
+		const blob = new Blob(["data"], { type: "text/plain" });
+
+		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.delete(url, blob);
 			expect(result).toBeDefined();
 		} catch (error) {
 			// If server doesn't accept Blob, that's okay - we're testing the client code

@@ -29,10 +29,11 @@ export async function fetch(
 		cache: "no-cache",
 	};
 
-	// Skip caching for POST, PATCH, and HEAD requests
+	// Skip caching for POST, PATCH, DELETE, and HEAD requests
 	if (
 		options.method === "POST" ||
 		options.method === "PATCH" ||
+		options.method === "DELETE" ||
 		options.method === "HEAD"
 	) {
 		const response = await undiciFetch(url, fetchOptions);
@@ -219,6 +220,92 @@ export async function patch<T = unknown>(
 		headers,
 		body: body as RequestInit["body"],
 		method: "PATCH",
+	});
+	const text = await response.text();
+	let responseData: T;
+
+	try {
+		responseData = JSON.parse(text) as T;
+	} catch {
+		// If not JSON, return as is
+		responseData = text as T;
+	}
+
+	// Create a new response with the text already consumed
+	const newResponse = new Response(text, {
+		status: response.status,
+		statusText: response.statusText,
+		headers: response.headers as HeadersInit,
+	}) as UndiciResponse;
+
+	return {
+		data: responseData,
+		response: newResponse,
+	};
+}
+
+/**
+ * Perform a DELETE request to a URL with optional data and request options.
+ * @param {string} url The URL to fetch.
+ * @param {unknown} data Optional data to send in the request body.
+ * @param {Omit<FetchOptions, 'method' | 'body'>} options Optional request options. The `cache` property is required.
+ * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
+ */
+export async function del<T = unknown>(
+	url: string,
+	data?: unknown,
+	options?: Omit<FetchOptions, "method" | "body">,
+): Promise<DataResponse<T>> {
+	// Handle the case where data is not provided (second param is options)
+	let actualData: unknown;
+	let actualOptions: Omit<FetchOptions, "method" | "body">;
+
+	if (
+		data !== undefined &&
+		typeof data === "object" &&
+		data !== null &&
+		"cache" in data
+	) {
+		// Second parameter is options, not data
+		actualData = undefined;
+		actualOptions = data as Omit<FetchOptions, "method" | "body">;
+	} else if (options) {
+		// Normal case: data and options provided
+		actualData = data;
+		actualOptions = options;
+	} else {
+		// No options provided
+		throw new Error("Fetch options must include a cache instance or options.");
+	}
+
+	// Automatically stringify data if it's provided and set appropriate headers
+	let body: BodyInit | undefined;
+	const headers = { ...actualOptions.headers } as Record<string, string>;
+
+	if (actualData !== undefined) {
+		if (typeof actualData === "string") {
+			body = actualData;
+		} else if (
+			actualData instanceof FormData ||
+			actualData instanceof URLSearchParams ||
+			actualData instanceof Blob
+		) {
+			body = actualData as BodyInit;
+		} else {
+			// Assume it's JSON data
+			body = JSON.stringify(actualData);
+			// Set Content-Type to JSON if not already set
+			if (!headers["Content-Type"] && !headers["content-type"]) {
+				headers["Content-Type"] = "application/json";
+			}
+		}
+	}
+
+	const response = await fetch(url, {
+		...actualOptions,
+		headers,
+		body: body as RequestInit["body"],
+		method: "DELETE",
 	});
 	const text = await response.text();
 	let responseData: T;
