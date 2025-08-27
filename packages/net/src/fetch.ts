@@ -1,4 +1,5 @@
 import type { Cacheable } from "cacheable";
+import CachePolicy from "http-cache-semantics";
 import {
 	type RequestInit,
 	type Response as UndiciResponse,
@@ -7,13 +8,40 @@ import {
 
 export type FetchOptions = Omit<RequestInit, "cache"> & {
 	cache: Cacheable;
+	/**
+	 * Enable HTTP cache headers for intelligent response caching.
+	 *
+	 * When enabled (default), the fetch function will:
+	 * - Respect standard HTTP cache headers (Cache-Control, ETag, Last-Modified, Expires)
+	 * - Store and validate cache policies according to RFC 7234
+	 * - Handle conditional requests with If-None-Match and If-Modified-Since headers
+	 * - Process 304 Not Modified responses to update cached entries
+	 * - Only cache responses that are considered "storable" per HTTP specifications
+	 * - Automatically revalidate stale cache entries when needed
+	 * - **Set cache TTL based on HTTP headers (e.g., max-age directive)**
+	 * - Refresh TTL when receiving 304 Not Modified responses
+	 *
+	 * When disabled, the fetch function will:
+	 * - Use simple key-based caching without considering HTTP headers
+	 * - Cache all successful GET responses regardless of cache directives
+	 * - Never revalidate cached entries
+	 * - Ignore cache-control directives from the server
+	 * - **Use the default TTL from the Cacheable instance**
+	 *
+	 * @default true
+	 */
+	useCacheHeaders?: boolean;
 };
 
 /**
  * Fetch data from a URL with optional request options.
+ *
+ * When `useCacheHeaders` is enabled (default), cache entries will have their TTL
+ * set based on HTTP cache headers (e.g., Cache-Control: max-age). When disabled,
+ * the default TTL from the Cacheable instance is used.
+ *
  * @param {string} url The URL to fetch.
- * @param {FetchOptions} options Optional request options. The `cacheable` property is required and should be an
- * instance of `Cacheable` or a `CacheableOptions` object.
+ * @param {FetchOptions} options Optional request options. The `cache` property is required.
  * @returns {Promise<UndiciResponse>} The response from the fetch.
  */
 export async function fetch(
@@ -44,37 +72,196 @@ export async function fetch(
 		return response;
 	}
 
-	// Create a cache key that includes the method
-	const cacheKey = `${options.method || "GET"}:${url}`;
+	const useCacheHeaders = options.useCacheHeaders !== false; // Default to true
+	const method = options.method || "GET";
 
-	const cachedData = await options.cache.getOrSet(cacheKey, async () => {
-		// Perform the fetch operation
-		const response = await undiciFetch(url, fetchOptions);
+	// Create a cache key that includes the method
+	const cacheKey = `${method}:${url}`;
+
+	if (!useCacheHeaders) {
+		// Simple caching without HTTP cache semantics
+		const cachedData = await options.cache.getOrSet(cacheKey, async () => {
+			// Perform the fetch operation
+			const response = await undiciFetch(url, fetchOptions);
+			/* c8 ignore next 3 */
+			if (!response.ok) {
+				throw new Error(`Fetch failed with status ${response.status}`);
+			}
+
+			// Convert response to cacheable format
+			const body = await response.text();
+			return {
+				body,
+				status: response.status,
+				statusText: response.statusText,
+				headers: Object.fromEntries(response.headers.entries()),
+			};
+		});
+
+		// Reconstruct Response object from cached data
 		/* c8 ignore next 3 */
-		if (!response.ok) {
-			throw new Error(`Fetch failed with status ${response.status}`);
+		if (!cachedData) {
+			throw new Error("Failed to get or set cache data");
 		}
 
-		// Convert response to cacheable format
-		const body = await response.text();
-		return {
-			body,
-			status: response.status,
-			statusText: response.statusText,
-			headers: Object.fromEntries(response.headers.entries()),
-		};
-	});
-
-	// Reconstruct Response object from cached data
-	/* c8 ignore next 3 */
-	if (!cachedData) {
-		throw new Error("Failed to get or set cache data");
+		return new Response(cachedData.body, {
+			status: cachedData.status,
+			statusText: cachedData.statusText,
+			headers: cachedData.headers,
+		}) as UndiciResponse;
 	}
 
-	return new Response(cachedData.body, {
-		status: cachedData.status,
-		statusText: cachedData.statusText,
-		headers: cachedData.headers,
+	// HTTP cache semantics enabled
+	const policyKey = `${cacheKey}:policy`;
+
+	type CachedResponse = {
+		body: string;
+		status: number;
+		statusText: string;
+		headers: Record<string, string>;
+	};
+
+	// Try to get cached response and policy
+	const [cachedResponse, cachedPolicyData] = await Promise.all([
+		options.cache.get<CachedResponse>(cacheKey),
+		options.cache.get(policyKey),
+	]);
+
+	let policy: CachePolicy | undefined;
+	let cachedBody: string | undefined;
+	let cachedStatus: number | undefined;
+	let cachedStatusText: string | undefined;
+	let cachedHeaders: Record<string, string> | undefined;
+
+	if (cachedPolicyData && cachedResponse) {
+		// Deserialize the policy
+		policy = CachePolicy.fromObject(
+			cachedPolicyData as CachePolicy.CachePolicyObject,
+		);
+		cachedBody = cachedResponse.body;
+		cachedStatus = cachedResponse.status;
+		cachedStatusText = cachedResponse.statusText;
+		cachedHeaders = cachedResponse.headers;
+	}
+
+	// Prepare the request for http-cache-semantics
+	const requestHeaders = fetchOptions.headers || {};
+	const request = {
+		url,
+		method,
+		headers: requestHeaders as Record<string, string>,
+	};
+
+	// Check if we have a valid cached response
+	if (policy?.satisfiesWithoutRevalidation(request)) {
+		// Return cached response with updated headers
+		const headers = policy.responseHeaders();
+		return new Response(cachedBody, {
+			status: cachedStatus,
+			statusText: cachedStatusText,
+			headers: headers as HeadersInit,
+		}) as UndiciResponse;
+	}
+
+	// Check if we need revalidation
+	let revalidationHeaders = {};
+	if (policy?.revalidationHeaders(request)) {
+		revalidationHeaders = policy.revalidationHeaders(request);
+	}
+
+	// Make the fetch request
+	const response = await undiciFetch(url, {
+		...fetchOptions,
+		headers: {
+			...fetchOptions.headers,
+			...revalidationHeaders,
+		},
+	});
+
+	// Handle 304 Not Modified
+	if (response.status === 304 && policy) {
+		// Update the policy with the revalidation response
+		const { policy: updatedPolicy, modified } = policy.revalidatedPolicy(
+			request,
+			{
+				status: response.status,
+				headers: Object.fromEntries(response.headers.entries()),
+			},
+		);
+
+		if (!modified) {
+			// Calculate new TTL from updated policy
+			const ttl = updatedPolicy.timeToLive();
+
+			// Store updated policy with new TTL
+			await options.cache.set(policyKey, updatedPolicy.toObject(), ttl);
+
+			// Also refresh the cached response TTL
+			await options.cache.set(
+				cacheKey,
+				{
+					body: cachedBody,
+					status: cachedStatus,
+					statusText: cachedStatusText,
+					headers: cachedHeaders,
+				},
+				ttl,
+			);
+
+			// Return cached response with updated headers
+			const headers = updatedPolicy.responseHeaders();
+			return new Response(cachedBody, {
+				status: cachedStatus,
+				statusText: cachedStatusText,
+				headers: headers as HeadersInit,
+			}) as UndiciResponse;
+		}
+	}
+
+	/* c8 ignore next 3 */
+	if (!response.ok && response.status !== 304) {
+		throw new Error(`Fetch failed with status ${response.status}`);
+	}
+
+	// Read the response body
+	const body = await response.text();
+
+	// Create response object for http-cache-semantics
+	const responseForPolicy = {
+		status: response.status,
+		statusText: response.statusText,
+		headers: Object.fromEntries(response.headers.entries()),
+	};
+
+	// Create a new cache policy
+	const newPolicy = new CachePolicy(request, responseForPolicy);
+
+	// Check if the response is cacheable
+	if (newPolicy.storable()) {
+		// Calculate TTL from cache policy
+		const ttl = newPolicy.timeToLive();
+
+		// Store the response and policy with appropriate TTL
+		await Promise.all([
+			options.cache.set(
+				cacheKey,
+				{
+					body,
+					status: response.status,
+					statusText: response.statusText,
+					headers: responseForPolicy.headers,
+				},
+				ttl,
+			),
+			options.cache.set(policyKey, newPolicy.toObject(), ttl),
+		]);
+	}
+
+	// Return the response
+	return new Response(body, {
+		status: response.status,
+		statusText: response.statusText,
+		headers: response.headers as HeadersInit,
 	}) as UndiciResponse;
 }
 

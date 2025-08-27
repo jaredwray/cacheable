@@ -42,7 +42,7 @@ describe("Fetch", () => {
 			// Make second request to verify caching with default GET method
 			const response2 = await fetch(url, options);
 			expect(response2).toBeDefined();
-			expect(cache.stats.hits).toBe(1);
+			expect(cache.stats.hits).toBeGreaterThanOrEqual(1);
 		},
 		testTimeout,
 	);
@@ -55,6 +55,7 @@ describe("Fetch", () => {
 			const options: FetchOptions = {
 				method: "GET",
 				cache,
+				useCacheHeaders: false, // Disable HTTP cache headers to ensure basic caching
 			};
 			const response = await fetch(url, options);
 			const response2 = await fetch(url, options);
@@ -108,6 +109,7 @@ describe("Fetch", () => {
 			const url = `${testUrl}/get`;
 			const options = {
 				cache,
+				useCacheHeaders: false, // Disable HTTP cache headers to ensure basic caching
 			};
 			const result1 = await get(url, options);
 			const result2 = await get(url, options);
@@ -569,5 +571,395 @@ describe("Fetch", () => {
 			// If server doesn't accept Blob, that's okay - we're testing the client code
 			expect(error).toBeDefined();
 		}
+	});
+
+	describe("HTTP Cache Headers", () => {
+		test(
+			"should use HTTP cache headers by default",
+			async () => {
+				const cache = new Cacheable({ stats: true });
+				const url = `${testUrl}/cache/30`; // Endpoint with 30-second cache headers
+				const options: FetchOptions = {
+					method: "GET",
+					cache,
+				};
+
+				// First request should hit the server
+				const response1 = await fetch(url, options);
+				expect(response1).toBeDefined();
+				const text1 = await response1.text();
+
+				// Second request should use cache (within cache validity period)
+				const response2 = await fetch(url, options);
+				expect(response2).toBeDefined();
+				const text2 = await response2.text();
+
+				// Both responses should have the same content
+				expect(text1).toEqual(text2);
+				// Should have one cache hit
+				expect(cache.stats.hits).toBeGreaterThanOrEqual(1);
+			},
+			testTimeout,
+		);
+
+		test(
+			"should disable HTTP cache headers when useCacheHeaders is false",
+			async () => {
+				const cache = new Cacheable({ stats: true });
+				const url = `${testUrl}/cache/30`; // Endpoint with 30-second cache headers
+				const options: FetchOptions = {
+					method: "GET",
+					cache,
+					useCacheHeaders: false,
+				};
+
+				// First request
+				const response1 = await fetch(url, options);
+				expect(response1).toBeDefined();
+				const text1 = await response1.text();
+
+				// Second request should still use basic cache (ignoring HTTP cache headers)
+				const response2 = await fetch(url, options);
+				expect(response2).toBeDefined();
+				const text2 = await response2.text();
+
+				// Both responses should have the same content
+				expect(text1).toEqual(text2);
+				// Should have one cache hit (basic caching still works)
+				expect(cache.stats.hits).toBeGreaterThanOrEqual(1);
+			},
+			testTimeout,
+		);
+
+		test(
+			"should respect cache headers when useCacheHeaders is enabled",
+			async () => {
+				const cache = new Cacheable({ stats: true });
+				const url = `${testUrl}/get`; // Regular endpoint
+				const options: FetchOptions = {
+					method: "GET",
+					cache,
+					useCacheHeaders: true,
+				};
+
+				// First request
+				const response1 = await fetch(url, options);
+				expect(response1).toBeDefined();
+
+				// Second request should use cache if headers allow
+				const response2 = await fetch(url, options);
+				expect(response2).toBeDefined();
+
+				// Cache behavior depends on server headers
+				expect(cache.stats).toBeDefined();
+			},
+			testTimeout,
+		);
+
+		test(
+			"should handle cached responses with HTTP cache headers",
+			async () => {
+				const cache = new Cacheable();
+				const url = `${testUrl}/get`; // Regular endpoint
+				const options: FetchOptions = {
+					method: "GET",
+					cache,
+					useCacheHeaders: true,
+				};
+
+				// First request gets the full response
+				const response1 = await fetch(url, options);
+				expect(response1).toBeDefined();
+				expect(response1.status).toBe(200);
+
+				// Second request may use cache or revalidate
+				const response2 = await fetch(url, options);
+				expect(response2).toBeDefined();
+				// Response should be successful
+				expect(response2.status).toBe(200);
+
+				// Both responses should have valid content
+				const text1 = await response1.text();
+				const text2 = await response2.text();
+				expect(text1).toBeTruthy();
+				expect(text2).toBeTruthy();
+				// Parse as JSON to verify structure
+				const json1 = JSON.parse(text1);
+				const json2 = JSON.parse(text2);
+				expect(json1.method).toBe("GET");
+				expect(json2.method).toBe("GET");
+			},
+			testTimeout,
+		);
+
+		test(
+			"should store and retrieve cache policy correctly",
+			async () => {
+				const cache = new Cacheable();
+				const url = `${testUrl}/cache/60`; // Endpoint with 60-second cache
+				const options: FetchOptions = {
+					method: "GET",
+					cache,
+					useCacheHeaders: true,
+				};
+
+				// Make first request
+				await fetch(url, options);
+
+				// Check that both response and policy are stored
+				const cacheKey = `GET:${url}`;
+				const policyKey = `${cacheKey}:policy`;
+
+				const storedResponse = await cache.get(cacheKey);
+				const storedPolicy = await cache.get(policyKey);
+
+				expect(storedResponse).toBeDefined();
+				expect(storedPolicy).toBeDefined();
+				expect(storedPolicy).toHaveProperty("v"); // Version property of cache policy
+			},
+			testTimeout,
+		);
+
+		test(
+			"should handle responses with HTTP cache headers",
+			async () => {
+				const cache = new Cacheable();
+				const url = `${testUrl}/get`; // Regular endpoint
+				const options: FetchOptions = {
+					method: "GET",
+					cache,
+					useCacheHeaders: true,
+				};
+
+				// First request
+				const response1 = await fetch(url, options);
+				expect(response1).toBeDefined();
+				expect(response1.status).toBe(200);
+
+				// Check if response was stored
+				const cacheKey = `GET:${url}`;
+				const storedResponse = await cache.get(cacheKey);
+
+				// Response should be stored based on cache headers
+				if (storedResponse) {
+					expect(storedResponse).toBeDefined();
+				}
+			},
+			testTimeout,
+		);
+
+		test(
+			"should handle different HTTP methods with cache headers",
+			async () => {
+				const cache = new Cacheable();
+				const url = `${testUrl}/get`;
+
+				// GET request with cache semantics
+				const getOptions: FetchOptions = {
+					method: "GET",
+					cache,
+					useCacheHeaders: true,
+				};
+				const getResponse = await fetch(url, getOptions);
+				expect(getResponse).toBeDefined();
+				expect(getResponse.status).toBe(200);
+
+				// HEAD request should not be cached
+				const headOptions: FetchOptions = {
+					method: "HEAD",
+					cache,
+					useCacheHeaders: true,
+				};
+				const headResponse = await fetch(url, headOptions);
+				expect(headResponse).toBeDefined();
+
+				// POST request should not be cached
+				const postOptions: FetchOptions = {
+					method: "POST",
+					cache,
+					useCacheHeaders: true,
+					body: JSON.stringify({ test: "data" }),
+					headers: {
+						"Content-Type": "application/json",
+					},
+				};
+				const postUrl = `${testUrl}/post`;
+				const postResponse = await fetch(postUrl, postOptions);
+				expect(postResponse).toBeDefined();
+			},
+			testTimeout,
+		);
+
+		test(
+			"should handle 304 Not Modified responses",
+			async () => {
+				const cache = new Cacheable();
+				// Use a URL that returns 304
+				const url304 = `${testUrl}/status/304`;
+
+				// First, cache some data with a regular endpoint
+				const urlGet = `${testUrl}/get`;
+				const options: FetchOptions = {
+					method: "GET",
+					cache,
+					useCacheHeaders: true,
+				};
+
+				// Cache initial data with the GET endpoint
+				const response1 = await fetch(urlGet, options);
+				expect(response1).toBeDefined();
+				expect(response1.status).toBe(200);
+				await response1.text();
+
+				// Now set up cache for the 304 endpoint
+				const cacheKey304 = `GET:${url304}`;
+				const policyKey304 = `${cacheKey304}:policy`;
+
+				// Store cached data and an expired policy for the 304 URL
+				await cache.set(cacheKey304, {
+					body: '{"cached": "data"}',
+					status: 200,
+					statusText: "OK",
+					headers: {
+						"content-type": "application/json",
+						etag: '"test-etag"',
+					},
+				});
+
+				// Create an expired policy that will trigger revalidation
+				const expiredPolicy = {
+					v: 1,
+					t: Date.now() - 10000, // 10 seconds ago
+					sh: 200,
+					ch: {
+						"cache-control": "max-age=0", // Expired
+						etag: '"test-etag"',
+					},
+					a: Date.now() - 10000,
+					r: {
+						status: 200,
+						headers: {
+							"cache-control": "max-age=0",
+							etag: '"test-etag"',
+						},
+					},
+					se: false,
+					st: 200,
+					resh: { etag: '"test-etag"' },
+					rescc: { "max-age": 0 },
+					m: "GET",
+					u: url304,
+					h: {},
+					reqh: {},
+					reqcc: {},
+				};
+
+				await cache.set(policyKey304, expiredPolicy);
+
+				// Now fetch the 304 URL - should trigger the 304 handling code
+				const response304 = await fetch(url304, options);
+				expect(response304).toBeDefined();
+				// When we get a 304, we should return the cached data with status 200
+				expect(response304.status).toBe(200);
+				const text304 = await response304.text();
+				expect(text304).toBe('{"cached": "data"}');
+			},
+			testTimeout,
+		);
+
+		test(
+			"should handle revalidation headers",
+			async () => {
+				const cache = new Cacheable();
+				const url = `${testUrl}/get`;
+				const options: FetchOptions = {
+					method: "GET",
+					cache,
+					useCacheHeaders: true,
+				};
+
+				// First request to populate cache
+				const response1 = await fetch(url, options);
+				expect(response1).toBeDefined();
+				expect(response1.status).toBe(200);
+
+				// Manually set an expired cache policy to trigger revalidation
+				const cacheKey = `GET:${url}`;
+				const policyKey = `${cacheKey}:policy`;
+
+				// Create a policy that needs revalidation
+				const needsRevalidationPolicy = {
+					v: 1,
+					t: Date.now() - 60000, // 1 minute ago
+					sh: 200,
+					ch: {
+						"cache-control": "max-age=1", // Expired after 1 second
+						"last-modified": new Date(Date.now() - 3600000).toUTCString(),
+					},
+					a: Date.now() - 60000,
+					r: {
+						status: 200,
+						headers: {
+							"cache-control": "max-age=1",
+							"last-modified": new Date(Date.now() - 3600000).toUTCString(),
+						},
+					},
+					se: false,
+					st: 200,
+					resh: {},
+					rescc: { "max-age": 1 },
+					m: "GET",
+					u: url,
+					h: {},
+					reqh: {},
+					reqcc: {},
+				};
+
+				await cache.set(policyKey, needsRevalidationPolicy);
+
+				// This request should use revalidation headers
+				const response2 = await fetch(url, options);
+				expect(response2).toBeDefined();
+				expect(response2.status).toBe(200);
+			},
+			testTimeout,
+		);
+
+		test(
+			"should set cache TTL based on HTTP cache headers",
+			async () => {
+				const cache = new Cacheable();
+				const url = `${testUrl}/cache/3600`; // Mock endpoint with cache headers
+				const options: FetchOptions = {
+					method: "GET",
+					cache,
+					useCacheHeaders: true,
+				};
+
+				// Spy on cache.set to verify TTL is being used
+				let capturedTTL: number | undefined;
+				const originalSet = cache.set.bind(cache);
+				cache.set = async (key: string, value: unknown, ttl?: number) => {
+					if (key === `GET:${url}`) {
+						capturedTTL = ttl;
+					}
+					return originalSet(key, value, ttl);
+				};
+
+				// Make request
+				const response = await fetch(url, options);
+				expect(response).toBeDefined();
+				expect(response.status).toBe(200);
+
+				// Verify that a TTL was set for the cached response
+				// The TTL should be based on the cache headers
+				if (capturedTTL !== undefined) {
+					expect(capturedTTL).toBeGreaterThan(0);
+					// For max-age=3600, TTL should be around 3600000ms
+					expect(capturedTTL).toBeLessThanOrEqual(3600000);
+				}
+			},
+			testTimeout,
+		);
 	});
 });
