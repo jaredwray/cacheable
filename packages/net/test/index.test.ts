@@ -696,32 +696,32 @@ describe("Cacheable Net", () => {
 		}
 	});
 
-	test("should handle useCacheHeaders option in constructor", () => {
-		// Test with useCacheHeaders set to false
-		const netWithoutHeaders = new CacheableNet({ useCacheHeaders: false });
-		expect(netWithoutHeaders.useCacheHeaders).toBe(false);
+	test("should handle useHttpCache option in constructor", () => {
+		// Test with useHttpCache set to false
+		const netWithoutCache = new CacheableNet({ useHttpCache: false });
+		expect(netWithoutCache.useHttpCache).toBe(false);
 
-		// Test with useCacheHeaders set to true
-		const netWithHeaders = new CacheableNet({ useCacheHeaders: true });
-		expect(netWithHeaders.useCacheHeaders).toBe(true);
+		// Test with useHttpCache set to true
+		const netWithCache = new CacheableNet({ useHttpCache: true });
+		expect(netWithCache.useHttpCache).toBe(true);
 
 		// Test default value (should be true)
 		const netDefault = new CacheableNet();
-		expect(netDefault.useCacheHeaders).toBe(true);
+		expect(netDefault.useHttpCache).toBe(true);
 	});
 
-	test("should set and get useCacheHeaders property", () => {
+	test("should set and get useHttpCache property", () => {
 		const net = new CacheableNet();
 
 		// Test getter (default should be true)
-		expect(net.useCacheHeaders).toBe(true);
+		expect(net.useHttpCache).toBe(true);
 
 		// Test setter - set to false
-		net.useCacheHeaders = false;
-		expect(net.useCacheHeaders).toBe(false);
+		net.useHttpCache = false;
+		expect(net.useHttpCache).toBe(false);
 
 		// Test setter - set back to true
-		net.useCacheHeaders = true;
-		expect(net.useCacheHeaders).toBe(true);
+		net.useHttpCache = true;
+		expect(net.useHttpCache).toBe(true);
 	});
 });

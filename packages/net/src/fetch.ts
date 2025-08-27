@@ -9,7 +9,7 @@ import {
 export type FetchOptions = Omit<RequestInit, "cache"> & {
 	cache: Cacheable;
 	/**
-	 * Enable HTTP cache headers for intelligent response caching.
+	 * Enable HTTP cache semantics for intelligent response caching.
 	 *
 	 * When enabled (default), the fetch function will:
 	 * - Respect standard HTTP cache headers (Cache-Control, ETag, Last-Modified, Expires)
@@ -30,13 +30,13 @@ export type FetchOptions = Omit<RequestInit, "cache"> & {
 	 *
 	 * @default true
 	 */
-	useCacheHeaders?: boolean;
+	useHttpCache?: boolean;
 };
 
 /**
  * Fetch data from a URL with optional request options.
  *
- * When `useCacheHeaders` is enabled (default), cache entries will have their TTL
+ * When `useHttpCache` is enabled (default), cache entries will have their TTL
  * set based on HTTP cache headers (e.g., Cache-Control: max-age). When disabled,
  * the default TTL from the Cacheable instance is used.
  *
@@ -72,13 +72,13 @@ export async function fetch(
 		return response;
 	}
 
-	const useCacheHeaders = options.useCacheHeaders !== false; // Default to true
+	const useHttpCache = options.useHttpCache !== false; // Default to true
 	const method = options.method || "GET";
 
 	// Create a cache key that includes the method
 	const cacheKey = `${method}:${url}`;
 
-	if (!useCacheHeaders) {
+	if (!useHttpCache) {
 		// Simple caching without HTTP cache semantics
 		const cachedData = await options.cache.getOrSet(cacheKey, async () => {
 			// Perform the fetch operation

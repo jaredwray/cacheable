@@ -11,7 +11,7 @@ import {
 export type CacheableNetOptions = {
 	cache?: Cacheable | CacheableOptions;
 	/**
-	 * Enable HTTP cache headers for intelligent response caching.
+	 * Enable HTTP cache semantics for intelligent response caching.
 	 *
 	 * When enabled (default), fetch operations will:
 	 * - Respect standard HTTP cache headers (Cache-Control, ETag, Last-Modified, Expires)
@@ -32,12 +32,12 @@ export type CacheableNetOptions = {
 	 *
 	 * @default true
 	 */
-	useCacheHeaders?: boolean;
+	useHttpCache?: boolean;
 } & HookifiedOptions;
 
 export class CacheableNet extends Hookified {
 	private _cache: Cacheable = new Cacheable();
-	private _useCacheHeaders = true;
+	private _useHttpCache = true;
 
 	constructor(options?: CacheableNetOptions) {
 		super(options);
@@ -49,8 +49,8 @@ export class CacheableNet extends Hookified {
 					: new Cacheable(options.cache);
 		}
 
-		if (options?.useCacheHeaders !== undefined) {
-			this._useCacheHeaders = options.useCacheHeaders;
+		if (options?.useHttpCache !== undefined) {
+			this._useHttpCache = options.useHttpCache;
 		}
 	}
 
@@ -63,25 +63,25 @@ export class CacheableNet extends Hookified {
 	}
 
 	/**
-	 * Get the current cache headers setting.
-	 * @returns {boolean} Whether HTTP cache headers are being used for caching decisions
+	 * Get the current HTTP cache setting.
+	 * @returns {boolean} Whether HTTP cache semantics are enabled
 	 */
-	public get useCacheHeaders(): boolean {
-		return this._useCacheHeaders;
+	public get useHttpCache(): boolean {
+		return this._useHttpCache;
 	}
 
 	/**
-	 * Set whether to use HTTP cache headers for caching decisions.
-	 * @param {boolean} value - Enable or disable HTTP cache headers
+	 * Set whether to use HTTP cache semantics.
+	 * @param {boolean} value - Enable or disable HTTP cache semantics
 	 */
-	public set useCacheHeaders(value: boolean) {
-		this._useCacheHeaders = value;
+	public set useHttpCache(value: boolean) {
+		this._useHttpCache = value;
 	}
 
 	/**
 	 * Fetch data from a URL with optional request options. Will use the cache that is already set in the instance.
 	 *
-	 * When `useCacheHeaders` is enabled (default), cache entries will have their TTL
+	 * When `useHttpCache` is enabled (default), cache entries will have their TTL
 	 * set based on HTTP cache headers (e.g., Cache-Control: max-age). When disabled,
 	 * the default TTL from the Cacheable instance is used.
 	 *
@@ -96,7 +96,7 @@ export class CacheableNet extends Hookified {
 		const fetchOptions: FetchOptions = {
 			...options,
 			cache: this._cache,
-			useCacheHeaders: this._useCacheHeaders,
+			useHttpCache: this._useHttpCache,
 		};
 
 		return fetch(url, fetchOptions);
