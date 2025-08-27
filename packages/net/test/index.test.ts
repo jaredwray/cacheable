@@ -86,9 +86,11 @@ describe("Cacheable Net", () => {
 		async () => {
 			const net = new Net();
 			const url = `${testUrl}/get`;
-			const response = await net.get(url);
-			expect(response).toBeDefined();
-			expect(response.status).toBe(200);
+			const result = await net.get(url);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
 		},
 		testTimeout,
 	);
@@ -100,9 +102,48 @@ describe("Cacheable Net", () => {
 			const options = {
 				cache: new Cacheable(),
 			};
-			const response = await get(url, options);
-			expect(response).toBeDefined();
-			expect(response.status).toBe(200);
+			const result = await get(url, options);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch typed data using get with generics",
+		async () => {
+			interface TestData {
+				method: string;
+				url: string;
+			}
+			const net = new Net();
+			const url = `${testUrl}/get`;
+			const result = await net.get<TestData>(url);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			// TypeScript will ensure result.data has the TestData type
+			if (typeof result.data === "object" && result.data !== null) {
+				expect(result.data).toHaveProperty("method");
+			}
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle non-JSON response in CacheableNet get method",
+		async () => {
+			const net = new Net();
+			// Use a URL that returns plain text
+			const mockTextUrl = "https://httpbin.org/robots.txt";
+			const result = await net.get(mockTextUrl);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(typeof result.data).toBe("string");
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
 		},
 		testTimeout,
 	);

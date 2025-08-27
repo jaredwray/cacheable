@@ -63,17 +63,43 @@ export async function fetch(
 	}) as UndiciResponse;
 }
 
+export type GetResponse<T = unknown> = {
+	data: T;
+	response: UndiciResponse;
+};
+
 /**
  * Perform a GET request to a URL with optional request options.
  * @param {string} url The URL to fetch.
  * @param {Omit<FetchOptions, 'method'>} options Optional request options. The `cache` property is required.
- * @returns {Promise<UndiciResponse>} The response from the fetch.
+ * @returns {Promise<GetResponse<T>>} The typed data and response from the fetch.
  */
-export async function get(
+export async function get<T = unknown>(
 	url: string,
 	options: Omit<FetchOptions, "method">,
-): Promise<UndiciResponse> {
-	return fetch(url, { ...options, method: "GET" });
+): Promise<GetResponse<T>> {
+	const response = await fetch(url, { ...options, method: "GET" });
+	const text = await response.text();
+	let data: T;
+
+	try {
+		data = JSON.parse(text) as T;
+	} catch {
+		// If not JSON, return as is
+		data = text as T;
+	}
+
+	// Create a new response with the text already consumed
+	const newResponse = new Response(text, {
+		status: response.status,
+		statusText: response.statusText,
+		headers: response.headers as HeadersInit,
+	}) as UndiciResponse;
+
+	return {
+		data,
+		response: newResponse,
+	};
 }
 
 export type Response = UndiciResponse;
