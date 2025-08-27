@@ -29,8 +29,12 @@ export async function fetch(
 		cache: "no-cache",
 	};
 
-	// Skip caching for POST and PATCH requests
-	if (options.method === "POST" || options.method === "PATCH") {
+	// Skip caching for POST, PATCH, and HEAD requests
+	if (
+		options.method === "POST" ||
+		options.method === "PATCH" ||
+		options.method === "HEAD"
+	) {
 		const response = await undiciFetch(url, fetchOptions);
 		/* c8 ignore next 3 */
 		if (!response.ok) {

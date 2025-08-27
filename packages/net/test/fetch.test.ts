@@ -199,7 +199,7 @@ describe("Fetch", () => {
 	);
 
 	test(
-		"should cache HEAD requests",
+		"should not cache HEAD requests (HEAD requests are not cached)",
 		async () => {
 			const cache = new Cacheable({ stats: true });
 			const url = `${testUrl}/get`;
@@ -211,7 +211,8 @@ describe("Fetch", () => {
 			expect(response1).toBeDefined();
 			expect(response2).toBeDefined();
 			expect(cache.stats).toBeDefined();
-			expect(cache.stats.hits).toBe(1);
+			// HEAD requests should not be cached, so expect 0 hits
+			expect(cache.stats.hits).toBe(0);
 			// Both responses should have the same status
 			expect(response1.status).toBe(200);
 			expect(response2.status).toBe(200);
