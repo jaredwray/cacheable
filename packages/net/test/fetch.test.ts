@@ -1,7 +1,14 @@
 import process from "node:process";
 import { Cacheable } from "cacheable";
 import { describe, expect, test } from "vitest";
-import { type FetchOptions, fetch, get, patch, post } from "../src/fetch.js";
+import {
+	type FetchOptions,
+	fetch,
+	get,
+	head,
+	patch,
+	post,
+} from "../src/fetch.js";
 
 const testUrl = process.env.TEST_URL ?? "https://mockhttp.org";
 const testTimeout = 10_000; // 10 seconds
@@ -120,15 +127,16 @@ describe("Fetch", () => {
 		"should handle non-JSON response in get helper",
 		async () => {
 			const cache = new Cacheable();
-			// Mock a text response by using a URL that returns plain text
-			const mockTextUrl = "https://httpbin.org/robots.txt";
+			// Use mockhttp.org/plain which returns plain text
+			const url = `${testUrl}/plain`;
 			const options = {
 				cache,
 			};
-			const result = await get(mockTextUrl, options);
+			const result = await get(url, options);
 			expect(result).toBeDefined();
 			expect(result.data).toBeDefined();
 			expect(typeof result.data).toBe("string");
+			expect(result.data).toBeTruthy(); // Plain text is not empty
 			expect(result.response).toBeDefined();
 			expect(result.response.status).toBe(200);
 		},
@@ -176,22 +184,64 @@ describe("Fetch", () => {
 	);
 
 	test(
-		"should handle non-JSON response in post helper",
+		"should fetch data using head helper",
 		async () => {
-			const cache = new Cacheable();
-			// Use httpbin's status endpoint that accepts POST and returns non-JSON
-			const url = "https://httpbin.org/status/201";
-			const data = "test data";
+			const url = `${testUrl}/get`;
+			const options = {
+				cache: new Cacheable(),
+			};
+			const response = await head(url, options);
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
+			// Headers should still be present
+			expect(response.headers).toBeDefined();
+		},
+		testTimeout,
+	);
+
+	test(
+		"should not cache HEAD requests (HEAD requests are not cached)",
+		async () => {
+			const cache = new Cacheable({ stats: true });
+			const url = `${testUrl}/get`;
 			const options = {
 				cache,
 			};
+			const response1 = await head(url, options);
+			const response2 = await head(url, options);
+			expect(response1).toBeDefined();
+			expect(response2).toBeDefined();
+			expect(cache.stats).toBeDefined();
+			// HEAD requests should not be cached, so expect 0 hits
+			expect(cache.stats.hits).toBe(0);
+			// Both responses should have the same status
+			expect(response1.status).toBe(200);
+			expect(response2.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle non-JSON response in post helper",
+		async () => {
+			const cache = new Cacheable();
+			// Use mockhttp.org/plain which now accepts POST and returns plain text
+			const url = `${testUrl}/plain`;
+			const data = "test data";
+			const options = {
+				cache,
+				headers: {
+					"Content-Type": "text/plain",
+				},
+			};
 			const result = await post(url, data, options);
 			expect(result).toBeDefined();
-			// Status endpoint returns empty body, which will be parsed as empty string
-			expect(result.data).toBe("");
+			// The plain endpoint returns text, which should be returned as a string
+			expect(result.data).toBeDefined();
 			expect(typeof result.data).toBe("string");
+			expect(result.data).toBeTruthy(); // Plain text is not empty
 			expect(result.response).toBeDefined();
-			expect(result.response.status).toBe(201);
+			expect(result.response.status).toBe(200);
 		},
 		testTimeout,
 	);
@@ -240,17 +290,21 @@ describe("Fetch", () => {
 		"should handle non-JSON response in patch helper",
 		async () => {
 			const cache = new Cacheable();
-			// Use httpbin's status endpoint that accepts PATCH and returns non-JSON
-			const url = "https://httpbin.org/status/200";
+			// Use mockhttp.org/plain which now accepts PATCH and returns plain text
+			const url = `${testUrl}/plain`;
 			const data = "test data";
 			const options = {
 				cache,
+				headers: {
+					"Content-Type": "text/plain",
+				},
 			};
 			const result = await patch(url, data, options);
 			expect(result).toBeDefined();
-			// Status endpoint returns empty body
-			expect(result.data).toBe("");
+			// The plain endpoint returns text, which should be returned as a string
+			expect(result.data).toBeDefined();
 			expect(typeof result.data).toBe("string");
+			expect(result.data).toBeTruthy(); // Plain text is not empty
 			expect(result.response).toBeDefined();
 			expect(result.response.status).toBe(200);
 		},

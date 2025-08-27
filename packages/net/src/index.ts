@@ -149,6 +149,20 @@ export class CacheableNet extends Hookified {
 	}
 
 	/**
+	 * Perform a HEAD request to a URL with optional request options. Will use the cache that is already set in the instance.
+	 * @param {string} url The URL to fetch.
+	 * @param {Omit<FetchRequestInit, 'method'>} options Optional request options (method will be set to HEAD).
+	 * @returns {Promise<FetchResponse>} The response from the fetch (no body).
+	 */
+	public async head(
+		url: string,
+		options?: Omit<FetchRequestInit, "method">,
+	): Promise<FetchResponse> {
+		const response = await this.fetch(url, { ...options, method: "HEAD" });
+		return response;
+	}
+
+	/**
 	 * Perform a PATCH request to a URL with data and optional request options. Will use the cache that is already set in the instance.
 	 * @param {string} url The URL to fetch.
 	 * @param {unknown} data The data to send in the request body.
@@ -219,6 +233,7 @@ export {
 	fetch,
 	type GetResponse,
 	get,
+	head,
 	patch,
 	post,
 	type Response as FetchResponse,
