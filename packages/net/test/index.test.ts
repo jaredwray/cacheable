@@ -139,12 +139,13 @@ describe("Cacheable Net", () => {
 		"should handle non-JSON response in CacheableNet get method",
 		async () => {
 			const net = new Net();
-			// Use a URL that returns plain text
-			const mockTextUrl = "https://httpbin.org/robots.txt";
-			const result = await net.get(mockTextUrl);
+			// Use mockhttp.org/plain which returns plain text
+			const url = `${testUrl}/plain`;
+			const result = await net.get(url);
 			expect(result).toBeDefined();
 			expect(result.data).toBeDefined();
 			expect(typeof result.data).toBe("string");
+			expect(result.data).toBeTruthy(); // Plain text is not empty
 			expect(result.response).toBeDefined();
 			expect(result.response.status).toBe(200);
 		},
@@ -270,16 +271,21 @@ describe("Cacheable Net", () => {
 		"should handle non-JSON response in CacheableNet post method",
 		async () => {
 			const net = new Net();
-			// Use httpbin's status endpoint that returns non-JSON
-			const url = "https://httpbin.org/status/201";
+			// Use mockhttp.org/plain which now accepts POST and returns plain text
+			const url = `${testUrl}/plain`;
 			const data = "test data";
-			const result = await net.post(url, data);
+			const result = await net.post(url, data, {
+				headers: {
+					"Content-Type": "text/plain",
+				},
+			});
 			expect(result).toBeDefined();
-			// Status endpoint returns empty body
-			expect(result.data).toBe("");
+			// The plain endpoint returns text, which should be returned as a string
+			expect(result.data).toBeDefined();
 			expect(typeof result.data).toBe("string");
+			expect(result.data).toBeTruthy(); // Plain text is not empty
 			expect(result.response).toBeDefined();
-			expect(result.response.status).toBe(201);
+			expect(result.response.status).toBe(200);
 		},
 		testTimeout,
 	);
@@ -342,14 +348,19 @@ describe("Cacheable Net", () => {
 		"should handle non-JSON response in CacheableNet patch method",
 		async () => {
 			const net = new Net();
-			// Use httpbin's status endpoint that returns non-JSON
-			const url = "https://httpbin.org/status/200";
+			// Use mockhttp.org/plain which now accepts PATCH and returns plain text
+			const url = `${testUrl}/plain`;
 			const data = "test data";
-			const result = await net.patch(url, data);
+			const result = await net.patch(url, data, {
+				headers: {
+					"Content-Type": "text/plain",
+				},
+			});
 			expect(result).toBeDefined();
-			// Status endpoint returns empty body
-			expect(result.data).toBe("");
+			// The plain endpoint returns text, which should be returned as a string
+			expect(result.data).toBeDefined();
 			expect(typeof result.data).toBe("string");
+			expect(result.data).toBeTruthy(); // Plain text is not empty
 			expect(result.response).toBeDefined();
 			expect(result.response.status).toBe(200);
 		},
