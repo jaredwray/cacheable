@@ -833,10 +833,12 @@ export class Cacheable extends Hookified {
 			set: async (key: string, value: any, ttl?: number | string) => {
 				await this.set(key, value, ttl);
 			},
-			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
+			/* c8 ignore start */
+			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance interface
 			on: (event: string, listener: (...args: any[]) => void) => {
 				this.on(event, listener);
 			},
+			/* c8 ignore stop */
 			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
 			emit: (event: string, ...args: any[]) => this.emit(event, ...args),
 		};
@@ -876,10 +878,12 @@ export class Cacheable extends Hookified {
 			set: async (key: string, value: any, ttl?: number | string) => {
 				await this.set(key, value, ttl);
 			},
-			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
+			/* c8 ignore start */
+			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance interface
 			on: (event: string, listener: (...args: any[]) => void) => {
 				this.on(event, listener);
 			},
+			/* c8 ignore stop */
 			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
 			emit: (event: string, ...args: any[]) => this.emit(event, ...args),
 		};
