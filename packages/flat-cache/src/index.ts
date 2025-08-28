@@ -254,11 +254,12 @@ export class FlatCache extends Hookified {
 	}
 
 	/**
-	 * Returns an array with all the items in the cache { key, value, ttl }
+	 * Returns an array with all the items in the cache { key, value, expires }
 	 * @method items
 	 * @returns {Array}
 	 */
-	public get items() {
+	// biome-ignore lint/suspicious/noExplicitAny: cache items can store any value
+	public get items(): Array<{ key: string; value: any; expires?: number }> {
 		return [...this._cache.items];
 	}
 

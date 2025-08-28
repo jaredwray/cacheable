@@ -1,7 +1,7 @@
+import { sleep } from "@cacheable/utils";
 import { Keyv } from "keyv";
 import { expect, test } from "vitest";
 import { Cacheable } from "../src/index.js";
-import { sleep } from "./sleep.js";
 
 /*
 	Should get a value from the secondary store and respect its ttl when setting the value in the primary store (item specific ttl)

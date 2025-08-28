@@ -1,12 +1,12 @@
-import { faker } from "@faker-js/faker";
-import { expect, test } from "vitest";
-import { Cacheable } from "../src/index.js";
 import {
 	calculateTtlFromExpiration,
 	getCascadingTtl,
 	getTtlFromExpires,
-} from "../src/ttl.js";
-import { sleep } from "./sleep.js";
+	sleep,
+} from "@cacheable/utils";
+import { faker } from "@faker-js/faker";
+import { expect, test } from "vitest";
+import { Cacheable } from "../src/index.js";
 
 test("should set a value with ttl", async () => {
 	const data = {

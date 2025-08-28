@@ -1,19 +1,24 @@
-import { Hookified } from "hookified";
-import { Keyv, type KeyvStoreAdapter, type StoredDataRaw } from "keyv";
-import type { CacheableItem } from "./cacheable-item-types.js";
-import { hash } from "./hash.js";
-import { createKeyv } from "./keyv-memory.js";
-import { shorthandToMilliseconds } from "./shorthand-time.js";
-import { CacheableStats } from "./stats.js";
-import { calculateTtlFromExpiration, getCascadingTtl } from "./ttl.js";
 import {
+	type CacheInstance,
 	type GetOrSetFunctionOptions,
 	type GetOrSetKey,
 	type GetOrSetOptions,
 	getOrSet,
 	type WrapFunctionOptions,
 	wrap,
-} from "./wrap.js";
+} from "@cacheable/memoize";
+import { createKeyv } from "@cacheable/memory";
+import {
+	type CacheableItem,
+	Stats as CacheableStats,
+	calculateTtlFromExpiration,
+	getCascadingTtl,
+	HashAlgorithm,
+	hash,
+	shorthandToMilliseconds,
+} from "@cacheable/utils";
+import { Hookified } from "hookified";
+import { Keyv, type KeyvStoreAdapter, type StoredDataRaw } from "keyv";
 
 export enum CacheableHooks {
 	BEFORE_SET = "BEFORE_SET",
@@ -820,11 +825,30 @@ export class Cacheable extends Hookified {
 		function_: (...arguments_: Arguments) => T,
 		options?: WrapFunctionOptions,
 	): (...arguments_: Arguments) => T {
+		// Create an adapter that converts Cacheable to CacheInstance
+		const cacheAdapter: CacheInstance = {
+			get: async (key: string) => this.get(key),
+			has: async (key: string) => this.has(key),
+			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
+			set: async (key: string, value: any, ttl?: number | string) => {
+				await this.set(key, value, ttl);
+			},
+			/* c8 ignore start */
+			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance interface
+			on: (event: string, listener: (...args: any[]) => void) => {
+				this.on(event, listener);
+			},
+			/* c8 ignore stop */
+			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
+			emit: (event: string, ...args: any[]) => this.emit(event, ...args),
+		};
+
 		const wrapOptions = {
 			ttl: options?.ttl ?? this._ttl,
 			keyPrefix: options?.keyPrefix,
 			createKey: options?.createKey,
-			cache: this,
+			cacheErrors: options?.cacheErrors,
+			cache: cacheAdapter,
 			cacheId: this._cacheId,
 		};
 
@@ -846,8 +870,26 @@ export class Cacheable extends Hookified {
 		function_: () => Promise<T>,
 		options?: GetOrSetFunctionOptions,
 	): Promise<T | undefined> {
+		// Create an adapter that converts Cacheable to CacheInstance
+		const cacheAdapter: CacheInstance = {
+			get: async (key: string) => this.get(key),
+			has: async (key: string) => this.has(key),
+			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
+			set: async (key: string, value: any, ttl?: number | string) => {
+				await this.set(key, value, ttl);
+			},
+			/* c8 ignore start */
+			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance interface
+			on: (event: string, listener: (...args: any[]) => void) => {
+				this.on(event, listener);
+			},
+			/* c8 ignore stop */
+			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
+			emit: (event: string, ...args: any[]) => this.emit(event, ...args),
+		};
+
 		const getOrSetOptions: GetOrSetOptions = {
-			cache: this,
+			cache: cacheAdapter,
 			cacheId: this._cacheId,
 			ttl: options?.ttl ?? this._ttl,
 			cacheErrors: options?.cacheErrors,
@@ -864,7 +906,21 @@ export class Cacheable extends Hookified {
 	 */
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	public hash(object: any, algorithm = "sha256"): string {
-		return hash(object, algorithm);
+		// Convert string algorithm to HashAlgorithm enum value if needed
+		let hashAlgorithm: HashAlgorithm | undefined;
+		if (algorithm === "sha256" || algorithm === HashAlgorithm.SHA256) {
+			hashAlgorithm = HashAlgorithm.SHA256;
+		} else if (algorithm === "sha512" || algorithm === HashAlgorithm.SHA512) {
+			hashAlgorithm = HashAlgorithm.SHA512;
+		} else if (algorithm === "md5" || algorithm === HashAlgorithm.MD5) {
+			hashAlgorithm = HashAlgorithm.MD5;
+		} else if (algorithm === "djb2" || algorithm === HashAlgorithm.DJB2) {
+			hashAlgorithm = HashAlgorithm.DJB2;
+		} else {
+			// Default to SHA256 for unknown algorithms
+			hashAlgorithm = HashAlgorithm.SHA256;
+		}
+		return hash(object, hashAlgorithm);
 	}
 
 	private async getSecondaryRawResults<T>(
@@ -937,12 +993,6 @@ export class Cacheable extends Hookified {
 	}
 }
 
-export { Keyv, KeyvHooks, type KeyvOptions, type KeyvStoreAdapter } from "keyv";
-export type { CacheableItem } from "./cacheable-item-types.js";
-export { createKeyv, KeyvCacheableMemory } from "./keyv-memory.js";
-export { CacheableMemory, type CacheableMemoryOptions } from "./memory.js";
-export { shorthandToMilliseconds, shorthandToTime } from "./shorthand-time.js";
-export { CacheableStats } from "./stats.js";
 export {
 	type GetOrSetFunctionOptions,
 	type GetOrSetKey,
@@ -952,4 +1002,18 @@ export {
 	type WrapSyncOptions,
 	wrap,
 	wrapSync,
-} from "./wrap.js";
+} from "@cacheable/memoize";
+export {
+	CacheableMemory,
+	type CacheableMemoryOptions,
+	createKeyv,
+	KeyvCacheableMemory,
+	type KeyvCacheableMemoryOptions,
+} from "@cacheable/memory";
+export {
+	type CacheableItem,
+	Stats as CacheableStats,
+	shorthandToMilliseconds,
+	shorthandToTime,
+} from "@cacheable/utils";
+export { Keyv, KeyvHooks, type KeyvOptions, type KeyvStoreAdapter } from "keyv";

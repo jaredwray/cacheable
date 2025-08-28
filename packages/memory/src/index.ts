@@ -731,3 +731,8 @@ export {
 	hash,
 	hashToNumber,
 } from "@cacheable/utils";
+export {
+	createKeyv,
+	KeyvCacheableMemory,
+	type KeyvCacheableMemoryOptions,
+} from "./keyv-memory.js";
