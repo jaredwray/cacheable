@@ -2,11 +2,11 @@ import {
 	calculateTtlFromExpiration,
 	getCascadingTtl,
 	getTtlFromExpires,
+	sleep,
 } from "@cacheable/utils";
 import { faker } from "@faker-js/faker";
 import { expect, test } from "vitest";
 import { Cacheable } from "../src/index.js";
-import { sleep } from "./sleep.js";
 
 test("should set a value with ttl", async () => {
 	const data = {
