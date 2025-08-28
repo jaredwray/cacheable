@@ -1,8 +1,9 @@
 // biome-ignore-all lint/style/noNonNullAssertion: test file
+
+import { createWrapKey } from "@cacheable/memoize";
+import { CacheableMemory, HashAlgorithm } from "@cacheable/memory";
 import { faker } from "@faker-js/faker";
 import { describe, expect, test } from "vitest";
-import { CacheableMemory, StoreHashAlgorithm } from "../src/memory.js";
-import { createWrapKey } from "../src/wrap.js";
 import { sleep } from "./sleep.js";
 
 const cacheItemList = [
@@ -59,11 +60,11 @@ describe("CacheableMemory Options and Properties", () => {
 
 	test("should be able to set the storeHashAlgorithm", () => {
 		const cache = new CacheableMemory({
-			storeHashAlgorithm: StoreHashAlgorithm.SHA1,
+			storeHashAlgorithm: HashAlgorithm.SHA256,
 		});
-		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.SHA1);
-		cache.storeHashAlgorithm = StoreHashAlgorithm.SHA256;
-		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.SHA256);
+		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.SHA256);
+		cache.storeHashAlgorithm = HashAlgorithm.MD5;
+		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.MD5);
 
 		const data1 = {
 			key: faker.string.alphanumeric(10),
@@ -84,9 +85,9 @@ describe("CacheableMemory Options and Properties", () => {
 
 	test("should be able to set the storeHashAlgorithm md5", () => {
 		const cache = new CacheableMemory({
-			storeHashAlgorithm: StoreHashAlgorithm.MD5,
+			storeHashAlgorithm: HashAlgorithm.MD5,
 		});
-		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.MD5);
+		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.MD5);
 
 		const data1 = {
 			key: faker.string.alphanumeric(10),
@@ -105,11 +106,11 @@ describe("CacheableMemory Options and Properties", () => {
 		expect(cache.get(data2.key)).toBe(data2.value);
 	});
 
-	test("should be able to set the storeHashAlgorithm sha1", () => {
+	test("should be able to set the storeHashAlgorithm sha256", () => {
 		const cache = new CacheableMemory({
-			storeHashAlgorithm: StoreHashAlgorithm.SHA1,
+			storeHashAlgorithm: HashAlgorithm.SHA256,
 		});
-		expect(cache.storeHashAlgorithm).toBe(StoreHashAlgorithm.SHA1);
+		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.SHA256);
 
 		const data1 = {
 			key: faker.string.alphanumeric(10),

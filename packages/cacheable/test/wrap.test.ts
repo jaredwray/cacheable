@@ -1,13 +1,13 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: test file
-import { describe, expect, it, vi } from "vitest";
-import { Cacheable, CacheableMemory } from "../src/index.js";
 import {
 	createWrapKey,
 	type WrapOptions,
 	type WrapSyncOptions,
 	wrap,
 	wrapSync,
-} from "../src/wrap.js";
+} from "@cacheable/memoize";
+import { describe, expect, it, vi } from "vitest";
+import { Cacheable, CacheableMemory } from "../src/index.js";
 import { sleep } from "./sleep.js";
 
 describe("wrap function", () => {

@@ -1,8 +1,5 @@
+import { shorthandToMilliseconds, shorthandToTime } from "@cacheable/utils";
 import { describe, expect, test } from "vitest";
-import {
-	shorthandToMilliseconds,
-	shorthandToTime,
-} from "../src/shorthand-time.js";
 
 describe("time parser", () => {
 	test("send in number", () => {

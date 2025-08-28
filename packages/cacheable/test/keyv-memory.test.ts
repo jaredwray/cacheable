@@ -1,6 +1,6 @@
 import { Keyv } from "keyv";
 import { describe, expect, test } from "vitest";
-import { createKeyv, KeyvCacheableMemory } from "../src/keyv-memory.js";
+import { createKeyv, KeyvCacheableMemory } from "../src/index.js";
 
 describe("Keyv Cacheable Memory", () => {
 	test("should initialize keyv cacheable memory", async () => {

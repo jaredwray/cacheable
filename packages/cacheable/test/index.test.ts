@@ -1,3 +1,4 @@
+import { createWrapKey, type GetOrSetOptions } from "@cacheable/memoize";
 import KeyvRedis from "@keyv/redis";
 import { Keyv } from "keyv";
 import { LRUCache } from "lru-cache";
@@ -8,7 +9,6 @@ import {
 	CacheableHooks,
 	KeyvCacheableMemory,
 } from "../src/index.js";
-import { createWrapKey, type GetOrSetOptions } from "../src/wrap.js";
 import { sleep } from "./sleep.js";
 
 describe("cacheable options and properties", async () => {

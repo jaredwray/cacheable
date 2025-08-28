@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { CacheableStats } from "../src/stats.js";
+import { CacheableStats } from "../src/index.js";
 
 describe("cacheable stats", () => {
 	test("should be able to instantiate", () => {

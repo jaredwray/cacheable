@@ -1,5 +1,5 @@
+import { hash, hashToNumber } from "@cacheable/utils";
 import { describe, expect, test } from "vitest";
-import { hash, hashToNumber } from "../src/hash.js";
 
 describe("hash", () => {
 	test("hashes an object using the specified algorithm", () => {

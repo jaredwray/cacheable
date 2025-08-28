@@ -1,8 +1,8 @@
+import { getTtlFromExpires } from "@cacheable/utils";
 import { faker } from "@faker-js/faker";
 import { Keyv } from "keyv";
 import { expect, test } from "vitest";
 import { Cacheable, CacheableHooks } from "../src/index.js";
-import { getTtlFromExpires } from "../src/ttl.js";
 import { sleep } from "./sleep.js";
 
 test("should set a new ttl when secondary is setting primary", async () => {
