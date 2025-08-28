@@ -1,8 +1,13 @@
 import KeyvRedis from "@keyv/redis";
 import { Keyv } from "keyv";
 import { LRUCache } from "lru-cache";
-import { describe, expect, test, vi } from "vitest";
-import { Cacheable, CacheableEvents, CacheableHooks } from "../src/index.js";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import {
+	Cacheable,
+	CacheableEvents,
+	CacheableHooks,
+	KeyvCacheableMemory,
+} from "../src/index.js";
 import { createWrapKey, type GetOrSetOptions } from "../src/wrap.js";
 import { sleep } from "./sleep.js";
 
@@ -963,5 +968,175 @@ describe("cacheable events", async () => {
 			value: "secondary-value",
 			store: "secondary",
 		});
+	});
+});
+
+describe("Non-blocking error handling", () => {
+	let errorSpy: ReturnType<typeof vi.fn>;
+
+	beforeEach(() => {
+		errorSpy = vi.fn();
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	test("should handle errors in non-blocking mode for set method", async () => {
+		const primary = new Keyv({ store: new KeyvCacheableMemory() });
+		const secondary = new Keyv();
+
+		// Make secondary.set throw an error after a delay
+		vi.spyOn(secondary, "set").mockImplementation(
+			() =>
+				new Promise((_, reject) => {
+					setTimeout(() => reject(new Error("Secondary store error")), 10);
+				}),
+		);
+
+		const cache = new Cacheable({ primary, secondary, nonBlocking: true });
+		cache.on(CacheableEvents.ERROR, errorSpy);
+
+		// This should succeed because primary works and we're in non-blocking mode
+		const result = await cache.set("key1", "value1");
+		expect(result).toBe(true);
+
+		// Wait for the secondary store to fail
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// Error should be emitted but not throw
+		expect(errorSpy).toHaveBeenCalledWith(new Error("Secondary store error"));
+	});
+
+	test("should handle errors in non-blocking mode for setMany method", async () => {
+		const primary = new Keyv({ store: new KeyvCacheableMemory() });
+		const secondary = new Keyv();
+
+		// Make secondary operations throw an error
+		const mockSetMany = vi
+			.fn()
+			.mockRejectedValue(new Error("Secondary setMany error"));
+		secondary.set = mockSetMany;
+
+		const cache = new Cacheable({ primary, secondary, nonBlocking: true });
+		cache.on(CacheableEvents.ERROR, errorSpy);
+
+		const items = [
+			{ key: "key1", value: "value1" },
+			{ key: "key2", value: "value2" },
+		];
+
+		// This should succeed because primary works
+		const result = await cache.setMany(items);
+		expect(result).toBe(true);
+
+		// Wait for the error to be emitted
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// Error should be emitted but not throw
+		expect(errorSpy).toHaveBeenCalled();
+		const errorArg = errorSpy.mock.calls[0][0];
+		expect(errorArg).toBeInstanceOf(Error);
+		expect(errorArg.message).toBe("Secondary setMany error");
+	});
+
+	test("should handle errors in non-blocking mode for delete method", async () => {
+		const primary = new Keyv({ store: new KeyvCacheableMemory() });
+		const secondary = new Keyv();
+
+		// Set a value first
+		await primary.set("key1", "value1");
+		await secondary.set("key1", "value1");
+
+		// Make secondary.delete throw an error after a delay
+		vi.spyOn(secondary, "delete").mockImplementation(
+			() =>
+				new Promise((_, reject) => {
+					setTimeout(() => reject(new Error("Secondary delete error")), 10);
+				}),
+		);
+
+		const cache = new Cacheable({ primary, secondary, nonBlocking: true });
+		cache.on(CacheableEvents.ERROR, errorSpy);
+
+		// This should succeed because primary works and we're in non-blocking mode
+		const result = await cache.delete("key1");
+		expect(result).toBe(true);
+
+		// Wait for the secondary store to fail
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// Error should be emitted but not throw
+		expect(errorSpy).toHaveBeenCalledWith(new Error("Secondary delete error"));
+	});
+
+	test("should handle errors in non-blocking mode for deleteMany method", async () => {
+		const primary = new Keyv({ store: new KeyvCacheableMemory() });
+		const secondary = new Keyv();
+
+		// Set values first
+		await primary.set("key1", "value1");
+		await primary.set("key2", "value2");
+
+		// Make secondary.delete throw an error
+		vi.spyOn(secondary, "delete").mockRejectedValue(
+			new Error("Secondary deleteMany error"),
+		);
+
+		const cache = new Cacheable({ primary, secondary, nonBlocking: true });
+		cache.on(CacheableEvents.ERROR, errorSpy);
+
+		// This should succeed because primary works
+		const result = await cache.deleteMany(["key1", "key2"]);
+		expect(result).toBe(true);
+
+		// Wait for the error to be emitted
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// Error should be emitted but not throw
+		expect(errorSpy).toHaveBeenCalled();
+		const errorArg = errorSpy.mock.calls[0][0];
+		expect(errorArg).toBeInstanceOf(Error);
+		expect(errorArg.message).toBe("Secondary deleteMany error");
+	});
+
+	test("multiple promises should all have error handlers in Promise.race", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+
+		// Create promises that we can control
+		vi.spyOn(primary, "set").mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					// Primary succeeds quickly
+					setTimeout(() => resolve(true), 5);
+				}),
+		);
+
+		vi.spyOn(secondary, "set").mockImplementation(
+			() =>
+				new Promise((_resolve, reject) => {
+					// Secondary fails after primary succeeds
+					setTimeout(
+						() => reject(new Error("Secondary failed after race")),
+						20,
+					);
+				}),
+		);
+
+		const cache = new Cacheable({ primary, secondary, nonBlocking: true });
+		cache.on(CacheableEvents.ERROR, errorSpy);
+
+		// This should succeed with the primary store
+		const result = await cache.set("key1", "value1");
+		expect(result).toBe(true);
+
+		// Wait for secondary to fail
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// The error from the losing promise should be caught and emitted
+		expect(errorSpy).toHaveBeenCalledWith(
+			new Error("Secondary failed after race"),
+		);
 	});
 });

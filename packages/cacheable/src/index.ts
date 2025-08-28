@@ -569,6 +569,12 @@ export class Cacheable extends Hookified {
 
 			if (this._nonBlocking) {
 				result = await Promise.race(promises);
+				// Catch any rejected promises to avoid unhandled rejections
+				for (const promise of promises) {
+					promise.catch((error) => {
+						this.emit(CacheableEvents.ERROR, error);
+					});
+				}
 			} else {
 				const results = await Promise.all(promises);
 				result = results[0];
@@ -601,7 +607,10 @@ export class Cacheable extends Hookified {
 			result = await this.setManyKeyv(this._primary, items);
 			if (this._secondary) {
 				if (this._nonBlocking) {
-					this.setManyKeyv(this._secondary, items);
+					// Catch any errors to avoid unhandled promise rejections
+					this.setManyKeyv(this._secondary, items).catch((error) => {
+						this.emit(CacheableEvents.ERROR, error);
+					});
 				} else {
 					await this.setManyKeyv(this._secondary, items);
 				}
@@ -720,6 +729,12 @@ export class Cacheable extends Hookified {
 
 		if (this.nonBlocking) {
 			result = await Promise.race(promises);
+			// Catch any rejected promises to avoid unhandled rejections
+			for (const promise of promises) {
+				promise.catch((error) => {
+					this.emit(CacheableEvents.ERROR, error);
+				});
+			}
 		} else {
 			const resultAll = await Promise.all(promises);
 			result = resultAll[0];
@@ -747,7 +762,10 @@ export class Cacheable extends Hookified {
 		const result = await this.deleteManyKeyv(this._primary, keys);
 		if (this._secondary) {
 			if (this._nonBlocking) {
-				this.deleteManyKeyv(this._secondary, keys);
+				// Catch any errors to avoid unhandled promise rejections
+				this.deleteManyKeyv(this._secondary, keys).catch((error) => {
+					this.emit(CacheableEvents.ERROR, error);
+				});
 			} else {
 				await this.deleteManyKeyv(this._secondary, keys);
 			}
