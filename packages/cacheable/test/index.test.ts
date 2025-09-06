@@ -184,6 +184,18 @@ describe("cacheable set method", async () => {
 		const result = await cacheable.getMany(["key1", "key2"]);
 		expect(result).toEqual(["value1", "value2"]);
 	});
+	test("should set many values", async () => {
+		const cacheable = new Cacheable();
+		await cacheable.setMany([
+			{ key: "key1", value: "value1" },
+			{ key: "key2", value: "value2" },
+		]);
+		const result1 = await cacheable.get("key1");
+		const result2 = await cacheable.get("key2");
+		expect(result1).toEqual("value1");
+		expect(result2).toEqual("value2");
+	});
+
 	test("should set value in a non blocking way", async () => {
 		const secondary = new Keyv();
 		const cacheable = new Cacheable({ nonBlocking: true, secondary });
