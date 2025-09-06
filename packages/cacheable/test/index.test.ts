@@ -8,6 +8,7 @@ import {
 	Cacheable,
 	CacheableEvents,
 	CacheableHooks,
+	HashAlgorithm,
 	KeyvCacheableMemory,
 } from "../src/index.js";
 
@@ -926,7 +927,7 @@ describe("cacheable hash method", () => {
 	test("should hash with sha512 algorithm", () => {
 		const cacheable = new Cacheable();
 		const object = { foo: "bar" };
-		const result = cacheable.hash(object, "sha512");
+		const result = cacheable.hash(object, HashAlgorithm.SHA512);
 		expect(result).toBeDefined();
 		expect(result).toHaveLength(128); // SHA512 produces 128 hex characters
 	});
@@ -934,7 +935,7 @@ describe("cacheable hash method", () => {
 	test("should hash with md5 algorithm", () => {
 		const cacheable = new Cacheable();
 		const object = { foo: "bar" };
-		const result = cacheable.hash(object, "md5");
+		const result = cacheable.hash(object, HashAlgorithm.MD5);
 		expect(result).toBeDefined();
 		expect(result).toHaveLength(32); // MD5 produces 32 hex characters
 	});
@@ -942,7 +943,7 @@ describe("cacheable hash method", () => {
 	test("should hash with djb2 algorithm", () => {
 		const cacheable = new Cacheable();
 		const object = { foo: "bar" };
-		const result = cacheable.hash(object, "djb2");
+		const result = cacheable.hash(object, HashAlgorithm.DJB2);
 		expect(result).toBeDefined();
 		expect(typeof result).toBe("string");
 	});
@@ -955,7 +956,7 @@ describe("cacheable hash method", () => {
 			// biome-ignore lint/suspicious/noExplicitAny: testing unknown algorithm
 			"unknown-algorithm" as any,
 		);
-		const sha256Result = cacheable.hash(object, "sha256");
+		const sha256Result = cacheable.hash(object, HashAlgorithm.SHA256);
 		expect(unknownAlgorithmResult).toBe(sha256Result);
 	});
 
