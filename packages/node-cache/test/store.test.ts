@@ -100,6 +100,13 @@ describe("NodeCacheStore", () => {
 		const result1 = await store.get("test");
 		expect(result1).toBe(123);
 	});
+	test("should be able to get multiple keys", async () => {
+		const store = new NodeCacheStore();
+		await store.set("test1", "value1");
+		await store.set("test2", "value2");
+		const result1 = await store.mget(["test1", "test2"]);
+		expect(result1).toEqual({ test1: "value1", test2: "value2" });
+	});
 	test("should be able to set multiple keys", async () => {
 		const store = new NodeCacheStore();
 		const data = [
@@ -111,13 +118,6 @@ describe("NodeCacheStore", () => {
 		const result2 = await store.get(data[1].key);
 		expect(result1).toBe(data[0].value);
 		expect(result2).toBe(data[1].value);
-	});
-	test("should be able to get multiple keys", async () => {
-		const store = new NodeCacheStore();
-		await store.set("test1", "value1");
-		await store.set("test2", "value2");
-		const result1 = await store.mget(["test1", "test2"]);
-		expect(result1).toEqual({ test1: "value1", test2: "value2" });
 	});
 	test("should be able to delete multiple keys", async () => {
 		const store = new NodeCacheStore();
