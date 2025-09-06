@@ -904,23 +904,17 @@ export class Cacheable extends Hookified {
 	 * @param {string} algorithm the hash algorithm to use. The default is 'sha256'
 	 * @returns {string} the hash of the object
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: type format
-	public hash(object: any, algorithm = "sha256"): string {
-		// Convert string algorithm to HashAlgorithm enum value if needed
-		let hashAlgorithm: HashAlgorithm | undefined;
-		if (algorithm === "sha256" || algorithm === HashAlgorithm.SHA256) {
-			hashAlgorithm = HashAlgorithm.SHA256;
-		} else if (algorithm === "sha512" || algorithm === HashAlgorithm.SHA512) {
-			hashAlgorithm = HashAlgorithm.SHA512;
-		} else if (algorithm === "md5" || algorithm === HashAlgorithm.MD5) {
-			hashAlgorithm = HashAlgorithm.MD5;
-		} else if (algorithm === "djb2" || algorithm === HashAlgorithm.DJB2) {
-			hashAlgorithm = HashAlgorithm.DJB2;
-		} else {
-			// Default to SHA256 for unknown algorithms
-			hashAlgorithm = HashAlgorithm.SHA256;
-		}
-		return hash(object, hashAlgorithm);
+	public hash(
+		// biome-ignore lint/suspicious/noExplicitAny: type format
+		object: any,
+		algorithm: HashAlgorithm = HashAlgorithm.SHA256,
+	): string {
+		// Check if algorithm is a valid HashAlgorithm value, default to SHA256 if not
+		const validAlgorithm = Object.values(HashAlgorithm).includes(algorithm)
+			? algorithm
+			: HashAlgorithm.SHA256;
+
+		return hash(object, validAlgorithm);
 	}
 
 	private async getSecondaryRawResults<T>(
@@ -1012,6 +1006,10 @@ export {
 } from "@cacheable/memory";
 export {
 	type CacheableItem,
+	calculateTtlFromExpiration,
+	getCascadingTtl,
+	HashAlgorithm,
+	hash,
 	Stats as CacheableStats,
 	shorthandToMilliseconds,
 	shorthandToTime,
