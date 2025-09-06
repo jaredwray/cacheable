@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import { Keyv } from "keyv";
 import { describe, expect, test } from "vitest";
 import { NodeCacheStore } from "../src/store.js";
@@ -101,14 +102,15 @@ describe("NodeCacheStore", () => {
 	});
 	test("should be able to set multiple keys", async () => {
 		const store = new NodeCacheStore();
-		await store.mset([
-			{ key: "test1", value: "value1" },
-			{ key: "test2", value: "value2" },
-		]);
-		const result1 = await store.get("test1");
-		const result2 = await store.get("test2");
-		expect(result1).toBe("value1");
-		expect(result2).toBe("value2");
+		const data = [
+			{ key: faker.string.uuid(), value: faker.lorem.word() },
+			{ key: faker.string.uuid(), value: faker.lorem.word() },
+		];
+		await store.mset(data);
+		const result1 = await store.get(data[0].key);
+		const result2 = await store.get(data[1].key);
+		expect(result1).toBe(data[0].value);
+		expect(result2).toBe(data[1].value);
 	});
 	test("should be able to get multiple keys", async () => {
 		const store = new NodeCacheStore();
