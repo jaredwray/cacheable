@@ -940,7 +940,7 @@ export class Cacheable extends Hookified {
 	): Promise<Array<StoredDataRaw<T>>> {
 		let result: StoredDataRaw<T>[] = [];
 
-		if (this._secondary) {
+		if (this._secondary && keys.length > 0) {
 			result = await this._secondary.get(keys, { raw: true });
 		}
 
