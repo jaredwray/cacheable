@@ -26,6 +26,7 @@
 * [Sleep Helper](#sleep-helper)
 * [Stats Helpers](#stats-helpers)
 * [Time to Live (TTL) Helpers](#time-to-live-ttl-helpers)
+* [Run if Function Helper](#run-if-function-helper)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -193,6 +194,35 @@ const cacheableTtl = 1000 * 60 * 5; // 5 minutes
 const primaryTtl = 1000 * 60 * 2; // 2 minutes
 const secondaryTtl = 1000 * 60; // 1 minute
 const ttl = getCascadingTtl(cacheableTtl, primaryTtl, secondaryTtl);
+```
+
+# Run if Function Helper
+
+The `runIfFn` utility function provides a convenient way to conditionally execute functions or return values based on whether the input is a function or not. This pattern is commonly used in UI libraries and configuration systems where values can be either static or computed.
+
+```typescript
+import { runIfFn } from '@cacheable/utils';
+
+// Static value - returns the value as-is
+const staticValue = runIfFn('hello world');
+console.log(staticValue); // 'hello world'
+
+// Function with no arguments - executes the function
+const dynamicValue = runIfFn(() => new Date().toISOString());
+console.log(dynamicValue); // Current timestamp
+
+// Function with arguments - executes with provided arguments
+const sum = runIfFn((a: number, b: number) => a + b, 5, 10);
+console.log(sum); // 15
+
+// Complex example with conditional logic
+const getConfig = (isDevelopment: boolean) => ({
+  apiUrl: isDevelopment ? 'http://localhost:3000' : 'https://api.example.com',
+  timeout: isDevelopment ? 5000 : 30000
+});
+
+const config = runIfFn(getConfig, true);
+console.log(config); // { apiUrl: 'http://localhost:3000', timeout: 5000 }
 ```
 
 # How to Contribute
