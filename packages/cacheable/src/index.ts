@@ -483,7 +483,7 @@ export class Cacheable extends Hookified {
 				}
 
 				const secondaryResults =
-					await this.getManySecondaryRawResults<T>(missingKeys);
+					await this._secondary.getManyRaw<T>(missingKeys);
 
 				let secondaryIndex = 0;
 				for await (const [i, key] of keys.entries()) {
@@ -924,18 +924,6 @@ export class Cacheable extends Hookified {
 		let result;
 		if (this._secondary) {
 			result = await this._secondary.get(key, { raw: true });
-		}
-
-		return result;
-	}
-
-	private async getManySecondaryRawResults<T>(
-		keys: string[],
-	): Promise<Array<StoredDataRaw<T>>> {
-		let result: StoredDataRaw<T>[] = [];
-
-		if (this._secondary && keys.length > 0) {
-			result = await this._secondary.get(keys, { raw: true });
 		}
 
 		return result;
