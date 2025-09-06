@@ -116,6 +116,11 @@ describe("NodeCacheStore", () => {
 		await store.mset(data);
 		const result1 = await store.get(data[0].key);
 		const result2 = await store.get(data[1].key);
+
+		// biome-ignore lint/suspicious/noExplicitAny: testing
+		const memoryStore = store.primary.store as any;
+		console.log(memoryStore);
+
 		expect(result1).toBe(data[0].value);
 		expect(result2).toBe(data[1].value);
 	});
