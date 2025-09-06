@@ -377,7 +377,7 @@ export class Cacheable extends Hookified {
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
-			result = await this._primary.get(key, { raw: true });
+			result = await this._primary.getRaw(key);
 			// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 			let ttl;
 			// Emit cache hit or miss for primary store
@@ -466,7 +466,7 @@ export class Cacheable extends Hookified {
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET_MANY, keys);
-			result = await this._primary.get(keys, { raw: true });
+			result = await this._primary.getManyRaw(keys);
 			// Emit cache hits and misses for primary store
 			for (const [i, key] of keys.entries()) {
 				if (result[i]) {
