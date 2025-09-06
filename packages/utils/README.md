@@ -28,6 +28,7 @@
 * [Time to Live (TTL) Helpers](#time-to-live-ttl-helpers)
 * [Run if Function Helper](#run-if-function-helper)
 * [Less Than Helper](#less-than-helper)
+* [Is Object Helper](#is-object-helper)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -268,6 +269,71 @@ function processValue(a?: number, b?: number) {
 ```
 
 This utility is particularly useful when dealing with potentially undefined or invalid numeric values, ensuring type safety in comparison operations.
+
+# Is Object Helper
+
+The `isObject` utility function provides a type-safe way to determine if a value is a plain object. It returns `true` for objects but `false` for arrays, `null`, functions, and primitive types. This function also serves as a TypeScript type guard.
+
+```typescript
+import { isObject } from '@cacheable/utils';
+
+// Basic object detection
+console.log(isObject({})); // true
+console.log(isObject({ name: 'John', age: 30 })); // true
+console.log(isObject(Object.create(null))); // true
+
+// Arrays are not considered objects
+console.log(isObject([])); // false
+console.log(isObject([1, 2, 3])); // false
+
+// null is not considered an object (despite typeof null === 'object')
+console.log(isObject(null)); // false
+
+// Primitive types return false
+console.log(isObject('string')); // false
+console.log(isObject(123)); // false
+console.log(isObject(true)); // false
+console.log(isObject(undefined)); // false
+
+// Functions return false
+console.log(isObject(() => {})); // false
+console.log(isObject(Date)); // false
+
+// Built-in object types return true
+console.log(isObject(new Date())); // true
+console.log(isObject(/regex/)); // true
+console.log(isObject(new Error('test'))); // true
+console.log(isObject(new Map())); // true
+
+// TypeScript type guard usage
+function processValue(value: unknown) {
+  if (isObject<{ name: string; age: number }>(value)) {
+    // TypeScript now knows value is an object with name and age properties
+    console.log(`Name: ${value.name}, Age: ${value.age}`);
+  }
+}
+
+// Useful for configuration validation
+function validateConfig(config: unknown) {
+  if (!isObject(config)) {
+    throw new Error('Configuration must be an object');
+  }
+  
+  // Safe to access object properties
+  return config;
+}
+
+// Filtering arrays for objects only
+const mixedArray = [1, 'string', {}, [], null, { valid: true }];
+const objectsOnly = mixedArray.filter(isObject);
+console.log(objectsOnly); // [{}', { valid: true }]
+```
+
+This utility is particularly useful for:
+- **Type validation** - Ensuring values are objects before accessing properties
+- **TypeScript type guarding** - Narrowing types in conditional blocks
+- **Configuration parsing** - Validating that configuration values are objects
+- **Data filtering** - Separating objects from other data types
 
 # How to Contribute
 
