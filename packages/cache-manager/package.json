@@ -58,6 +58,7 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@cacheable/utils": "workspace:^",
     "keyv": "^5.5.0"
   },
   "devDependencies": {
