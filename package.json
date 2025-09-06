@@ -30,5 +30,8 @@
       "unrs-resolver",
       "workerd"
     ]
+  },
+  "dependencies": {
+    "@biomejs/biome": "^2.2.3"
   }
 }
