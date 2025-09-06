@@ -1271,8 +1271,8 @@ describe("Non-blocking error handling", () => {
 		await primary.set("key1", "value1");
 		await primary.set("key2", "value2");
 
-		// Make secondary.delete throw an error
-		vi.spyOn(secondary, "delete").mockRejectedValue(
+		// Make secondary.deleteMany throw an error
+		vi.spyOn(secondary, "deleteMany").mockRejectedValue(
 			new Error("Secondary deleteMany error"),
 		);
 
