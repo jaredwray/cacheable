@@ -63,7 +63,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.2.3",
     "@faker-js/faker": "^9.9.0",
-    "@keyv/redis": "^5.1.0",
+    "@keyv/redis": "^5.1.1",
     "@types/node": "^24.3.1",
     "@vitest/coverage-v8": "^3.2.4",
     "@vitest/spy": "^3.2.4",
