@@ -27,6 +27,7 @@
 * [Stats Helpers](#stats-helpers)
 * [Time to Live (TTL) Helpers](#time-to-live-ttl-helpers)
 * [Run if Function Helper](#run-if-function-helper)
+* [Less Than Helper](#less-than-helper)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -224,6 +225,49 @@ const getConfig = (isDevelopment: boolean) => ({
 const config = runIfFn(getConfig, true);
 console.log(config); // { apiUrl: 'http://localhost:3000', timeout: 5000 }
 ```
+
+# Less Than Helper
+
+The `lessThan` utility function provides a safe way to compare two values and determine if the first value is less than the second. It only performs the comparison if both values are valid numbers, returning `false` for any non-number inputs.
+
+```typescript
+import { lessThan } from '@cacheable/utils';
+
+// Basic number comparisons
+console.log(lessThan(1, 2)); // true
+console.log(lessThan(2, 1)); // false
+console.log(lessThan(1, 1)); // false
+
+// Works with negative numbers
+console.log(lessThan(-1, 0)); // true
+console.log(lessThan(-2, -1)); // true
+
+// Works with decimal numbers
+console.log(lessThan(1.5, 2.5)); // true
+console.log(lessThan(2.7, 2.7)); // false
+
+// Safe handling of non-number values
+console.log(lessThan("1", 2)); // false
+console.log(lessThan(1, "2")); // false
+console.log(lessThan(null, 1)); // false
+console.log(lessThan(undefined, 1)); // false
+console.log(lessThan(NaN, 1)); // false
+
+// Useful in filtering and sorting operations
+const numbers = [5, 2, 8, 1, 9];
+const lessThanFive = numbers.filter(n => lessThan(n, 5));
+console.log(lessThanFive); // [2, 1]
+
+// Safe comparison in conditional logic
+function processValue(a?: number, b?: number) {
+  if (lessThan(a, b)) {
+    return `${a} is less than ${b}`;
+  }
+  return 'Invalid comparison or a >= b';
+}
+```
+
+This utility is particularly useful when dealing with potentially undefined or invalid numeric values, ensuring type safety in comparison operations.
 
 # How to Contribute
 
