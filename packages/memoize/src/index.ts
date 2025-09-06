@@ -71,9 +71,11 @@ export function wrapSync<T>(
 
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	return (...arguments_: any[]) => {
-		let cacheKey = createWrapKey(function_, arguments_, keyPrefix);
+		let cacheKey: string;
 		if (options.createKey) {
 			cacheKey = options.createKey(function_, arguments_, options);
+		} else {
+			cacheKey = createWrapKey(function_, arguments_, keyPrefix);
 		}
 
 		let value = cache.get(cacheKey) as T | undefined;
@@ -131,14 +133,15 @@ export function wrap<T>(
 	function_: AnyFunction,
 	options: WrapOptions,
 ): AnyFunction {
-	// biome-ignore lint/correctness/noUnusedVariables: allowed
-	const { keyPrefix, cache } = options;
+	const { keyPrefix } = options;
 
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	return async (...arguments_: any[]) => {
-		let cacheKey = createWrapKey(function_, arguments_, keyPrefix);
+		let cacheKey: string;
 		if (options.createKey) {
 			cacheKey = options.createKey(function_, arguments_, options);
+		} else {
+			cacheKey = createWrapKey(function_, arguments_, keyPrefix);
 		}
 
 		return getOrSet(
