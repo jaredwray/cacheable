@@ -18,7 +18,12 @@ import {
 	shorthandToMilliseconds,
 } from "@cacheable/utils";
 import { Hookified } from "hookified";
-import { Keyv, type KeyvStoreAdapter, type StoredDataRaw } from "keyv";
+import {
+	Keyv,
+	type KeyvEntry,
+	type KeyvStoreAdapter,
+	type StoredDataRaw,
+} from "keyv";
 
 export enum CacheableHooks {
 	BEFORE_SET = "BEFORE_SET",
@@ -614,6 +619,7 @@ export class Cacheable extends Hookified {
 				if (this._nonBlocking) {
 					// Catch any errors to avoid unhandled promise rejections
 					this.setManyKeyv(this._secondary, items).catch((error) => {
+						/* c8 ignore next */
 						this.emit(CacheableEvents.ERROR, error);
 					});
 				} else {
@@ -944,13 +950,13 @@ export class Cacheable extends Hookified {
 		keyv: Keyv,
 		items: CacheableItem[],
 	): Promise<boolean> {
-		const promises = [];
+		const entries: KeyvEntry[] = [];
 		for (const item of items) {
 			const finalTtl = shorthandToMilliseconds(item.ttl ?? this._ttl);
-			promises.push(keyv.set(item.key, item.value, finalTtl));
+			entries.push({ key: item.key, value: item.value, ttl: finalTtl });
 		}
 
-		await Promise.all(promises);
+		await keyv.setMany(entries);
 
 		return true;
 	}

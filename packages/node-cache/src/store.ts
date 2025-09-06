@@ -1,7 +1,7 @@
-import { Cacheable, type CacheableItem, CacheableMemory } from "cacheable";
+import { Cacheable, type CacheableItem } from "cacheable";
 import { Hookified } from "hookified";
 import type { PartialNodeCacheItem } from "index.js";
-import { Keyv } from "keyv";
+import type { Keyv } from "keyv";
 
 export type NodeCacheStoreOptions<T> = {
 	/**
@@ -30,9 +30,7 @@ export type NodeCacheStoreOptions<T> = {
 
 export class NodeCacheStore<T> extends Hookified {
 	private _maxKeys = 0;
-	private readonly _cache = new Cacheable({
-		primary: new Keyv<T>({ store: new CacheableMemory() }),
-	});
+	private readonly _cache = new Cacheable();
 	constructor(options?: NodeCacheStoreOptions<T>) {
 		super();
 		if (options) {
