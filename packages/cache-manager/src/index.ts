@@ -1,9 +1,11 @@
 import EventEmitter from "node:events";
+import {
+	coalesceAsync,
+	isObject,
+	lessThan as lt,
+	runIfFn,
+} from "@cacheable/utils";
 import { Keyv, type StoredDataRaw } from "keyv";
-import { coalesceAsync } from "./coalesce-async.js";
-import { isObject } from "./is-object.js";
-import { lt } from "./lt.js";
-import { runIfFn } from "./run-if-fn.js";
 
 const _storeLabel = (i: number) => (i === 0 ? "primary" : `secondary:${i - 1}`);
 
