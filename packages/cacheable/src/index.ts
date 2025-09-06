@@ -770,15 +770,15 @@ export class Cacheable extends Hookified {
 			}
 		}
 
-		const result = await this.deleteManyKeyv(this._primary, keys);
+		const result = await this._primary.deleteMany(keys);
 		if (this._secondary) {
 			if (this._nonBlocking) {
 				// Catch any errors to avoid unhandled promise rejections
-				this.deleteManyKeyv(this._secondary, keys).catch((error) => {
+				this._secondary.deleteMany(keys).catch((error) => {
 					this.emit(CacheableEvents.ERROR, error);
 				});
 			} else {
-				await this.deleteManyKeyv(this._secondary, keys);
+				await this._secondary.deleteMany(keys);
 			}
 		}
 
@@ -933,17 +933,6 @@ export class Cacheable extends Hookified {
 		}
 
 		return result;
-	}
-
-	private async deleteManyKeyv(keyv: Keyv, keys: string[]): Promise<boolean> {
-		const promises = [];
-		for (const key of keys) {
-			promises.push(keyv.delete(key));
-		}
-
-		await Promise.all(promises);
-
-		return true;
 	}
 
 	private async setManyKeyv(
