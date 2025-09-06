@@ -1,5 +1,6 @@
 import { createWrapKey, type GetOrSetOptions } from "@cacheable/memoize";
 import { sleep } from "@cacheable/utils";
+import { faker } from "@faker-js/faker";
 import KeyvRedis from "@keyv/redis";
 import { Keyv } from "keyv";
 import { LRUCache } from "lru-cache";
@@ -177,23 +178,29 @@ describe("cacheable set method", async () => {
 	});
 	test("should set many values", async () => {
 		const cacheable = new Cacheable();
-		await cacheable.setMany([
-			{ key: "key1", value: "value1" },
-			{ key: "key2", value: "value2" },
-		]);
-		const result = await cacheable.getMany(["key1", "key2"]);
-		expect(result).toEqual(["value1", "value2"]);
+
+		const data = [
+			{ key: faker.string.uuid(), value: faker.lorem.word() },
+			{ key: faker.string.uuid(), value: faker.lorem.word() },
+		];
+
+		await cacheable.setMany(data);
+		const result = await cacheable.getMany([data[0].key, data[1].key]);
+		expect(result).toEqual([data[0].value, data[1].value]);
 	});
 	test("should set many values", async () => {
 		const cacheable = new Cacheable();
-		await cacheable.setMany([
-			{ key: "key1", value: "value1" },
-			{ key: "key2", value: "value2" },
-		]);
-		const result1 = await cacheable.get("key1");
-		const result2 = await cacheable.get("key2");
-		expect(result1).toEqual("value1");
-		expect(result2).toEqual("value2");
+
+		const data = [
+			{ key: faker.string.uuid(), value: faker.lorem.word() },
+			{ key: faker.string.uuid(), value: faker.lorem.word() },
+		];
+
+		await cacheable.setMany(data);
+		const result1 = await cacheable.get(data[0].key);
+		const result2 = await cacheable.get(data[1].key);
+		expect(result1).toEqual(data[0].value);
+		expect(result2).toEqual(data[1].value);
 	});
 
 	test("should set value in a non blocking way", async () => {
