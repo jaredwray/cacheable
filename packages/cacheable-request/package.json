@@ -52,10 +52,10 @@
 		"responselike": "^3.0.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.0",
+		"@biomejs/biome": "^2.2.3",
 		"@keyv/sqlite": "^4.0.5",
 		"@types/express": "^5.0.3",
-		"@types/node": "^24.2.0",
+		"@types/node": "^24.3.1",
 		"@types/responselike": "^1.0.3",
 		"@vitest/coverage-v8": "^3.2.4",
 		"body-parser": "^2.2.0",
