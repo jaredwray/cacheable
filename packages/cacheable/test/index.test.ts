@@ -270,7 +270,7 @@ describe("cacheable get method", async () => {
 	});
 	test("should throw on get", async () => {
 		const keyv = new Keyv();
-		vi.spyOn(keyv, "get").mockImplementation(async () => {
+		vi.spyOn(keyv, "getRaw").mockImplementation(async () => {
 			throw new Error("get error");
 		});
 

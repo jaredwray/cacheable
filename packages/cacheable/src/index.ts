@@ -392,7 +392,7 @@ export class Cacheable extends Hookified {
 			}
 
 			if (!result && this._secondary) {
-				const secondaryResult = await this.getSecondaryRawResults<T>(key);
+				const secondaryResult = await this._secondary.getRaw<T>(key);
 				if (secondaryResult?.value) {
 					result = secondaryResult;
 					// Emit cache hit for secondary store
@@ -921,18 +921,6 @@ export class Cacheable extends Hookified {
 			: HashAlgorithm.SHA256;
 
 		return hash(object, validAlgorithm);
-	}
-
-	private async getSecondaryRawResults<T>(
-		key: string,
-	): Promise<StoredDataRaw<T> | undefined> {
-		// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
-		let result;
-		if (this._secondary) {
-			result = await this._secondary.get(key, { raw: true });
-		}
-
-		return result;
 	}
 
 	private async setManyKeyv(
