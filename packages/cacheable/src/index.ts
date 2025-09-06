@@ -905,22 +905,8 @@ export class Cacheable extends Hookified {
 	 * @returns {string} the hash of the object
 	 */
 	// biome-ignore lint/suspicious/noExplicitAny: type format
-	public hash(object: any, algorithm = "sha256"): string {
-		// Convert string algorithm to HashAlgorithm enum value if needed
-		let hashAlgorithm: HashAlgorithm | undefined;
-		if (algorithm === "sha256" || algorithm === HashAlgorithm.SHA256) {
-			hashAlgorithm = HashAlgorithm.SHA256;
-		} else if (algorithm === "sha512" || algorithm === HashAlgorithm.SHA512) {
-			hashAlgorithm = HashAlgorithm.SHA512;
-		} else if (algorithm === "md5" || algorithm === HashAlgorithm.MD5) {
-			hashAlgorithm = HashAlgorithm.MD5;
-		} else if (algorithm === "djb2" || algorithm === HashAlgorithm.DJB2) {
-			hashAlgorithm = HashAlgorithm.DJB2;
-		} else {
-			// Default to SHA256 for unknown algorithms
-			hashAlgorithm = HashAlgorithm.SHA256;
-		}
-		return hash(object, hashAlgorithm);
+	public hash(object: any, algorithm: HashAlgorithm = HashAlgorithm.SHA256): string {
+		return hash(object, algorithm);
 	}
 
 	private async getSecondaryRawResults<T>(
@@ -1015,5 +1001,9 @@ export {
 	Stats as CacheableStats,
 	shorthandToMilliseconds,
 	shorthandToTime,
+	HashAlgorithm,
+	hash,
+	calculateTtlFromExpiration,
+	getCascadingTtl
 } from "@cacheable/utils";
 export { Keyv, KeyvHooks, type KeyvOptions, type KeyvStoreAdapter } from "keyv";
