@@ -26,6 +26,9 @@
 * [Sleep Helper](#sleep-helper)
 * [Stats Helpers](#stats-helpers)
 * [Time to Live (TTL) Helpers](#time-to-live-ttl-helpers)
+* [Run if Function Helper](#run-if-function-helper)
+* [Less Than Helper](#less-than-helper)
+* [Is Object Helper](#is-object-helper)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -194,6 +197,143 @@ const primaryTtl = 1000 * 60 * 2; // 2 minutes
 const secondaryTtl = 1000 * 60; // 1 minute
 const ttl = getCascadingTtl(cacheableTtl, primaryTtl, secondaryTtl);
 ```
+
+# Run if Function Helper
+
+The `runIfFn` utility function provides a convenient way to conditionally execute functions or return values based on whether the input is a function or not. This pattern is commonly used in UI libraries and configuration systems where values can be either static or computed.
+
+```typescript
+import { runIfFn } from '@cacheable/utils';
+
+// Static value - returns the value as-is
+const staticValue = runIfFn('hello world');
+console.log(staticValue); // 'hello world'
+
+// Function with no arguments - executes the function
+const dynamicValue = runIfFn(() => new Date().toISOString());
+console.log(dynamicValue); // Current timestamp
+
+// Function with arguments - executes with provided arguments
+const sum = runIfFn((a: number, b: number) => a + b, 5, 10);
+console.log(sum); // 15
+
+// Complex example with conditional logic
+const getConfig = (isDevelopment: boolean) => ({
+  apiUrl: isDevelopment ? 'http://localhost:3000' : 'https://api.example.com',
+  timeout: isDevelopment ? 5000 : 30000
+});
+
+const config = runIfFn(getConfig, true);
+console.log(config); // { apiUrl: 'http://localhost:3000', timeout: 5000 }
+```
+
+# Less Than Helper
+
+The `lessThan` utility function provides a safe way to compare two values and determine if the first value is less than the second. It only performs the comparison if both values are valid numbers, returning `false` for any non-number inputs.
+
+```typescript
+import { lessThan } from '@cacheable/utils';
+
+// Basic number comparisons
+console.log(lessThan(1, 2)); // true
+console.log(lessThan(2, 1)); // false
+console.log(lessThan(1, 1)); // false
+
+// Works with negative numbers
+console.log(lessThan(-1, 0)); // true
+console.log(lessThan(-2, -1)); // true
+
+// Works with decimal numbers
+console.log(lessThan(1.5, 2.5)); // true
+console.log(lessThan(2.7, 2.7)); // false
+
+// Safe handling of non-number values
+console.log(lessThan("1", 2)); // false
+console.log(lessThan(1, "2")); // false
+console.log(lessThan(null, 1)); // false
+console.log(lessThan(undefined, 1)); // false
+console.log(lessThan(NaN, 1)); // false
+
+// Useful in filtering and sorting operations
+const numbers = [5, 2, 8, 1, 9];
+const lessThanFive = numbers.filter(n => lessThan(n, 5));
+console.log(lessThanFive); // [2, 1]
+
+// Safe comparison in conditional logic
+function processValue(a?: number, b?: number) {
+  if (lessThan(a, b)) {
+    return `${a} is less than ${b}`;
+  }
+  return 'Invalid comparison or a >= b';
+}
+```
+
+This utility is particularly useful when dealing with potentially undefined or invalid numeric values, ensuring type safety in comparison operations.
+
+# Is Object Helper
+
+The `isObject` utility function provides a type-safe way to determine if a value is a plain object. It returns `true` for objects but `false` for arrays, `null`, functions, and primitive types. This function also serves as a TypeScript type guard.
+
+```typescript
+import { isObject } from '@cacheable/utils';
+
+// Basic object detection
+console.log(isObject({})); // true
+console.log(isObject({ name: 'John', age: 30 })); // true
+console.log(isObject(Object.create(null))); // true
+
+// Arrays are not considered objects
+console.log(isObject([])); // false
+console.log(isObject([1, 2, 3])); // false
+
+// null is not considered an object (despite typeof null === 'object')
+console.log(isObject(null)); // false
+
+// Primitive types return false
+console.log(isObject('string')); // false
+console.log(isObject(123)); // false
+console.log(isObject(true)); // false
+console.log(isObject(undefined)); // false
+
+// Functions return false
+console.log(isObject(() => {})); // false
+console.log(isObject(Date)); // false
+
+// Built-in object types return true
+console.log(isObject(new Date())); // true
+console.log(isObject(/regex/)); // true
+console.log(isObject(new Error('test'))); // true
+console.log(isObject(new Map())); // true
+
+// TypeScript type guard usage
+function processValue(value: unknown) {
+  if (isObject<{ name: string; age: number }>(value)) {
+    // TypeScript now knows value is an object with name and age properties
+    console.log(`Name: ${value.name}, Age: ${value.age}`);
+  }
+}
+
+// Useful for configuration validation
+function validateConfig(config: unknown) {
+  if (!isObject(config)) {
+    throw new Error('Configuration must be an object');
+  }
+  
+  // Safe to access object properties
+  return config;
+}
+
+// Filtering arrays for objects only
+const mixedArray = [1, 'string', {}, [], null, { valid: true }];
+const objectsOnly = mixedArray.filter(isObject);
+console.log(objectsOnly); // [{}', { valid: true }]
+```
+
+This utility is particularly useful for:
+- **Type validation** - Ensuring values are objects before accessing properties
+- **TypeScript type guarding** - Narrowing types in conditional blocks
+- **Configuration parsing** - Validating that configuration values are objects
+- **Data filtering** - Separating objects from other data types
 
 # How to Contribute
 
