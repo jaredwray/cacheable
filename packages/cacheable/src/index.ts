@@ -377,7 +377,7 @@ export class Cacheable extends Hookified {
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
-			result = await this._primary.get(key, { raw: true });
+			result = await this._primary.getRaw(key);
 			// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 			let ttl;
 			// Emit cache hit or miss for primary store
@@ -392,7 +392,7 @@ export class Cacheable extends Hookified {
 			}
 
 			if (!result && this._secondary) {
-				const secondaryResult = await this.getSecondaryRawResults<T>(key);
+				const secondaryResult = await this._secondary.getRaw<T>(key);
 				if (secondaryResult?.value) {
 					result = secondaryResult;
 					// Emit cache hit for secondary store
@@ -466,7 +466,7 @@ export class Cacheable extends Hookified {
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET_MANY, keys);
-			result = await this._primary.get(keys, { raw: true });
+			result = await this._primary.getManyRaw(keys);
 			// Emit cache hits and misses for primary store
 			for (const [i, key] of keys.entries()) {
 				if (result[i]) {
@@ -921,18 +921,6 @@ export class Cacheable extends Hookified {
 			: HashAlgorithm.SHA256;
 
 		return hash(object, validAlgorithm);
-	}
-
-	private async getSecondaryRawResults<T>(
-		key: string,
-	): Promise<StoredDataRaw<T> | undefined> {
-		// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
-		let result;
-		if (this._secondary) {
-			result = await this._secondary.get(key, { raw: true });
-		}
-
-		return result;
 	}
 
 	private async setManyKeyv(
