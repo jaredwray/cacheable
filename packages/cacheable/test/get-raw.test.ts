@@ -49,7 +49,7 @@ describe("cacheable getRaw method", async () => {
 		expect(raw?.expires).toBeGreaterThan(Date.now());
 	});
 
-	test("should work independently of hooks", async () => {
+	test("should trigger BEFORE_GET and AFTER_GET hooks", async () => {
 		const cacheable = new Cacheable();
 		let beforeGetCalled = false;
 		let afterGetCalled = false;
@@ -65,13 +65,13 @@ describe("cacheable getRaw method", async () => {
 		await cacheable.set("hookKey", "hookValue");
 		const raw = await cacheable.getRaw("hookKey");
 
-		// getRaw doesn't trigger hooks - it's a direct method
-		expect(beforeGetCalled).toBe(false);
-		expect(afterGetCalled).toBe(false);
+		// getRaw now triggers hooks since it contains the full implementation
+		expect(beforeGetCalled).toBe(true);
+		expect(afterGetCalled).toBe(true);
 		expect(raw?.value).toBe("hookValue");
 	});
 
-	test("should not emit events as it's a direct method", async () => {
+	test("should emit cache:hit event from primary store", async () => {
 		const cacheable = new Cacheable();
 		const events: Array<{ key: string; value: unknown; store: string }> = [];
 
@@ -83,11 +83,16 @@ describe("cacheable getRaw method", async () => {
 		const raw = await cacheable.getRaw("eventKey");
 
 		expect(raw?.value).toBe("eventValue");
-		// getRaw doesn't emit events - it's a direct method
-		expect(events).toHaveLength(0);
+		// getRaw now emits events since it contains the full implementation
+		expect(events).toHaveLength(1);
+		expect(events[0]).toEqual({
+			key: "eventKey",
+			value: "eventValue",
+			store: "primary",
+		});
 	});
 
-	test("should get from secondary store without events", async () => {
+	test("should emit cache:hit event from secondary store", async () => {
 		const secondary = new Keyv();
 		const cacheable = new Cacheable({ secondary });
 		const events: Array<{ key: string; value: unknown; store: string }> = [];
@@ -100,11 +105,16 @@ describe("cacheable getRaw method", async () => {
 		const raw = await cacheable.getRaw("secEventKey");
 
 		expect(raw?.value).toBe("secEventValue");
-		// getRaw doesn't emit events - it's a direct method
-		expect(events).toHaveLength(0);
+		// getRaw now emits events since it contains the full implementation
+		expect(events).toHaveLength(1);
+		expect(events[0]).toEqual({
+			key: "secEventKey",
+			value: "secEventValue",
+			store: "secondary",
+		});
 	});
 
-	test("should return undefined without emitting events for missing keys", async () => {
+	test("should emit cache:miss event for non-existent key", async () => {
 		const cacheable = new Cacheable();
 		const events: Array<{ key: string; store?: string }> = [];
 
@@ -115,29 +125,33 @@ describe("cacheable getRaw method", async () => {
 		const raw = await cacheable.getRaw("missKey");
 
 		expect(raw).toBeUndefined();
-		// getRaw doesn't emit events - it's a direct method
-		expect(events).toHaveLength(0);
+		// getRaw now emits events since it contains the full implementation
+		expect(events).toHaveLength(1);
+		expect(events[0]).toEqual({
+			key: "missKey",
+			store: "primary",
+		});
 	});
 
-	test("should not update stats as it's a direct method", async () => {
+	test("should update stats when enabled", async () => {
 		const cacheable = new Cacheable({ stats: true });
 
 		// Test miss
 		await cacheable.getRaw("statsMissKey");
-		expect(cacheable.stats.gets).toBe(0);
-		expect(cacheable.stats.misses).toBe(0);
+		expect(cacheable.stats.gets).toBe(1);
+		expect(cacheable.stats.misses).toBe(1);
 		expect(cacheable.stats.hits).toBe(0);
 
 		// Test hit
 		await cacheable.set("statsHitKey", "statsValue");
 		await cacheable.getRaw("statsHitKey");
-		// getRaw doesn't update stats - it's a direct method
-		expect(cacheable.stats.gets).toBe(0);
-		expect(cacheable.stats.misses).toBe(0);
-		expect(cacheable.stats.hits).toBe(0);
+		// getRaw now updates stats since it contains the full implementation
+		expect(cacheable.stats.gets).toBe(2);
+		expect(cacheable.stats.misses).toBe(1);
+		expect(cacheable.stats.hits).toBe(1);
 	});
 
-	test("should propagate errors without handling", async () => {
+	test("should handle errors gracefully", async () => {
 		const keyv = new Keyv();
 		vi.spyOn(keyv, "getRaw").mockImplementation(async () => {
 			throw new Error("getRaw error");
@@ -149,9 +163,10 @@ describe("cacheable getRaw method", async () => {
 			errorReceived = true;
 		});
 
-		// getRaw propagates errors directly
-		await expect(cacheable.getRaw("errorKey")).rejects.toThrow("getRaw error");
-		expect(errorReceived).toBe(false);
+		// getRaw now handles errors gracefully since it contains the full implementation
+		const raw = await cacheable.getRaw("errorKey");
+		expect(raw).toBeUndefined();
+		expect(errorReceived).toBe(true);
 	});
 
 	test("should propagate value from secondary to primary", async () => {
@@ -266,7 +281,7 @@ describe("cacheable getManyRaw method", async () => {
 		expect(raws[1]?.expires).toBeGreaterThan(Date.now());
 	});
 
-	test("should work independently of hooks", async () => {
+	test("should trigger BEFORE_GET_MANY and AFTER_GET_MANY hooks", async () => {
 		const cacheable = new Cacheable();
 		let beforeGetManyCalled = false;
 		let afterGetManyCalled = false;
@@ -286,13 +301,13 @@ describe("cacheable getManyRaw method", async () => {
 		]);
 		const raws = await cacheable.getManyRaw(testKeys);
 
-		// getManyRaw doesn't trigger hooks - it's a direct method
-		expect(beforeGetManyCalled).toBe(false);
-		expect(afterGetManyCalled).toBe(false);
+		// getManyRaw now triggers hooks since it contains the full implementation
+		expect(beforeGetManyCalled).toBe(true);
+		expect(afterGetManyCalled).toBe(true);
 		expect(raws).toHaveLength(2);
 	});
 
-	test("should not emit events as it's a direct method", async () => {
+	test("should emit cache:hit and cache:miss events", async () => {
 		const cacheable = new Cacheable();
 		const hitEvents: Array<{ key: string; value: unknown; store: string }> = [];
 		const missEvents: Array<{ key: string; store?: string }> = [];
@@ -312,12 +327,22 @@ describe("cacheable getManyRaw method", async () => {
 		expect(raws[0]?.value).toBe("hitValue");
 		expect(raws[1]).toBeUndefined();
 
-		// getManyRaw doesn't emit events - it's a direct method
-		expect(hitEvents).toHaveLength(0);
-		expect(missEvents).toHaveLength(0);
+		// getManyRaw now emits events since it contains the full implementation
+		expect(hitEvents).toHaveLength(1);
+		expect(hitEvents[0]).toEqual({
+			key: "hitKey",
+			value: "hitValue",
+			store: "primary",
+		});
+
+		expect(missEvents).toHaveLength(1);
+		expect(missEvents[0]).toEqual({
+			key: "missKey",
+			store: "primary",
+		});
 	});
 
-	test("should get from secondary store without events", async () => {
+	test("should emit cache:hit from secondary store", async () => {
 		const secondary = new Keyv();
 		const cacheable = new Cacheable({ secondary });
 		const hitEvents: Array<{ key: string; value: unknown; store: string }> = [];
@@ -330,24 +355,29 @@ describe("cacheable getManyRaw method", async () => {
 		const raws = await cacheable.getManyRaw(["secondaryHitKey"]);
 
 		expect(raws[0]?.value).toBe("secondaryHitValue");
-		// getManyRaw doesn't emit events - it's a direct method
-		expect(hitEvents).toHaveLength(0);
+		// getManyRaw now emits events since it contains the full implementation
+		expect(hitEvents).toHaveLength(1);
+		expect(hitEvents[0]).toEqual({
+			key: "secondaryHitKey",
+			value: "secondaryHitValue",
+			store: "secondary",
+		});
 	});
 
-	test("should not update stats as it's a direct method", async () => {
+	test("should update stats when enabled", async () => {
 		const cacheable = new Cacheable({ stats: true });
 
 		// Test with mix of hits and misses
 		await cacheable.set("statsKey1", "statsValue1");
 		await cacheable.getManyRaw(["statsKey1", "statsMissKey1", "statsMissKey2"]);
 
-		// getManyRaw doesn't update stats - it's a direct method
-		expect(cacheable.stats.gets).toBe(0);
-		expect(cacheable.stats.hits).toBe(0);
-		expect(cacheable.stats.misses).toBe(0);
+		// getManyRaw now updates stats since it contains the full implementation
+		expect(cacheable.stats.gets).toBe(1);
+		expect(cacheable.stats.hits).toBe(1);
+		expect(cacheable.stats.misses).toBe(2);
 	});
 
-	test("should propagate errors without handling", async () => {
+	test("should handle errors gracefully", async () => {
 		const keyv = new Keyv();
 		vi.spyOn(keyv, "getManyRaw").mockImplementation(async () => {
 			throw new Error("getManyRaw error");
@@ -359,11 +389,10 @@ describe("cacheable getManyRaw method", async () => {
 			errorReceived = true;
 		});
 
-		// getManyRaw propagates errors directly
-		await expect(
-			cacheable.getManyRaw(["errorKey1", "errorKey2"]),
-		).rejects.toThrow("getManyRaw error");
-		expect(errorReceived).toBe(false);
+		// getManyRaw now handles errors gracefully since it contains the full implementation
+		const raws = await cacheable.getManyRaw(["errorKey1", "errorKey2"]);
+		expect(raws).toEqual([]);
+		expect(errorReceived).toBe(true);
 	});
 
 	test("should propagate values from secondary to primary", async () => {
