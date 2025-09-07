@@ -176,16 +176,16 @@ describe("cacheable getRaw method", async () => {
 		expect(raw).toBeUndefined();
 	});
 
-	test("should maintain consistency with get method raw option", async () => {
+	test("should provide raw data while get returns value only", async () => {
 		const cacheable = new Cacheable();
 		await cacheable.set("consistencyKey", "consistencyValue");
 
 		const getRawResult = await cacheable.getRaw("consistencyKey");
-		const getWithRawResult = await cacheable.get("consistencyKey", {
-			raw: true,
-		});
+		const getResult = await cacheable.get("consistencyKey");
 
-		expect(getRawResult).toEqual(getWithRawResult);
+		expect(getRawResult?.value).toEqual(getResult);
+		expect(getRawResult).toHaveProperty("value", "consistencyValue");
+		expect(getResult).toBe("consistencyValue");
 	});
 });
 
@@ -387,7 +387,7 @@ describe("cacheable getManyRaw method", async () => {
 		expect(primaryRaws[1]?.value).toBe("propagateValue2");
 	});
 
-	test("should maintain consistency with getMany method raw option", async () => {
+	test("should provide raw data while getMany returns values only", async () => {
 		const cacheable = new Cacheable();
 		await cacheable.setMany([
 			{ key: "consistKey1", value: "consistValue1" },
@@ -398,13 +398,13 @@ describe("cacheable getManyRaw method", async () => {
 			"consistKey1",
 			"consistKey2",
 		]);
-		const getManyWithRawResult = await cacheable.getMany(
-			["consistKey1", "consistKey2"],
-			{
-				raw: true,
-			},
-		);
+		const getManyResult = await cacheable.getMany([
+			"consistKey1",
+			"consistKey2",
+		]);
 
-		expect(getManyRawResult).toEqual(getManyWithRawResult);
+		expect(getManyRawResult.map((item) => item?.value)).toEqual(getManyResult);
+		expect(getManyRawResult).toHaveLength(2);
+		expect(getManyResult).toEqual(["consistValue1", "consistValue2"]);
 	});
 });

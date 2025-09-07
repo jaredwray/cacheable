@@ -261,10 +261,10 @@ describe("cacheable get method", async () => {
 		const result = await cacheable.get("key");
 		expect(result).toEqual("value");
 	});
-	test("should get a raw data object", async () => {
+	test("should get a raw data object using getRaw", async () => {
 		const cacheable = new Cacheable();
 		await cacheable.set("rawKey", "rawValue");
-		const raw = await cacheable.get("rawKey", { raw: true });
+		const raw = await cacheable.getRaw("rawKey");
 		expect(raw).toHaveProperty("value", "rawValue");
 		expect(raw).toHaveProperty("expires");
 	});
@@ -315,11 +315,11 @@ describe("cacheable get method", async () => {
 		const result = await cacheable.getMany(["key1", "key2"]);
 		expect(result).toEqual(["value1", "value2"]);
 	});
-	test("should get raw data objects with getMany", async () => {
+	test("should get raw data objects with getManyRaw", async () => {
 		const cacheable = new Cacheable();
 		await cacheable.set("rawKey1", "value1");
 		await cacheable.set("rawKey2", "value2");
-		const raws = await cacheable.getMany(["rawKey1", "rawKey2"], { raw: true });
+		const raws = await cacheable.getManyRaw(["rawKey1", "rawKey2"]);
 		expect(raws).toHaveLength(2);
 		expect(raws[0]).toHaveProperty("value", "value1");
 		expect(raws[0]).toHaveProperty("expires");
