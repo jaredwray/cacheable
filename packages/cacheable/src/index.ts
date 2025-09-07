@@ -13,6 +13,7 @@ import {
 	Stats as CacheableStats,
 	calculateTtlFromExpiration,
 	getCascadingTtl,
+	getTtlFromExpires,
 	HashAlgorithm,
 	hash,
 	shorthandToMilliseconds,
@@ -432,6 +433,66 @@ export class Cacheable extends Hookified {
 		}
 
 		return raw ? result : result?.value;
+	}
+
+	/**
+	 * Retrieves the raw entry from the cache including metadata like expiration.
+	 *
+	 * Checks the primary store first; if not found and a secondary store is configured,
+	 * it will fetch from the secondary, repopulate the primary, and return the result.
+	 *
+	 * @typeParam T - The expected type of the stored value.
+	 * @param {string} key - The cache key to retrieve.
+	 * @returns {Promise<StoredDataRaw<T>>}
+	 *   A promise that resolves to the full raw data object if found, or undefined.
+	 */
+	public async getRaw<T>(key: string): Promise<StoredDataRaw<T>> {
+		let result = await this._primary.getRaw<T>(key);
+
+		if (!result && this._secondary) {
+			result = await this._secondary.getRaw<T>(key);
+			// Repopulate primary store
+			if (result) {
+				const ttl = getTtlFromExpires(result.expires);
+				await this._primary.set(key, result.value, ttl);
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Retrieves multiple raw entries from the cache including metadata like expiration.
+	 *
+	 * Checks the primary store for each key; if a key is missing and a secondary store is configured,
+	 * it will fetch from the secondary store, repopulate the primary store, and return the results.
+	 *
+	 * @typeParam T - The expected type of the stored values.
+	 * @param {string[]} keys - The cache keys to retrieve.
+	 * @returns {Promise<Array<StoredDataRaw<T>>>}
+	 *   A promise that resolves to an array of raw data objects.
+	 */
+	public async getManyRaw<T>(keys: string[]): Promise<Array<StoredDataRaw<T>>> {
+		const result = await this._primary.getManyRaw<T>(keys);
+
+		// Find missing keys
+		const missingKeys = keys.filter((_, index) => !result[index]);
+
+		if (missingKeys.length > 0 && this._secondary) {
+			const secondaryResults = await this._secondary.getManyRaw<T>(missingKeys);
+
+			for (const [i, key] of missingKeys.entries()) {
+				const secondaryResult = secondaryResults[i];
+				if (secondaryResult) {
+					result[keys.indexOf(key)] = secondaryResult;
+					// Repopulate primary store
+					const ttl = getTtlFromExpires(secondaryResult.expires);
+					await this._primary.set(key, secondaryResult.value, ttl);
+				}
+			}
+		}
+
+		return result;
 	}
 
 	/**
