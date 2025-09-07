@@ -435,6 +435,21 @@ export class Cacheable extends Hookified {
 	}
 
 	/**
+	 * Retrieves the raw entry from the cache including metadata like expiration.
+	 *
+	 * Checks the primary store first; if not found and a secondary store is configured,
+	 * it will fetch from the secondary, repopulate the primary, and return the result.
+	 *
+	 * @typeParam T - The expected type of the stored value.
+	 * @param {string} key - The cache key to retrieve.
+	 * @returns {Promise<StoredDataRaw<T>>}
+	 *   A promise that resolves to the full raw data object if found, or undefined.
+	 */
+	public async getRaw<T>(key: string): Promise<StoredDataRaw<T>> {
+		return this.get<T>(key, { raw: true });
+	}
+
+	/**
 	 * Retrieves multiple entries from the cache.
 	 * Checks the primary store for each key; if a key is missing and a secondary store is configured,
 	 * it will fetch from the secondary store, repopulate the primary store, and return the results.
