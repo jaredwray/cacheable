@@ -348,33 +348,18 @@ export class Cacheable extends Hookified {
 	}
 
 	/**
-	 * Retrieves an entry from the cache, with an optional “raw” mode.
+	 * Retrieves an entry from the cache.
 	 *
 	 * Checks the primary store first; if not found and a secondary store is configured,
 	 * it will fetch from the secondary, repopulate the primary, and return the result.
 	 *
 	 * @typeParam T - The expected type of the stored value.
 	 * @param {string} key - The cache key to retrieve.
-	 * @param {{ raw?: boolean }} [opts] - Options for retrieval.
-	 * @param {boolean} [opts.raw=false] - If `true`, returns the full raw data object
-	 *                                      (`StoredDataRaw<T>`); otherwise returns just the value.
-	 * @returns {Promise<T | StoredDataRaw<T> | undefined>}
-	 *   A promise that resolves to the cached value (or raw data) if found, or `undefined`.
+	 * @returns {Promise<T | undefined>}
+	 *   A promise that resolves to the cached value if found, or `undefined`.
 	 */
-	public async get<T>(
-		key: string,
-		options?: { raw?: false },
-	): Promise<T | undefined>;
-	public async get<T>(
-		key: string,
-		options: { raw: true },
-	): Promise<StoredDataRaw<T>>;
-	public async get<T>(
-		key: string,
-		options: { raw?: boolean } = {},
-	): Promise<T | StoredDataRaw<T>> {
+	public async get<T>(key: string): Promise<T | undefined> {
 		let result: StoredDataRaw<T>;
-		const { raw = false } = options;
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
@@ -432,7 +417,7 @@ export class Cacheable extends Hookified {
 			this.stats.incrementGets();
 		}
 
-		return raw ? result : result?.value;
+		return result?.value;
 	}
 
 	/**
@@ -502,28 +487,11 @@ export class Cacheable extends Hookified {
 	 *
 	 * @typeParam T - The expected type of the stored values.
 	 * @param {string[]} keys - The cache keys to retrieve.
-	 * @param {{ raw?: boolean }} [options] - Options for retrieval.
-	 * @param {boolean} [options.raw=false] - When `true`, returns an array of raw data objects (`StoredDataRaw<T>`);
-	 *                                        when `false`, returns an array of unwrapped values (`T`) or `undefined` for misses.
-	 * @returns {Promise<Array<T | undefined>> | Promise<Array<StoredDataRaw<T>>>}
-	 *   A promise that resolves to:
-	 *   - `Array<T | undefined>` if `raw` is `false` (default).
-	 *   - `Array<StoredDataRaw<T>>` if `raw` is `true`.
+	 * @returns {Promise<Array<T | undefined>>}
+	 *   A promise that resolves to an array of cached values or `undefined` for misses.
 	 */
-	public async getMany<T>(
-		keys: string[],
-		options?: { raw?: false },
-	): Promise<Array<T | undefined>>;
-	public async getMany<T>(
-		keys: string[],
-		options: { raw: true },
-	): Promise<Array<StoredDataRaw<T>>>;
-	public async getMany<T>(
-		keys: string[],
-		options: { raw?: boolean } = {},
-	): Promise<Array<T | StoredDataRaw<T>>> {
+	public async getMany<T>(keys: string[]): Promise<Array<T | undefined>> {
 		let result: Array<StoredDataRaw<T>> = [];
-		const { raw = false } = options;
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET_MANY, keys);
@@ -611,7 +579,7 @@ export class Cacheable extends Hookified {
 			this.stats.incrementGets();
 		}
 
-		return raw ? result : result.map((item) => item?.value);
+		return result.map((item) => item?.value);
 	}
 
 	/**
