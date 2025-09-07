@@ -9,7 +9,7 @@ describe("hash", () => {
 		const algorithm = HashAlgorithm.SHA256;
 
 		// Act
-		const result = hash(object, algorithm);
+		const result = hash(object, { algorithm });
 
 		// Assert
 		expect(result).toBe(
@@ -43,7 +43,7 @@ describe("hash", () => {
 	test("throws an error when the algorithm is not supported", () => {
 		// @ts-expect-error testing unsupported algorithm
 		expect(() => hash("foo", "md5foo")).toThrowError(
-			"Unsupported hash algorithm: 'md5foo'",
+			"Cannot create property 'algorithm' on string 'md5foo'",
 		);
 	});
 
@@ -53,7 +53,7 @@ describe("hash", () => {
 		const algorithm = HashAlgorithm.DJB2;
 
 		// Act
-		const result = hash(object, algorithm);
+		const result = hash(object, { algorithm });
 
 		// Assert
 		expect(result).toBe("717564430");
@@ -65,7 +65,10 @@ describe("hash", () => {
 		const max = 10;
 
 		// Act
-		const result = hashToNumber({ foo: "bar" }, min, max, HashAlgorithm.DJB2);
+		const result = hashToNumber(
+			{ foo: "bar" },
+			{ min, max, algorithm: HashAlgorithm.DJB2 },
+		);
 
 		// Assert
 		expect(result).toBeGreaterThanOrEqual(min);
@@ -80,8 +83,14 @@ describe("hash", () => {
 		const value = faker.string.alphanumeric(10);
 
 		// Act
-		const result = hashToNumber({ foo: value }, min, max, HashAlgorithm.DJB2);
-		const result2 = hashToNumber({ foo: value }, min, max, HashAlgorithm.DJB2);
+		const result = hashToNumber(
+			{ foo: value },
+			{ min, max, algorithm: HashAlgorithm.DJB2 },
+		);
+		const result2 = hashToNumber(
+			{ foo: value },
+			{ min, max, algorithm: HashAlgorithm.DJB2 },
+		);
 
 		// Assert
 		expect(result).toBe(result2);
@@ -99,7 +108,11 @@ describe("hash", () => {
 		let outOfRange = false;
 
 		for (const item of data) {
-			const result = hashToNumber(item, min, max, HashAlgorithm.DJB2);
+			const result = hashToNumber(item, {
+				min,
+				max,
+				algorithm: HashAlgorithm.DJB2,
+			});
 			expect(result).toBeGreaterThanOrEqual(min);
 			expect(result).toBeLessThanOrEqual(max);
 			if (result > max || result < min) {
