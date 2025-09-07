@@ -47,6 +47,14 @@ describe("hash", () => {
 		);
 	});
 
+	test("throws an error when a valid but unsupported hash algorithm is provided", () => {
+		// Test the actual unsupported algorithm error path
+		// @ts-expect-error testing unsupported algorithm string
+		expect(() => hash("foo", { algorithm: "invalidalgo" })).toThrowError(
+			"Unsupported hash algorithm: 'invalidalgo'",
+		);
+	});
+
 	test("hashes an object using the DJB2 algorithm", () => {
 		// Arrange
 		const object = { foo: "bar" };
@@ -122,5 +130,101 @@ describe("hash", () => {
 
 		// Assert
 		expect(outOfRange).toBe(false);
+	});
+
+	test("hashToNumber throws error when min >= max", () => {
+		// Arrange
+		const min = 10;
+		const max = 5; // Invalid: min >= max
+
+		// Act & Assert
+		expect(() => hashToNumber("test", { min, max })).toThrowError(
+			"Invalid range: min (10) must be less than max (5)",
+		);
+	});
+
+	test("hashToNumber throws error when min equals max", () => {
+		// Arrange
+		const min = 5;
+		const max = 5; // Invalid: min == max
+
+		// Act & Assert
+		expect(() => hashToNumber("test", { min, max })).toThrowError(
+			"Invalid range: min (5) must be less than max (5)",
+		);
+	});
+
+	test("hashToNumber uses default algorithm when not provided", () => {
+		// Arrange & Act
+		const result = hashToNumber("test", { min: 0, max: 10 });
+
+		// Assert - should work without specifying algorithm
+		expect(result).toBeDefined();
+		expect(result).toBeGreaterThanOrEqual(0);
+		expect(result).toBeLessThanOrEqual(10);
+	});
+
+	test("hashToNumber uses default stringify when not provided", () => {
+		// Arrange
+		const object = { foo: "bar" };
+
+		// Act
+		const result = hashToNumber(object, { min: 0, max: 10 });
+
+		// Assert - should work without specifying stringify
+		expect(result).toBeDefined();
+		expect(result).toBeGreaterThanOrEqual(0);
+		expect(result).toBeLessThanOrEqual(10);
+	});
+
+	test("hash uses default algorithm when not provided", () => {
+		// Arrange
+		const object = "test";
+
+		// Act
+		const result = hash(object, {});
+
+		// Assert - should work without specifying algorithm
+		expect(result).toBeDefined();
+		expect(typeof result).toBe("string");
+	});
+
+	test("hash uses default stringify when not provided", () => {
+		// Arrange
+		const object = { foo: "bar" };
+
+		// Act
+		const result = hash(object, {});
+
+		// Assert - should work without specifying stringify
+		expect(result).toBeDefined();
+		expect(typeof result).toBe("string");
+	});
+
+	test("hashToNumber uses default min when min is undefined", () => {
+		// Arrange & Act
+		const result = hashToNumber("test", { min: undefined, max: 10 });
+
+		// Assert - should use default min value of 0
+		expect(result).toBeGreaterThanOrEqual(0);
+		expect(result).toBeLessThanOrEqual(10);
+	});
+
+	test("hashToNumber uses default max when max is undefined", () => {
+		// Arrange & Act
+		const result = hashToNumber("test", { min: 0, max: undefined });
+
+		// Assert - should use default max value of 10
+		expect(result).toBeGreaterThanOrEqual(0);
+		expect(result).toBeLessThanOrEqual(10);
+	});
+
+	test("hashToNumber uses both default min and max when both are undefined", () => {
+		// Arrange & Act
+		const result = hashToNumber("test", { min: undefined, max: undefined });
+
+		// Assert - should use default range 0-10
+		expect(result).toBeGreaterThanOrEqual(0);
+		expect(result).toBeLessThanOrEqual(10);
 	});
 });
