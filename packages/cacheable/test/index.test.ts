@@ -692,7 +692,9 @@ describe("cacheable wrap", async () => {
 		const result = await wrapped(1);
 		const result2 = await wrapped(1);
 		expect(result).toBe(result2);
-		const cacheKey = createWrapKey(asyncFunction, [1], options.keyPrefix);
+		const cacheKey = createWrapKey(asyncFunction, [1], {
+			keyPrefix: options.keyPrefix,
+		});
 		const cacheResult1 = await cacheable.get(cacheKey);
 		expect(cacheResult1).toBe(result);
 		await sleep(20);
@@ -901,7 +903,9 @@ describe("cacheable adapter coverage", () => {
 		// Also test the regular wrap functionality
 		const wrapped = cacheable.wrap(testFn, { keyPrefix: "test" });
 		await wrapped();
-		expect(await cacheable.has(createWrapKey(testFn, [], "test"))).toBe(true);
+		expect(
+			await cacheable.has(createWrapKey(testFn, [], { keyPrefix: "test" })),
+		).toBe(true);
 	});
 
 	test("should directly test getOrSet adapter on method", async () => {

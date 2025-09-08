@@ -670,7 +670,9 @@ describe("cacheable wrap", async () => {
 		const result = wrapped(1);
 		const result2 = wrapped(1);
 		expect(result).toBe(result2);
-		const cacheKey = createWrapKey(syncFunction, [1], options.keyPrefix);
+		const cacheKey = createWrapKey(syncFunction, [1], {
+			keyPrefix: options.keyPrefix,
+		});
 		const cacheResult1 = cacheable.get<number>(cacheKey);
 		expect(cacheResult1).toBe(result);
 		await sleep(20);
