@@ -25,11 +25,7 @@ import {
 	type StoredDataRaw,
 } from "keyv";
 import { CacheableEvents, CacheableHooks } from "./enums.js";
-import type {
-	CacheableOptions,
-	DeserializationFunction,
-	SerializationFunction,
-} from "./types.js";
+import type { CacheableOptions } from "./types.js";
 
 export class Cacheable extends Hookified {
 	private _primary: Keyv = createKeyv();
@@ -39,9 +35,6 @@ export class Cacheable extends Hookified {
 	private readonly _stats = new CacheableStats({ enabled: false });
 	private _namespace?: string | (() => string);
 	private _cacheId: string = Math.random().toString(36).slice(2);
-	private _serialize?: SerializationFunction;
-	private _deserialize?: DeserializationFunction;
-
 	/**
 	 * Creates a new cacheable instance
 	 * @param {CacheableOptions} [options] The options for the cacheable instance
@@ -72,9 +65,6 @@ export class Cacheable extends Hookified {
 		if (options?.cacheId) {
 			this._cacheId = options.cacheId;
 		}
-
-		this.setSerialize(options?.serialize ?? JSON.stringify);
-		this.setDeserialize(options?.deserialize ?? JSON.parse);
 
 		if (options?.namespace) {
 			this._namespace = options.namespace;
@@ -233,46 +223,6 @@ export class Cacheable extends Hookified {
 	}
 
 	/**
-	 * Gets the serializer for the cacheable instance. It will also get the primary and secondary stores serializer.
-	 * @returns {function} The serializer function
-	 * @default undefined
-	 */
-	public get serialize(): SerializationFunction | undefined {
-		return this._serialize;
-	}
-
-	/**
-	 * Sets the serializer for the cacheable instance. It will also set the primary and secondary stores serializer.
-	 * @param {function | undefined} serialize The serializer function
-	 * @returns {void}
-	 * @default undefined
-	 */
-	public set serialize(serialize: SerializationFunction | undefined) {
-		this.setSerialize(serialize);
-	}
-
-	/**
-	 * Sets the deserializer. This is used in many places such as Keyv. If you provide your own
-	 * stringify function, you should also provide a parse function that is the inverse of the stringify function.
-	 * @default undefined
-	 * @returns {function | undefined}
-	 */
-	public get deserialize(): DeserializationFunction | undefined {
-		return this._deserialize;
-	}
-
-	/**
-	 * Sets the deserializer. This is used in many places such as Keyv. If you provide your own
-	 * stringify function, you should also provide a parse function that is the inverse of the stringify function.
-	 * @param {function} - the deserializer to use
-	 * @default undefined
-	 * @returns {void}
-	 */
-	public set deserialize(deserialize: DeserializationFunction | undefined) {
-		this.setDeserialize(deserialize);
-	}
-
-	/**
 	 * Sets the primary store for the cacheable instance
 	 * @param {Keyv | KeyvStoreAdapter} primary The primary store for the cacheable instance
 	 * @returns {void}
@@ -308,34 +258,6 @@ export class Cacheable extends Hookified {
 		this._secondary.on("error", (error: unknown) => {
 			this.emit(CacheableEvents.ERROR, error);
 		});
-	}
-
-	/**
-	 * Sets the serializer for the cacheable instance. It will also set the primary and secondary stores serializer.
-	 * @param {function} serialize The serializer function
-	 * @returns {void}
-	 */
-	public setSerialize(serialize: SerializationFunction | undefined): void {
-		this._serialize = serialize;
-		this._primary.serialize = serialize;
-		if (this._secondary) {
-			this._secondary.serialize = serialize;
-		}
-	}
-
-	/**
-	 * Sets the deserializer for the cacheable instance. It will also set the primary and secondary stores deserializer.
-	 * @param {function} deserialize The deserializer function
-	 * @returns {void}
-	 */
-	public setDeserialize(
-		deserialize: DeserializationFunction | undefined,
-	): void {
-		this._deserialize = deserialize;
-		this._primary.deserialize = deserialize;
-		if (this._secondary) {
-			this._secondary.deserialize = deserialize;
-		}
 	}
 
 	// biome-ignore lint/suspicious/noExplicitAny: type format
@@ -882,7 +804,7 @@ export class Cacheable extends Hookified {
 			cacheErrors: options?.cacheErrors,
 			cache: cacheAdapter,
 			cacheId: this._cacheId,
-			serialize: options?.serialize || this._serialize,
+			serialize: options?.serialize,
 		};
 
 		return wrap<T>(function_, wrapOptions);

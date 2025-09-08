@@ -827,38 +827,6 @@ describe("cacheable adapter coverage", () => {
 	});
 });
 
-describe("cacheable serialize/deserialize properties", () => {
-	test("should get and set serialize property", () => {
-		const cacheable = new Cacheable();
-		// biome-ignore lint/suspicious/noExplicitAny: testing serializer interface
-		const customSerialize = (obj: any) => `custom:${JSON.stringify(obj)}`;
-
-		// Test getter
-		expect(typeof cacheable.serialize).toBe("function");
-
-		// Test setter
-		cacheable.serialize = customSerialize;
-		expect(cacheable.serialize).toBe(customSerialize);
-	});
-
-	test("should get and set deserialize property", () => {
-		const cacheable = new Cacheable();
-		const customDeserialize = (str: string) => {
-			if (str.startsWith("custom:")) {
-				return JSON.parse(str.substring(7));
-			}
-			return JSON.parse(str);
-		};
-
-		// Test getter
-		expect(typeof cacheable.deserialize).toBe("function");
-
-		// Test setter
-		cacheable.deserialize = customDeserialize;
-		expect(cacheable.deserialize).toBe(customDeserialize);
-	});
-});
-
 describe("cacheable hash method", () => {
 	test("should hash with sha512 algorithm", () => {
 		const cacheable = new Cacheable();
