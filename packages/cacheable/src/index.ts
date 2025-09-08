@@ -360,11 +360,13 @@ export class Cacheable extends Hookified {
 				if (nonBlocking) {
 					secondaryProcessResult =
 						await this.processSecondaryForGetRawNonBlocking<T>(
+							this._primary,
 							this._secondary,
 							key,
 						);
 				} else {
 					secondaryProcessResult = await this.processSecondaryForGetRaw<T>(
+						this._primary,
 						this._secondary,
 						key,
 					);
@@ -432,12 +434,14 @@ export class Cacheable extends Hookified {
 			if (this._secondary) {
 				if (nonBlocking) {
 					await this.processSecondaryForGetManyRawNonBlocking(
+						this._primary,
 						this._secondary,
 						keys,
 						result,
 					);
 				} else {
 					await this.processSecondaryForGetManyRaw(
+						this._primary,
 						this._secondary,
 						keys,
 						result,
@@ -881,10 +885,13 @@ export class Cacheable extends Hookified {
 
 	/**
 	 * Processes a single key from secondary store for getRaw operation
+	 * @param primary - the primary store to use
+	 * @param secondary - the secondary store to use
 	 * @param key - The key to retrieve from secondary store
 	 * @returns Promise containing the result and TTL information
 	 */
 	private async processSecondaryForGetRaw<T>(
+		primary: Keyv,
 		secondary: Keyv,
 		key: string,
 	): Promise<
@@ -907,7 +914,7 @@ export class Cacheable extends Hookified {
 			const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 			const setItem = { key, value: secondaryResult.value, ttl };
 			await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
-			await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+			await primary.set(setItem.key, setItem.value, setItem.ttl);
 
 			return { result: secondaryResult, ttl };
 		} else {
@@ -920,10 +927,13 @@ export class Cacheable extends Hookified {
 	/**
 	 * Processes a single key from secondary store for getRaw operation in non-blocking mode
 	 * Non-blocking mode means we don't wait for secondary operations that update primary store
+	 * @param primary - the primary store to use
+	 * @param secondary - the secondary store to use
 	 * @param key - The key to retrieve from secondary store
 	 * @returns Promise containing the result and TTL information
 	 */
 	private async processSecondaryForGetRawNonBlocking<T>(
+		primary: Keyv,
 		secondary: Keyv,
 		key: string,
 	): Promise<
@@ -949,7 +959,7 @@ export class Cacheable extends Hookified {
 			// In non-blocking mode, fire and forget the hook and primary store update
 			this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 				.then(async () => {
-					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+					await primary.set(setItem.key, setItem.value, setItem.ttl);
 				})
 				.catch((error) => {
 					/* c8 ignore next */
@@ -966,12 +976,14 @@ export class Cacheable extends Hookified {
 
 	/**
 	 * Processes missing keys from secondary store for getManyRaw operation
+	 * @param primary - the primary store to use
 	 * @param secondary - the secondary store to use
 	 * @param keys - The original array of keys requested
 	 * @param result - The result array from primary store (will be modified)
 	 * @returns Promise<void>
 	 */
 	private async processSecondaryForGetManyRaw<T>(
+		primary: Keyv,
 		secondary: Keyv,
 		keys: string[],
 		result: Array<StoredDataRaw<T>>,
@@ -1015,7 +1027,7 @@ export class Cacheable extends Hookified {
 						CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
 						setItem,
 					);
-					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+					await primary.set(setItem.key, setItem.value, setItem.ttl);
 				} else {
 					// Emit cache miss for secondary store
 					this.emit(CacheableEvents.CACHE_MISS, {
@@ -1037,6 +1049,7 @@ export class Cacheable extends Hookified {
 	 * @returns Promise<void>
 	 */
 	private async processSecondaryForGetManyRawNonBlocking<T>(
+		primary: Keyv,
 		secondary: Keyv,
 		keys: string[],
 		result: Array<StoredDataRaw<T>>,
@@ -1080,7 +1093,7 @@ export class Cacheable extends Hookified {
 					// In non-blocking mode, fire and forget the hook and primary store update
 					this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 						.then(async () => {
-							await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+							await primary.set(setItem.key, setItem.value, setItem.ttl);
 						})
 						.catch((error) => {
 							/* c8 ignore next */
