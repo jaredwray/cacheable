@@ -328,7 +328,7 @@ export class Cacheable extends Hookified {
 	 */
 	public async getRaw<T>(
 		key: string,
-		_options?: GetOptions,
+		options?: GetOptions,
 	): Promise<StoredDataRaw<T>> {
 		let result: StoredDataRaw<T>;
 
@@ -348,28 +348,30 @@ export class Cacheable extends Hookified {
 				this.emit(CacheableEvents.CACHE_MISS, { key, store: "primary" });
 			}
 
+			const nonBlocking = options?.nonBlocking ?? this._nonBlocking;
+
 			if (!result && this._secondary) {
-				const secondaryResult = await this._secondary.getRaw<T>(key);
-				if (secondaryResult?.value) {
-					result = secondaryResult;
-					// Emit cache hit for secondary store
-					this.emit(CacheableEvents.CACHE_HIT, {
-						key,
-						value: result.value,
-						store: "secondary",
-					});
-					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
-					const expires = secondaryResult.expires ?? undefined;
-					ttl = calculateTtlFromExpiration(cascadeTtl, expires);
-					const setItem = { key, value: result.value, ttl };
-					await this.hook(
-						CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
-						setItem,
-					);
-					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+				let secondaryProcessResult:
+					| {
+							result: StoredDataRaw<T>;
+							ttl?: number | string;
+					  }
+					| undefined;
+				if (nonBlocking) {
+					secondaryProcessResult =
+						await this.processSecondaryForGetRawNonBlocking<T>(
+							this._secondary,
+							key,
+						);
 				} else {
-					// Emit cache miss for secondary store
-					this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
+					secondaryProcessResult = await this.processSecondaryForGetRaw<T>(
+						this._secondary,
+						key,
+					);
+				}
+				if (secondaryProcessResult) {
+					result = secondaryProcessResult.result;
+					ttl = secondaryProcessResult.ttl;
 				}
 			}
 
@@ -875,6 +877,91 @@ export class Cacheable extends Hookified {
 		}
 
 		return Promise.all(promises);
+	}
+
+	/**
+	 * Processes a single key from secondary store for getRaw operation
+	 * @param key - The key to retrieve from secondary store
+	 * @returns Promise containing the result and TTL information
+	 */
+	private async processSecondaryForGetRaw<T>(
+		secondary: Keyv,
+		key: string,
+	): Promise<
+		| {
+				result: StoredDataRaw<T>;
+				ttl?: number | string;
+		  }
+		| undefined
+	> {
+		const secondaryResult = await secondary.getRaw<T>(key);
+		if (secondaryResult?.value) {
+			// Emit cache hit for secondary store
+			this.emit(CacheableEvents.CACHE_HIT, {
+				key,
+				value: secondaryResult.value,
+				store: "secondary",
+			});
+			const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+			const expires = secondaryResult.expires ?? undefined;
+			const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+			const setItem = { key, value: secondaryResult.value, ttl };
+			await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
+			await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+
+			return { result: secondaryResult, ttl };
+		} else {
+			// Emit cache miss for secondary store
+			this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
+			return undefined;
+		}
+	}
+
+	/**
+	 * Processes a single key from secondary store for getRaw operation in non-blocking mode
+	 * Non-blocking mode means we don't wait for secondary operations that update primary store
+	 * @param key - The key to retrieve from secondary store
+	 * @returns Promise containing the result and TTL information
+	 */
+	private async processSecondaryForGetRawNonBlocking<T>(
+		secondary: Keyv,
+		key: string,
+	): Promise<
+		| {
+				result: StoredDataRaw<T>;
+				ttl?: number | string;
+		  }
+		| undefined
+	> {
+		const secondaryResult = await secondary.getRaw<T>(key);
+		if (secondaryResult?.value) {
+			// Emit cache hit for secondary store
+			this.emit(CacheableEvents.CACHE_HIT, {
+				key,
+				value: secondaryResult.value,
+				store: "secondary",
+			});
+			const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+			const expires = secondaryResult.expires ?? undefined;
+			const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+			const setItem = { key, value: secondaryResult.value, ttl };
+
+			// In non-blocking mode, fire and forget the hook and primary store update
+			this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
+				.then(async () => {
+					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+				})
+				.catch((error) => {
+					/* c8 ignore next */
+					this.emit(CacheableEvents.ERROR, error);
+				});
+
+			return { result: secondaryResult, ttl };
+		} else {
+			// Emit cache miss for secondary store
+			this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
+			return undefined;
+		}
 	}
 
 	/**

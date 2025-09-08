@@ -450,6 +450,54 @@ describe("cacheable get method", async () => {
 		expect(results[0]?.value).toBe("override-value1");
 		expect(nonBlockingResults[0]?.value).toBe("override-value3");
 	});
+
+	test("should get value from secondary with getRaw in non-blocking mode", async () => {
+		const cacheable = new Cacheable({
+			secondary: new Keyv(),
+			nonBlocking: true,
+		});
+
+		// Set value only in secondary store
+		await cacheable.secondary?.set("single-key", "single-value");
+
+		// Get value using getRaw in non-blocking mode
+		const result = await cacheable.getRaw("single-key");
+
+		// Should get result from secondary store immediately
+		expect(result?.value).toBe("single-value");
+
+		// Wait a bit for background primary store population to complete
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// Verify the value was populated to primary store in the background
+		const primaryResult = await cacheable.primary.get("single-key");
+		expect(primaryResult).toBe("single-value");
+	});
+
+	test("should override getRaw nonBlocking setting with options parameter", async () => {
+		// Test blocking instance with non-blocking override
+		const blockingCacheable = new Cacheable({
+			secondary: new Keyv(),
+			nonBlocking: false,
+		});
+
+		// Set value only in secondary store
+		await blockingCacheable.secondary?.set(
+			"override-single",
+			"override-single-value",
+		);
+
+		// Call getRaw with nonBlocking: true to override the blocking behavior
+		const nonBlockingResult = await blockingCacheable.getRaw(
+			"override-single",
+			{
+				nonBlocking: true,
+			},
+		);
+
+		// Should get result from secondary store
+		expect(nonBlockingResult?.value).toBe("override-single-value");
+	});
 });
 
 describe("cacheable has method", async () => {
