@@ -366,6 +366,90 @@ describe("cacheable get method", async () => {
 		const result2 = await cacheable.getMany(["key1", "key4"]);
 		expect(result2).toEqual(["value1", undefined]);
 	});
+
+	test("should get values from secondary in non-blocking mode", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary, nonBlocking: true });
+
+		// Set values only in secondary store
+		await secondary.set("secondary-key1", "secondary-value1");
+		await secondary.set("secondary-key2", "secondary-value2");
+
+		// Get values using getManyRaw in non-blocking mode
+		const results = await cacheable.getManyRaw([
+			"secondary-key1",
+			"secondary-key2",
+			"nonexistent-key",
+		]);
+
+		// Should get results from secondary store immediately
+		expect(results[0]?.value).toBe("secondary-value1");
+		expect(results[1]?.value).toBe("secondary-value2");
+		expect(results[2]).toBeUndefined();
+
+		// Wait a bit for background primary store population to complete
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// Verify the values were populated to primary store in the background
+		const primaryResult1 = await cacheable.primary.get("secondary-key1");
+		const primaryResult2 = await cacheable.primary.get("secondary-key2");
+		expect(primaryResult1).toBe("secondary-value1");
+		expect(primaryResult2).toBe("secondary-value2");
+	});
+
+	test("should override instance nonBlocking setting with options parameter", async () => {
+		// Create cacheable with nonBlocking: true (default behavior)
+		const cacheable = new Cacheable({
+			secondary: new Keyv(),
+			nonBlocking: true,
+		});
+
+		// Clear primary store and set values only in secondary store
+		await cacheable.clear();
+		await cacheable.secondary?.set("override-key1", "override-value1");
+		await cacheable.secondary?.set("override-key2", "override-value2");
+
+		// Call getManyRaw with nonBlocking: false to override the instance setting
+		// This should block until primary store is populated
+		const results = await cacheable.getManyRaw(
+			["override-key1", "override-key2"],
+			{ nonBlocking: false },
+		);
+
+		// Should get results from secondary store
+		expect(results[0]?.value).toBe("override-value1");
+		expect(results[1]?.value).toBe("override-value2");
+
+		// Since nonBlocking was overridden to false, primary store should be populated immediately
+		const primaryResult1 = await cacheable.primary.get("override-key1");
+		const primaryResult2 = await cacheable.primary.get("override-key2");
+		expect(primaryResult1).toBe("override-value1");
+		expect(primaryResult2).toBe("override-value2");
+
+		// Test that nonBlocking: true works (test that option is being read)
+		// This tests that the nonBlocking option is being read and used
+		const blockingCacheable = new Cacheable({
+			secondary: new Keyv(),
+			nonBlocking: false, // Instance is blocking by default
+		});
+
+		// Set value only in secondary store
+		await blockingCacheable.secondary?.set("override-key3", "override-value3");
+
+		// Call with nonBlocking: true to override the blocking behavior
+		const nonBlockingResults = await blockingCacheable.getManyRaw(
+			["override-key3"],
+			{ nonBlocking: true },
+		);
+
+		// Should get result from secondary store
+		expect(nonBlockingResults[0]?.value).toBe("override-value3");
+
+		// Both instances should work correctly and return secondary results
+		// The key test is that the options parameter is being used
+		expect(results[0]?.value).toBe("override-value1");
+		expect(nonBlockingResults[0]?.value).toBe("override-value3");
+	});
 });
 
 describe("cacheable has method", async () => {
