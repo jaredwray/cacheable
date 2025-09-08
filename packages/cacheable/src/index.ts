@@ -25,7 +25,11 @@ import {
 	type StoredDataRaw,
 } from "keyv";
 import { CacheableEvents, CacheableHooks } from "./enums.js";
-import type { CacheableOptions } from "./types.js";
+import type {
+	CacheableOptions,
+	DeserializationFunction,
+	SerializationFunction,
+} from "./types.js";
 
 export class Cacheable extends Hookified {
 	private _primary: Keyv = createKeyv();
@@ -35,10 +39,8 @@ export class Cacheable extends Hookified {
 	private readonly _stats = new CacheableStats({ enabled: false });
 	private _namespace?: string | (() => string);
 	private _cacheId: string = Math.random().toString(36).slice(2);
-	// biome-ignore lint/suspicious/noExplicitAny: type format
-	private _serialize: (object: any) => string = JSON.stringify;
-	// biome-ignore lint/suspicious/noExplicitAny: type format
-	private _deserialize: (text: string) => any = JSON.parse;
+	private _serialize?: SerializationFunction;
+	private _deserialize?: DeserializationFunction;
 
 	/**
 	 * Creates a new cacheable instance
@@ -233,32 +235,29 @@ export class Cacheable extends Hookified {
 	/**
 	 * Gets the serializer for the cacheable instance. It will also get the primary and secondary stores serializer.
 	 * @returns {function} The serializer function
-	 * @default JSON.stringify
+	 * @default undefined
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: type
-	public get serialize(): (object: any) => string {
+	public get serialize(): SerializationFunction | undefined {
 		return this._serialize;
 	}
 
 	/**
 	 * Sets the serializer for the cacheable instance. It will also set the primary and secondary stores serializer.
-	 * @param {function} serialize The serializer function
+	 * @param {function | undefined} serialize The serializer function
 	 * @returns {void}
-	 * @default JSON.stringify
+	 * @default undefined
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: type
-	public set serialize(serialize: (object: any) => string) {
+	public set serialize(serialize: SerializationFunction | undefined) {
 		this.setSerialize(serialize);
 	}
 
 	/**
 	 * Sets the deserializer. This is used in many places such as Keyv. If you provide your own
 	 * stringify function, you should also provide a parse function that is the inverse of the stringify function.
-	 * @default JSON.parse
-	 * @returns {function}
+	 * @default undefined
+	 * @returns {function | undefined}
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: type
-	public get deserialize(): (text: string) => any {
+	public get deserialize(): DeserializationFunction | undefined {
 		return this._deserialize;
 	}
 
@@ -266,11 +265,10 @@ export class Cacheable extends Hookified {
 	 * Sets the deserializer. This is used in many places such as Keyv. If you provide your own
 	 * stringify function, you should also provide a parse function that is the inverse of the stringify function.
 	 * @param {function} - the deserializer to use
-	 * @default JSON.parse
+	 * @default undefined
 	 * @returns {void}
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: type
-	public set deserialize(deserialize: (text: string) => any) {
+	public set deserialize(deserialize: DeserializationFunction | undefined) {
 		this.setDeserialize(deserialize);
 	}
 
@@ -311,14 +309,13 @@ export class Cacheable extends Hookified {
 			this.emit(CacheableEvents.ERROR, error);
 		});
 	}
+
 	/**
 	 * Sets the serializer for the cacheable instance. It will also set the primary and secondary stores serializer.
 	 * @param {function} serialize The serializer function
 	 * @returns {void}
-	 * @default JSON.stringify
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: type format
-	public setSerialize(serialize: (object: any) => string): void {
+	public setSerialize(serialize: SerializationFunction | undefined): void {
 		this._serialize = serialize;
 		this._primary.serialize = serialize;
 		if (this._secondary) {
@@ -330,10 +327,10 @@ export class Cacheable extends Hookified {
 	 * Sets the deserializer for the cacheable instance. It will also set the primary and secondary stores deserializer.
 	 * @param {function} deserialize The deserializer function
 	 * @returns {void}
-	 * @default JSON.parse
 	 */
-	// biome-ignore lint/suspicious/noExplicitAny: type format
-	public setDeserialize(deserialize: (text: string) => any): void {
+	public setDeserialize(
+		deserialize: DeserializationFunction | undefined,
+	): void {
 		this._deserialize = deserialize;
 		this._primary.deserialize = deserialize;
 		if (this._secondary) {
