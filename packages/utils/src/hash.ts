@@ -10,7 +10,7 @@ export enum HashAlgorithm {
 export type HashOptions = {
 	algorithm?: HashAlgorithm;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
-	stringify?: (object: any) => string;
+	serialize?: (object: any) => string;
 };
 
 export type hashToNumberOptions = HashOptions & {
@@ -29,19 +29,19 @@ export function hash(
 	object: any,
 	options: HashOptions = {
 		algorithm: HashAlgorithm.SHA256,
-		stringify: JSON.stringify,
+		serialize: JSON.stringify,
 	},
 ): string {
 	if (!options?.algorithm) {
 		options.algorithm = HashAlgorithm.SHA256;
 	}
 
-	if (!options?.stringify) {
-		options.stringify = JSON.stringify;
+	if (!options?.serialize) {
+		options.serialize = JSON.stringify;
 	}
 
 	// Convert the object to a string
-	const objectString = options.stringify(object);
+	const objectString = options.serialize(object);
 
 	if (options?.algorithm === HashAlgorithm.DJB2) {
 		return djb2Hash(objectString);
@@ -64,7 +64,7 @@ export function hashToNumber(
 		min: 0,
 		max: 10,
 		algorithm: HashAlgorithm.SHA256,
-		stringify: JSON.stringify,
+		serialize: JSON.stringify,
 	},
 ): number {
 	const min = options?.min ?? 0;
@@ -80,8 +80,8 @@ export function hashToNumber(
 		options.algorithm = HashAlgorithm.SHA256;
 	}
 
-	if (!options?.stringify) {
-		options.stringify = JSON.stringify;
+	if (!options?.serialize) {
+		options.serialize = JSON.stringify;
 	}
 
 	// Create hash of the object

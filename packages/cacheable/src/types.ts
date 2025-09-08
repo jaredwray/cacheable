@@ -51,4 +51,24 @@ export type CacheableOptions = {
 	 * If it is not set then it will be a random string that is generated
 	 */
 	cacheId?: string;
+
+	/**
+	 * Stringifies an object into a string representation. This is used in many places such as Keyv, hashing, and creating cache keys. If
+	 * you are storing complex objects that JSON.stringify does not handle well, you may want to provide your own implementation.
+	 * @param object The object to stringify.
+	 * @default JSON.stringify
+	 * @returns The string representation of the object.
+	 */
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	serialize?: (object: any) => string;
+
+	/**
+	 * Parses a string back into an object. This is used in many places such as Keyv. If you provide your own
+	 * stringify function, you should also provide a parse function that is the inverse of the stringify function.
+	 * @param text The string to parse.
+	 * @default JSON.parse
+	 * @returns The parsed object.
+	 */
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	deserialize?: (text: string) => any;
 };

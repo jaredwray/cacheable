@@ -1,5 +1,6 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: mock file
 import type { CacheableStoreItem } from "@cacheable/utils";
+import { shorthandToMilliseconds } from "@cacheable/utils";
 import type { CacheInstance, CacheSyncInstance } from "../src/index.js";
 
 export class MockCacheable implements CacheInstance {
@@ -23,8 +24,11 @@ export class MockCacheable implements CacheInstance {
 
 	async set(key: string, value: any, ttl?: number | string): Promise<void> {
 		let expires: number | undefined;
-		if (ttl && typeof ttl === "number" && ttl > 0) {
-			expires = Date.now() + ttl;
+		if (ttl) {
+			const ttlMs = shorthandToMilliseconds(ttl);
+			if (ttlMs && ttlMs > 0) {
+				expires = Date.now() + ttlMs;
+			}
 		}
 
 		this.cache.set(key, { key, value, expires });
@@ -69,8 +73,11 @@ export class MockCacheableMemory implements CacheSyncInstance {
 
 	set(key: string, value: any, ttl?: number | string): void {
 		let expires: number | undefined;
-		if (ttl && typeof ttl === "number" && ttl > 0) {
-			expires = Date.now() + ttl;
+		if (ttl) {
+			const ttlMs = shorthandToMilliseconds(ttl);
+			if (ttlMs && ttlMs > 0) {
+				expires = Date.now() + ttlMs;
+			}
 		}
 
 		this.cache.set(key, { key, value, expires });

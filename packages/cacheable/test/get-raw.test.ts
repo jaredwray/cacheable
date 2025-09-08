@@ -6,7 +6,7 @@ import { Cacheable, CacheableEvents, CacheableHooks } from "../src/index.js";
 describe("cacheable getRaw method", async () => {
 	test("should get raw data object from primary store", async () => {
 		const cacheable = new Cacheable();
-		await cacheable.set("rawKey", "rawValue");
+		await cacheable.set("rawKey", "rawValue", 10);
 		const raw = await cacheable.getRaw("rawKey");
 		expect(raw).toHaveProperty("value", "rawValue");
 		expect(raw).toHaveProperty("expires");
