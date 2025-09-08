@@ -54,10 +54,14 @@ export type WrapFunctionOptions = {
 
 export type WrapOptions = WrapFunctionOptions & {
 	cache: CacheInstance;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	stringify?: (object: any) => string;
 };
 
 export type WrapSyncOptions = WrapFunctionOptions & {
 	cache: CacheSyncInstance;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	stringify?: (object: any) => string;
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: type format
@@ -67,11 +71,14 @@ export function wrapSync<T>(
 	function_: AnyFunction,
 	options: WrapSyncOptions,
 ): AnyFunction {
-	const { ttl, keyPrefix, cache } = options;
+	const { ttl, keyPrefix, cache, stringify } = options;
 
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	return (...arguments_: any[]) => {
-		let cacheKey = createWrapKey(function_, arguments_, keyPrefix);
+		let cacheKey = createWrapKey(function_, arguments_, {
+			keyPrefix,
+			stringify,
+		});
 		if (options.createKey) {
 			cacheKey = options.createKey(function_, arguments_, options);
 		}
@@ -131,12 +138,14 @@ export function wrap<T>(
 	function_: AnyFunction,
 	options: WrapOptions,
 ): AnyFunction {
-	// biome-ignore lint/correctness/noUnusedVariables: allowed
-	const { keyPrefix, cache } = options;
+	const { keyPrefix, stringify } = options;
 
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	return async (...arguments_: any[]) => {
-		let cacheKey = createWrapKey(function_, arguments_, keyPrefix);
+		let cacheKey = createWrapKey(function_, arguments_, {
+			keyPrefix,
+			stringify,
+		});
 		if (options.createKey) {
 			cacheKey = options.createKey(function_, arguments_, options);
 		}
@@ -149,15 +158,23 @@ export function wrap<T>(
 	};
 }
 
+export type CreateWrapKeyOptions = {
+	keyPrefix?: string;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	stringify?: (object: any) => string;
+};
+
 export function createWrapKey(
 	function_: AnyFunction,
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	arguments_: any[],
-	keyPrefix?: string,
+	options?: CreateWrapKeyOptions,
 ): string {
+	const { keyPrefix, stringify } = options || {};
+
 	if (!keyPrefix) {
-		return `${function_.name}::${hash(arguments_)}`;
+		return `${function_.name}::${hash(arguments_, { stringify })}`;
 	}
 
-	return `${keyPrefix}::${function_.name}::${hash(arguments_)}`;
+	return `${keyPrefix}::${function_.name}::${hash(arguments_, { stringify })}`;
 }
