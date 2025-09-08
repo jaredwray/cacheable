@@ -869,7 +869,7 @@ export class Cacheable extends Hookified {
 			? algorithm
 			: HashAlgorithm.SHA256;
 
-		return hash(object, validAlgorithm);
+		return hash(object, { algorithm: validAlgorithm });
 	}
 
 	private async setManyKeyv(

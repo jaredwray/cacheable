@@ -7,30 +7,52 @@ export enum HashAlgorithm {
 	DJB2 = "djb2",
 }
 
+export type HashOptions = {
+	algorithm?: HashAlgorithm;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	stringify?: (object: any) => string;
+};
+
+export type hashToNumberOptions = HashOptions & {
+	min?: number;
+	max?: number;
+};
+
 /**
  * Hashes an object using the specified algorithm. The default algorithm is 'sha256'.
  * @param object The object to hash
- * @param algorithm The hash algorithm to use
+ * @param options The hash options to use
  * @returns {string} The hash of the object
  */
 export function hash(
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	object: any,
-	algorithm: HashAlgorithm = HashAlgorithm.SHA256,
+	options: HashOptions = {
+		algorithm: HashAlgorithm.SHA256,
+		stringify: JSON.stringify,
+	},
 ): string {
-	// Convert the object to a string
-	const objectString = JSON.stringify(object);
+	if (!options?.algorithm) {
+		options.algorithm = HashAlgorithm.SHA256;
+	}
 
-	if (algorithm === HashAlgorithm.DJB2) {
+	if (!options?.stringify) {
+		options.stringify = JSON.stringify;
+	}
+
+	// Convert the object to a string
+	const objectString = options.stringify(object);
+
+	if (options?.algorithm === HashAlgorithm.DJB2) {
 		return djb2Hash(objectString);
 	}
 
 	// Check if the algorithm is supported
-	if (!crypto.getHashes().includes(algorithm)) {
-		throw new Error(`Unsupported hash algorithm: '${algorithm}'`);
+	if (!crypto.getHashes().includes(options.algorithm)) {
+		throw new Error(`Unsupported hash algorithm: '${options?.algorithm}'`);
 	}
 
-	const hasher = crypto.createHash(algorithm);
+	const hasher = crypto.createHash(options.algorithm);
 	hasher.update(objectString);
 	return hasher.digest("hex");
 }
@@ -38,12 +60,32 @@ export function hash(
 export function hashToNumber(
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	object: any,
-	min = 0,
-	max = 10,
-	algorithm: HashAlgorithm = HashAlgorithm.SHA256,
+	options: hashToNumberOptions = {
+		min: 0,
+		max: 10,
+		algorithm: HashAlgorithm.SHA256,
+		stringify: JSON.stringify,
+	},
 ): number {
+	const min = options?.min ?? 0;
+	const max = options?.max ?? 10;
+
+	if (min >= max) {
+		throw new Error(
+			`Invalid range: min (${min}) must be less than max (${max})`,
+		);
+	}
+
+	if (!options?.algorithm) {
+		options.algorithm = HashAlgorithm.SHA256;
+	}
+
+	if (!options?.stringify) {
+		options.stringify = JSON.stringify;
+	}
+
 	// Create hash of the object
-	const hashResult = hash(object, algorithm);
+	const hashResult = hash(object, options);
 
 	// Convert the hex string to a number (base 16)
 	const hashNumber = Number.parseInt(hashResult, 16);
