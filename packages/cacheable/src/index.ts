@@ -25,7 +25,7 @@ import {
 	type StoredDataRaw,
 } from "keyv";
 import { CacheableEvents, CacheableHooks } from "./enums.js";
-import type { CacheableOptions } from "./types.js";
+import type { CacheableOptions, GetOptions } from "./types.js";
 
 export class Cacheable extends Hookified {
 	private _primary: Keyv = createKeyv();
@@ -302,11 +302,15 @@ export class Cacheable extends Hookified {
 	 *
 	 * @typeParam T - The expected type of the stored value.
 	 * @param {string} key - The cache key to retrieve.
+	 * @param {GetOptions} - options such as to bypass `nonBlocking` for this call
 	 * @returns {Promise<T | undefined>}
 	 *   A promise that resolves to the cached value if found, or `undefined`.
 	 */
-	public async get<T>(key: string): Promise<T | undefined> {
-		const result = await this.getRaw<T>(key);
+	public async get<T>(
+		key: string,
+		options?: GetOptions,
+	): Promise<T | undefined> {
+		const result = await this.getRaw<T>(key, options);
 		return result?.value;
 	}
 
@@ -318,10 +322,14 @@ export class Cacheable extends Hookified {
 	 *
 	 * @typeParam T - The expected type of the stored value.
 	 * @param {string} key - The cache key to retrieve.
+	 * @param {GetOptions} - options such as to bypass `nonBlocking` for this call
 	 * @returns {Promise<StoredDataRaw<T>>}
 	 *   A promise that resolves to the full raw data object if found, or undefined.
 	 */
-	public async getRaw<T>(key: string): Promise<StoredDataRaw<T>> {
+	public async getRaw<T>(
+		key: string,
+		options?: GetOptions,
+	): Promise<StoredDataRaw<T>> {
 		let result: StoredDataRaw<T>;
 
 		try {
@@ -340,28 +348,32 @@ export class Cacheable extends Hookified {
 				this.emit(CacheableEvents.CACHE_MISS, { key, store: "primary" });
 			}
 
+			const nonBlocking = options?.nonBlocking ?? this._nonBlocking;
+
 			if (!result && this._secondary) {
-				const secondaryResult = await this._secondary.getRaw<T>(key);
-				if (secondaryResult?.value) {
-					result = secondaryResult;
-					// Emit cache hit for secondary store
-					this.emit(CacheableEvents.CACHE_HIT, {
-						key,
-						value: result.value,
-						store: "secondary",
-					});
-					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
-					const expires = secondaryResult.expires ?? undefined;
-					ttl = calculateTtlFromExpiration(cascadeTtl, expires);
-					const setItem = { key, value: result.value, ttl };
-					await this.hook(
-						CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
-						setItem,
-					);
-					await this._primary.set(setItem.key, setItem.value, setItem.ttl);
+				let secondaryProcessResult:
+					| {
+							result: StoredDataRaw<T>;
+							ttl?: number | string;
+					  }
+					| undefined;
+				if (nonBlocking) {
+					secondaryProcessResult =
+						await this.processSecondaryForGetRawNonBlocking<T>(
+							this._primary,
+							this._secondary,
+							key,
+						);
 				} else {
-					// Emit cache miss for secondary store
-					this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
+					secondaryProcessResult = await this.processSecondaryForGetRaw<T>(
+						this._primary,
+						this._secondary,
+						key,
+					);
+				}
+				if (secondaryProcessResult) {
+					result = secondaryProcessResult.result;
+					ttl = secondaryProcessResult.ttl;
 				}
 			}
 
@@ -391,10 +403,14 @@ export class Cacheable extends Hookified {
 	 *
 	 * @typeParam T - The expected type of the stored values.
 	 * @param {string[]} keys - The cache keys to retrieve.
+	 * @param {GetOptions} - options such as to bypass `nonBlocking` on this call
 	 * @returns {Promise<Array<StoredDataRaw<T>>>}
 	 *   A promise that resolves to an array of raw data objects.
 	 */
-	public async getManyRaw<T>(keys: string[]): Promise<Array<StoredDataRaw<T>>> {
+	public async getManyRaw<T>(
+		keys: string[],
+		options?: GetOptions,
+	): Promise<Array<StoredDataRaw<T>>> {
 		let result: Array<StoredDataRaw<T>> = [];
 
 		try {
@@ -412,57 +428,24 @@ export class Cacheable extends Hookified {
 					this.emit(CacheableEvents.CACHE_MISS, { key, store: "primary" });
 				}
 			}
+
+			const nonBlocking = options?.nonBlocking ?? this._nonBlocking;
+
 			if (this._secondary) {
-				const missingKeys = [];
-				for (const [i, key] of keys.entries()) {
-					if (!result[i]) {
-						missingKeys.push(key);
-					}
-				}
-
-				const secondaryResults =
-					await this._secondary.getManyRaw<T>(missingKeys);
-
-				let secondaryIndex = 0;
-				for await (const [i, key] of keys.entries()) {
-					if (!result[i]) {
-						const secondaryResult = secondaryResults[secondaryIndex];
-						if (secondaryResult && secondaryResult.value !== undefined) {
-							result[i] = secondaryResult;
-							// Emit cache hit for secondary store
-							this.emit(CacheableEvents.CACHE_HIT, {
-								key,
-								value: secondaryResult.value,
-								store: "secondary",
-							});
-
-							const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
-
-							let { expires } = secondaryResult;
-
-							/* c8 ignore next 4 */
-							if (expires === null) {
-								expires = undefined;
-							}
-
-							const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
-
-							const setItem = { key, value: secondaryResult.value, ttl };
-
-							await this.hook(
-								CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
-								setItem,
-							);
-							await this._primary.set(setItem.key, setItem.value, setItem.ttl);
-						} else {
-							// Emit cache miss for secondary store
-							this.emit(CacheableEvents.CACHE_MISS, {
-								key,
-								store: "secondary",
-							});
-						}
-						secondaryIndex++;
-					}
+				if (nonBlocking) {
+					await this.processSecondaryForGetManyRawNonBlocking(
+						this._primary,
+						this._secondary,
+						keys,
+						result,
+					);
+				} else {
+					await this.processSecondaryForGetManyRaw(
+						this._primary,
+						this._secondary,
+						keys,
+						result,
+					);
 				}
 			}
 
@@ -493,11 +476,15 @@ export class Cacheable extends Hookified {
 	 *
 	 * @typeParam T - The expected type of the stored values.
 	 * @param {string[]} keys - The cache keys to retrieve.
+	 * @param {GetOptions} - options such as to bypass `nonBlocking` on this call
 	 * @returns {Promise<Array<T | undefined>>}
 	 *   A promise that resolves to an array of cached values or `undefined` for misses.
 	 */
-	public async getMany<T>(keys: string[]): Promise<Array<T | undefined>> {
-		const result = await this.getManyRaw<T>(keys);
+	public async getMany<T>(
+		keys: string[],
+		options?: GetOptions,
+	): Promise<Array<T | undefined>> {
+		const result = await this.getManyRaw<T>(keys, options);
 		return result.map((item) => item?.value);
 	}
 
@@ -894,6 +881,234 @@ export class Cacheable extends Hookified {
 		}
 
 		return Promise.all(promises);
+	}
+
+	/**
+	 * Processes a single key from secondary store for getRaw operation
+	 * @param primary - the primary store to use
+	 * @param secondary - the secondary store to use
+	 * @param key - The key to retrieve from secondary store
+	 * @returns Promise containing the result and TTL information
+	 */
+	private async processSecondaryForGetRaw<T>(
+		primary: Keyv,
+		secondary: Keyv,
+		key: string,
+	): Promise<
+		| {
+				result: StoredDataRaw<T>;
+				ttl?: number | string;
+		  }
+		| undefined
+	> {
+		const secondaryResult = await secondary.getRaw<T>(key);
+		if (secondaryResult?.value) {
+			// Emit cache hit for secondary store
+			this.emit(CacheableEvents.CACHE_HIT, {
+				key,
+				value: secondaryResult.value,
+				store: "secondary",
+			});
+			const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+			const expires = secondaryResult.expires ?? undefined;
+			const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+			const setItem = { key, value: secondaryResult.value, ttl };
+			await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
+			await primary.set(setItem.key, setItem.value, setItem.ttl);
+
+			return { result: secondaryResult, ttl };
+		} else {
+			// Emit cache miss for secondary store
+			this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
+			return undefined;
+		}
+	}
+
+	/**
+	 * Processes a single key from secondary store for getRaw operation in non-blocking mode
+	 * Non-blocking mode means we don't wait for secondary operations that update primary store
+	 * @param primary - the primary store to use
+	 * @param secondary - the secondary store to use
+	 * @param key - The key to retrieve from secondary store
+	 * @returns Promise containing the result and TTL information
+	 */
+	private async processSecondaryForGetRawNonBlocking<T>(
+		primary: Keyv,
+		secondary: Keyv,
+		key: string,
+	): Promise<
+		| {
+				result: StoredDataRaw<T>;
+				ttl?: number | string;
+		  }
+		| undefined
+	> {
+		const secondaryResult = await secondary.getRaw<T>(key);
+		if (secondaryResult?.value) {
+			// Emit cache hit for secondary store
+			this.emit(CacheableEvents.CACHE_HIT, {
+				key,
+				value: secondaryResult.value,
+				store: "secondary",
+			});
+			const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+			const expires = secondaryResult.expires ?? undefined;
+			const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+			const setItem = { key, value: secondaryResult.value, ttl };
+
+			// In non-blocking mode, fire and forget the hook and primary store update
+			this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
+				.then(async () => {
+					await primary.set(setItem.key, setItem.value, setItem.ttl);
+				})
+				.catch((error) => {
+					/* c8 ignore next */
+					this.emit(CacheableEvents.ERROR, error);
+				});
+
+			return { result: secondaryResult, ttl };
+		} else {
+			// Emit cache miss for secondary store
+			this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
+			return undefined;
+		}
+	}
+
+	/**
+	 * Processes missing keys from secondary store for getManyRaw operation
+	 * @param primary - the primary store to use
+	 * @param secondary - the secondary store to use
+	 * @param keys - The original array of keys requested
+	 * @param result - The result array from primary store (will be modified)
+	 * @returns Promise<void>
+	 */
+	private async processSecondaryForGetManyRaw<T>(
+		primary: Keyv,
+		secondary: Keyv,
+		keys: string[],
+		result: Array<StoredDataRaw<T>>,
+	): Promise<void> {
+		const missingKeys = [];
+		for (const [i, key] of keys.entries()) {
+			if (!result[i]) {
+				missingKeys.push(key);
+			}
+		}
+
+		const secondaryResults = await secondary.getManyRaw<T>(missingKeys);
+
+		let secondaryIndex = 0;
+		for await (const [i, key] of keys.entries()) {
+			if (!result[i]) {
+				const secondaryResult = secondaryResults[secondaryIndex];
+				if (secondaryResult && secondaryResult.value !== undefined) {
+					result[i] = secondaryResult;
+					// Emit cache hit for secondary store
+					this.emit(CacheableEvents.CACHE_HIT, {
+						key,
+						value: secondaryResult.value,
+						store: "secondary",
+					});
+
+					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+
+					let { expires } = secondaryResult;
+
+					/* c8 ignore next 4 */
+					if (expires === null) {
+						expires = undefined;
+					}
+
+					const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+
+					const setItem = { key, value: secondaryResult.value, ttl };
+
+					await this.hook(
+						CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
+						setItem,
+					);
+					await primary.set(setItem.key, setItem.value, setItem.ttl);
+				} else {
+					// Emit cache miss for secondary store
+					this.emit(CacheableEvents.CACHE_MISS, {
+						key,
+						store: "secondary",
+					});
+				}
+				secondaryIndex++;
+			}
+		}
+	}
+
+	/**
+	 * Processes missing keys from secondary store for getManyRaw operation in non-blocking mode
+	 * Non-blocking mode means we don't wait for secondary operations that update primary store
+	 * @param secondary - the secondary store to use
+	 * @param keys - The original array of keys requested
+	 * @param result - The result array from primary store (will be modified)
+	 * @returns Promise<void>
+	 */
+	private async processSecondaryForGetManyRawNonBlocking<T>(
+		primary: Keyv,
+		secondary: Keyv,
+		keys: string[],
+		result: Array<StoredDataRaw<T>>,
+	): Promise<void> {
+		const missingKeys = [];
+		for (const [i, key] of keys.entries()) {
+			if (!result[i]) {
+				missingKeys.push(key);
+			}
+		}
+
+		// Get secondary results synchronously but don't wait for primary store updates
+		const secondaryResults = await secondary.getManyRaw<T>(missingKeys);
+
+		let secondaryIndex = 0;
+		for await (const [i, key] of keys.entries()) {
+			if (!result[i]) {
+				const secondaryResult = secondaryResults[secondaryIndex];
+				if (secondaryResult && secondaryResult.value !== undefined) {
+					result[i] = secondaryResult;
+					// Emit cache hit for secondary store
+					this.emit(CacheableEvents.CACHE_HIT, {
+						key,
+						value: secondaryResult.value,
+						store: "secondary",
+					});
+
+					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+
+					let { expires } = secondaryResult;
+
+					/* c8 ignore next 4 */
+					if (expires === null) {
+						expires = undefined;
+					}
+
+					const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+
+					const setItem = { key, value: secondaryResult.value, ttl };
+
+					// In non-blocking mode, fire and forget the hook and primary store update
+					this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
+						.then(async () => {
+							await primary.set(setItem.key, setItem.value, setItem.ttl);
+						})
+						.catch((error) => {
+							/* c8 ignore next */
+							this.emit(CacheableEvents.ERROR, error);
+						});
+				} else {
+					// Emit cache miss for secondary store
+					this.emit(CacheableEvents.CACHE_MISS, {
+						key,
+						store: "secondary",
+					});
+				}
+				secondaryIndex++;
+			}
+		}
 	}
 
 	private setTtl(ttl: number | string | undefined): void {

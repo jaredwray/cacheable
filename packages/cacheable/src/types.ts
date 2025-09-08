@@ -52,3 +52,43 @@ export type CacheableOptions = {
 	 */
 	cacheId?: string;
 };
+
+export type GetOptions = {
+	/**
+	 * If set, this will bypass the instances nonBlocking setting.
+	 * @type {boolean}
+	 */
+	nonBlocking?: boolean;
+};
+
+export type SetOptions = {
+	/**
+	 * If set, this will bypass the instances nonBlocking setting.
+	 * @type {boolean}
+	 */
+	nonBlocking?: boolean;
+};
+
+export type TakeOptions = {
+	/**
+	 * If set, this will bypass the instances nonBlocking setting.
+	 * @type {boolean}
+	 */
+	nonBlocking?: boolean;
+};
+
+export type HasOptions = {
+	/**
+	 * If set, this will bypass the instances nonBlocking setting.
+	 * @type {boolean}
+	 */
+	nonBlocking?: boolean;
+};
+
+export type DeleteOptions = {
+	/**
+	 * If set, this will bypass the instances nonBlocking setting.
+	 * @type {boolean}
+	 */
+	nonBlocking?: boolean;
+};
