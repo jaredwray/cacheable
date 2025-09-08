@@ -50,18 +50,20 @@ export type WrapFunctionOptions = {
 	createKey?: CreateWrapKey;
 	cacheErrors?: boolean;
 	cacheId?: string;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	serialize?: (object: any) => string;
 };
 
 export type WrapOptions = WrapFunctionOptions & {
 	cache: CacheInstance;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
-	stringify?: (object: any) => string;
+	serialize?: (object: any) => string;
 };
 
 export type WrapSyncOptions = WrapFunctionOptions & {
 	cache: CacheSyncInstance;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
-	stringify?: (object: any) => string;
+	serialize?: (object: any) => string;
 };
 
 // biome-ignore lint/suspicious/noExplicitAny: type format
@@ -71,13 +73,13 @@ export function wrapSync<T>(
 	function_: AnyFunction,
 	options: WrapSyncOptions,
 ): AnyFunction {
-	const { ttl, keyPrefix, cache, stringify } = options;
+	const { ttl, keyPrefix, cache, serialize } = options;
 
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	return (...arguments_: any[]) => {
 		let cacheKey = createWrapKey(function_, arguments_, {
 			keyPrefix,
-			stringify,
+			serialize,
 		});
 		if (options.createKey) {
 			cacheKey = options.createKey(function_, arguments_, options);
@@ -138,13 +140,13 @@ export function wrap<T>(
 	function_: AnyFunction,
 	options: WrapOptions,
 ): AnyFunction {
-	const { keyPrefix, stringify } = options;
+	const { keyPrefix, serialize } = options;
 
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	return async (...arguments_: any[]) => {
 		let cacheKey = createWrapKey(function_, arguments_, {
 			keyPrefix,
-			stringify,
+			serialize,
 		});
 		if (options.createKey) {
 			cacheKey = options.createKey(function_, arguments_, options);
@@ -161,7 +163,7 @@ export function wrap<T>(
 export type CreateWrapKeyOptions = {
 	keyPrefix?: string;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
-	stringify?: (object: any) => string;
+	serialize?: (object: any) => string;
 };
 
 export function createWrapKey(
@@ -170,11 +172,11 @@ export function createWrapKey(
 	arguments_: any[],
 	options?: CreateWrapKeyOptions,
 ): string {
-	const { keyPrefix, stringify } = options || {};
+	const { keyPrefix, serialize } = options || {};
 
 	if (!keyPrefix) {
-		return `${function_.name}::${hash(arguments_, { stringify })}`;
+		return `${function_.name}::${hash(arguments_, { serialize })}`;
 	}
 
-	return `${keyPrefix}::${function_.name}::${hash(arguments_, { stringify })}`;
+	return `${keyPrefix}::${function_.name}::${hash(arguments_, { serialize })}`;
 }
