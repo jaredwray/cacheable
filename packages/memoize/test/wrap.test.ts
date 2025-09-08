@@ -27,7 +27,9 @@ describe("wrap function", () => {
 
 		// Expectations
 		expect(result).toBe(3);
-		const cacheKey = createWrapKey(asyncFunction, [1, 2], options.keyPrefix);
+		const cacheKey = createWrapKey(asyncFunction, [1, 2], {
+			keyPrefix: options.keyPrefix,
+		});
 		const cacheResult = await cache.get(cacheKey);
 		expect(cacheResult).toBe(3);
 	});
@@ -68,7 +70,9 @@ describe("wrap function", () => {
 
 		// Expectations
 		expect(result).toBe(result2);
-		const cacheKey = createWrapKey(syncFunction, [1, 2], options.keyPrefix);
+		const cacheKey = createWrapKey(syncFunction, [1, 2], {
+			keyPrefix: options.keyPrefix,
+		});
 		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(result);
 	});
@@ -113,7 +117,9 @@ describe("wrap function", () => {
 		// Expectations
 		expect(result).toBe(result2);
 		await sleep(30);
-		const cacheKey = createWrapKey(syncFunction, [1, 2], options.keyPrefix);
+		const cacheKey = createWrapKey(syncFunction, [1, 2], {
+			keyPrefix: options.keyPrefix,
+		});
 		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(undefined);
 	});
@@ -175,9 +181,11 @@ describe("wrap function", () => {
 		expect(result).toBe(result2);
 		await sleep(200);
 		const cacheKey = createWrapKey(
-			wrapSync,
+			syncFunction,
 			[1, { first: "John", last: "Doe", meta: { age: 30 } }],
-			options.keyPrefix,
+			{
+				keyPrefix: options.keyPrefix,
+			},
 		);
 		const cacheResult = cache.get(cacheKey);
 		expect(cacheResult).toBe(undefined);
@@ -188,7 +196,9 @@ describe("wrap function with stampede protection", () => {
 	it("should only execute the wrapped function once when called concurrently with the same key", async () => {
 		const cache = new MockCacheable();
 		const mockFunction = vi.fn().mockResolvedValue("result");
-		const mockedKey = createWrapKey(mockFunction, ["arg1"], "test");
+		const mockedKey = createWrapKey(mockFunction, ["arg1"], {
+			keyPrefix: "test",
+		});
 		const wrappedFunction = wrap(mockFunction, { cache, keyPrefix: "test" });
 
 		// Call the wrapped function concurrently
@@ -303,7 +313,9 @@ describe("wrap functions handling thrown errors", () => {
 				throw error;
 			},
 			[],
-			options.keyPrefix,
+			{
+				keyPrefix: options.keyPrefix,
+			},
 		);
 		const result = await cache.get(cacheKey);
 		expect(result).toBe(undefined);
