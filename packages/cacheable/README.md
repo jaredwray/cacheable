@@ -26,6 +26,7 @@
 
 # Table of Contents
 * [Getting Started](#getting-started)
+* [v1 to v2 Changes](#v1-to-v2-changes)
 * [Basic Usage](#basic-usage)
 * [Hooks and Events](#hooks-and-events)
 * [Storage Tiering and Caching](#storage-tiering-and-caching)
@@ -286,7 +287,16 @@ raws.forEach((entry, idx) => {
 
 # Non-Blocking Operations
 
-If you want your layer 2 (secondary) store to be non-blocking you can set the `nonBlocking` property to `true` in the options. This will make the secondary store non-blocking and will not wait for the secondary store to respond on `setting data`, `deleting data`, or `clearing data`. This is useful if you want to have a faster response time and not wait for the secondary store to respond.
+If you want your layer 2 (secondary) store to be non-blocking you can set the `nonBlocking` property to `true` in the options. This will make the secondary store non-blocking and will not wait for the secondary store to respond on `setting data`, `deleting data`, or `clearing data`. This is useful if you want to have a faster response time and not wait for the secondary store to respond. Here is a full list of what each method does in nonBlocking mode:
+
+* `set` - in non-blocking mode it will set at the `primary` storage and then in the background update `secondary`
+* `get` - in non-blocking mode it will only check the primary storage but then in the background look to see if there is a value in the `secondary` and update the primary
+
+* `getMany` - in non-blocking mode it will only check the primary storage but then in the background look to see if there is a value in the `secondary` and update the primary
+
+* `getRaw` - in non-blocking mode it will only check the primary storage but then in the background look to see if there is a value in the `secondary` and update the primary
+
+* `getManyRaw` - in non-blocking mode it will only check the primary storage but then in the background look to see if there is a value in the `secondary` and update the primary
 
 # Non-Blocking with @keyv/redis
 
@@ -426,7 +436,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 
 # CacheableMemory - In-Memory Cache
 
-`cacheable` comes with a built-in in-memory cache called `CacheableMemory`. This is a simple in-memory cache that is used as the primary store for `cacheable`. You can use this as a standalone cache or as a primary store for `cacheable`. Here is an example of how to use `CacheableMemory`:
+`cacheable` comes with a built-in in-memory cache called `CacheableMemory` from `@cacheable/memory`. This is a simple in-memory cache that is used as the primary store for `cacheable`. You can use this as a standalone cache or as a primary store for `cacheable`. Here is an example of how to use `CacheableMemory`:
 
 ```javascript
 import { CacheableMemory } from 'cacheable';
@@ -440,165 +450,11 @@ cache.set('key', 'value');
 const value = cache.get('key'); // value
 ```
 
-You can use `CacheableMemory` as a standalone cache or as a primary store for `cacheable`. You can also set the `useClones` property to `false` if you want to use the same reference for the values. This is useful if you are using large objects and want to save memory. The `lruSize` property is the size of the LRU cache and is set to `0` by default which is unlimited. When setting the `lruSize` property it will limit the number of keys in the cache.
-
-This simple in-memory cache uses multiple Map objects and a with `expiration` and `lru` policies if set to manage the in memory cache at scale.
-
-By default we use lazy expiration deletion which means on `get` and `getMany` type functions we look if it is expired and then delete it. If you want to have a more aggressive expiration policy you can set the `checkInterval` property to a value greater than `0` which will check for expired keys at the interval you set.
-
-Here are some of the main features of `CacheableMemory`:
-* High performance in-memory cache with a robust API and feature set. 🚀
-* Can scale past the `16,777,216 (2^24) keys` limit of a single `Map` via `hashStoreSize`. Default is `16` Map objects.
-* LRU (Least Recently Used) cache feature to limit the number of keys in the cache via `lruSize`. Limit to `16,777,216 (2^24) keys` total.
-* Expiration policy to delete expired keys with lazy deletion or aggressive deletion via `checkInterval`.
-* `Wrap` feature to memoize `sync` and `async` functions with stampede protection.
-* Ability to do many operations at once such as `setMany`, `getMany`, `deleteMany`, and `takeMany`.
-* Supports `raw` data retrieval with `getRaw` and `getManyRaw` methods to get the full metadata of the cache entry.
-
-## CacheableMemory Store Hashing
-
-`CacheableMemory` uses `Map` objects to store the keys and values. To make this scale past the `16,777,216 (2^24) keys` limit of a single `Map` we use a hash to balance the data across multiple `Map` objects. This is done by hashing the key and using the hash to determine which `Map` object to use. The default hashing algorithm is `djb2Hash` but you can change it by setting the `storeHashAlgorithm` property in the options. By default we set the amount of `Map` objects to `16`. 
-
-NOTE: if you are using the LRU cache feature the `lruSize` no matter how many `Map` objects you have it will be limited to the `16,777,216 (2^24) keys` limit of a single `Map` object. This is because we use a double linked list to manage the LRU cache and it is not possible to have more than `16,777,216 (2^24) keys` in a single `Map` object.
-
-Here is an example of how to set the number of `Map` objects and the hashing algorithm:
-
-```javascript
-import { CacheableMemory } from 'cacheable';
-const cache = new CacheableMemory({
-  storeSize: 32, // set the number of Map objects to 32
-});
-cache.set('key', 'value');
-const value = cache.get('key'); // value
-```
-
-Here is an example of how to use the `storeHashAlgorithm` property:
-
-```javascript
-import { CacheableMemory } from 'cacheable';
-const cache = new CacheableMemory({ storeHashAlgorithm: 'sha256' });
-cache.set('key', 'value');
-const value = cache.get('key'); // value
-```
-
-If you want to provide your own hashing function you can set the `storeHashAlgorithm` property to a function that takes an object and returns a `number` that is in the range of the amount of `Map` stores you have.
-
-```javascript
-import { CacheableMemory } from 'cacheable';
-/**
- * Custom hash function that takes a key and the size of the store
- * and returns a number between 0 and storeHashSize - 1.
- * @param {string} key - The key to hash.
- * @param {number} storeHashSize - The size of the store (number of Map objects).
- * @returns {number} - A number between 0 and storeHashSize - 1.
- */
-const customHash = (key, storeHashSize) => {
-  // custom hashing logic
-  return key.length % storeHashSize; // returns a number between 0 and 31 for 32 Map objects
-};
-const cache = new CacheableMemory({ storeHashAlgorithm: customHash, storeSize: 32 });
-cache.set('key', 'value');
-const value = cache.get('key'); // value
-```
-
-## CacheableMemory LRU Feature
-
-You can enable the LRU (Least Recently Used) feature in `CacheableMemory` by setting the `lruSize` property in the options. This will limit the number of keys in the cache to the size you set. When the cache reaches the limit it will remove the least recently used keys from the cache. This is useful if you want to limit the memory usage of the cache.
-
-When you set the `lruSize` we use a double linked list to manage the LRU cache and also set the `hashStoreSize` to `1` which means we will only use a single `Map` object for the LRU cache. This is because the LRU cache is managed by the double linked list and it is not possible to have more than `16,777,216 (2^24) keys` in a single `Map` object.
-
-```javascript
-import { CacheableMemory } from 'cacheable';
-const cache = new CacheableMemory({ lruSize: 1 }); // sets the LRU cache size to 1000 keys and hashStoreSize to 1
-cache.set('key1', 'value1');
-cache.set('key2', 'value2');
-const value1 = cache.get('key1');
-console.log(value1); // undefined if the cache is full and key1 is the least recently used
-const value2 = cache.get('key2');
-console.log(value2); // value2 if key2 is still in the cache
-console.log(cache.size()); // 1
-```
-
-NOTE: if you set the `lruSize` property to `0` after it was enabled it will disable the LRU cache feature and will not limit the number of keys in the cache. This will remove the `16,777,216 (2^24) keys` limit of a single `Map` object and will allow you to store more keys in the cache.
-
-## CacheableMemory Performance
-
-Our goal with `cacheable` and `CacheableMemory` is to provide a high performance caching engine that is simple to use and has a robust API. We test it against other cacheing engines such that are less feature rich to make sure there is little difference. Here are some of the benchmarks we have run:
-
-*Memory Benchmark Results:*
-|                   name                   |  summary  |  ops/sec  |  time/op  |  margin  |  samples  |
-|------------------------------------------|:---------:|----------:|----------:|:--------:|----------:|
-|  Map (v22) - set / get                   |    🥇     |     117K  |      9µs  |  ±1.29%  |     110K  |
-|  Cacheable Memory (v1.10.0) - set / get  |   -1.3%   |     116K  |      9µs  |  ±0.77%  |     110K  |
-|  Node Cache - set / get                  |   -4.1%   |     112K  |      9µs  |  ±1.34%  |     107K  |
-|  bentocache (v1.4.0) - set / get         |   -45%    |      65K  |     17µs  |  ±1.10%  |     100K  |
-
-*Memory LRU Benchmark Results:*
-|                   name                   |  summary  |  ops/sec  |  time/op  |  margin  |  samples  |
-|------------------------------------------|:---------:|----------:|----------:|:--------:|----------:|
-|  quick-lru (v7.0.1) - set / get          |    🥇     |     118K  |      9µs  |  ±0.85%  |     112K  |
-|  Map (v22) - set / get                   |  -0.56%   |     117K  |      9µs  |  ±1.35%  |     110K  |
-|  lru.min (v1.1.2) - set / get            |   -1.7%   |     116K  |      9µs  |  ±0.90%  |     110K  |
-|  Cacheable Memory (v1.10.0) - set / get  |   -3.3%   |     114K  |      9µs  |  ±1.16%  |     108K  |
-
-As you can see from the benchmarks `CacheableMemory` is on par with other caching engines such as `Map`, `Node Cache`, and `bentocache`. We have also tested it against other LRU caching engines such as `quick-lru` and `lru.min` and it performs well against them too.
-
-## CacheableMemory Options
-
-* `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.
-* `useClones`: If the cache should use clones for the values. Default is `true`.
-* `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
-* `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
-* `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
-* `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2Hash`.
-
-## CacheableMemory - API
-
-* `set(key, value, ttl?)`: Sets a value in the cache.
-* `setMany([{key, value, ttl?}])`: Sets multiple values in the cache from `CacheableItem`.
-* `get(key)`: Gets a value from the cache.
-* `getMany([keys])`: Gets multiple values from the cache.
-* `getRaw(key)`: Gets a value from the cache as `CacheableStoreItem`.
-* `getManyRaw([keys])`: Gets multiple values from the cache as `CacheableStoreItem`.
-* `has(key)`: Checks if a value exists in the cache.
-* `hasMany([keys])`: Checks if multiple values exist in the cache.
-* `delete(key)`: Deletes a value from the cache.
-* `deleteMany([keys])`: Deletes multiple values from the cache.
-* `take(key)`: Takes a value from the cache and deletes it.
-* `takeMany([keys])`: Takes multiple values from the cache and deletes them.
-* `wrap(function, WrapSyncOptions)`: Wraps a `sync` function in a cache.
-* `clear()`: Clears the cache.
-* `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
-* `useClones`: If the cache should use clones for the values. Default is `true`.
-* `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
-* `size`: The number of keys in the cache.
-* `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
-* `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
-* `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2Hash`.
-* `keys`: Get the keys in the cache. Not able to be set.
-* `items`: Get the items in the cache as `CacheableStoreItem` example `{ key, value, expires? }`.
-* `store`: The hash store for the cache which is an array of `Map` objects.
-* `checkExpired()`: Checks for expired keys in the cache. This is used by the `checkInterval` property.
-* `startIntervalCheck()`: Starts the interval check for expired keys if `checkInterval` is above 0 ms.
-* `stopIntervalCheck()`: Stops the interval check for expired keys.
-
-# Keyv Storage Adapter - KeyvCacheableMemory
-
-`cacheable` comes with a built-in storage adapter for Keyv called `KeyvCacheableMemory`. This takes `CacheableMemory` and creates a storage adapter for Keyv. This is useful if you want to use `CacheableMemory` as a storage adapter for Keyv. Here is an example of how to use `KeyvCacheableMemory`:
-
-```javascript
-import { Keyv } from 'keyv';
-import { KeyvCacheableMemory } from 'cacheable';
-
-const keyv = new Keyv({ store: new KeyvCacheableMemory() });
-await keyv.set('foo', 'bar');
-const value = await keyv.get('foo');
-console.log(value); // bar 
-```
+To learn more go to [@cacheable/memory](https://cacheable.org/docs/memory/)
 
 # Wrap / Memoization for Sync and Async Functions
 
-`Cacheable` and `CacheableMemory` has a feature called `wrap` that allows you to wrap a function in a cache. This is useful for memoization and caching the results of a function. You can wrap a `sync` or `async` function in a cache. Here is an example of how to use the `wrap` function:
+`Cacheable` and `CacheableMemory` has a feature called `wrap` that comes from [@cacheable/memoize](https://cacheable.org/docs/memoize/) and allows you to wrap a function in a cache. This is useful for memoization and caching the results of a function. You can wrap a `sync` or `async` function in a cache. Here is an example of how to use the `wrap` function:
 
 ```javascript
 import { Cacheable } from 'cacheable';
@@ -691,9 +547,11 @@ If you would like to generate your own key for the wrapped function you can set 
 
 We will pass in the `function` that is being wrapped, the `arguments` passed to the function, and the `options` used to wrap the function. You can then use these to generate a custom key for the cache.
 
+To learn more visit [@cacheable/memoize](https://cacheable.org/docs/memoize/)
+
 # Get Or Set Memoization Function
 
-The `getOrSet` method provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value from cache, and if not found, calls the provided function to compute the value and store it in cache before returning it. Here are the options:
+The `getOrSet`  method that comes from [@cacheable/memoize](https://cacheable.org/docs/memoize/) provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value from cache, and if not found, calls the provided function to compute the value and store it in cache before returning it. Here are the options:
 
 ```typescript
 export type GetOrSetFunctionOptions = {
@@ -728,6 +586,18 @@ const generateKey = (options?: GetOrSetOptions) => {
 const function_ = async () => Math.random() * 100;
 const value = await cache.getOrSet(generateKey(), function_, { ttl: '1h' });
 ```
+
+To learn more go to [@cacheable/memoize](https://cacheable.org/docs/memoize/)
+
+# v1 to v2 Changes
+
+`cacheable` is now using `@cacheable/utils`, `@cacheable/memoize`, and `@cacheable/memory` for its core functionality as we are moving to this modular architecture and plan to eventually have these modules across `cache-manager` and `flat-cache`. In addition there are some breaking changes:
+
+* `get()` and `getMany()` no longer have the `raw` option but instead we have built out `getRaw()` and `getManyRaw()` to use.
+* All `get` related functions now support `nonBlocking` which means if `nonBlocking: true` the primary store will return what it has and then in the background will work to sync from secondary storage for any misses. You can disable this by setting at the `get` function level the option `nonBlocking: false` which will look for any missing keys in the secondary.
+* `Keyv` v5.5+ is now the recommended supported version as we are using its native `getMany*` and `getRaw*`
+* `Wrap` and `getOrSet` have been updated with more robust options including the ability to use your own `serialize` function for creating the key in `wrap`.
+* `hash` has now been updated with robust options and also an enum for setting the algorithm.
 
 # How to Contribute
 
