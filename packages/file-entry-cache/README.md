@@ -15,8 +15,8 @@
 - Ideal for processes that work on a specific set of files
 - Persists cache to Disk via `reconcile()` or `persistInterval` on `cache` options.
 - Uses `checksum` to determine if a file has changed
-- Supports `relative` and `absolute` paths
-- Ability to rename keys in the cache. Useful when renaming directories.
+- Supports `relative` and `absolute` paths - paths are stored exactly as provided
+- Portable cache files when using relative paths
 - ESM and CommonJS support with Typescript
 
 # Table of Contents
@@ -43,24 +43,30 @@ npm install file-entry-cache
 ```javascript
 import fileEntryCache from 'file-entry-cache';
 const cache = fileEntryCache.create('cache1');
-let fileDescriptor = cache.getFileDescriptor('file.txt');
+
+// Using relative paths
+let fileDescriptor = cache.getFileDescriptor('./src/file.txt');
 console.log(fileDescriptor.changed); // true as it is the first time
-fileDescriptor = cache.getFileDescriptor('file.txt');
+console.log(fileDescriptor.key); // './src/file.txt' (stored as provided)
+
+fileDescriptor = cache.getFileDescriptor('./src/file.txt');
 console.log(fileDescriptor.changed); // false as it has not changed
+
 // do something to change the file
-fs.writeFileSync('file.txt', 'new data foo bar');
+fs.writeFileSync('./src/file.txt', 'new data foo bar');
+
 // check if the file has changed
-fileDescriptor = cache.getFileDescriptor('file.txt');
+fileDescriptor = cache.getFileDescriptor('./src/file.txt');
 console.log(fileDescriptor.changed); // true
 ```
 
-Save it to Disk and Reconsile files that are no longer found
+Save it to Disk and Reconcile files that are no longer found
 ```javascript
 import fileEntryCache from 'file-entry-cache';
 const cache = fileEntryCache.create('cache1');
-let fileDescriptor = cache.getFileDescriptor('file.txt');
+let fileDescriptor = cache.getFileDescriptor('./src/file.txt');
 console.log(fileDescriptor.changed); // true as it is the first time
-fileEntryCache.reconcile(); // save the cache to disk and remove files that are no longer found
+cache.reconcile(); // save the cache to disk and remove files that are no longer found
 ```
 
 Load the cache from a file:
@@ -68,30 +74,63 @@ Load the cache from a file:
 ```javascript
 import fileEntryCache from 'file-entry-cache';
 const cache = fileEntryCache.createFromFile('/path/to/cache/file');
-let fileDescriptor = cache.getFileDescriptor('file.txt');
+let fileDescriptor = cache.getFileDescriptor('./src/file.txt');
 console.log(fileDescriptor.changed); // false as it has not changed from the saved cache.
 ```
+
+## Migration Guide from v10 to v11
+
+The main breaking change is the removal of `currentWorkingDirectory`. Here's how to update your code:
+
+**Before (v10):**
+```javascript
+const cache = new FileEntryCache({
+  currentWorkingDirectory: '/project/root'
+});
+// This would store the key as 'src/file.js'
+cache.getFileDescriptor('/project/root/src/file.js');
+```
+
+**After (v11):**
+```javascript
+const cache = new FileEntryCache();
+// Now stores the key exactly as provided
+cache.getFileDescriptor('./src/file.js');  // Key: './src/file.js'
+cache.getFileDescriptor('/project/root/src/file.js'); // Key: '/project/root/src/file.js'
+```
+
+If you were using absolute paths with `currentWorkingDirectory`, you'll need to update your code to use relative paths if you want portable cache files.
+
+# Changes from v10 to v11
+
+**BREAKING CHANGES:**
+- **Removed `currentWorkingDirectory`** - This option has been completely removed from the API. Paths are now stored exactly as provided (relative or absolute).
+- **Path handling changes** - The cache now stores paths exactly as they are provided:
+  - Relative paths remain relative in the cache
+  - Absolute paths remain absolute in the cache
+  - The same file accessed with different path formats will create separate cache entries
+- **Renamed method** - `renameAbsolutePathKeys()` is now `renameCacheKeys()` to reflect that it works with any path format
+- **Simplified API** - Removed `currentWorkingDirectory` parameter from all methods including `getFileDescriptor()`, `removeEntry()`, and factory functions
+
+These changes make cache files portable when using relative paths, and simplify the API by removing path manipulation logic.
 
 # Changes from v9 to v10
 
 There have been many features added and changes made to the `file-entry-cache` class. Here are the main changes:
 - Added `cache` object to the options to allow for more control over the cache
-- Added `hashAlgorithm` to the options to allow for different checksum algorithms. Note that if you load from file it most likely will break if the value was something before. 
-- Updated more on using Relative or Absolute paths. We now support both on `getFileDescriptor()`. You can read more on this in the `Get File Descriptor` section.
+- Added `hashAlgorithm` to the options to allow for different checksum algorithms. Note that if you load from file it most likely will break if the value was something before.
 - Migrated to Typescript with ESM and CommonJS support. This allows for better type checking and support for both ESM and CommonJS.
-- Once options are passed in they get assigned as properties such as `hashAlgorithm` and `currentWorkingDirectory`. This allows for better control and access to the options. For the Cache options they are assigned to `cache` such as `cache.ttl` and `cache.lruSize`.
+- Once options are passed in they get assigned as properties such as `hashAlgorithm`. For the Cache options they are assigned to `cache` such as `cache.ttl` and `cache.lruSize`.
 - Added `cache.persistInterval` to allow for saving the cache to disk at a specific interval. This will save the cache to disk at the interval specified instead of calling `reconsile()` to save. (`off` by default)
 - Added `getFileDescriptorsByPath(filePath: string): FileEntryDescriptor[]` to get all the file descriptors that start with the path specified. This is useful when you want to get all the files in a directory or a specific path.
-- Added `renameAbsolutePathKeys(oldPath: string, newPath: string): void` will rename the keys in the cache from the old path to the new path. This is useful when you rename a directory and want to update the cache without reanalyzing the files.
 - Using `flat-cache` v6 which is a major update. This allows for better performance and more control over the cache.
 - On `FileEntryDescriptor.meta` if using typescript you need to use the `meta.data` to set additional information. This is to allow for better type checking and to avoid conflicts with the `meta` object which was `any`.
 
 # Global Default Functions
-- `create(cacheId: string, cacheDirectory?: string, useCheckSum?: boolean, currentWorkingDirectory?: string)` - Creates a new instance of the `FileEntryCache` class
-- `createFromFile(cachePath: string, useCheckSum?: boolean, currentWorkingDirectory?: string)` - Creates a new instance of the `FileEntryCache` class and loads the cache from a file.
+- `create(cacheId: string, cacheDirectory?: string, useCheckSum?: boolean)` - Creates a new instance of the `FileEntryCache` class
+- `createFromFile(cachePath: string, useCheckSum?: boolean)` - Creates a new instance of the `FileEntryCache` class and loads the cache from a file.
 
 # FileEntryCache Options (FileEntryCacheOptions)
-- `currentWorkingDirectory?` - The current working directory. Used when resolving relative paths.
 - `useModifiedTime?` - If `true` it will use the modified time to determine if the file has changed. Default is `true`
 - `useCheckSum?` - If `true` it will use a checksum to determine if the file has changed. Default is `false`
 - `hashAlgorithm?` - The algorithm to use for the checksum. Default is `md5` but can be any algorithm supported by `crypto.createHash`
@@ -110,49 +149,53 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `constructor(options?: FileEntryCacheOptions)` - Creates a new instance of the `FileEntryCache` class
 - `useCheckSum: boolean` - If `true` it will use a checksum to determine if the file has changed. Default is `false`
 - `hashAlgorithm: string` - The algorithm to use for the checksum. Default is `md5` but can be any algorithm supported by `crypto.createHash`
-- `currentWorkingDirectory: string` - The current working directory. Used when resolving relative paths.
 - `getHash(buffer: Buffer): string` - Gets the hash of a buffer used for checksums
-- `createFileKey(filePath: string): string` - Creates a key for the file path. This is used to store the data in the cache based on relative or absolute paths.
-- `deleteCacheFile(filePath: string): void` - Deletes the cache file
-- `destroy(): void` - Destroys the cache. This will also delete the cache file. If using cache persistence it will stop the interval.
-- `removeEntry(filePath: string): void` - Removes an entry from the cache. This can be `relative` or `absolute` paths.
+- `createFileKey(filePath: string): string` - Returns the cache key for the file path (returns the path exactly as provided).
+- `deleteCacheFile(): boolean` - Deletes the cache file from disk
+- `destroy(): void` - Destroys the cache. This will clear the cache in memory. If using cache persistence it will stop the interval.
+- `removeEntry(filePath: string): void` - Removes an entry from the cache using the exact path provided.
 - `reconcile(): void` - Saves the cache to disk and removes any files that are no longer found.
 - `hasFileChanged(filePath: string): boolean` - Checks if the file has changed. This will return `true` if the file has changed.
-- `getFileDescriptor(filePath: string, options?: { useModifiedTime?: boolean, useCheckSum?: boolean, currentWorkingDirectory?: string }): FileEntryDescriptor` - Gets the file descriptor for the file. Please refer to the entire section on `Get File Descriptor` for more information.
+- `getFileDescriptor(filePath: string, options?: { useModifiedTime?: boolean, useCheckSum?: boolean }): FileEntryDescriptor` - Gets the file descriptor for the file. Please refer to the entire section on `Get File Descriptor` for more information.
 - `normalizeEntries(entries: FileEntryDescriptor[]): FileEntryDescriptor[]` - Normalizes the entries to have the correct paths. This is used when loading the cache from disk.
 - `analyzeFiles(files: string[])` will return `AnalyzedFiles` object with `changedFiles`, `notFoundFiles`, and `notChangedFiles` as FileDescriptor arrays.
 - `getUpdatedFiles(files: string[])` will return an array of `FileEntryDescriptor` objects that have changed.
-- `getFileDescriptorsByPath(filePath: string): FileEntryDescriptor[]` will return an array of `FileEntryDescriptor` objects that starts with the path specified.
-- `renameAbsolutePathKeys(oldPath: string, newPath: string): void` - Renames the keys in the cache from the old path to the new path. This is useful when you rename a directory and want to update the cache without reanalyzing the files.
+- `getFileDescriptorsByPath(filePath: string): FileEntryDescriptor[]` will return an array of `FileEntryDescriptor` objects that starts with the path prefix specified.
 
 # Get File Descriptor
 
-The `getFileDescriptor(filePath: string, options?: { useCheckSum?: boolean, currentWorkingDirectory?: string }): FileEntryDescriptor` function is used to get the file descriptor for the file. This function will return a `FileEntryDescriptor` object that has the following properties:
+The `getFileDescriptor(filePath: string, options?: { useCheckSum?: boolean, useModifiedTime?: boolean }): FileEntryDescriptor` function is used to get the file descriptor for the file. This function will return a `FileEntryDescriptor` object that has the following properties:
 
-- `key: string` - The key for the file. This is the relative or absolute path of the file.
+- `key: string` - The cache key for the file. This is exactly the path that was provided (relative or absolute).
 - `changed: boolean` - If the file has changed since the last time it was analyzed.
 - `notFound: boolean` - If the file was not found.
-- `meta: FileEntryMeta` - The meta data for the file. This has the following prperties: `size`, `mtime`, `ctime`, `hash`, `data`. Note that `data` is an object that can be used to store additional information.
+- `meta: FileEntryMeta` - The meta data for the file. This has the following properties: `size`, `mtime`, `hash`, `data`. Note that `data` is an object that can be used to store additional information.
 - `err` - If there was an error analyzing the file.
 
-We have added the ability to use `relative` or `absolute` paths. If you pass in a `relative` path it will use the `currentWorkingDirectory` to resolve the path. If you pass in an `absolute` path it will use the path as is. This is useful when you want to use `relative` paths but also want to use `absolute` paths. 
+## Path Handling
 
-If you do not pass in `currentWorkingDirectory` in the class options or in the `getFileDescriptor` function it will use the `process.cwd()` as the default `currentWorkingDirectory`.
+The cache stores paths exactly as they are provided:
 
-```javascript
-const fileEntryCache = new FileEntryCache();
-const fileDescriptor = fileEntryCache.getFileDescriptor('file.txt', { currentWorkingDirectory: '/path/to/directory' });
-```
-
-Since this is a relative path it will use the `currentWorkingDirectory` to resolve the path. If you want to use an absolute path you can do the following:
+- **Relative paths** remain relative in the cache
+- **Absolute paths** remain absolute in the cache
+- The same file accessed with different path formats creates **separate cache entries**
 
 ```javascript
 const fileEntryCache = new FileEntryCache();
-const filePath = path.resolve('/path/to/directory', 'file.txt');
-const fileDescriptor = fileEntryCache.getFileDescriptor(filePath);
+
+// Using a relative path
+const relativeDescriptor = fileEntryCache.getFileDescriptor('./file.txt');
+console.log(relativeDescriptor.key); // './file.txt'
+
+// Using an absolute path
+const absolutePath = path.resolve('./file.txt');
+const absoluteDescriptor = fileEntryCache.getFileDescriptor(absolutePath);
+console.log(absoluteDescriptor.key); // '/full/path/to/file.txt'
+
+// These create two separate cache entries even though they refer to the same file
 ```
 
-This will save the key as the absolute path.
+This behavior makes cache files portable when using relative paths, as they will work correctly when the project is moved to a different location.
 
 If there is an error when trying to get the file descriptor it will return an ``notFound` and `err` property with the error.
 

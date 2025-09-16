@@ -9,7 +9,6 @@ import {
 } from "flat-cache";
 
 export type FileEntryCacheOptions = {
-	currentWorkingDirectory?: string;
 	useModifiedTime?: boolean;
 	useCheckSum?: boolean;
 	hashAlgorithm?: string;
@@ -19,7 +18,6 @@ export type FileEntryCacheOptions = {
 export type GetFileDescriptorOptions = {
 	useCheckSum?: boolean;
 	useModifiedTime?: boolean;
-	currentWorkingDirectory?: string;
 };
 
 export type FileDescriptor = {
@@ -46,21 +44,18 @@ export type AnalyzedFiles = {
 export function createFromFile(
 	filePath: string,
 	useCheckSum?: boolean,
-	currentWorkingDirectory?: string,
 ): FileEntryCache {
 	const fname = path.basename(filePath);
 	const directory = path.dirname(filePath);
-	return create(fname, directory, useCheckSum, currentWorkingDirectory);
+	return create(fname, directory, useCheckSum);
 }
 
 export function create(
 	cacheId: string,
 	cacheDirectory?: string,
 	useCheckSum?: boolean,
-	currentWorkingDirectory?: string,
 ): FileEntryCache {
 	const options: FileEntryCacheOptions = {
-		currentWorkingDirectory,
 		useCheckSum,
 		cache: {
 			cacheId,
@@ -90,7 +85,6 @@ export class FileEntryCache {
 	private _cache: FlatCache = new FlatCache({ useClone: false });
 	private _useCheckSum = false;
 	private _useModifiedTime = true;
-	private _currentWorkingDirectory: string | undefined;
 	private _hashAlgorithm = "md5";
 
 	/**
@@ -108,10 +102,6 @@ export class FileEntryCache {
 
 		if (options?.useCheckSum) {
 			this._useCheckSum = options.useCheckSum;
-		}
-
-		if (options?.currentWorkingDirectory) {
-			this._currentWorkingDirectory = options.currentWorkingDirectory;
 		}
 
 		if (options?.hashAlgorithm) {
@@ -184,22 +174,6 @@ export class FileEntryCache {
 	}
 
 	/**
-	 * Get the current working directory
-	 * @returns {string | undefined} The current working directory
-	 */
-	public get currentWorkingDirectory(): string | undefined {
-		return this._currentWorkingDirectory;
-	}
-
-	/**
-	 * Set the current working directory
-	 * @param {string | undefined} value - The value to set
-	 */
-	public set currentWorkingDirectory(value: string | undefined) {
-		this._currentWorkingDirectory = value;
-	}
-
-	/**
 	 * Given a buffer, calculate md5 hash of its content.
 	 * @method getHash
 	 * @param  {Buffer} buffer   buffer to calculate hash on
@@ -215,27 +189,8 @@ export class FileEntryCache {
 	 * @param {String} filePath
 	 * @return {String}
 	 */
-	public createFileKey(
-		filePath: string,
-		options?: { currentWorkingDirectory?: string },
-	): string {
-		let result = filePath;
-		const currentWorkingDirectory =
-			options?.currentWorkingDirectory ?? this._currentWorkingDirectory;
-		if (
-			currentWorkingDirectory &&
-			filePath.startsWith(currentWorkingDirectory)
-		) {
-			const splitPath = filePath.split(currentWorkingDirectory).pop();
-			if (splitPath) {
-				result = splitPath;
-				if (result.startsWith("/")) {
-					result = result.slice(1);
-				}
-			}
-		}
-
-		return result;
+	public createFileKey(filePath: string): string {
+		return filePath;
 	}
 
 	/**
@@ -270,20 +225,8 @@ export class FileEntryCache {
 	 * @method removeEntry
 	 * @param filePath - The file path to remove from the cache
 	 */
-	public removeEntry(
-		filePath: string,
-		options?: { currentWorkingDirectory?: string },
-	): void {
-		if (this.isRelativePath(filePath)) {
-			filePath = this.getAbsolutePath(filePath, {
-				currentWorkingDirectory: options?.currentWorkingDirectory,
-			});
-			this._cache.removeKey(this.createFileKey(filePath));
-		}
-
-		const key = this.createFileKey(filePath, {
-			currentWorkingDirectory: options?.currentWorkingDirectory,
-		});
+	public removeEntry(filePath: string): void {
+		const key = this.createFileKey(filePath);
 		this._cache.removeKey(key);
 	}
 
@@ -342,17 +285,15 @@ export class FileEntryCache {
 
 		result.meta = this._cache.getKey<FileDescriptorMeta>(result.key) ?? {};
 
-		// Set the file path
-		filePath = this.getAbsolutePath(filePath, {
-			currentWorkingDirectory: options?.currentWorkingDirectory,
-		});
+		// Convert to absolute path for file system operations
+		const absolutePath = this.getAbsolutePath(filePath);
 
 		const useCheckSumValue = options?.useCheckSum ?? this._useCheckSum;
 		const useModifiedTimeValue =
 			options?.useModifiedTime ?? this._useModifiedTime;
 
 		try {
-			fstat = fs.statSync(filePath);
+			fstat = fs.statSync(absolutePath);
 			// Get the file size
 			result.meta = {
 				size: fstat.size,
@@ -362,7 +303,7 @@ export class FileEntryCache {
 
 			if (useCheckSumValue) {
 				// Get the file hash
-				const buffer = fs.readFileSync(filePath);
+				const buffer = fs.readFileSync(absolutePath);
 				result.meta.hash = this.getHash(buffer);
 			}
 		} catch (error) {
@@ -488,17 +429,16 @@ export class FileEntryCache {
 	}
 
 	/**
-	 * Get the not found files
+	 * Get the file descriptors by path prefix
 	 * @method getFileDescriptorsByPath
-	 * @param filePath - the files that you want to get from a path
-	 * @returns {FileDescriptor[]} The not found files
+	 * @param filePath - the path prefix to match
+	 * @returns {FileDescriptor[]} The file descriptors
 	 */
 	public getFileDescriptorsByPath(filePath: string): FileDescriptor[] {
 		const result: FileDescriptor[] = [];
 		const keys = this._cache.keys();
 		for (const key of keys) {
-			const absolutePath = this.getAbsolutePath(filePath);
-			if (absolutePath.startsWith(filePath)) {
+			if (key.startsWith(filePath)) {
 				const fileDescriptor = this.getFileDescriptor(key);
 				result.push(fileDescriptor);
 			}
@@ -511,31 +451,22 @@ export class FileEntryCache {
 	 * Get the Absolute Path. If it is already absolute it will return the path as is.
 	 * @method getAbsolutePath
 	 * @param filePath - The file path to get the absolute path for
-	 * @param options - The options for getting the absolute path. The current working directory is used if not provided.
 	 * @returns {string}
 	 */
-	public getAbsolutePath(
-		filePath: string,
-		options?: { currentWorkingDirectory?: string },
-	): string {
+	public getAbsolutePath(filePath: string): string {
 		if (this.isRelativePath(filePath)) {
-			const currentWorkingDirectory =
-				options?.currentWorkingDirectory ??
-				this._currentWorkingDirectory ??
-				process.cwd();
-			filePath = path.resolve(currentWorkingDirectory, filePath);
+			return path.resolve(process.cwd(), filePath);
 		}
-
 		return filePath;
 	}
 
 	/**
-	 * Rename the absolute path keys. This is used when a directory is changed or renamed.
-	 * @method renameAbsolutePathKeys
-	 * @param oldPath - The old path to rename
-	 * @param newPath - The new path to rename to
+	 * Rename cache keys that start with a given path prefix.
+	 * @method renameCacheKeys
+	 * @param oldPath - The old path prefix to rename
+	 * @param newPath - The new path prefix to rename to
 	 */
-	public renameAbsolutePathKeys(oldPath: string, newPath: string): void {
+	public renameCacheKeys(oldPath: string, newPath: string): void {
 		const keys = this._cache.keys();
 		for (const key of keys) {
 			if (key.startsWith(oldPath)) {

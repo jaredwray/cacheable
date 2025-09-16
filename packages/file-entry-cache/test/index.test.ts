@@ -48,15 +48,6 @@ describe("file-entry-cache with options", () => {
 		expect(fileEntryCache.useModifiedTime).toBe(false);
 	});
 
-	test("should be able to get and set currentWorkingDirectory", () => {
-		const fileEntryCache = new FileEntryCache({
-			currentWorkingDirectory: "test",
-		});
-		expect(fileEntryCache.currentWorkingDirectory).toBe("test");
-		fileEntryCache.currentWorkingDirectory = "test2";
-		expect(fileEntryCache.currentWorkingDirectory).toBe("test2");
-	});
-
 	test("create should initialize a file-entry-cache", () => {
 		const fileEntryCache = defaultFileEntryCache.create("test1");
 		expect(fileEntryCache).toBeDefined();
@@ -101,19 +92,15 @@ describe("getFileKey", () => {
 		const key = fileEntryCache.createFileKey(path);
 		expect(key).toBe(path);
 	});
-	test("should return a correct path key with cwd", () => {
-		const fileEntryCache = new FileEntryCache({
-			currentWorkingDirectory: "/usr/src/test2",
-		});
-		const path = "/usr/src/test2/test.file";
+	test("should return path as-is for relative paths", () => {
+		const fileEntryCache = new FileEntryCache();
+		const path = "./test/file.js";
 		const key = fileEntryCache.createFileKey(path);
-		expect(key).toBe("test.file");
+		expect(key).toBe(path);
 	});
-	test("should return full path when cwd is full path", () => {
-		const fileEntryCache = new FileEntryCache({
-			currentWorkingDirectory: "/usr/src/test2",
-		});
-		const path = "/usr/src/test2";
+	test("should return path as-is for absolute paths", () => {
+		const fileEntryCache = new FileEntryCache();
+		const path = "/usr/src/test2/file.js";
 		const key = fileEntryCache.createFileKey(path);
 		expect(key).toBe(path);
 	});
@@ -130,26 +117,24 @@ describe("destroy()", () => {
 });
 
 describe("removeEntry()", () => {
-	test("test relative path and absolute path", () => {
+	test("should remove entry using exact key match", () => {
 		const fileEntryCache = new FileEntryCache();
-		fileEntryCache.cache.setKey("/usr/src/test2/test", "bar");
+		fileEntryCache.cache.setKey("test.js", "bar");
 		expect(fileEntryCache.cache.all()).toEqual({
-			"/usr/src/test2/test": "bar",
+			"test.js": "bar",
 		});
-		fileEntryCache.removeEntry("test", {
-			currentWorkingDirectory: "/usr/src/test2",
-		});
+		fileEntryCache.removeEntry("test.js");
 		expect(fileEntryCache.cache.all()).toEqual({});
 	});
 
-	test("should not work if passing a absolute path to a relative key", () => {
+	test("should remove absolute path entry", () => {
 		const fileEntryCache = new FileEntryCache();
-		fileEntryCache.cache.setKey("testified", "bar");
+		fileEntryCache.cache.setKey("/usr/src/test2/testified", "bar");
 
-		expect(fileEntryCache.cache.all()).toEqual({ testified: "bar" });
-		fileEntryCache.removeEntry("/usr/src/test2/testified", {
-			currentWorkingDirectory: "/usr/src/test2",
+		expect(fileEntryCache.cache.all()).toEqual({
+			"/usr/src/test2/testified": "bar",
 		});
+		fileEntryCache.removeEntry("/usr/src/test2/testified");
 		expect(fileEntryCache.cache.all()).toEqual({});
 	});
 });
@@ -355,32 +340,30 @@ describe("getFileDescriptor()", () => {
 		expect(fileEntryCache.cache.get(testFile1)).toEqual(fileDescriptor2.meta);
 	});
 
-	test("should work with currentWorkingDirectory", () => {
-		const fileEntryCache = new FileEntryCache({
-			currentWorkingDirectory: "./.cacheGFD",
-		});
-		const fileDescriptor = fileEntryCache.getFileDescriptor("./test1.txt");
+	test("should work with relative paths", () => {
+		const fileEntryCache = new FileEntryCache();
+		const fileDescriptor = fileEntryCache.getFileDescriptor(
+			"./.cacheGFD/test1.txt",
+		);
 		expect(fileDescriptor).toBeDefined();
-		expect(fileDescriptor.key).toBe("./test1.txt");
+		expect(fileDescriptor.key).toBe("./.cacheGFD/test1.txt");
 		expect(fileDescriptor.meta?.size).toBe(4);
 		expect(fileDescriptor.changed).toBe(true);
 	});
 
-	test("should work with currentWorkingDirectory", () => {
-		const fileEntryCache = new FileEntryCache({
-			currentWorkingDirectory: "./.cacheGFD",
-		});
-		const fileDescriptor = fileEntryCache.getFileDescriptor("test1.txt");
+	test("should preserve relative paths as keys", () => {
+		const fileEntryCache = new FileEntryCache();
+		const fileDescriptor = fileEntryCache.getFileDescriptor(
+			".cacheGFD/test1.txt",
+		);
 		expect(fileDescriptor).toBeDefined();
-		expect(fileDescriptor.key).toBe("test1.txt");
+		expect(fileDescriptor.key).toBe(".cacheGFD/test1.txt");
 		expect(fileDescriptor.meta?.size).toBe(4);
 		expect(fileDescriptor.changed).toBe(true);
 	});
 
-	test("should not use currentWorkingDirectory", () => {
-		const fileEntryCache = new FileEntryCache({
-			currentWorkingDirectory: "./.cacheGFD",
-		});
+	test("should preserve absolute paths as keys", () => {
+		const fileEntryCache = new FileEntryCache();
 		const testFile1 = path.resolve("./.cacheGFD/test1.txt");
 		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
 		expect(fileDescriptor).toBeDefined();
@@ -388,26 +371,25 @@ describe("getFileDescriptor()", () => {
 		expect(fileDescriptor.changed).toBe(true);
 	});
 
-	test("should default to process.cwd() if current workind directory not set", () => {
+	test("relative and absolute paths are different keys", () => {
 		const fileEntryCache = new FileEntryCache();
-		const testFile1 = "./.cacheGFD/test1.txt";
-		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
-		expect(fileDescriptor).toBeDefined();
-		expect(fileDescriptor.key).toBe(testFile1);
-		expect(fileDescriptor.changed).toBe(true);
-	});
+		const relPath = "./.cacheGFD/test1.txt";
+		const absPath = path.resolve(relPath);
 
-	test("should cascade currentWorkingDirectory", () => {
-		const fileEntryCache = new FileEntryCache({
-			currentWorkingDirectory: "./.cacheGFD",
-		});
-		const fileDescriptor = fileEntryCache.getFileDescriptor("test1.txt", {
-			currentWorkingDirectory: "./.cacheGFD",
-		});
-		expect(fileDescriptor).toBeDefined();
-		expect(fileDescriptor.key).toBe("test1.txt");
-		expect(fileDescriptor.meta?.size).toBe(4);
-		expect(fileDescriptor.changed).toBe(true);
+		const fileDescriptor1 = fileEntryCache.getFileDescriptor(relPath);
+		expect(fileDescriptor1.key).toBe(relPath);
+		expect(fileDescriptor1.changed).toBe(true);
+
+		const fileDescriptor2 = fileEntryCache.getFileDescriptor(absPath);
+		expect(fileDescriptor2.key).toBe(absPath);
+		expect(fileDescriptor2.changed).toBe(true);
+
+		// Should be cached separately
+		const fileDescriptor3 = fileEntryCache.getFileDescriptor(relPath);
+		expect(fileDescriptor3.changed).toBe(false);
+
+		const fileDescriptor4 = fileEntryCache.getFileDescriptor(absPath);
+		expect(fileDescriptor4.changed).toBe(false);
 	});
 });
 
@@ -477,31 +459,30 @@ describe("normalizeEntries()", () => {
 		expect(entries).toEqual([]);
 	});
 	test("should return an array of entries", () => {
-		const fileEntryCache = new FileEntryCache({
-			currentWorkingDirectory: `./${fileCacheName}`,
-		});
-		fileEntryCache.getFileDescriptor("test2.txt");
-		const entries = fileEntryCache.normalizeEntries(["test1.txt", "test2.txt"]);
-		expect(entries[0].key).toBe("test1.txt");
+		const fileEntryCache = new FileEntryCache();
+		const file1 = `./${fileCacheName}/test1.txt`;
+		const file2 = `./${fileCacheName}/test2.txt`;
+		fileEntryCache.getFileDescriptor(file2);
+		const entries = fileEntryCache.normalizeEntries([file1, file2]);
+		expect(entries[0].key).toBe(file1);
 		expect(entries[0].changed).toBe(true);
-		expect(entries[1].key).toBe("test2.txt");
+		expect(entries[1].key).toBe(file2);
 		expect(entries[1].changed).toBe(false);
 	});
 
 	test("should return all entries", () => {
 		const fileEntryCache = new FileEntryCache({
 			useCheckSum: true,
-			currentWorkingDirectory: `./${fileCacheName}`,
 		});
-		fileEntryCache.getFileDescriptor("test1.txt");
-		fileEntryCache.getFileDescriptor("test2.txt");
-		fileEntryCache.getFileDescriptor("test3.txt");
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test1.txt`);
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test2.txt`);
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test3.txt`);
 		fs.chmodSync(path.resolve(`./${fileCacheName}/test3.txt`), 0o000);
 		const entries = fileEntryCache.normalizeEntries();
 		expect(entries.length).toBe(2);
-		expect(entries[0].key).toBe("test1.txt");
+		expect(entries[0].key).toBe(`./${fileCacheName}/test1.txt`);
 		expect(entries[0].changed).toBe(false);
-		expect(entries[1].key).toBe("test2.txt");
+		expect(entries[1].key).toBe(`./${fileCacheName}/test2.txt`);
 		expect(entries[1].changed).toBe(false);
 	});
 });
@@ -529,20 +510,21 @@ describe("reconcile()", () => {
 
 	test("should reconcile the cache", () => {
 		const options: FileEntryCacheOptions = {
-			currentWorkingDirectory: `./${fileCacheName}`,
 			cache: {
 				cacheId: "test1",
 				cacheDir: "./.cacheReconcile",
 			},
 		};
 		const fileEntryCache = new FileEntryCache(options);
-		const fileEntry1 = fileEntryCache.getFileDescriptor("test1.txt");
+		const fileEntry1 = fileEntryCache.getFileDescriptor(
+			`./${fileCacheName}/test1.txt`,
+		);
 		if (fileEntry1.meta) {
 			fileEntry1.meta.data = { testingFooVariable: "11" };
 		}
 
-		fileEntryCache.getFileDescriptor("test2.txt");
-		fileEntryCache.getFileDescriptor("test3.txt");
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test2.txt`);
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test3.txt`);
 		fileEntryCache.reconcile();
 		const cacheFileContent = fs.readFileSync(
 			fileEntryCache.cache.cacheFilePath,
@@ -559,17 +541,16 @@ describe("reconcile()", () => {
 
 	test("should reconcile with deleted files", () => {
 		const options: FileEntryCacheOptions = {
-			currentWorkingDirectory: `./${fileCacheName}`,
 			cache: {
 				cacheId: "test1",
 				cacheDir: "./.cacheReconcile",
 			},
 		};
 		const fileEntryCache = new FileEntryCache(options);
-		fileEntryCache.getFileDescriptor("test1.txt");
-		fileEntryCache.getFileDescriptor("test2.txt");
-		fileEntryCache.getFileDescriptor("test3.txt");
-		fileEntryCache.getFileDescriptor("test4.txt");
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test1.txt`);
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test2.txt`);
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test3.txt`);
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test4.txt`);
 		const testFile4 = path.resolve(`./${fileCacheName}/test4.txt`);
 		fs.unlinkSync(testFile4);
 
@@ -613,14 +594,18 @@ describe("analyzeFiles()", () => {
 
 	test("should analyze files", () => {
 		const options: FileEntryCacheOptions = {
-			currentWorkingDirectory: `./${fileCacheName}`,
 			cache: {
 				cacheId: "test1",
 				cacheDir: "./.cacheAnalyzeFiles",
 			},
 		};
 		const fileEntryCache = new FileEntryCache(options);
-		const files = ["test1.txt", "test2.txt", "test3.txt", "test4.txt"];
+		const files = [
+			`./${fileCacheName}/test1.txt`,
+			`./${fileCacheName}/test2.txt`,
+			`./${fileCacheName}/test3.txt`,
+			`./${fileCacheName}/test4.txt`,
+		];
 		const analyzedFiles = fileEntryCache.analyzeFiles(files);
 		expect(analyzedFiles).toBeDefined();
 		expect(analyzedFiles.changedFiles.length).toBe(4);
@@ -628,14 +613,18 @@ describe("analyzeFiles()", () => {
 
 	test("should analyze files with removed ones", () => {
 		const options: FileEntryCacheOptions = {
-			currentWorkingDirectory: `./${fileCacheName}`,
 			cache: {
 				cacheId: "test1",
 				cacheDir: "./.cacheAnalyzeFiles",
 			},
 		};
 		const fileEntryCache = new FileEntryCache(options);
-		const files = ["test1.txt", "test2.txt", "test3.txt", "test4.txt"];
+		const files = [
+			`./${fileCacheName}/test1.txt`,
+			`./${fileCacheName}/test2.txt`,
+			`./${fileCacheName}/test3.txt`,
+			`./${fileCacheName}/test4.txt`,
+		];
 		const analyzedFiles = fileEntryCache.analyzeFiles(files);
 		expect(analyzedFiles).toBeDefined();
 		expect(analyzedFiles.changedFiles.length).toBe(4);
@@ -670,39 +659,33 @@ describe("getUpdatedFiles()", () => {
 	});
 
 	test("should return empty array on get updated files", () => {
-		const options: FileEntryCacheOptions = {
-			currentWorkingDirectory: `./${fileCacheName}`,
-		};
-		const fileEntryCache = new FileEntryCache(options);
-		const files = ["test1.txt", "test2.txt", "test3.txt", "test4.txt"];
+		const fileEntryCache = new FileEntryCache();
+		const files = [
+			`./${fileCacheName}/test1.txt`,
+			`./${fileCacheName}/test2.txt`,
+			`./${fileCacheName}/test3.txt`,
+			`./${fileCacheName}/test4.txt`,
+		];
 		const updatedFiles = fileEntryCache.getUpdatedFiles(files);
-		expect(updatedFiles).toEqual([
-			"test1.txt",
-			"test2.txt",
-			"test3.txt",
-			"test4.txt",
-		]);
+		expect(updatedFiles).toEqual(files);
 		const updatedFiles2 = fileEntryCache.getUpdatedFiles(files);
 		expect(updatedFiles2).toEqual([]);
 	});
 
 	test("should return updated files if one is updated", () => {
-		const options: FileEntryCacheOptions = {
-			currentWorkingDirectory: `./${fileCacheName}`,
-		};
-		const fileEntryCache = new FileEntryCache(options);
-		const files = ["test1.txt", "test2.txt", "test3.txt", "test4.txt"];
+		const fileEntryCache = new FileEntryCache();
+		const files = [
+			`./${fileCacheName}/test1.txt`,
+			`./${fileCacheName}/test2.txt`,
+			`./${fileCacheName}/test3.txt`,
+			`./${fileCacheName}/test4.txt`,
+		];
 		const updatedFiles = fileEntryCache.getUpdatedFiles(files);
-		expect(updatedFiles).toEqual([
-			"test1.txt",
-			"test2.txt",
-			"test3.txt",
-			"test4.txt",
-		]);
+		expect(updatedFiles).toEqual(files);
 		const testFile4 = path.resolve(`./${fileCacheName}/test4.txt`);
 		fs.writeFileSync(testFile4, "test5booosdkfjsldfkjsldkjfls");
 		const updatedFiles2 = fileEntryCache.getUpdatedFiles(files);
-		expect(updatedFiles2).toEqual(["test4.txt"]);
+		expect(updatedFiles2).toEqual([`./${fileCacheName}/test4.txt`]);
 	});
 });
 
@@ -735,22 +718,19 @@ describe("createFromFile()", () => {
 				cacheId,
 				cacheDir: cacheDirectory,
 			},
-			currentWorkingDirectory: `./${fileCacheName}`,
 		};
 		const fileEntryCache1 = new FileEntryCache(fileEntryCacheOptions);
-		fileEntryCache1.getFileDescriptor("test1.txt");
-		fileEntryCache1.getFileDescriptor("test2.txt");
-		fileEntryCache1.getFileDescriptor("test3.txt");
-		fileEntryCache1.getFileDescriptor("test4.txt");
+		fileEntryCache1.getFileDescriptor(`./${fileCacheName}/test1.txt`);
+		fileEntryCache1.getFileDescriptor(`./${fileCacheName}/test2.txt`);
+		fileEntryCache1.getFileDescriptor(`./${fileCacheName}/test3.txt`);
+		fileEntryCache1.getFileDescriptor(`./${fileCacheName}/test4.txt`);
 		fileEntryCache1.reconcile();
 		const fileEntryCache2 = defaultFileEntryCache.createFromFile(
 			filePath,
 			undefined,
-			`./${fileCacheName}`,
 		);
 		expect(fileEntryCache2.cache.cacheId).toBe(cacheId);
 		expect(fileEntryCache2.cache.cacheDir).toBe(cacheDirectory);
-		expect(fileEntryCache2.currentWorkingDirectory).toBe(`./${fileCacheName}`);
 		expect(fileEntryCache2.cache.all()).toEqual(fileEntryCache1.cache.all());
 		fs.rmSync(path.resolve(cacheDirectory), { recursive: true, force: true });
 	});
@@ -763,10 +743,10 @@ describe("createFromFile()", () => {
 				cacheId,
 				cacheDir: cacheDirectory,
 			},
-			currentWorkingDirectory: `./${fileCacheName}`,
 		};
 		const fileEntryCache1 = new FileEntryCache(fileEntryCacheOptions);
-		fileEntryCache1.getFileDescriptor("test1.txt");
+		const testFile = `./${fileCacheName}/test1.txt`;
+		fileEntryCache1.getFileDescriptor(testFile);
 		fileEntryCache1.reconcile();
 
 		fs.writeFileSync(path.resolve(`./${fileCacheName}/test1.txt`), "modified");
@@ -774,17 +754,15 @@ describe("createFromFile()", () => {
 		const fileEntryCache2 = defaultFileEntryCache.createFromFile(
 			filePath,
 			undefined,
-			`./${fileCacheName}`,
 		);
-		expect(fileEntryCache2.getUpdatedFiles(["test1.txt"]).length).toBe(1);
+		expect(fileEntryCache2.getUpdatedFiles([testFile]).length).toBe(1);
 		fileEntryCache2.reconcile();
 
 		const fileEntryCache3 = defaultFileEntryCache.createFromFile(
 			filePath,
 			undefined,
-			`./${fileCacheName}`,
 		);
-		expect(fileEntryCache3.getUpdatedFiles(["test1.txt"]).length).toBe(0);
+		expect(fileEntryCache3.getUpdatedFiles([testFile]).length).toBe(0);
 		fs.rmSync(path.resolve(cacheDirectory), { recursive: true, force: true });
 	});
 });
@@ -816,21 +794,19 @@ describe("getFileDescriptorsByPath()", () => {
 	});
 
 	test("should return an array of file descriptors", () => {
-		const fileEntryCache = new FileEntryCache({
-			currentWorkingDirectory: `./${fileCacheName}`,
-		});
-		fileEntryCache.getFileDescriptor("test1.txt");
-		fileEntryCache.getFileDescriptor("test2.txt");
-		fileEntryCache.getFileDescriptor("test3.txt");
-		const absolutePath = path.resolve(`./${fileCacheName}/`);
-		const fileDescriptors =
-			fileEntryCache.getFileDescriptorsByPath(absolutePath);
-		expect(fileDescriptors.length).toBe(3);
-		expect(fileDescriptors[0].key).toBe("test1.txt");
+		const fileEntryCache = new FileEntryCache();
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test1.txt`);
+		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test2.txt`);
+		const fileDescriptors = fileEntryCache.getFileDescriptorsByPath(
+			`./${fileCacheName}`,
+		);
+		expect(fileDescriptors.length).toBe(2);
+		expect(fileDescriptors[0].key).toBe(`./${fileCacheName}/test1.txt`);
+		expect(fileDescriptors[1].key).toBe(`./${fileCacheName}/test2.txt`);
 	});
 });
 
-describe("renameAbsolutePathKeys()", () => {
+describe("renameCacheKeys()", () => {
 	const fileCacheName = "filesRAPK";
 	beforeEach(() => {
 		// Generate files for testing
@@ -851,7 +827,7 @@ describe("renameAbsolutePathKeys()", () => {
 		});
 	});
 
-	test("should handle rename of absolute paths", () => {
+	test("should handle rename of cache keys", () => {
 		const fileEntryCache = new FileEntryCache();
 		const file1 = path.resolve(`./${fileCacheName}/test1.txt`);
 		const file2 = path.resolve(`./${fileCacheName}/test2.txt`);
@@ -866,10 +842,7 @@ describe("renameAbsolutePathKeys()", () => {
 		expect(keys).toContain(file3);
 		const oldFileCacheNamePath = path.resolve(`./${fileCacheName}`);
 		const newFileCacheNamePath = path.resolve(`${fileCacheName}-new`);
-		fileEntryCache.renameAbsolutePathKeys(
-			oldFileCacheNamePath,
-			newFileCacheNamePath,
-		);
+		fileEntryCache.renameCacheKeys(oldFileCacheNamePath, newFileCacheNamePath);
 		const newKeys = fileEntryCache.cache.keys();
 		expect(newKeys.length).toBe(3);
 		expect(newKeys).toContain(`${newFileCacheNamePath}/test1.txt`);
@@ -877,7 +850,7 @@ describe("renameAbsolutePathKeys()", () => {
 		expect(newKeys).toContain(`${newFileCacheNamePath}/test3.txt`);
 	});
 
-	test("should handle rename of absolute paths with reconcile", () => {
+	test("should handle rename of cache keys with reconcile", () => {
 		const fileEntryCache = new FileEntryCache();
 		const file1 = path.resolve(`./${fileCacheName}/test1.txt`);
 		const file2 = path.resolve(`./${fileCacheName}/test2.txt`);
@@ -893,10 +866,7 @@ describe("renameAbsolutePathKeys()", () => {
 		const oldFileCacheNamePath = path.resolve(`./${fileCacheName}`);
 		const newFileCacheNamePath = path.resolve(`${fileCacheName}-new`);
 		fs.renameSync(oldFileCacheNamePath, newFileCacheNamePath);
-		fileEntryCache.renameAbsolutePathKeys(
-			oldFileCacheNamePath,
-			newFileCacheNamePath,
-		);
+		fileEntryCache.renameCacheKeys(oldFileCacheNamePath, newFileCacheNamePath);
 		const newKeys = fileEntryCache.cache.keys();
 		expect(newKeys.length).toBe(3);
 		expect(newKeys).toContain(`${newFileCacheNamePath}/test1.txt`);
