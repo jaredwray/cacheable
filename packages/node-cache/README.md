@@ -290,13 +290,13 @@ await cache.get('foo'); // 'bar'
 Here is an example of how to use the `NodeCacheStore` with a primary and secondary storage adapter:
 
 ```javascript
-import {NodeStorageCache} from '@cacheable/node-cache';
+import {NodeCacheStore} from '@cacheable/node-cache';
 import {Keyv} from 'keyv';
 import {KeyvRedis} from '@keyv/redis';
 
 const primary = new Keyv(); // In-memory storage as primary
 const secondary = new Keyv({store: new KeyvRedis('redis://user:pass@localhost:6379')});
-const cache = new NodeStorageCache({primary, secondary});
+const cache = new NodeCacheStore({primary, secondary});
 
 // with storage you have the same functionality as the NodeCache but will be using async/await
 await cache.set('foo', 'bar');
