@@ -42,9 +42,9 @@
 	"dependencies": {
 		"@cacheable/memoize": "workspace:^",
 		"@cacheable/utils": "workspace:^",
-		"@keyv/bigmap": "^1.0.0",
+		"@keyv/bigmap": "^1.0.2",
 		"hookified": "^1.12.1",
-		"keyv": "^5.5.1"
+		"keyv": "^5.5.2"
 	},
 	"keywords": [
 		"cacheable",
