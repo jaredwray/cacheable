@@ -1,6 +1,6 @@
 {
 	"name": "@cacheable/utils",
-	"version": "2.0.1",
+	"version": "2.0.2",
 	"description": "Cacheable Utilities for Caching Libraries",
 	"type": "module",
 	"main": "./dist/index.cjs",
