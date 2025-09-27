@@ -34,6 +34,69 @@ Features:
 npm install @cacheable/net
 ```
 
+## Basic Usage
+
+```javascript
+import { CacheableNet } from '@cacheable/net';
+
+const net = new CacheableNet();
+
+// Simple GET request with caching
+const response = await net.get('https://api.example.com/data');
+console.log(response.data);
+
+// POST request with data
+const result = await net.post('https://api.example.com/users', {
+  name: 'John Doe',
+  email: 'john@example.com'
+});
+
+// Using fetch directly with caching
+const fetchResponse = await net.fetch('https://api.example.com/data', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer token'
+  }
+});
+```
+
+## API Reference
+
+### CacheableNet Class
+
+The main class that provides cached network operations.
+
+#### Constructor Options
+
+```typescript
+interface CacheableNetOptions {
+  cache?: Cacheable | CacheableOptions;  // Cacheable instance or options
+  useHttpCache?: boolean;                 // Enable HTTP cache semantics (default: true)
+}
+```
+
+#### Methods
+
+All methods accept request options of type `FetchOptions` (excluding the `cache` property which is managed internally):
+
+- **fetch(url: string, options?: FetchOptions)**: Fetch with caching support
+- **get(url: string, options?: FetchOptions)**: GET request helper
+- **post(url: string, data?: unknown, options?: FetchOptions)**: POST request helper
+- **patch(url: string, data?: unknown, options?: FetchOptions)**: PATCH request helper
+- **delete(url: string, data?: unknown, options?: FetchOptions)**: DELETE request helper
+- **head(url: string, options?: FetchOptions)**: HEAD request helper
+
+The `FetchOptions` type extends the standard fetch `RequestInit` options with additional caching controls:
+
+```typescript
+type FetchOptions = Omit<RequestInit, 'cache'> & {
+  cache: Cacheable;           // Required internally, provided by CacheableNet
+  useHttpCache?: boolean;     // Override instance-level HTTP cache setting
+};
+```
+
+**Note**: When using the CacheableNet methods, you don't need to provide the `cache` property as it's automatically injected from the instance.
+
 
 # How to Contribute
 
