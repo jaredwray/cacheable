@@ -3,7 +3,6 @@ import { Hookified, type HookifiedOptions } from "hookified";
 import {
 	type DataResponse,
 	type FetchOptions,
-	type FetchRequestInit,
 	type Response as FetchResponse,
 	fetch,
 } from "./fetch.js";
@@ -94,12 +93,12 @@ export class CacheableNet extends Hookified {
 	 * the default TTL from the Cacheable instance is used.
 	 *
 	 * @param {string} url The URL to fetch.
-	 * @param {FetchRequestInit} options Optional request options.
+	 * @param {Omit<FetchOptions, "cache">} options Optional request options.
 	 * @returns {Promise<FetchResponse>} The response from the fetch.
 	 */
 	public async fetch(
 		url: string,
-		options?: FetchRequestInit,
+		options?: Omit<FetchOptions, "cache">,
 	): Promise<FetchResponse> {
 		const fetchOptions: FetchOptions = {
 			...options,
@@ -113,12 +112,12 @@ export class CacheableNet extends Hookified {
 	/**
 	 * Perform a GET request to a URL with optional request options. Will use the cache that is already set in the instance.
 	 * @param {string} url The URL to fetch.
-	 * @param {Omit<FetchRequestInit, 'method'>} options Optional request options (method will be set to GET).
+	 * @param {Omit<FetchOptions, 'method' | 'cache'>} options Optional request options (method will be set to GET).
 	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
 	 */
 	public async get<T = unknown>(
 		url: string,
-		options?: Omit<FetchRequestInit, "method">,
+		options?: Omit<FetchOptions, "method" | "cache">,
 	): Promise<DataResponse<T>> {
 		const response = await this.fetch(url, { ...options, method: "GET" });
 		const text = await response.text();
@@ -148,13 +147,13 @@ export class CacheableNet extends Hookified {
 	 * Perform a POST request to a URL with data and optional request options. Will use the cache that is already set in the instance.
 	 * @param {string} url The URL to fetch.
 	 * @param {unknown} data The data to send in the request body.
-	 * @param {Omit<FetchRequestInit, 'method' | 'body'>} options Optional request options (method and body will be set).
+	 * @param {Omit<FetchOptions, 'method' | 'body' | 'cache'>} options Optional request options (method and body will be set).
 	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
 	 */
 	public async post<T = unknown>(
 		url: string,
 		data?: unknown,
-		options?: Omit<FetchRequestInit, "method" | "body">,
+		options?: Omit<FetchOptions, "method" | "body" | "cache">,
 	): Promise<DataResponse<T>> {
 		// Automatically stringify data if it's an object and set appropriate headers
 		let body: BodyInit | undefined;
@@ -180,7 +179,7 @@ export class CacheableNet extends Hookified {
 		const response = await this.fetch(url, {
 			...options,
 			headers,
-			body: body as FetchRequestInit["body"],
+			body: body as FetchOptions["body"],
 			method: "POST",
 		});
 		const text = await response.text();
@@ -209,12 +208,12 @@ export class CacheableNet extends Hookified {
 	/**
 	 * Perform a HEAD request to a URL with optional request options. Will use the cache that is already set in the instance.
 	 * @param {string} url The URL to fetch.
-	 * @param {Omit<FetchRequestInit, 'method'>} options Optional request options (method will be set to HEAD).
+	 * @param {Omit<FetchOptions, 'method' | 'cache'>} options Optional request options (method will be set to HEAD).
 	 * @returns {Promise<FetchResponse>} The response from the fetch (no body).
 	 */
 	public async head(
 		url: string,
-		options?: Omit<FetchRequestInit, "method">,
+		options?: Omit<FetchOptions, "method" | "cache">,
 	): Promise<FetchResponse> {
 		const response = await this.fetch(url, { ...options, method: "HEAD" });
 		return response;
@@ -224,13 +223,13 @@ export class CacheableNet extends Hookified {
 	 * Perform a PATCH request to a URL with data and optional request options. Will use the cache that is already set in the instance.
 	 * @param {string} url The URL to fetch.
 	 * @param {unknown} data The data to send in the request body.
-	 * @param {Omit<FetchRequestInit, 'method' | 'body'>} options Optional request options (method and body will be set).
+	 * @param {Omit<FetchOptions, 'method' | 'body' | 'cache'>} options Optional request options (method and body will be set).
 	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
 	 */
 	public async patch<T = unknown>(
 		url: string,
 		data?: unknown,
-		options?: Omit<FetchRequestInit, "method" | "body">,
+		options?: Omit<FetchOptions, "method" | "body" | "cache">,
 	): Promise<DataResponse<T>> {
 		// Automatically stringify data if it's an object and set appropriate headers
 		let body: BodyInit | undefined;
@@ -256,7 +255,7 @@ export class CacheableNet extends Hookified {
 		const response = await this.fetch(url, {
 			...options,
 			headers,
-			body: body as FetchRequestInit["body"],
+			body: body as FetchOptions["body"],
 			method: "PATCH",
 		});
 		const text = await response.text();
@@ -286,13 +285,13 @@ export class CacheableNet extends Hookified {
 	 * Perform a DELETE request to a URL with optional data and request options. Will use the cache that is already set in the instance.
 	 * @param {string} url The URL to fetch.
 	 * @param {unknown} data Optional data to send in the request body.
-	 * @param {Omit<FetchRequestInit, 'method' | 'body'>} options Optional request options (method and body will be set).
+	 * @param {Omit<FetchOptions, 'method' | 'body' | 'cache'>} options Optional request options (method and body will be set).
 	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
 	 */
 	public async delete<T = unknown>(
 		url: string,
 		data?: unknown,
-		options?: Omit<FetchRequestInit, "method" | "body">,
+		options?: Omit<FetchOptions, "method" | "body" | "cache">,
 	): Promise<DataResponse<T>> {
 		// Automatically stringify data if it's provided and set appropriate headers
 		let body: BodyInit | undefined;
@@ -320,7 +319,7 @@ export class CacheableNet extends Hookified {
 		const response = await this.fetch(url, {
 			...options,
 			headers,
-			body: body as FetchRequestInit["body"],
+			body: body as FetchOptions["body"],
 			method: "DELETE",
 		});
 		const text = await response.text();
@@ -352,7 +351,6 @@ export {
 	type DataResponse,
 	del,
 	type FetchOptions,
-	type FetchRequestInit,
 	fetch,
 	type GetResponse,
 	get,
