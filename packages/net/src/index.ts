@@ -54,10 +54,18 @@ export class CacheableNet extends Hookified {
 		}
 	}
 
+	/**
+	 * Get the Cacheable instance used for caching fetch operations.
+	 * @returns {Cacheable} The current Cacheable instance
+	 */
 	public get cache(): Cacheable {
 		return this._cache;
 	}
 
+	/**
+	 * Set the Cacheable instance for caching fetch operations.
+	 * @param {Cacheable} value - The Cacheable instance to use for caching
+	 */
 	public set cache(value: Cacheable) {
 		this._cache = value;
 	}
