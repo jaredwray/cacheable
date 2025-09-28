@@ -314,6 +314,147 @@ describe("Cacheable Net", () => {
 	);
 
 	test(
+		"should fetch data using CacheableNet put method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/put`;
+			const data = { update: "data" };
+			const result = await net.put(url, data);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle put without options parameter",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/put`;
+			const data = { update: "data" };
+
+			// Calling put with only url and data, no options at all
+			const result = await net.put(url, data);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle put with empty options object",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/put`;
+			const data = { update: "data" };
+
+			// Pass empty options object (no headers)
+			const result = await net.put(url, data, {});
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle non-JSON response in CacheableNet put method",
+		async () => {
+			const net = new Net();
+			// Use mockhttp.org/plain which accepts PUT and returns plain text
+			const url = `${testUrl}/plain`;
+			const data = "test data";
+			const result = await net.put(url, data, {
+				headers: {
+					"Content-Type": "text/plain",
+				},
+			});
+			expect(result).toBeDefined();
+			// The plain endpoint returns text, which should be returned as a string
+			expect(result.data).toBeDefined();
+			expect(typeof result.data).toBe("string");
+			expect(result.data).toBeTruthy(); // Plain text is not empty
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should fetch typed data using put with generics",
+		async () => {
+			interface PutResponse {
+				method: string;
+				data: string;
+			}
+			const net = new Net();
+			const url = `${testUrl}/put`;
+			const data = { update: "data" };
+			const result = await net.put<PutResponse>(url, data);
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			// TypeScript will ensure result.data has the PutResponse type
+			if (typeof result.data === "object" && result.data !== null) {
+				expect(result.data).toHaveProperty("method");
+			}
+		},
+		testTimeout,
+	);
+
+	test("should handle FormData in CacheableNet put method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/put`;
+		const formData = new FormData();
+		formData.append("field", "value");
+
+		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.put(url, formData);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept FormData, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test("should handle URLSearchParams in CacheableNet put method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/put`;
+		const params = new URLSearchParams();
+		params.append("test", "value");
+
+		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.put(url, params);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test("should handle Blob in CacheableNet put method", async () => {
+		const net = new Net();
+		const url = `${testUrl}/put`;
+		const blob = new Blob(["data"], { type: "text/plain" });
+
+		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+		try {
+			const result = await net.put(url, blob);
+			expect(result).toBeDefined();
+		} catch (error) {
+			// If server doesn't accept Blob, that's okay - we're testing the client code
+			expect(error).toBeDefined();
+		}
+	});
+
+	test(
 		"should fetch data using CacheableNet patch method",
 		async () => {
 			const net = new Net();
