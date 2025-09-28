@@ -612,6 +612,72 @@ describe("Cacheable Net", () => {
 		}
 	});
 
+	test(
+		"should use cache when caching is set to true in post method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const data = { test: "caching-enabled" };
+
+			// First POST with caching enabled
+			const result1 = await net.post(url, data, { caching: true });
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Second POST with same data and caching enabled should hit cache
+			const result2 = await net.post(url, data, { caching: true });
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should not use cache when caching is not specified in post method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const data = { test: "no-caching" };
+
+			// First POST without caching option (default behavior - no cache)
+			const result1 = await net.post(url, data);
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Second POST without caching should make a new request
+			const result2 = await net.post(url, data);
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should not use cache when caching is false in post method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const data = { test: "caching-disabled" };
+
+			// POST with caching explicitly disabled
+			const result1 = await net.post(url, data, { caching: false });
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Another POST with caching disabled should make a new request
+			const result2 = await net.post(url, data, { caching: false });
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
 	test("should handle FormData in CacheableNet patch method", async () => {
 		const net = new Net();
 		const url = `${testUrl}/patch`;
