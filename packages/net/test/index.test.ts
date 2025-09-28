@@ -909,6 +909,72 @@ describe("Cacheable Net", () => {
 	);
 
 	test(
+		"should use cache when caching is set to true in delete method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const data = { test: "delete-caching-enabled" };
+
+			// First DELETE with caching enabled
+			const result1 = await net.delete(url, data, { caching: true });
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Second DELETE with same data and caching enabled should hit cache
+			const result2 = await net.delete(url, data, { caching: true });
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should not use cache when caching is not specified in delete method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const data = { test: "delete-no-caching" };
+
+			// First DELETE without caching option (default behavior - no cache)
+			const result1 = await net.delete(url, data);
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Second DELETE without caching should make a new request
+			const result2 = await net.delete(url, data);
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should not use cache when caching is false in delete method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const data = { test: "delete-caching-disabled" };
+
+			// DELETE with caching explicitly disabled
+			const result1 = await net.delete(url, data, { caching: false });
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Another DELETE with caching disabled should make a new request
+			const result2 = await net.delete(url, data, { caching: false });
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
 		"should handle delete with empty options object",
 		async () => {
 			const net = new Net();

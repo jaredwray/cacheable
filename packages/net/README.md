@@ -84,7 +84,7 @@ All methods accept request options of type `FetchOptions` (excluding the `cache`
 - **post(url: string, data?: unknown, options?: NetFetchOptions)**: POST request helper with caching control
 - **put(url: string, data?: unknown, options?: NetFetchOptions)**: PUT request helper with caching control
 - **patch(url: string, data?: unknown, options?: NetFetchOptions)**: PATCH request helper with caching control
-- **delete(url: string, data?: unknown, options?: FetchOptions)**: DELETE request helper
+- **delete(url: string, data?: unknown, options?: NetFetchOptions)**: DELETE request helper with caching control
 - **head(url: string, options?: NetFetchOptions)**: HEAD request helper with caching control
 
 The `FetchOptions` type extends the standard fetch `RequestInit` options with additional caching controls:
