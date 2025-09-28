@@ -9,8 +9,6 @@ import {
 
 export type NetFetchOptions = {
 	caching?: boolean;
-	stringify: (value: unknown) => string;
-	parse: (value: string) => unknown;
 } & Omit<FetchOptions, "method" | "cache">;
 
 export type CacheableNetOptions = {
