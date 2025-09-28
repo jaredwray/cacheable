@@ -55,7 +55,7 @@ describe("Fetch", () => {
 			const options: FetchOptions = {
 				method: "GET",
 				cache,
-				useHttpCache: false, // Disable HTTP cache to ensure basic caching
+				httpCachePolicy: false, // Disable HTTP cache to ensure basic caching
 			};
 			const response = await fetch(url, options);
 			const response2 = await fetch(url, options);
@@ -115,7 +115,7 @@ describe("Fetch", () => {
 			const url = `${testUrl}/get`;
 			const options = {
 				cache,
-				useHttpCache: false, // Disable HTTP cache to ensure basic caching
+				httpCachePolicy: false, // Disable HTTP cache to ensure basic caching
 			};
 			const result1 = await get(url, options);
 			const result2 = await get(url, options);
@@ -609,14 +609,14 @@ describe("Fetch", () => {
 		);
 
 		test(
-			"should disable HTTP cache when useHttpCache is false",
+			"should disable HTTP cache when httpCachePolicy is false",
 			async () => {
 				const cache = new Cacheable({ stats: true });
 				const url = `${testUrl}/cache/30`; // Endpoint with 30-second cache headers
 				const options: FetchOptions = {
 					method: "GET",
 					cache,
-					useHttpCache: false,
+					httpCachePolicy: false,
 				};
 
 				// First request
@@ -638,14 +638,14 @@ describe("Fetch", () => {
 		);
 
 		test(
-			"should respect cache headers when useHttpCache is enabled",
+			"should respect cache headers when httpCachePolicy is enabled",
 			async () => {
 				const cache = new Cacheable({ stats: true });
 				const url = `${testUrl}/get`; // Regular endpoint
 				const options: FetchOptions = {
 					method: "GET",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 				};
 
 				// First request
@@ -670,7 +670,7 @@ describe("Fetch", () => {
 				const options: FetchOptions = {
 					method: "GET",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 				};
 
 				// First request gets the full response
@@ -706,7 +706,7 @@ describe("Fetch", () => {
 				const options: FetchOptions = {
 					method: "GET",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 				};
 
 				// Make first request
@@ -734,7 +734,7 @@ describe("Fetch", () => {
 				const options: FetchOptions = {
 					method: "GET",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 				};
 
 				// First request
@@ -764,7 +764,7 @@ describe("Fetch", () => {
 				const getOptions: FetchOptions = {
 					method: "GET",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 				};
 				const getResponse = await fetch(url, getOptions);
 				expect(getResponse).toBeDefined();
@@ -774,7 +774,7 @@ describe("Fetch", () => {
 				const headOptions: FetchOptions = {
 					method: "HEAD",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 				};
 				const headResponse = await fetch(url, headOptions);
 				expect(headResponse).toBeDefined();
@@ -783,7 +783,7 @@ describe("Fetch", () => {
 				const postOptions: FetchOptions = {
 					method: "POST",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 					body: JSON.stringify({ test: "data" }),
 					headers: {
 						"Content-Type": "application/json",
@@ -808,7 +808,7 @@ describe("Fetch", () => {
 				const options: FetchOptions = {
 					method: "GET",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 				};
 
 				// Cache initial data with the GET endpoint
@@ -881,7 +881,7 @@ describe("Fetch", () => {
 				const options: FetchOptions = {
 					method: "GET",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 				};
 
 				// First request to populate cache
@@ -939,7 +939,7 @@ describe("Fetch", () => {
 				const options: FetchOptions = {
 					method: "GET",
 					cache,
-					useHttpCache: true,
+					httpCachePolicy: true,
 				};
 
 				// Spy on cache.set to verify TTL is being used

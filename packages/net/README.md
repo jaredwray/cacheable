@@ -104,7 +104,7 @@ The main class that provides cached network operations.
 ```typescript
 interface CacheableNetOptions {
   cache?: Cacheable | CacheableOptions;  // Cacheable instance or options
-  useHttpCache?: boolean;                 // Enable HTTP cache semantics (default: true)
+  httpCachePolicy?: boolean;                 // Enable HTTP cache semantics (default: true)
   stringify?: (value: unknown) => string; // Custom JSON stringifier (default: JSON.stringify)
   parse?: (value: string) => unknown;     // Custom JSON parser (default: JSON.parse)
 ```
@@ -126,7 +126,7 @@ The `FetchOptions` type extends the standard fetch `RequestInit` options with ad
 ```typescript
 type FetchOptions = Omit<RequestInit, 'cache'> & {
   cache?: Cacheable;          // Optional cache instance (if not provided, no caching)
-  useHttpCache?: boolean;     // Override instance-level HTTP cache setting
+  httpCachePolicy?: boolean;     // Override instance-level HTTP cache setting
 };
 ```
 
