@@ -62,27 +62,33 @@ const fetchResponse = await net.fetch('https://api.example.com/data', {
 
 ## Custom Serialization
 
-You can provide custom `stringify` and `parse` functions for handling data serialization:
+You can provide custom `stringify` and `parse` functions for handling data serialization. This is particularly useful when working with complex data types that JSON doesn't natively support:
 
 ```javascript
 import { CacheableNet } from '@cacheable/net';
+import superjson from 'superjson';
 
-// Custom serialization that handles BigInt
+// Using superjson for enhanced serialization
+// Supports Dates, BigInt, RegExp, Set, Map, Error and more
 const net = new CacheableNet({
-  stringify: (value) => JSON.stringify(value, (key, val) =>
-    typeof val === 'bigint' ? val.toString() : val
-  ),
-  parse: (text) => JSON.parse(text, (key, val) =>
-    /^\d+n$/.test(val) ? BigInt(val.slice(0, -1)) : val
-  )
+  stringify: (value) => superjson.stringify(value),
+  parse: (text) => superjson.parse(text)
+});
+
+// Now you can work with complex data types
+const response = await net.post('https://api.example.com/data', {
+  timestamp: new Date(),
+  userId: BigInt(12345),
+  pattern: /[a-z]+/gi,
+  metadata: new Map([['key', 'value']]),
+  tags: new Set(['important', 'urgent'])
 });
 
 // Or provide per-request custom serialization
-const response = await net.get('https://api.example.com/data', {
+const result = await net.get('https://api.example.com/data', {
   parse: (text) => {
-    // Custom parsing logic
-    const data = JSON.parse(text);
-    return { ...data, timestamp: Date.now() };
+    // Custom parsing with superjson for this request only
+    return superjson.parse(text);
   }
 });
 ```
