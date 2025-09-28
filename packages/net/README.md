@@ -82,6 +82,7 @@ All methods accept request options of type `FetchOptions` (excluding the `cache`
 - **fetch(url: string, options?: FetchOptions)**: Fetch with caching support
 - **get(url: string, options?: FetchOptions)**: GET request helper
 - **post(url: string, data?: unknown, options?: FetchOptions)**: POST request helper
+- **put(url: string, data?: unknown, options?: FetchOptions)**: PUT request helper
 - **patch(url: string, data?: unknown, options?: FetchOptions)**: PATCH request helper
 - **delete(url: string, data?: unknown, options?: FetchOptions)**: DELETE request helper
 - **head(url: string, options?: FetchOptions)**: HEAD request helper

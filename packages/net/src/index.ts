@@ -220,6 +220,68 @@ export class CacheableNet extends Hookified {
 	}
 
 	/**
+	 * Perform a PUT request to a URL with data and optional request options. Will use the cache that is already set in the instance.
+	 * @param {string} url The URL to fetch.
+	 * @param {unknown} data The data to send in the request body.
+	 * @param {Omit<FetchOptions, 'method' | 'body' | 'cache'>} options Optional request options (method and body will be set).
+	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
+	 */
+	public async put<T = unknown>(
+		url: string,
+		data?: unknown,
+		options?: Omit<FetchOptions, "method" | "body" | "cache">,
+	): Promise<DataResponse<T>> {
+		// Automatically stringify data if it's an object and set appropriate headers
+		let body: BodyInit | undefined;
+		const headers = { ...options?.headers } as Record<string, string>;
+
+		if (typeof data === "string") {
+			body = data;
+		} else if (
+			data instanceof FormData ||
+			data instanceof URLSearchParams ||
+			data instanceof Blob
+		) {
+			body = data as BodyInit;
+		} else {
+			// Assume it's JSON data
+			body = JSON.stringify(data);
+			// Set Content-Type to JSON if not already set
+			if (!headers["Content-Type"] && !headers["content-type"]) {
+				headers["Content-Type"] = "application/json";
+			}
+		}
+
+		const response = await this.fetch(url, {
+			...options,
+			headers,
+			body: body as FetchOptions["body"],
+			method: "PUT",
+		});
+		const text = await response.text();
+		let responseData: T;
+
+		try {
+			responseData = JSON.parse(text) as T;
+		} catch {
+			// If not JSON, return as is
+			responseData = text as T;
+		}
+
+		// Create a new response with the text already consumed
+		const newResponse = new Response(text, {
+			status: response.status,
+			statusText: response.statusText,
+			headers: response.headers as HeadersInit,
+		}) as FetchResponse;
+
+		return {
+			data: responseData,
+			response: newResponse,
+		};
+	}
+
+	/**
 	 * Perform a PATCH request to a URL with data and optional request options. Will use the cache that is already set in the instance.
 	 * @param {string} url The URL to fetch.
 	 * @param {unknown} data The data to send in the request body.
