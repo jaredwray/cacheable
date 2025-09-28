@@ -80,20 +80,30 @@ interface CacheableNetOptions {
 All methods accept request options of type `FetchOptions` (excluding the `cache` property which is managed internally):
 
 - **fetch(url: string, options?: FetchOptions)**: Fetch with caching support
-- **get(url: string, options?: FetchOptions)**: GET request helper
+- **get(url: string, options?: NetFetchOptions)**: GET request helper with caching control
 - **post(url: string, data?: unknown, options?: FetchOptions)**: POST request helper
 - **put(url: string, data?: unknown, options?: FetchOptions)**: PUT request helper
 - **patch(url: string, data?: unknown, options?: FetchOptions)**: PATCH request helper
 - **delete(url: string, data?: unknown, options?: FetchOptions)**: DELETE request helper
-- **head(url: string, options?: FetchOptions)**: HEAD request helper
+- **head(url: string, options?: NetFetchOptions)**: HEAD request helper with caching control
 
 The `FetchOptions` type extends the standard fetch `RequestInit` options with additional caching controls:
 
 ```typescript
 type FetchOptions = Omit<RequestInit, 'cache'> & {
-  cache: Cacheable;           // Required internally, provided by CacheableNet
+  cache?: Cacheable;          // Optional cache instance (if not provided, no caching)
   useHttpCache?: boolean;     // Override instance-level HTTP cache setting
 };
+```
+
+The `NetFetchOptions` type (used by `get()` and `head()` methods) provides additional control:
+
+```typescript
+type NetFetchOptions = {
+  caching?: boolean;          // Enable/disable caching for this request
+  stringify?: (value: unknown) => string;  // Custom JSON stringifier
+  parse?: (value: string) => unknown;      // Custom JSON parser
+} & Omit<FetchOptions, 'method' | 'cache'>;
 ```
 
 **Note**: When using the CacheableNet methods, you don't need to provide the `cache` property as it's automatically injected from the instance.
