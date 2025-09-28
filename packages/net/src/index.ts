@@ -7,6 +7,12 @@ import {
 	fetch,
 } from "./fetch.js";
 
+export type NetFetchOptions = {
+	caching?: boolean;
+	stringify: (value: unknown) => string;
+	parse: (value: string) => unknown;
+} & Omit<FetchOptions, "method" | "cache">;
+
 export type CacheableNetOptions = {
 	cache?: Cacheable | CacheableOptions;
 	/**
@@ -110,16 +116,30 @@ export class CacheableNet extends Hookified {
 	}
 
 	/**
-	 * Perform a GET request to a URL with optional request options. Will use the cache that is already set in the instance.
+	 * Perform a GET request to a URL with optional request options. By default caching is enabled on all requests. To
+	 * disable set `options.caching` to false.
 	 * @param {string} url The URL to fetch.
-	 * @param {Omit<FetchOptions, 'method' | 'cache'>} options Optional request options (method will be set to GET).
+	 * @param {NetFetchOptions} options Optional request options (method will be set to GET).
 	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
 	 */
 	public async get<T = unknown>(
 		url: string,
-		options?: Omit<FetchOptions, "method" | "cache">,
+		options?: NetFetchOptions,
 	): Promise<DataResponse<T>> {
-		const response = await this.fetch(url, { ...options, method: "GET" });
+		const fetchOptions: FetchOptions = {
+			...options,
+			cache: this._cache,
+			useHttpCache: this._useHttpCache,
+			method: "GET",
+		};
+
+		// remove cache if they specify it
+		if (options?.caching !== undefined) {
+			delete fetchOptions.cache;
+		}
+
+		const response = await fetch(url, fetchOptions);
+
 		const text = await response.text();
 		let data: T;
 

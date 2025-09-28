@@ -865,4 +865,54 @@ describe("Cacheable Net", () => {
 		net.useHttpCache = true;
 		expect(net.useHttpCache).toBe(true);
 	});
+
+	test(
+		"should not use cache when caching is set to false in get method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/get`;
+
+			// Call get with caching set to false
+			const result = await net.get(url, { caching: false });
+
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+
+			// Make another request with caching false - should not use cache
+			const result2 = await net.get(url, { caching: false });
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should use cache when caching property is undefined in get method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/get`;
+
+			// First request with undefined caching (should use cache)
+			const result1 = await net.get(url);
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Second request should hit cache
+			const result2 = await net.get(url);
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+
+			// Third request with explicit undefined caching should also hit cache
+			const result3 = await net.get(url, { caching: undefined });
+			expect(result3).toBeDefined();
+			expect(result3.data).toBeDefined();
+			expect(result3.response.status).toBe(200);
+		},
+		testTimeout,
+	);
 });
