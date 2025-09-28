@@ -9,15 +9,22 @@ import {
 } from "flat-cache";
 
 export type FileEntryCacheOptions = {
+	/** Whether to use file modified time for change detection (default: true) */
 	useModifiedTime?: boolean;
+	/** Whether to use checksum for change detection (default: false) */
 	useCheckSum?: boolean;
+	/** Hash algorithm to use for checksum (default: 'md5') */
 	hashAlgorithm?: string;
+	/** Current working directory for resolving relative paths (default: process.cwd()) */
 	cwd?: string;
+	/** Options for the underlying flat cache */
 	cache?: FlatCacheOptions;
 };
 
 export type GetFileDescriptorOptions = {
+	/** Whether to use checksum for this specific file check (overrides instance setting) */
 	useCheckSum?: boolean;
+	/** Whether to use modified time for this specific file check (overrides instance setting) */
 	useModifiedTime?: boolean;
 };
 
@@ -42,6 +49,13 @@ export type AnalyzedFiles = {
 	notChangedFiles: string[];
 };
 
+/**
+ * Create a new FileEntryCache instance from a file path
+ * @param filePath - The path to the cache file
+ * @param useCheckSum - Whether to use checksum to detect file changes (default: false)
+ * @param cwd - The current working directory for resolving relative paths (default: process.cwd())
+ * @returns A new FileEntryCache instance
+ */
 export function createFromFile(
 	filePath: string,
 	useCheckSum?: boolean,
@@ -52,6 +66,14 @@ export function createFromFile(
 	return create(fname, directory, useCheckSum, cwd);
 }
 
+/**
+ * Create a new FileEntryCache instance
+ * @param cacheId - The cache file name
+ * @param cacheDirectory - The directory to store the cache file (default: undefined, cache won't be persisted)
+ * @param useCheckSum - Whether to use checksum to detect file changes (default: false)
+ * @param cwd - The current working directory for resolving relative paths (default: process.cwd())
+ * @returns A new FileEntryCache instance
+ */
 export function create(
 	cacheId: string,
 	cacheDirectory?: string,
@@ -94,7 +116,7 @@ export class FileEntryCache {
 
 	/**
 	 * Create a new FileEntryCache instance
-	 * @param options - The options for the FileEntryCache
+	 * @param options - The options for the FileEntryCache (all properties are optional with defaults)
 	 */
 	constructor(options?: FileEntryCacheOptions) {
 		if (options?.cache) {
