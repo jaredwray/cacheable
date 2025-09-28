@@ -12,6 +12,7 @@ export type FileEntryCacheOptions = {
 	useModifiedTime?: boolean;
 	useCheckSum?: boolean;
 	hashAlgorithm?: string;
+	currentWorkingDirectory?: string;
 	cache?: FlatCacheOptions;
 };
 
@@ -44,19 +45,22 @@ export type AnalyzedFiles = {
 export function createFromFile(
 	filePath: string,
 	useCheckSum?: boolean,
+	currentWorkingDirectory?: string,
 ): FileEntryCache {
 	const fname = path.basename(filePath);
 	const directory = path.dirname(filePath);
-	return create(fname, directory, useCheckSum);
+	return create(fname, directory, useCheckSum, currentWorkingDirectory);
 }
 
 export function create(
 	cacheId: string,
 	cacheDirectory?: string,
 	useCheckSum?: boolean,
+	currentWorkingDirectory?: string,
 ): FileEntryCache {
 	const options: FileEntryCacheOptions = {
 		useCheckSum,
+		currentWorkingDirectory,
 		cache: {
 			cacheId,
 			cacheDir: cacheDirectory,
@@ -86,6 +90,7 @@ export class FileEntryCache {
 	private _useCheckSum = false;
 	private _useModifiedTime = true;
 	private _hashAlgorithm = "md5";
+	private _currentWorkingDirectory: string = process.cwd();
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -106,6 +111,10 @@ export class FileEntryCache {
 
 		if (options?.hashAlgorithm) {
 			this._hashAlgorithm = options.hashAlgorithm;
+		}
+
+		if (options?.currentWorkingDirectory) {
+			this._currentWorkingDirectory = options.currentWorkingDirectory;
 		}
 	}
 
@@ -171,6 +180,22 @@ export class FileEntryCache {
 	 */
 	public set hashAlgorithm(value: string) {
 		this._hashAlgorithm = value;
+	}
+
+	/**
+	 * Get the current working directory
+	 * @returns {string} The current working directory
+	 */
+	public get currentWorkingDirectory(): string {
+		return this._currentWorkingDirectory;
+	}
+
+	/**
+	 * Set the current working directory
+	 * @param {string} value - The value to set
+	 */
+	public set currentWorkingDirectory(value: string) {
+		this._currentWorkingDirectory = value;
 	}
 
 	/**
@@ -455,7 +480,21 @@ export class FileEntryCache {
 	 */
 	public getAbsolutePath(filePath: string): string {
 		if (this.isRelativePath(filePath)) {
-			return path.resolve(process.cwd(), filePath);
+			return path.resolve(this._currentWorkingDirectory, filePath);
+		}
+		return filePath;
+	}
+
+	/**
+	 * Get the Absolute Path with a custom working directory. If it is already absolute it will return the path as is.
+	 * @method getAbsolutePathWithCwd
+	 * @param filePath - The file path to get the absolute path for
+	 * @param cwd - The custom working directory to resolve relative paths from
+	 * @returns {string}
+	 */
+	public getAbsolutePathWithCwd(filePath: string, cwd: string): string {
+		if (this.isRelativePath(filePath)) {
+			return path.resolve(cwd, filePath);
 		}
 		return filePath;
 	}
