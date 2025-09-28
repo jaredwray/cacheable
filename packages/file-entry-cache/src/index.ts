@@ -12,7 +12,7 @@ export type FileEntryCacheOptions = {
 	useModifiedTime?: boolean;
 	useCheckSum?: boolean;
 	hashAlgorithm?: string;
-	currentWorkingDirectory?: string;
+	cwd?: string;
 	cache?: FlatCacheOptions;
 };
 
@@ -45,22 +45,22 @@ export type AnalyzedFiles = {
 export function createFromFile(
 	filePath: string,
 	useCheckSum?: boolean,
-	currentWorkingDirectory?: string,
+	cwd?: string,
 ): FileEntryCache {
 	const fname = path.basename(filePath);
 	const directory = path.dirname(filePath);
-	return create(fname, directory, useCheckSum, currentWorkingDirectory);
+	return create(fname, directory, useCheckSum, cwd);
 }
 
 export function create(
 	cacheId: string,
 	cacheDirectory?: string,
 	useCheckSum?: boolean,
-	currentWorkingDirectory?: string,
+	cwd?: string,
 ): FileEntryCache {
 	const options: FileEntryCacheOptions = {
 		useCheckSum,
-		currentWorkingDirectory,
+		cwd,
 		cache: {
 			cacheId,
 			cacheDir: cacheDirectory,
@@ -90,7 +90,7 @@ export class FileEntryCache {
 	private _useCheckSum = false;
 	private _useModifiedTime = true;
 	private _hashAlgorithm = "md5";
-	private _currentWorkingDirectory: string = process.cwd();
+	private _cwd: string = process.cwd();
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -113,8 +113,8 @@ export class FileEntryCache {
 			this._hashAlgorithm = options.hashAlgorithm;
 		}
 
-		if (options?.currentWorkingDirectory) {
-			this._currentWorkingDirectory = options.currentWorkingDirectory;
+		if (options?.cwd) {
+			this._cwd = options.cwd;
 		}
 	}
 
@@ -186,16 +186,16 @@ export class FileEntryCache {
 	 * Get the current working directory
 	 * @returns {string} The current working directory
 	 */
-	public get currentWorkingDirectory(): string {
-		return this._currentWorkingDirectory;
+	public get cwd(): string {
+		return this._cwd;
 	}
 
 	/**
 	 * Set the current working directory
 	 * @param {string} value - The value to set
 	 */
-	public set currentWorkingDirectory(value: string) {
-		this._currentWorkingDirectory = value;
+	public set cwd(value: string) {
+		this._cwd = value;
 	}
 
 	/**
@@ -480,7 +480,7 @@ export class FileEntryCache {
 	 */
 	public getAbsolutePath(filePath: string): string {
 		if (this.isRelativePath(filePath)) {
-			return path.resolve(this._currentWorkingDirectory, filePath);
+			return path.resolve(this._cwd, filePath);
 		}
 		return filePath;
 	}

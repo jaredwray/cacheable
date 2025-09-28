@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import fileEntryCache, { FileEntryCache } from "../src/index.js";
 
-describe("currentWorkingDirectory functionality", () => {
+describe("cwd functionality", () => {
 	const testBaseDir = path.resolve(process.cwd(), "../test-cwd-base");
 	const cacheDirectory = path.resolve(__dirname, "cache-cwd");
 	const srcDir = path.join(testBaseDir, "src");
@@ -29,19 +29,19 @@ describe("currentWorkingDirectory functionality", () => {
 		}
 	});
 
-	test("should set currentWorkingDirectory via constructor", () => {
+	test("should set cwd via constructor", () => {
 		const cache = new FileEntryCache({
-			currentWorkingDirectory: testBaseDir,
+			cwd: testBaseDir,
 			cache: {
 				cacheId: ".testcache",
 				cacheDir: cacheDirectory,
 			},
 		});
 
-		expect(cache.currentWorkingDirectory).toBe(testBaseDir);
+		expect(cache.cwd).toBe(testBaseDir);
 	});
 
-	test("should set currentWorkingDirectory via create function", () => {
+	test("should set cwd via create function", () => {
 		const cache = fileEntryCache.create(
 			".testcache",
 			cacheDirectory,
@@ -49,10 +49,10 @@ describe("currentWorkingDirectory functionality", () => {
 			testBaseDir,
 		);
 
-		expect(cache.currentWorkingDirectory).toBe(testBaseDir);
+		expect(cache.cwd).toBe(testBaseDir);
 	});
 
-	test("should use currentWorkingDirectory for relative path resolution", () => {
+	test("should use cwd for relative path resolution", () => {
 		const cache = fileEntryCache.create(
 			".testcache",
 			cacheDirectory,
@@ -70,15 +70,15 @@ describe("currentWorkingDirectory functionality", () => {
 		expect(descriptor.meta?.size).toBe(30); // 'export const main = () => {};\n'
 	});
 
-	test("should allow changing currentWorkingDirectory via setter", () => {
+	test("should allow changing cwd via setter", () => {
 		const cache = fileEntryCache.create(".testcache", cacheDirectory, true);
 
 		// Initially uses process.cwd()
-		expect(cache.currentWorkingDirectory).toBe(process.cwd());
+		expect(cache.cwd).toBe(process.cwd());
 
 		// Change the working directory
-		cache.currentWorkingDirectory = testBaseDir;
-		expect(cache.currentWorkingDirectory).toBe(testBaseDir);
+		cache.cwd = testBaseDir;
+		expect(cache.cwd).toBe(testBaseDir);
 
 		// Now it should find files relative to testBaseDir
 		const descriptor = cache.getFileDescriptor("src/index.js");
@@ -86,7 +86,7 @@ describe("currentWorkingDirectory functionality", () => {
 		expect(descriptor.meta?.size).toBe(30);
 	});
 
-	test("should work with reconcile() using class-level currentWorkingDirectory", () => {
+	test("should work with reconcile() using class-level cwd", () => {
 		const cache = fileEntryCache.create(
 			".testcache",
 			cacheDirectory,
@@ -109,10 +109,10 @@ describe("currentWorkingDirectory functionality", () => {
 			descriptor2.meta.data = { type: "library" };
 		}
 
-		// Reconcile should work correctly with the class-level currentWorkingDirectory
+		// Reconcile should work correctly with the class-level cwd
 		cache.reconcile();
 
-		// Create new cache instance with same currentWorkingDirectory
+		// Create new cache instance with same cwd
 		const cache2 = fileEntryCache.create(
 			".testcache",
 			cacheDirectory,
@@ -130,7 +130,7 @@ describe("currentWorkingDirectory functionality", () => {
 		expect(cached2.meta?.data).toStrictEqual({ type: "library" });
 	});
 
-	test("should handle nested relative paths with currentWorkingDirectory", () => {
+	test("should handle nested relative paths with cwd", () => {
 		const nestedDir = path.join(srcDir, "components");
 		fs.mkdirSync(nestedDir, { recursive: true });
 		const nestedFile = path.join(nestedDir, "Button.js");
@@ -150,7 +150,7 @@ describe("currentWorkingDirectory functionality", () => {
 		expect(descriptor.meta?.size).toBe(32);
 	});
 
-	test("should handle parent directory references with currentWorkingDirectory", () => {
+	test("should handle parent directory references with cwd", () => {
 		const childDir = path.join(testBaseDir, "child");
 		fs.mkdirSync(childDir, { recursive: true });
 
@@ -169,7 +169,7 @@ describe("currentWorkingDirectory functionality", () => {
 		expect(descriptor.meta?.size).toBe(30);
 	});
 
-	test("should handle absolute paths regardless of currentWorkingDirectory", () => {
+	test("should handle absolute paths regardless of cwd", () => {
 		const cache = fileEntryCache.create(
 			".testcache",
 			cacheDirectory,
@@ -186,7 +186,7 @@ describe("currentWorkingDirectory functionality", () => {
 		expect(descriptor.meta?.size).toBe(30);
 	});
 
-	test("should persist cache across instances with same currentWorkingDirectory", () => {
+	test("should persist cache across instances with same cwd", () => {
 		// First cache instance
 		const cache1 = fileEntryCache.create(
 			".testcache",
@@ -234,7 +234,7 @@ describe("currentWorkingDirectory functionality", () => {
 		expect(notFound.notFound).toBe(true);
 	});
 
-	test("should detect file changes with currentWorkingDirectory", () => {
+	test("should detect file changes with cwd", () => {
 		const cache = fileEntryCache.create(
 			".testcache",
 			cacheDirectory,
@@ -343,7 +343,7 @@ describe("currentWorkingDirectory functionality", () => {
 		expect(absPath3).toBe(path.join(testBaseDir, "src/index.js"));
 	});
 
-	test("should handle empty cache with currentWorkingDirectory", () => {
+	test("should handle empty cache with cwd", () => {
 		const cache = fileEntryCache.create(
 			".testcache",
 			cacheDirectory,
