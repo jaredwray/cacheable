@@ -29,23 +29,35 @@ export type GetFileDescriptorOptions = {
 };
 
 export type FileDescriptor = {
+	/** The cache key for this file (typically the file path) */
 	key: string;
+	/** Whether the file has changed since last cache check */
 	changed?: boolean;
+	/** Metadata about the file */
 	meta: FileDescriptorMeta;
+	/** Whether the file was not found */
 	notFound?: boolean;
+	/** Error encountered when accessing the file */
 	err?: Error;
 };
 
 export type FileDescriptorMeta = {
+	/** File size in bytes */
 	size?: number;
+	/** File modification time (timestamp in milliseconds) */
 	mtime?: number;
+	/** File content hash (when useCheckSum is enabled) */
 	hash?: string;
+	/** Custom data associated with the file (e.g., lint results, metadata) */
 	data?: unknown;
 };
 
 export type AnalyzedFiles = {
+	/** Array of file paths that have changed since last cache */
 	changedFiles: string[];
+	/** Array of file paths that were not found */
 	notFoundFiles: string[];
+	/** Array of file paths that have not changed since last cache */
 	notChangedFiles: string[];
 };
 
@@ -158,7 +170,7 @@ export class FileEntryCache {
 
 	/**
 	 * Use the hash to check if the file has changed
-	 * @returns {boolean} if the hash is used to check if the file has changed
+	 * @returns {boolean} if the hash is used to check if the file has changed (default: false)
 	 */
 	public get useCheckSum(): boolean {
 		return this._useCheckSum;
@@ -174,7 +186,7 @@ export class FileEntryCache {
 
 	/**
 	 * Use the modified time to check if the file has changed
-	 * @returns {boolean} if the modified time is used to check if the file has changed
+	 * @returns {boolean} if the modified time is used to check if the file has changed (default: true)
 	 */
 	public get useModifiedTime(): boolean {
 		return this._useModifiedTime;
@@ -190,7 +202,7 @@ export class FileEntryCache {
 
 	/**
 	 * Get the hash algorithm
-	 * @returns {string} The hash algorithm
+	 * @returns {string} The hash algorithm (default: 'md5')
 	 */
 	public get hashAlgorithm(): string {
 		return this._hashAlgorithm;
@@ -206,7 +218,7 @@ export class FileEntryCache {
 
 	/**
 	 * Get the current working directory
-	 * @returns {string} The current working directory
+	 * @returns {string} The current working directory (default: process.cwd())
 	 */
 	public get cwd(): string {
 		return this._cwd;
