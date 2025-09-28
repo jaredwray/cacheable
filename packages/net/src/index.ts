@@ -6,9 +6,12 @@ import {
 	type Response as FetchResponse,
 	fetch,
 } from "./fetch.js";
+import { stringify } from "node:querystring";
 
 export type NetFetchOptions = {
 	caching?: boolean;
+	stringify?: StringifyType;
+	parse?: ParseType;
 } & Omit<FetchOptions, "method" | "cache">;
 
 export type CacheableNetOptions = {
@@ -36,11 +39,19 @@ export type CacheableNetOptions = {
 	 * @default true
 	 */
 	useHttpCache?: boolean;
+	stringify?: StringifyType;
+	parse?: ParseType;
 } & HookifiedOptions;
+
+export type StringifyType = (value: unknown) => string;
+
+export type ParseType = (value: string) => unknown;
 
 export class CacheableNet extends Hookified {
 	private _cache: Cacheable = new Cacheable();
 	private _useHttpCache = true;
+	private _stringify: StringifyType = JSON.stringify;
+	private _parse: ParseType = JSON.parse;
 
 	constructor(options?: CacheableNetOptions) {
 		super(options);
@@ -54,6 +65,14 @@ export class CacheableNet extends Hookified {
 
 		if (options?.useHttpCache !== undefined) {
 			this._useHttpCache = options.useHttpCache;
+		}
+
+		if(options?.stringify) {
+			this._stringify = options?.stringify;
+		}
+
+		if(options?.parse) {
+			this._parse = options?.parse;
 		}
 	}
 
