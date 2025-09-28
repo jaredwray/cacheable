@@ -30,13 +30,13 @@ export type FetchOptions = Omit<RequestInit, "cache"> & {
 	 *
 	 * @default true
 	 */
-	useHttpCache?: boolean;
+	httpCachePolicy?: boolean;
 };
 
 /**
  * Fetch data from a URL with optional request options.
  *
- * When `useHttpCache` is enabled (default), cache entries will have their TTL
+ * When `httpCachePolicy` is enabled (default), cache entries will have their TTL
  * set based on HTTP cache headers (e.g., Cache-Control: max-age). When disabled,
  * the default TTL from the Cacheable instance is used.
  *
@@ -80,13 +80,13 @@ export async function fetch(
 		return response;
 	}
 
-	const useHttpCache = options.useHttpCache !== false; // Default to true
+	const httpCachePolicy = options.httpCachePolicy !== false; // Default to true
 	const method = options.method || "GET";
 
 	// Create a cache key that includes the method
 	const cacheKey = `${method}:${url}`;
 
-	if (!useHttpCache) {
+	if (!httpCachePolicy) {
 		// Simple caching without HTTP cache semantics
 		const cachedData = await options.cache.getOrSet(cacheKey, async () => {
 			// Perform the fetch operation

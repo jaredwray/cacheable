@@ -1101,33 +1101,33 @@ describe("Cacheable Net", () => {
 		}
 	});
 
-	test("should handle useHttpCache option in constructor", () => {
-		// Test with useHttpCache set to false
-		const netWithoutCache = new CacheableNet({ useHttpCache: false });
-		expect(netWithoutCache.useHttpCache).toBe(false);
+	test("should handle httpCachePolicy option in constructor", () => {
+		// Test with httpCachePolicy set to false
+		const netWithoutCache = new CacheableNet({ httpCachePolicy: false });
+		expect(netWithoutCache.httpCachePolicy).toBe(false);
 
-		// Test with useHttpCache set to true
-		const netWithCache = new CacheableNet({ useHttpCache: true });
-		expect(netWithCache.useHttpCache).toBe(true);
+		// Test with httpCachePolicy set to true
+		const netWithCache = new CacheableNet({ httpCachePolicy: true });
+		expect(netWithCache.httpCachePolicy).toBe(true);
 
 		// Test default value (should be true)
 		const netDefault = new CacheableNet();
-		expect(netDefault.useHttpCache).toBe(true);
+		expect(netDefault.httpCachePolicy).toBe(true);
 	});
 
-	test("should set and get useHttpCache property", () => {
+	test("should set and get httpCachePolicy property", () => {
 		const net = new CacheableNet();
 
 		// Test getter (default should be true)
-		expect(net.useHttpCache).toBe(true);
+		expect(net.httpCachePolicy).toBe(true);
 
 		// Test setter - set to false
-		net.useHttpCache = false;
-		expect(net.useHttpCache).toBe(false);
+		net.httpCachePolicy = false;
+		expect(net.httpCachePolicy).toBe(false);
 
 		// Test setter - set back to true
-		net.useHttpCache = true;
-		expect(net.useHttpCache).toBe(true);
+		net.httpCachePolicy = true;
+		expect(net.httpCachePolicy).toBe(true);
 	});
 
 	test("should set and get stringify property", () => {

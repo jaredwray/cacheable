@@ -1,6 +1,6 @@
 [<img align="center" src="https://cacheable.org/logo.svg" alt="Cacheable" />](https://github.com/jaredwray/cacheable)
 
-> High Performance Network Caching for Node.js with fetch, request, http 1.1, and http 2 support
+> High Performance Network Caching for Node.js with fetch support and HTTP cache semantics
 
 [![codecov](https://codecov.io/gh/jaredwray/cacheable/graph/badge.svg?token=lWZ9OBQ7GM)](https://codecov.io/gh/jaredwray/cacheable)
 [![tests](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml/badge.svg)](https://github.com/jaredwray/cacheable/actions/workflows/tests.yml)
@@ -10,18 +10,16 @@
 
 
 Features:
-* `fetch` from [undici](https://github.com/nodejs/undici) cache enabled via `cacheable`
-* `fetch` quick helpers such as `get`, `post`, `put`, and `delete` for easier development
-* `request` from [undici](https://github.com/nodejs/undici) cache enabled via `cacheable`
-* HTTP/1.1 and HTTP/2 caching support via Node.js `http` and `https` modules
-* [RFC 7234](http://httpwg.org/specs/rfc7234.html) compliant HTTP caching for native Node.js HTTP/HTTPS requests
-* Drop in replacement for `http` `https`, `fetch` modules with caching enabled
-* DNS caching for `dns.lookup` and `dns.resolve` methods via `cacheable`
-* WHOIS caching for `whois.lookup` method via `cacheable`
-* Advanced key generation via built in hashing and custom key generation functions
-* Benchmarks for performance comparison
-* All the features of [cacheable](https://npmjs.com/package/cacheable) - layered caching, LRU, expiration, hooks, backed by Keyv, and more!
-* Highly Tested and Maintained on a regular basis with a focus on performance and reliability
+* `fetch` from [undici](https://github.com/nodejs/undici) with caching enabled via `cacheable`
+* HTTP method helpers: `get`, `post`, `put`, `patch`, `delete`, and `head` for easier development
+* [RFC 7234](http://httpwg.org/specs/rfc7234.html) compliant HTTP caching with `http-cache-semantics`
+* Smart caching with automatic cache key generation
+* Support for custom serialization/deserialization with `stringify` and `parse` functions
+* Configurable cache policies - use HTTP cache semantics or simple TTL-based caching
+* Full TypeScript support with comprehensive type definitions
+* Request-level cache control with the `caching` option
+* All the features of [cacheable](https://npmjs.com/package/cacheable) - layered caching, LRU, TTL expiration, and more!
+* Extensively tested with 100% code coverage
 
 # Table of Contents
 * [Getting Started](#getting-started)
@@ -93,6 +91,34 @@ const result = await net.get('https://api.example.com/data', {
 });
 ```
 
+## Caching Control
+
+You can control caching behavior at multiple levels:
+
+```javascript
+import { CacheableNet } from '@cacheable/net';
+
+const net = new CacheableNet({
+  httpCachePolicy: true  // Enable HTTP cache semantics globally (default)
+});
+
+// GET requests are cached by default
+const data1 = await net.get('https://api.example.com/data');
+
+// Disable caching for a specific GET request
+const data2 = await net.get('https://api.example.com/data', {
+  caching: false
+});
+
+// POST requests are NOT cached by default
+const result1 = await net.post('https://api.example.com/data', { value: 1 });
+
+// Enable caching for a specific POST request
+const result2 = await net.post('https://api.example.com/data', { value: 1 }, {
+  caching: true
+});
+```
+
 ## API Reference
 
 ### CacheableNet Class
@@ -103,10 +129,11 @@ The main class that provides cached network operations.
 
 ```typescript
 interface CacheableNetOptions {
-  cache?: Cacheable | CacheableOptions;  // Cacheable instance or options
-  useHttpCache?: boolean;                 // Enable HTTP cache semantics (default: true)
+  cache?: Cacheable | CacheableOptions;   // Cacheable instance or options
+  httpCachePolicy?: boolean;              // Enable HTTP cache semantics (default: true)
   stringify?: (value: unknown) => string; // Custom JSON stringifier (default: JSON.stringify)
   parse?: (value: string) => unknown;     // Custom JSON parser (default: JSON.parse)
+}
 ```
 
 #### Methods
@@ -126,11 +153,11 @@ The `FetchOptions` type extends the standard fetch `RequestInit` options with ad
 ```typescript
 type FetchOptions = Omit<RequestInit, 'cache'> & {
   cache?: Cacheable;          // Optional cache instance (if not provided, no caching)
-  useHttpCache?: boolean;     // Override instance-level HTTP cache setting
+  httpCachePolicy?: boolean;     // Override instance-level HTTP cache setting
 };
 ```
 
-The `NetFetchOptions` type (used by `get()` and `head()` methods) provides additional control:
+The `NetFetchOptions` type (used by all HTTP method helpers) provides additional control:
 
 ```typescript
 type NetFetchOptions = {
@@ -141,6 +168,14 @@ type NetFetchOptions = {
 ```
 
 **Note**: When using the CacheableNet methods, you don't need to provide the `cache` property as it's automatically injected from the instance.
+
+#### Caching Behavior
+
+By default:
+- **GET** and **HEAD** requests are cached automatically
+- **POST**, **PUT**, **PATCH**, and **DELETE** requests are NOT cached by default
+- To enable caching for POST/PUT/PATCH/DELETE, set `caching: true` in the options
+- To disable caching for GET/HEAD, set `caching: false` in the options
 
 
 # How to Contribute

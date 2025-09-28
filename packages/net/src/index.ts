@@ -64,7 +64,7 @@ export type CacheableNetOptions = {
 	 *
 	 * @default true
 	 */
-	useHttpCache?: boolean;
+	httpCachePolicy?: boolean;
 	/**
 	 * Custom function for converting JavaScript values to strings.
 	 * This is used when serializing request bodies for POST, PUT, PATCH, and DELETE methods.
@@ -105,7 +105,7 @@ export type ParseType = (value: string) => unknown;
 
 export class CacheableNet extends Hookified {
 	private _cache: Cacheable = new Cacheable();
-	private _useHttpCache = true;
+	private _httpCachePolicy = true;
 	private _stringify: StringifyType = JSON.stringify;
 	private _parse: ParseType = JSON.parse;
 
@@ -119,8 +119,8 @@ export class CacheableNet extends Hookified {
 					: new Cacheable(options.cache);
 		}
 
-		if (options?.useHttpCache !== undefined) {
-			this._useHttpCache = options.useHttpCache;
+		if (options?.httpCachePolicy !== undefined) {
+			this._httpCachePolicy = options.httpCachePolicy;
 		}
 
 		if (options?.stringify) {
@@ -181,25 +181,25 @@ export class CacheableNet extends Hookified {
 	}
 
 	/**
-	 * Get the current HTTP cache setting.
+	 * Get the current HTTP cache policy setting.
 	 * @returns {boolean} Whether HTTP cache semantics are enabled
 	 */
-	public get useHttpCache(): boolean {
-		return this._useHttpCache;
+	public get httpCachePolicy(): boolean {
+		return this._httpCachePolicy;
 	}
 
 	/**
 	 * Set whether to use HTTP cache semantics.
 	 * @param {boolean} value - Enable or disable HTTP cache semantics
 	 */
-	public set useHttpCache(value: boolean) {
-		this._useHttpCache = value;
+	public set httpCachePolicy(value: boolean) {
+		this._httpCachePolicy = value;
 	}
 
 	/**
 	 * Fetch data from a URL with optional request options. Will use the cache that is already set in the instance.
 	 *
-	 * When `useHttpCache` is enabled (default), cache entries will have their TTL
+	 * When `httpCachePolicy` is enabled (default), cache entries will have their TTL
 	 * set based on HTTP cache headers (e.g., Cache-Control: max-age). When disabled,
 	 * the default TTL from the Cacheable instance is used.
 	 *
@@ -214,7 +214,7 @@ export class CacheableNet extends Hookified {
 		const fetchOptions: FetchOptions = {
 			...options,
 			cache: this._cache,
-			useHttpCache: this._useHttpCache,
+			httpCachePolicy: this._httpCachePolicy,
 		};
 
 		return fetch(url, fetchOptions);
@@ -234,7 +234,7 @@ export class CacheableNet extends Hookified {
 		const fetchOptions: FetchOptions = {
 			...options,
 			cache: this._cache,
-			useHttpCache: this._useHttpCache,
+			httpCachePolicy: this._httpCachePolicy,
 			method: "GET",
 		};
 
@@ -311,7 +311,7 @@ export class CacheableNet extends Hookified {
 			...options,
 			headers,
 			body: body as FetchOptions["body"],
-			useHttpCache: this._useHttpCache,
+			httpCachePolicy: this._httpCachePolicy,
 			method: "POST",
 		};
 
@@ -361,7 +361,7 @@ export class CacheableNet extends Hookified {
 		const fetchOptions: FetchOptions = {
 			...options,
 			cache: this._cache,
-			useHttpCache: this._useHttpCache,
+			httpCachePolicy: this._httpCachePolicy,
 			method: "HEAD",
 		};
 
@@ -414,7 +414,7 @@ export class CacheableNet extends Hookified {
 			...options,
 			headers,
 			body: body as FetchOptions["body"],
-			useHttpCache: this._useHttpCache,
+			httpCachePolicy: this._httpCachePolicy,
 			method: "PUT",
 		};
 
@@ -490,7 +490,7 @@ export class CacheableNet extends Hookified {
 			...options,
 			headers,
 			body: body as FetchOptions["body"],
-			useHttpCache: this._useHttpCache,
+			httpCachePolicy: this._httpCachePolicy,
 			method: "PATCH",
 		};
 
@@ -568,7 +568,7 @@ export class CacheableNet extends Hookified {
 			...options,
 			headers,
 			body: body as FetchOptions["body"],
-			useHttpCache: this._useHttpCache,
+			httpCachePolicy: this._httpCachePolicy,
 			method: "DELETE",
 		};
 
