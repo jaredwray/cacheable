@@ -792,6 +792,72 @@ describe("Cacheable Net", () => {
 	});
 
 	test(
+		"should use cache when caching is set to true in patch method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const data = { test: "patch-caching-enabled" };
+
+			// First PATCH with caching enabled
+			const result1 = await net.patch(url, data, { caching: true });
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Second PATCH with same data and caching enabled should hit cache
+			const result2 = await net.patch(url, data, { caching: true });
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should not use cache when caching is not specified in patch method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const data = { test: "patch-no-caching" };
+
+			// First PATCH without caching option (default behavior - no cache)
+			const result1 = await net.patch(url, data);
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Second PATCH without caching should make a new request
+			const result2 = await net.patch(url, data);
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should not use cache when caching is false in patch method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const data = { test: "patch-caching-disabled" };
+
+			// PATCH with caching explicitly disabled
+			const result1 = await net.patch(url, data, { caching: false });
+			expect(result1).toBeDefined();
+			expect(result1.data).toBeDefined();
+			expect(result1.response.status).toBe(200);
+
+			// Another PATCH with caching disabled should make a new request
+			const result2 = await net.patch(url, data, { caching: false });
+			expect(result2).toBeDefined();
+			expect(result2.data).toBeDefined();
+			expect(result2.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
 		"should fetch data using CacheableNet delete method",
 		async () => {
 			const net = new Net();

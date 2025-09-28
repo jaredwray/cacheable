@@ -333,16 +333,17 @@ export class CacheableNet extends Hookified {
 	}
 
 	/**
-	 * Perform a PATCH request to a URL with data and optional request options. Will use the cache that is already set in the instance.
+	 * Perform a PATCH request to a URL with data and optional request options. By default caching is not enabled. To enable it
+	 * set `options.caching` to true. Note, setting caching to true means it will not patch if the data is the same.
 	 * @param {string} url The URL to fetch.
 	 * @param {unknown} data The data to send in the request body.
-	 * @param {Omit<FetchOptions, 'method' | 'body' | 'cache'>} options Optional request options (method and body will be set).
+	 * @param {Omit<NetFetchOptions, 'method' | 'body'>} options Optional request options (method and body will be set).
 	 * @returns {Promise<DataResponse<T>>} The typed data and response from the fetch.
 	 */
 	public async patch<T = unknown>(
 		url: string,
 		data?: unknown,
-		options?: Omit<FetchOptions, "method" | "body" | "cache">,
+		options?: Omit<NetFetchOptions, "method" | "body">,
 	): Promise<DataResponse<T>> {
 		// Automatically stringify data if it's an object and set appropriate headers
 		let body: BodyInit | undefined;
@@ -365,12 +366,20 @@ export class CacheableNet extends Hookified {
 			}
 		}
 
-		const response = await this.fetch(url, {
+		const fetchOptions: FetchOptions = {
 			...options,
 			headers,
 			body: body as FetchOptions["body"],
+			useHttpCache: this._useHttpCache,
 			method: "PATCH",
-		});
+		};
+
+		// add the cache if caching is true
+		if (options?.caching === true) {
+			fetchOptions.cache = this._cache;
+		}
+
+		const response = await fetch(url, fetchOptions);
 		const text = await response.text();
 		let responseData: T;
 
