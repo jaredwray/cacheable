@@ -8,12 +8,39 @@ import {
 } from "./fetch.js";
 
 export type NetFetchOptions = {
+	/**
+	 * Controls whether caching is enabled for this specific request.
+	 * - `true`: Enable caching for this request
+	 * - `false`: Disable caching for this request
+	 * - `undefined`: Use default caching behavior based on the method (GET/HEAD are cached by default)
+	 * @default undefined
+	 */
 	caching?: boolean;
+	/**
+	 * Custom function for converting JavaScript values to strings for this request.
+	 * Overrides the instance-level stringify function if provided.
+	 * @example
+	 * // Use custom serialization for this request only
+	 * stringify: (value) => superjson.stringify(value)
+	 */
 	stringify?: StringifyType;
+	/**
+	 * Custom function for parsing strings back to JavaScript values for this request.
+	 * Overrides the instance-level parse function if provided.
+	 * @example
+	 * // Use custom parsing for this request only
+	 * parse: (text) => superjson.parse(text)
+	 */
 	parse?: ParseType;
 } & Omit<FetchOptions, "method" | "cache">;
 
 export type CacheableNetOptions = {
+	/**
+	 * The cache instance or configuration options for caching responses.
+	 * Can be either an existing Cacheable instance or options to create a new one.
+	 * If not provided, a default Cacheable instance will be created.
+	 * @default new Cacheable()
+	 */
 	cache?: Cacheable | CacheableOptions;
 	/**
 	 * Enable HTTP cache semantics for intelligent response caching.
@@ -38,12 +65,42 @@ export type CacheableNetOptions = {
 	 * @default true
 	 */
 	useHttpCache?: boolean;
+	/**
+	 * Custom function for converting JavaScript values to strings.
+	 * This is used when serializing request bodies for POST, PUT, PATCH, and DELETE methods.
+	 * Useful for handling complex data types that JSON.stringify doesn't support natively.
+	 * @default JSON.stringify
+	 * @example
+	 * // Using superjson for enhanced serialization
+	 * stringify: (value) => superjson.stringify(value)
+	 */
 	stringify?: StringifyType;
+	/**
+	 * Custom function for parsing strings back to JavaScript values.
+	 * This is used when deserializing response bodies.
+	 * Should be compatible with the stringify function for proper round-trip serialization.
+	 * @default JSON.parse
+	 * @example
+	 * // Using superjson for enhanced parsing
+	 * parse: (text) => superjson.parse(text)
+	 */
 	parse?: ParseType;
 } & HookifiedOptions;
 
+/**
+ * Function type for converting JavaScript values to strings.
+ * Used for serializing request bodies and data.
+ * @param value - The JavaScript value to stringify
+ * @returns The string representation of the value
+ */
 export type StringifyType = (value: unknown) => string;
 
+/**
+ * Function type for parsing strings back to JavaScript values.
+ * Used for deserializing response bodies.
+ * @param value - The string to parse
+ * @returns The parsed JavaScript value
+ */
 export type ParseType = (value: string) => unknown;
 
 export class CacheableNet extends Hookified {
