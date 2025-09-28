@@ -60,6 +60,39 @@ const fetchResponse = await net.fetch('https://api.example.com/data', {
 });
 ```
 
+## Custom Serialization
+
+You can provide custom `stringify` and `parse` functions for handling data serialization. This is particularly useful when working with complex data types that JSON doesn't natively support:
+
+```javascript
+import { CacheableNet } from '@cacheable/net';
+import superjson from 'superjson';
+
+// Using superjson for enhanced serialization
+// Supports Dates, BigInt, RegExp, Set, Map, Error and more
+const net = new CacheableNet({
+  stringify: (value) => superjson.stringify(value),
+  parse: (text) => superjson.parse(text)
+});
+
+// Now you can work with complex data types
+const response = await net.post('https://api.example.com/data', {
+  timestamp: new Date(),
+  userId: BigInt(12345),
+  pattern: /[a-z]+/gi,
+  metadata: new Map([['key', 'value']]),
+  tags: new Set(['important', 'urgent'])
+});
+
+// Or provide per-request custom serialization
+const result = await net.get('https://api.example.com/data', {
+  parse: (text) => {
+    // Custom parsing with superjson for this request only
+    return superjson.parse(text);
+  }
+});
+```
+
 ## API Reference
 
 ### CacheableNet Class
@@ -72,7 +105,8 @@ The main class that provides cached network operations.
 interface CacheableNetOptions {
   cache?: Cacheable | CacheableOptions;  // Cacheable instance or options
   useHttpCache?: boolean;                 // Enable HTTP cache semantics (default: true)
-}
+  stringify?: (value: unknown) => string; // Custom JSON stringifier (default: JSON.stringify)
+  parse?: (value: string) => unknown;     // Custom JSON parser (default: JSON.parse)
 ```
 
 #### Methods
