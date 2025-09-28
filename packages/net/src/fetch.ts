@@ -7,7 +7,7 @@ import {
 } from "undici";
 
 export type FetchOptions = Omit<RequestInit, "cache"> & {
-	cache: Cacheable;
+	cache?: Cacheable;
 	/**
 	 * Enable HTTP cache semantics for intelligent response caching.
 	 *
@@ -40,22 +40,30 @@ export type FetchOptions = Omit<RequestInit, "cache"> & {
  * set based on HTTP cache headers (e.g., Cache-Control: max-age). When disabled,
  * the default TTL from the Cacheable instance is used.
  *
+ * If no cache is provided, the request will be made without any caching.
+ *
  * @param {string} url The URL to fetch.
- * @param {FetchOptions} options Optional request options. The `cache` property is required.
+ * @param {FetchOptions} options Optional request options. If `cache` is not provided, no caching will be used.
  * @returns {Promise<UndiciResponse>} The response from the fetch.
  */
 export async function fetch(
 	url: string,
 	options: FetchOptions,
 ): Promise<UndiciResponse> {
-	if (!options.cache) {
-		throw new Error("Fetch options must include a cache instance or options.");
-	}
-
 	const fetchOptions: RequestInit = {
 		...options,
 		cache: "no-cache",
 	};
+
+	// If no cache provided, skip all caching logic
+	if (!options.cache) {
+		const response = await undiciFetch(url, fetchOptions);
+		/* c8 ignore next 3 */
+		if (!response.ok) {
+			throw new Error(`Fetch failed with status ${response.status}`);
+		}
+		return response;
+	}
 
 	// Skip caching for POST, PATCH, DELETE, and HEAD requests
 	if (

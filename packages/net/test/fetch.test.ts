@@ -72,16 +72,22 @@ describe("Fetch", () => {
 	);
 
 	test(
-		"should throw an error if cache is not provided",
+		"should work without cache when cache is not provided",
 		async () => {
 			const url = `${testUrl}/get`;
 			const options: FetchOptions = {
 				method: "GET",
-				cache: undefined as unknown as Cacheable, // Force error
+				cache: undefined,
 			};
-			await expect(fetch(url, options)).rejects.toThrow(
-				"Fetch options must include a cache instance or options.",
-			);
+			// Should not throw and should return a response
+			const response = await fetch(url, options);
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
+
+			// Make another request - should not be cached
+			const response2 = await fetch(url, options);
+			expect(response2).toBeDefined();
+			expect(response2.status).toBe(200);
 		},
 		testTimeout,
 	);
