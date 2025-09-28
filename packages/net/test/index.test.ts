@@ -1130,6 +1130,87 @@ describe("Cacheable Net", () => {
 		expect(net.useHttpCache).toBe(true);
 	});
 
+	test("should set and get stringify property", () => {
+		const net = new CacheableNet();
+
+		// Test getter (default should be JSON.stringify)
+		expect(net.stringify).toBe(JSON.stringify);
+
+		// Test setter with custom stringify
+		const customStringify = (value: unknown) =>
+			`custom: ${JSON.stringify(value)}`;
+		net.stringify = customStringify;
+		expect(net.stringify).toBe(customStringify);
+	});
+
+	test("should set and get parse property", () => {
+		const net = new CacheableNet();
+
+		// Test getter (default should be JSON.parse)
+		expect(net.parse).toBe(JSON.parse);
+
+		// Test setter with custom parse
+		const customParse = (value: string) => ({ custom: JSON.parse(value) });
+		net.parse = customParse;
+		expect(net.parse).toBe(customParse);
+	});
+
+	test("should use custom stringify and parse from constructor options", () => {
+		const customStringify = (value: unknown) =>
+			`custom: ${JSON.stringify(value)}`;
+		const customParse = (value: string) => ({
+			custom: JSON.parse(value.replace("custom: ", "")),
+		});
+
+		const net = new CacheableNet({
+			stringify: customStringify,
+			parse: customParse,
+		});
+
+		expect(net.stringify).toBe(customStringify);
+		expect(net.parse).toBe(customParse);
+	});
+
+	test(
+		"should use custom stringify in POST method",
+		async () => {
+			const customStringify = (value: unknown) =>
+				JSON.stringify({ wrapper: value });
+			const net = new CacheableNet();
+
+			const url = `${testUrl}/post`;
+			const data = { test: "custom-stringify" };
+
+			const result = await net.post(url, data, { stringify: customStringify });
+			expect(result).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should use custom parse in GET method",
+		async () => {
+			const customParse = (value: string) => {
+				try {
+					const parsed = JSON.parse(value);
+					return { custom: true, data: parsed };
+				} catch {
+					return { custom: true, data: value };
+				}
+			};
+
+			const net = new CacheableNet();
+			const url = `${testUrl}/get`;
+
+			const result = await net.get(url, { parse: customParse });
+			expect(result).toBeDefined();
+			expect(result.data).toBeDefined();
+			expect((result.data as unknown as { custom: boolean }).custom).toBe(true);
+		},
+		testTimeout,
+	);
+
 	test(
 		"should not use cache when caching is set to false in get method",
 		async () => {

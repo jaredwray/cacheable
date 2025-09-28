@@ -60,6 +60,33 @@ const fetchResponse = await net.fetch('https://api.example.com/data', {
 });
 ```
 
+## Custom Serialization
+
+You can provide custom `stringify` and `parse` functions for handling data serialization:
+
+```javascript
+import { CacheableNet } from '@cacheable/net';
+
+// Custom serialization that handles BigInt
+const net = new CacheableNet({
+  stringify: (value) => JSON.stringify(value, (key, val) =>
+    typeof val === 'bigint' ? val.toString() : val
+  ),
+  parse: (text) => JSON.parse(text, (key, val) =>
+    /^\d+n$/.test(val) ? BigInt(val.slice(0, -1)) : val
+  )
+});
+
+// Or provide per-request custom serialization
+const response = await net.get('https://api.example.com/data', {
+  parse: (text) => {
+    // Custom parsing logic
+    const data = JSON.parse(text);
+    return { ...data, timestamp: Date.now() };
+  }
+});
+```
+
 ## API Reference
 
 ### CacheableNet Class
@@ -72,7 +99,8 @@ The main class that provides cached network operations.
 interface CacheableNetOptions {
   cache?: Cacheable | CacheableOptions;  // Cacheable instance or options
   useHttpCache?: boolean;                 // Enable HTTP cache semantics (default: true)
-}
+  stringify?: (value: unknown) => string; // Custom JSON stringifier (default: JSON.stringify)
+  parse?: (value: string) => unknown;     // Custom JSON parser (default: JSON.parse)
 ```
 
 #### Methods

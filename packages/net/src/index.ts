@@ -6,7 +6,6 @@ import {
 	type Response as FetchResponse,
 	fetch,
 } from "./fetch.js";
-import { stringify } from "node:querystring";
 
 export type NetFetchOptions = {
 	caching?: boolean;
@@ -67,13 +66,45 @@ export class CacheableNet extends Hookified {
 			this._useHttpCache = options.useHttpCache;
 		}
 
-		if(options?.stringify) {
+		if (options?.stringify) {
 			this._stringify = options?.stringify;
 		}
 
-		if(options?.parse) {
+		if (options?.parse) {
 			this._parse = options?.parse;
 		}
+	}
+
+	/**
+	 * Get the stringify function used for converting objects to strings.
+	 * @returns {StringifyType} The current stringify function
+	 */
+	public get stringify(): StringifyType {
+		return this._stringify;
+	}
+
+	/**
+	 * Set the stringify function for converting objects to strings.
+	 * @param {StringifyType} value - The stringify function to use
+	 */
+	public set stringify(value: StringifyType) {
+		this._stringify = value;
+	}
+
+	/**
+	 * Get the parse function used for converting strings to objects.
+	 * @returns {ParseType} The current parse function
+	 */
+	public get parse(): ParseType {
+		return this._parse;
+	}
+
+	/**
+	 * Set the parse function for converting strings to objects.
+	 * @param {ParseType} value - The parse function to use
+	 */
+	public set parse(value: ParseType) {
+		this._parse = value;
 	}
 
 	/**
@@ -160,8 +191,11 @@ export class CacheableNet extends Hookified {
 		const text = await response.text();
 		let data: T;
 
+		// Use custom parse function if provided, otherwise use instance parse
+		const parseFn = options?.parse || this._parse;
+
 		try {
-			data = JSON.parse(text) as T;
+			data = parseFn(text) as T;
 		} catch {
 			// If not JSON, return as is
 			data = text as T;
@@ -207,7 +241,9 @@ export class CacheableNet extends Hookified {
 			body = data as BodyInit;
 		} else {
 			// Assume it's JSON data
-			body = JSON.stringify(data);
+			// Use custom stringify function if provided, otherwise use instance stringify
+			const stringifyFn = options?.stringify || this._stringify;
+			body = stringifyFn(data);
 			// Set Content-Type to JSON if not already set
 			if (!headers["Content-Type"] && !headers["content-type"]) {
 				headers["Content-Type"] = "application/json";
@@ -231,8 +267,11 @@ export class CacheableNet extends Hookified {
 		const text = await response.text();
 		let responseData: T;
 
+		// Use custom parse function if provided, otherwise use instance parse
+		const parseFn = options?.parse || this._parse;
+
 		try {
-			responseData = JSON.parse(text) as T;
+			responseData = parseFn(text) as T;
 		} catch {
 			// If not JSON, return as is
 			responseData = text as T;
@@ -305,7 +344,9 @@ export class CacheableNet extends Hookified {
 			body = data as BodyInit;
 		} else {
 			// Assume it's JSON data
-			body = JSON.stringify(data);
+			// Use custom stringify function if provided, otherwise use instance stringify
+			const stringifyFn = options?.stringify || this._stringify;
+			body = stringifyFn(data);
 			// Set Content-Type to JSON if not already set
 			if (!headers["Content-Type"] && !headers["content-type"]) {
 				headers["Content-Type"] = "application/json";
@@ -329,8 +370,11 @@ export class CacheableNet extends Hookified {
 		const text = await response.text();
 		let responseData: T;
 
+		// Use custom parse function if provided, otherwise use instance parse
+		const parseFn = options?.parse || this._parse;
+
 		try {
-			responseData = JSON.parse(text) as T;
+			responseData = parseFn(text) as T;
 		} catch {
 			// If not JSON, return as is
 			responseData = text as T;
@@ -376,7 +420,9 @@ export class CacheableNet extends Hookified {
 			body = data as BodyInit;
 		} else {
 			// Assume it's JSON data
-			body = JSON.stringify(data);
+			// Use custom stringify function if provided, otherwise use instance stringify
+			const stringifyFn = options?.stringify || this._stringify;
+			body = stringifyFn(data);
 			// Set Content-Type to JSON if not already set
 			if (!headers["Content-Type"] && !headers["content-type"]) {
 				headers["Content-Type"] = "application/json";
@@ -400,8 +446,11 @@ export class CacheableNet extends Hookified {
 		const text = await response.text();
 		let responseData: T;
 
+		// Use custom parse function if provided, otherwise use instance parse
+		const parseFn = options?.parse || this._parse;
+
 		try {
-			responseData = JSON.parse(text) as T;
+			responseData = parseFn(text) as T;
 		} catch {
 			// If not JSON, return as is
 			responseData = text as T;
@@ -448,7 +497,9 @@ export class CacheableNet extends Hookified {
 				body = data as BodyInit;
 			} else {
 				// Assume it's JSON data
-				body = JSON.stringify(data);
+				// Use custom stringify function if provided, otherwise use instance stringify
+				const stringifyFn = options?.stringify || this._stringify;
+				body = stringifyFn(data);
 				// Set Content-Type to JSON if not already set
 				if (!headers["Content-Type"] && !headers["content-type"]) {
 					headers["Content-Type"] = "application/json";
@@ -473,8 +524,11 @@ export class CacheableNet extends Hookified {
 		const text = await response.text();
 		let responseData: T;
 
+		// Use custom parse function if provided, otherwise use instance parse
+		const parseFn = options?.parse || this._parse;
+
 		try {
-			responseData = JSON.parse(text) as T;
+			responseData = parseFn(text) as T;
 		} catch {
 			// If not JSON, return as is
 			responseData = text as T;
