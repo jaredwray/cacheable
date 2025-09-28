@@ -915,4 +915,64 @@ describe("Cacheable Net", () => {
 		},
 		testTimeout,
 	);
+
+	test(
+		"should not use cache when caching is set to false in head method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/get`;
+
+			// Call head with caching set to false
+			const response1 = await net.head(url, { caching: false });
+			expect(response1).toBeDefined();
+			expect(response1.status).toBe(200);
+
+			// Make another request with caching false - should not use cache
+			const response2 = await net.head(url, { caching: false });
+			expect(response2).toBeDefined();
+			expect(response2.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should use cache when caching property is undefined in head method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/get`;
+
+			// First request with undefined caching (should use cache by default)
+			const response1 = await net.head(url);
+			expect(response1).toBeDefined();
+			expect(response1.status).toBe(200);
+
+			// Second request should potentially hit cache (HEAD requests can be cached)
+			const response2 = await net.head(url);
+			expect(response2).toBeDefined();
+			expect(response2.status).toBe(200);
+
+			// Third request with explicit undefined caching
+			const response3 = await net.head(url, { caching: undefined });
+			expect(response3).toBeDefined();
+			expect(response3.status).toBe(200);
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle head method with custom headers and caching",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/get`;
+
+			// Call head with custom headers and caching true
+			const response = await net.head(url, {
+				headers: { "User-Agent": "test-agent" },
+				caching: true,
+			});
+			expect(response).toBeDefined();
+			expect(response.status).toBe(200);
+		},
+		testTimeout,
+	);
 });

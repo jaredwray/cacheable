@@ -226,16 +226,29 @@ export class CacheableNet extends Hookified {
 	}
 
 	/**
-	 * Perform a HEAD request to a URL with optional request options. Will use the cache that is already set in the instance.
+	 * Perform a HEAD request to a URL with optional request options. By default caching is enabled on all requests. To
+	 * disable set `options.caching` to false.
 	 * @param {string} url The URL to fetch.
-	 * @param {Omit<FetchOptions, 'method' | 'cache'>} options Optional request options (method will be set to HEAD).
+	 * @param {NetFetchOptions} options Optional request options (method will be set to HEAD).
 	 * @returns {Promise<FetchResponse>} The response from the fetch (no body).
 	 */
 	public async head(
 		url: string,
-		options?: Omit<FetchOptions, "method" | "cache">,
+		options?: NetFetchOptions,
 	): Promise<FetchResponse> {
-		const response = await this.fetch(url, { ...options, method: "HEAD" });
+		const fetchOptions: FetchOptions = {
+			...options,
+			cache: this._cache,
+			useHttpCache: this._useHttpCache,
+			method: "HEAD",
+		};
+
+		// remove cache if they specify it
+		if (options?.caching !== undefined && !options.caching) {
+			delete fetchOptions.cache;
+		}
+
+		const response = await fetch(url, fetchOptions);
 		return response;
 	}
 
