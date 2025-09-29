@@ -112,7 +112,7 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `useCheckSum?` - If `true` it will use a checksum to determine if the file has changed. Default is `false`
 - `hashAlgorithm?` - The algorithm to use for the checksum. Default is `md5` but can be any algorithm supported by `crypto.createHash`
 - `cwd?` - The current working directory for resolving relative paths. Default is `process.cwd()`
-- `strictPaths?` - If `true` restricts file access to within `cwd` boundaries, preventing path traversal attacks. Default is `false`
+- `strictPaths?` - If `true` restricts file access to within `cwd` boundaries, preventing path traversal attacks. Default is `true`
 - `cache.ttl?` - The time to live for the cache in milliseconds. Default is `0` which means no expiration
 - `cache.lruSize?` - The number of items to keep in the cache. Default is `0` which means no limit
 - `cache.useClone?` - If `true` it will clone the data before returning it. Default is `false`
@@ -130,7 +130,7 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `hashAlgorithm: string` - The algorithm to use for the checksum. Default is `md5` but can be any algorithm supported by `crypto.createHash`
 - `getHash(buffer: Buffer): string` - Gets the hash of a buffer used for checksums
 - `cwd: string` - The current working directory for resolving relative paths. Default is `process.cwd()`
-- `strictPaths: boolean` - If `true` restricts file access to within `cwd` boundaries. Default is `false`
+- `strictPaths: boolean` - If `true` restricts file access to within `cwd` boundaries. Default is `true`
 - `createFileKey(filePath: string): string` - Returns the cache key for the file path (returns the path exactly as provided).
 - `deleteCacheFile(): boolean` - Deletes the cache file from disk
 - `destroy(): void` - Destroys the cache. This will clear the cache in memory. If using cache persistence it will stop the interval.
@@ -258,14 +258,14 @@ if (fileDescriptor.notFound) {
 
 # Path Security and Traversal Prevention
 
-The `strictPaths` option provides security against path traversal attacks by restricting file access to within the configured `cwd` boundaries. This is especially important when processing untrusted input or when running in security-sensitive environments.
+The `strictPaths` option provides security against path traversal attacks by restricting file access to within the configured `cwd` boundaries. **This is enabled by default (since v11)** to ensure secure defaults when processing untrusted input or when running in security-sensitive environments.
 
 ## Basic Usage
 
 ```javascript
+// strictPaths is enabled by default for security
 const cache = new FileEntryCache({
-    cwd: '/project/root',
-    strictPaths: true  // Enable path traversal protection
+    cwd: '/project/root'
 });
 
 // This will work - file is within cwd
@@ -277,6 +277,12 @@ try {
 } catch (error) {
     console.error(error); // Path traversal attempt blocked
 }
+
+// To allow parent directory access (not recommended for untrusted input)
+const unsafeCache = new FileEntryCache({
+    cwd: '/project/root',
+    strictPaths: false  // Explicitly disable protection
+});
 ```
 
 ## Security Features
@@ -350,11 +356,23 @@ cache.strictPaths = false;
 
 ## Default Behavior
 
-By default, `strictPaths` is set to `false` to maintain backward compatibility. This allows:
-- Access to parent directories using `../`
-- Flexible file access patterns that existing code may depend on
+**As of v11, `strictPaths` is enabled by default** to provide secure defaults. This means:
+- Path traversal attempts using `../` are blocked
+- File access is restricted to within the configured `cwd`
+- Null bytes in paths are automatically sanitized
 
-To enable security features, explicitly set `strictPaths: true` in your configuration.
+### Migrating from v10 or Earlier
+
+If you're upgrading from v10 or earlier and need to maintain the previous behavior (for example, if your code legitimately accesses parent directories), you can explicitly disable strict paths:
+
+```javascript
+const cache = new FileEntryCache({
+    cwd: process.cwd(),
+    strictPaths: false  // Restore v10 behavior
+});
+```
+
+However, we strongly recommend keeping `strictPaths: true` and adjusting your code to work within the security boundaries, especially when processing any untrusted input.
 
 # Using Checksums to Determine if a File has Changed (useCheckSum)
 

@@ -17,7 +17,7 @@ export type FileEntryCacheOptions = {
 	hashAlgorithm?: string;
 	/** Current working directory for resolving relative paths (default: process.cwd()) */
 	cwd?: string;
-	/** Restrict file access to within cwd boundaries (default: false) */
+	/** Restrict file access to within cwd boundaries (default: true) */
 	strictPaths?: boolean;
 	/** Options for the underlying flat cache */
 	cache?: FlatCacheOptions;
@@ -127,7 +127,7 @@ export class FileEntryCache {
 	private _useModifiedTime = true;
 	private _hashAlgorithm = "md5";
 	private _cwd: string = process.cwd();
-	private _strictPaths = false;
+	private _strictPaths = true;
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -241,7 +241,7 @@ export class FileEntryCache {
 
 	/**
 	 * Get whether to restrict paths to cwd boundaries
-	 * @returns {boolean} Whether strict path checking is enabled (default: false)
+	 * @returns {boolean} Whether strict path checking is enabled (default: true)
 	 */
 	public get strictPaths(): boolean {
 		return this._strictPaths;

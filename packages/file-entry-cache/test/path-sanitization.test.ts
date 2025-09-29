@@ -27,10 +27,25 @@ describe("path sanitization with strictPaths", () => {
 		}
 	});
 
-	test("should allow access within cwd when strictPaths is false (default)", () => {
+	test("should have strictPaths enabled by default", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: false, // default
+			// Not setting strictPaths - should default to true
+		});
+
+		// Verify default is true
+		expect(cache.strictPaths).toBe(true);
+
+		// Should block path traversal by default
+		expect(() => cache.getAbsolutePath("../sensitive.txt")).toThrowError(
+			/Path traversal attempt blocked/,
+		);
+	});
+
+	test("should allow access outside cwd when strictPaths is explicitly false", () => {
+		const cache = new FileEntryCache({
+			cwd: safeDir,
+			strictPaths: false, // explicitly disable
 		});
 
 		// Should allow access to parent directories
