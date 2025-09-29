@@ -154,7 +154,7 @@ export class FileEntryCache {
 			this._cwd = options.cwd;
 		}
 
-		if (options?.strictPaths) {
+		if (options?.strictPaths !== undefined) {
 			this._strictPaths = options.strictPaths;
 		}
 	}

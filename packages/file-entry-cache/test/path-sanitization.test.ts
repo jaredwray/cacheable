@@ -180,35 +180,34 @@ describe("path sanitization with strictPaths", () => {
 	test("should allow toggling strictPaths via setter", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: false,
+			strictPaths: true, // Start with true
 		});
 
 		// Check initial value via getter
-		expect(cache.strictPaths).toBe(false);
-
-		// Initially allows traversal
-		const parentPath1 = cache.getAbsolutePath("../sensitive.txt");
-		expect(parentPath1).toBe(
-			path.normalize(path.join(testBaseDir, "sensitive.txt")),
-		);
-
-		// Enable strict mode
-		cache.strictPaths = true;
 		expect(cache.strictPaths).toBe(true);
 
-		// Now blocks traversal
+		// Initially blocks traversal
 		expect(() => cache.getAbsolutePath("../sensitive.txt")).toThrowError(
 			/Path traversal attempt blocked/,
 		);
 
-		// Disable strict mode again
+		// Disable strict mode
 		cache.strictPaths = false;
 		expect(cache.strictPaths).toBe(false);
 
-		// Allows traversal again
-		const parentPath2 = cache.getAbsolutePath("../sensitive.txt");
-		expect(parentPath2).toBe(
+		// Now allows traversal
+		const parentPath = cache.getAbsolutePath("../sensitive.txt");
+		expect(parentPath).toBe(
 			path.normalize(path.join(testBaseDir, "sensitive.txt")),
+		);
+
+		// Re-enable strict mode
+		cache.strictPaths = true;
+		expect(cache.strictPaths).toBe(true);
+
+		// Blocks traversal again
+		expect(() => cache.getAbsolutePath("../sensitive.txt")).toThrowError(
+			/Path traversal attempt blocked/,
 		);
 	});
 

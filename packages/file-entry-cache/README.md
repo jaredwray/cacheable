@@ -87,8 +87,12 @@ console.log(fileDescriptor.changed); // false as it has not changed from the sav
 
 # Changes from v10 to v11
 
+**BREAKING CHANGES:**
+- **`strictPaths` now defaults to `true`** - Path traversal protection is enabled by default for security. To restore v10 behavior, explicitly set `strictPaths: false`
+
 **NEW FEATURES:**
 - **Added `cwd` option** - You can now specify a custom current working directory for resolving relative paths
+- **Added `strictPaths` option** - Provides protection against path traversal attacks (enabled by default)
 - **Improved cache portability** - When using relative paths with the same `cwd`, cache files are portable across different environments
 
 # Changes from v9 to v10
