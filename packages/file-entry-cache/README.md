@@ -31,6 +31,8 @@
 - [Get File Descriptor](#get-file-descriptor)
   - [Path Handling and Current Working Directory](#path-handling-and-current-working-directory)
   - [Cache Portability](#cache-portability)
+  - [Maximum Portability with Checksums](#maximum-portability-with-checksums)
+  - [Handling Project Relocations](#handling-project-relocations)
 - [Using Checksums to Determine if a File has Changed (useCheckSum)](#using-checksums-to-determine-if-a-file-has-changed-usechecksum)
 - [Setting Additional Meta Data](#setting-additional-meta-data)
 - [How to Contribute](#how-to-contribute)
@@ -171,7 +173,7 @@ console.log(descriptor.key); // './src/file.txt'
 
 ### Cache Portability
 
-Using relative paths with a consistent `cwd` makes cache files portable:
+Using relative paths with a consistent `cwd` (defaults to `process.cwd()`) makes cache files portable across different machines and environments. This is especially useful for CI/CD pipelines and team development.
 
 ```javascript
 // On machine A (project at /home/user/project)
@@ -183,6 +185,58 @@ cacheA.reconcile();
 const cacheB = fileEntryCache.create('build-cache', './cache', false, '/workspace/project');
 cacheB.getFileDescriptor('./src/index.js'); // Resolves to /workspace/project/src/index.js
 // Cache hit! File hasn't changed since machine A
+```
+
+### Maximum Portability with Checksums
+
+For maximum cache portability across different environments, use checksums (`useCheckSum: true`) along with relative paths and `cwd` which defaults to `process.cwd()`. This ensures that cache validity is determined by file content rather than modification times, which can vary across systems:
+
+```javascript
+// Development machine
+const devCache = fileEntryCache.create(
+    '.buildcache',
+    './cache',                 // cache directory
+    true                      // Use checksums for content-based comparison
+);
+
+// Process files using relative paths
+const descriptor = devCache.getFileDescriptor('./src/index.js');
+if (descriptor.changed) {
+    console.log('Building ./src/index.js...');
+    // Build process here
+}
+devCache.reconcile(); // Save cache
+
+// CI/CD Pipeline or another developer's machine
+const ciCache = fileEntryCache.create(
+    '.buildcache',
+    './node_modules/.cache',
+    true,                      // Same checksum setting
+    process.cwd()              // Different absolute path, same relative structure
+);
+
+// Same relative path works across environments
+const descriptor2 = ciCache.getFileDescriptor('./src/index.js');
+if (!descriptor2.changed) {
+    console.log('Using cached result for ./src/index.js');
+    // Skip rebuild - file content unchanged
+}
+```
+
+### Handling Project Relocations
+
+Cache remains valid even when projects are moved or renamed:
+
+```javascript
+// Original location: /projects/my-app
+const cache1 = fileEntryCache.create('.cache', './cache', true, '/projects/my-app');
+cache1.getFileDescriptor('./src/app.js');
+cache1.reconcile();
+
+// After moving project to: /archived/2024/my-app
+const cache2 = fileEntryCache.create('.cache', './cache', true, '/archived/2024/my-app');
+cache2.getFileDescriptor('./src/app.js'); // Still finds cached entry!
+// Cache valid as long as relative structure unchanged
 ```
 
 If there is an error when trying to get the file descriptor it will return a `notFound` and `err` property with the error.
