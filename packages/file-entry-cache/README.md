@@ -33,6 +33,7 @@
   - [Cache Portability](#cache-portability)
   - [Maximum Portability with Checksums](#maximum-portability-with-checksums)
   - [Handling Project Relocations](#handling-project-relocations)
+- [Path Security and Traversal Prevention](#path-security-and-traversal-prevention)
 - [Using Checksums to Determine if a File has Changed (useCheckSum)](#using-checksums-to-determine-if-a-file-has-changed-usechecksum)
 - [Setting Additional Meta Data](#setting-additional-meta-data)
 - [How to Contribute](#how-to-contribute)
@@ -111,6 +112,7 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `useCheckSum?` - If `true` it will use a checksum to determine if the file has changed. Default is `false`
 - `hashAlgorithm?` - The algorithm to use for the checksum. Default is `md5` but can be any algorithm supported by `crypto.createHash`
 - `cwd?` - The current working directory for resolving relative paths. Default is `process.cwd()`
+- `strictPaths?` - If `true` restricts file access to within `cwd` boundaries, preventing path traversal attacks. Default is `false`
 - `cache.ttl?` - The time to live for the cache in milliseconds. Default is `0` which means no expiration
 - `cache.lruSize?` - The number of items to keep in the cache. Default is `0` which means no limit
 - `cache.useClone?` - If `true` it will clone the data before returning it. Default is `false`
@@ -128,6 +130,7 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `hashAlgorithm: string` - The algorithm to use for the checksum. Default is `md5` but can be any algorithm supported by `crypto.createHash`
 - `getHash(buffer: Buffer): string` - Gets the hash of a buffer used for checksums
 - `cwd: string` - The current working directory for resolving relative paths. Default is `process.cwd()`
+- `strictPaths: boolean` - If `true` restricts file access to within `cwd` boundaries. Default is `false`
 - `createFileKey(filePath: string): string` - Returns the cache key for the file path (returns the path exactly as provided).
 - `deleteCacheFile(): boolean` - Deletes the cache file from disk
 - `destroy(): void` - Destroys the cache. This will clear the cache in memory. If using cache persistence it will stop the interval.
@@ -139,8 +142,8 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `analyzeFiles(files: string[])` will return `AnalyzedFiles` object with `changedFiles`, `notFoundFiles`, and `notChangedFiles` as FileDescriptor arrays.
 - `getUpdatedFiles(files: string[])` will return an array of `FileEntryDescriptor` objects that have changed.
 - `getFileDescriptorsByPath(filePath: string): FileEntryDescriptor[]` will return an array of `FileEntryDescriptor` objects that starts with the path prefix specified.
-- `getAbsolutePath(filePath: string): string` - Resolves a relative path to absolute using the configured `cwd`. Returns absolute paths unchanged.
-- `getAbsolutePathWithCwd(filePath: string, cwd: string): string` - Resolves a relative path to absolute using a custom working directory.
+- `getAbsolutePath(filePath: string): string` - Resolves a relative path to absolute using the configured `cwd`. Returns absolute paths unchanged. When `strictPaths` is enabled, throws an error if the path resolves outside `cwd`.
+- `getAbsolutePathWithCwd(filePath: string, cwd: string): string` - Resolves a relative path to absolute using a custom working directory. When `strictPaths` is enabled, throws an error if the path resolves outside the provided `cwd`.
 
 # Get File Descriptor
 
@@ -252,6 +255,106 @@ if (fileDescriptor.notFound) {
     console.error('File not found');
 }
 ```
+
+# Path Security and Traversal Prevention
+
+The `strictPaths` option provides security against path traversal attacks by restricting file access to within the configured `cwd` boundaries. This is especially important when processing untrusted input or when running in security-sensitive environments.
+
+## Basic Usage
+
+```javascript
+const cache = new FileEntryCache({
+    cwd: '/project/root',
+    strictPaths: true  // Enable path traversal protection
+});
+
+// This will work - file is within cwd
+const descriptor = cache.getFileDescriptor('./src/index.js');
+
+// This will throw an error - attempts to access parent directory
+try {
+    cache.getFileDescriptor('../../../etc/passwd');
+} catch (error) {
+    console.error(error); // Path traversal attempt blocked
+}
+```
+
+## Security Features
+
+When `strictPaths` is enabled:
+- **Path Traversal Prevention**: Blocks attempts to access files outside the working directory using `../` sequences
+- **Null Byte Protection**: Automatically removes null bytes from paths to prevent injection attacks
+- **Path Normalization**: Cleans and normalizes paths to prevent bypass attempts
+
+## Use Cases
+
+### Build Tools with Untrusted Input
+```javascript
+// Secure build tool configuration
+const cache = fileEntryCache.create(
+    '.buildcache',
+    './cache',
+    true,  // useCheckSum
+    process.cwd()
+);
+
+// Enable strict path checking for security
+cache.strictPaths = true;
+
+// Process user-provided file paths safely
+function processUserFile(userProvidedPath) {
+    try {
+        const descriptor = cache.getFileDescriptor(userProvidedPath);
+        // Safe to process - file is within boundaries
+        return descriptor;
+    } catch (error) {
+        if (error.message.includes('Path traversal attempt blocked')) {
+            console.warn('Security: Blocked access to:', userProvidedPath);
+            return null;
+        }
+        throw error;
+    }
+}
+```
+
+### CI/CD Environments
+```javascript
+// Strict security for CI/CD pipelines
+const cache = new FileEntryCache({
+    cwd: process.env.GITHUB_WORKSPACE || process.cwd(),
+    strictPaths: true,  // Prevent access outside workspace
+    useCheckSum: true   // Content-based validation
+});
+
+// All file operations are now restricted to the workspace
+cache.getFileDescriptor('./src/app.js');  // ✓ Allowed
+cache.getFileDescriptor('/etc/passwd');   // ✗ Blocked (absolute path outside cwd)
+cache.getFileDescriptor('../../../root'); // ✗ Blocked (path traversal)
+```
+
+### Dynamic Security Control
+```javascript
+const cache = new FileEntryCache({ cwd: '/safe/directory' });
+
+// Start with relaxed mode for trusted operations
+cache.strictPaths = false;
+processInternalFiles();
+
+// Enable strict mode for untrusted input
+cache.strictPaths = true;
+processUserUploadedPaths();
+
+// Return to relaxed mode if needed
+cache.strictPaths = false;
+```
+
+## Default Behavior
+
+By default, `strictPaths` is set to `false` to maintain backward compatibility. This allows:
+- Access to parent directories using `../`
+- Flexible file access patterns that existing code may depend on
+
+To enable security features, explicitly set `strictPaths: true` in your configuration.
 
 # Using Checksums to Determine if a File has Changed (useCheckSum)
 

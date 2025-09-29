@@ -17,6 +17,8 @@ export type FileEntryCacheOptions = {
 	hashAlgorithm?: string;
 	/** Current working directory for resolving relative paths (default: process.cwd()) */
 	cwd?: string;
+	/** Restrict file access to within cwd boundaries (default: false) */
+	strictPaths?: boolean;
 	/** Options for the underlying flat cache */
 	cache?: FlatCacheOptions;
 };
@@ -125,6 +127,7 @@ export class FileEntryCache {
 	private _useModifiedTime = true;
 	private _hashAlgorithm = "md5";
 	private _cwd: string = process.cwd();
+	private _strictPaths = false;
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -149,6 +152,10 @@ export class FileEntryCache {
 
 		if (options?.cwd) {
 			this._cwd = options.cwd;
+		}
+
+		if (options?.strictPaths) {
+			this._strictPaths = options.strictPaths;
 		}
 	}
 
@@ -230,6 +237,22 @@ export class FileEntryCache {
 	 */
 	public set cwd(value: string) {
 		this._cwd = value;
+	}
+
+	/**
+	 * Get whether to restrict paths to cwd boundaries
+	 * @returns {boolean} Whether strict path checking is enabled (default: false)
+	 */
+	public get strictPaths(): boolean {
+		return this._strictPaths;
+	}
+
+	/**
+	 * Set whether to restrict paths to cwd boundaries
+	 * @param {boolean} value - The value to set
+	 */
+	public set strictPaths(value: boolean) {
+		this._strictPaths = value;
 	}
 
 	/**
@@ -508,27 +531,73 @@ export class FileEntryCache {
 
 	/**
 	 * Get the Absolute Path. If it is already absolute it will return the path as is.
+	 * When strictPaths is enabled, ensures the resolved path stays within cwd boundaries.
 	 * @method getAbsolutePath
 	 * @param filePath - The file path to get the absolute path for
 	 * @returns {string}
+	 * @throws {Error} When strictPaths is true and path would resolve outside cwd
 	 */
 	public getAbsolutePath(filePath: string): string {
 		if (this.isRelativePath(filePath)) {
-			return path.resolve(this._cwd, filePath);
+			// Normalize the path to remove any null bytes
+			const sanitizedPath = filePath.replace(/\0/g, "");
+
+			// Resolve the path
+			const resolved = path.resolve(this._cwd, sanitizedPath);
+			const normalized = path.normalize(resolved);
+
+			// Check if strict path checking is enabled
+			if (this._strictPaths) {
+				const cwdNormalized = path.normalize(this._cwd);
+				// Ensure the resolved path starts with the cwd
+				if (
+					!normalized.startsWith(cwdNormalized + path.sep) &&
+					normalized !== cwdNormalized
+				) {
+					throw new Error(
+						`Path traversal attempt blocked: "${filePath}" resolves outside of working directory "${this._cwd}"`,
+					);
+				}
+			}
+
+			return normalized;
 		}
 		return filePath;
 	}
 
 	/**
 	 * Get the Absolute Path with a custom working directory. If it is already absolute it will return the path as is.
+	 * When strictPaths is enabled, ensures the resolved path stays within the provided cwd boundaries.
 	 * @method getAbsolutePathWithCwd
 	 * @param filePath - The file path to get the absolute path for
 	 * @param cwd - The custom working directory to resolve relative paths from
 	 * @returns {string}
+	 * @throws {Error} When strictPaths is true and path would resolve outside the provided cwd
 	 */
 	public getAbsolutePathWithCwd(filePath: string, cwd: string): string {
 		if (this.isRelativePath(filePath)) {
-			return path.resolve(cwd, filePath);
+			// Normalize the path to remove any null bytes
+			const sanitizedPath = filePath.replace(/\0/g, "");
+
+			// Resolve the path
+			const resolved = path.resolve(cwd, sanitizedPath);
+			const normalized = path.normalize(resolved);
+
+			// Check if strict path checking is enabled
+			if (this._strictPaths) {
+				const cwdNormalized = path.normalize(cwd);
+				// Ensure the resolved path starts with the provided cwd
+				if (
+					!normalized.startsWith(cwdNormalized + path.sep) &&
+					normalized !== cwdNormalized
+				) {
+					throw new Error(
+						`Path traversal attempt blocked: "${filePath}" resolves outside of working directory "${cwd}"`,
+					);
+				}
+			}
+
+			return normalized;
 		}
 		return filePath;
 	}
