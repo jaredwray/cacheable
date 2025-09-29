@@ -539,28 +539,32 @@ export class FileEntryCache {
 	 */
 	public getAbsolutePath(filePath: string): string {
 		if (this.isRelativePath(filePath)) {
-			// Normalize the path to remove any null bytes
+			// Sanitize the path to remove any null bytes
 			const sanitizedPath = filePath.replace(/\0/g, "");
 
-			// Resolve the path
+			// Resolve the path - this handles all .. and . sequences correctly
 			const resolved = path.resolve(this._cwd, sanitizedPath);
-			const normalized = path.normalize(resolved);
 
 			// Check if strict path checking is enabled
 			if (this._strictPaths) {
-				const cwdNormalized = path.normalize(this._cwd);
-				// Ensure the resolved path starts with the cwd
-				if (
-					!normalized.startsWith(cwdNormalized + path.sep) &&
-					normalized !== cwdNormalized
-				) {
+				// Normalize both paths for comparison to handle edge cases
+				const normalizedResolved = path.normalize(resolved);
+				const normalizedCwd = path.normalize(this._cwd);
+
+				// Check if the resolved path is within the cwd boundaries
+				// We need to handle both the case where it equals cwd and where it's a subdirectory
+				const isWithinCwd =
+					normalizedResolved === normalizedCwd ||
+					normalizedResolved.startsWith(normalizedCwd + path.sep);
+
+				if (!isWithinCwd) {
 					throw new Error(
 						`Path traversal attempt blocked: "${filePath}" resolves outside of working directory "${this._cwd}"`,
 					);
 				}
 			}
 
-			return normalized;
+			return resolved;
 		}
 		return filePath;
 	}
@@ -576,28 +580,32 @@ export class FileEntryCache {
 	 */
 	public getAbsolutePathWithCwd(filePath: string, cwd: string): string {
 		if (this.isRelativePath(filePath)) {
-			// Normalize the path to remove any null bytes
+			// Sanitize the path to remove any null bytes
 			const sanitizedPath = filePath.replace(/\0/g, "");
 
-			// Resolve the path
+			// Resolve the path - this handles all .. and . sequences correctly
 			const resolved = path.resolve(cwd, sanitizedPath);
-			const normalized = path.normalize(resolved);
 
 			// Check if strict path checking is enabled
 			if (this._strictPaths) {
-				const cwdNormalized = path.normalize(cwd);
-				// Ensure the resolved path starts with the provided cwd
-				if (
-					!normalized.startsWith(cwdNormalized + path.sep) &&
-					normalized !== cwdNormalized
-				) {
+				// Normalize both paths for comparison to handle edge cases
+				const normalizedResolved = path.normalize(resolved);
+				const normalizedCwd = path.normalize(cwd);
+
+				// Check if the resolved path is within the cwd boundaries
+				// We need to handle both the case where it equals cwd and where it's a subdirectory
+				const isWithinCwd =
+					normalizedResolved === normalizedCwd ||
+					normalizedResolved.startsWith(normalizedCwd + path.sep);
+
+				if (!isWithinCwd) {
 					throw new Error(
 						`Path traversal attempt blocked: "${filePath}" resolves outside of working directory "${cwd}"`,
 					);
 				}
 			}
 
-			return normalized;
+			return resolved;
 		}
 		return filePath;
 	}

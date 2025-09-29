@@ -230,4 +230,63 @@ describe("path sanitization with strictPaths", () => {
 			);
 		}
 	});
+
+	test("should block advanced path traversal attacks", () => {
+		const cache = new FileEntryCache({
+			cwd: safeDir,
+			strictPaths: true,
+		});
+
+		// Test various path traversal patterns that attackers might use
+		const attackVectors = [
+			"../sensitive.txt",
+			"../../etc/passwd",
+			"../../../root/.ssh/id_rsa",
+			"./../sensitive.txt",
+			"./../../sensitive.txt",
+			"subdir/../../../sensitive.txt",
+			"subdir/../../sensitive.txt",
+			"../subdir/../../sensitive.txt",
+		];
+
+		for (const vector of attackVectors) {
+			// Should throw error for all attack vectors
+			expect(
+				() => cache.getAbsolutePath(vector),
+				`Failed to block attack vector: ${vector}`,
+			).toThrowError(/Path traversal attempt blocked/);
+		}
+
+		// Verify legitimate paths still work
+		expect(() => cache.getAbsolutePath("./allowed.js")).not.toThrow();
+		expect(() => cache.getAbsolutePath("subdir/file.js")).not.toThrow();
+	});
+
+	test("should properly validate after path resolution", () => {
+		const cache = new FileEntryCache({
+			cwd: safeDir,
+			strictPaths: true,
+		});
+
+		// Create a subdirectory for testing
+		const subDir = path.join(safeDir, "subdir");
+		fs.mkdirSync(subDir, { recursive: true });
+
+		// This should be blocked even though it starts with a valid subdirectory
+		// because the final resolved path goes outside cwd
+		expect(() =>
+			cache.getAbsolutePath("subdir/../../sensitive.txt"),
+		).toThrowError(/Path traversal attempt blocked/);
+
+		// Verify the resolved path would actually be outside
+		const maliciousPath = "subdir/../../sensitive.txt";
+		const wouldResolve = path.resolve(safeDir, maliciousPath);
+		const expectedBlock = path.join(testBaseDir, "sensitive.txt");
+		expect(path.normalize(wouldResolve)).toBe(path.normalize(expectedBlock));
+
+		// And verify our check blocks it
+		expect(() => cache.getAbsolutePath(maliciousPath)).toThrowError(
+			/Path traversal attempt blocked/,
+		);
+	});
 });
