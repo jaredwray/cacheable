@@ -9,54 +9,94 @@ import {
 } from "flat-cache";
 
 export type FileEntryCacheOptions = {
+	/** Whether to use file modified time for change detection (default: true) */
 	useModifiedTime?: boolean;
+	/** Whether to use checksum for change detection (default: false) */
 	useCheckSum?: boolean;
+	/** Hash algorithm to use for checksum (default: 'md5') */
 	hashAlgorithm?: string;
+	/** Current working directory for resolving relative paths (default: process.cwd()) */
+	cwd?: string;
+	/** Restrict file access to within cwd boundaries (default: true) */
+	strictPaths?: boolean;
+	/** Options for the underlying flat cache */
 	cache?: FlatCacheOptions;
 };
 
 export type GetFileDescriptorOptions = {
+	/** Whether to use checksum for this specific file check (overrides instance setting) */
 	useCheckSum?: boolean;
+	/** Whether to use modified time for this specific file check (overrides instance setting) */
 	useModifiedTime?: boolean;
 };
 
 export type FileDescriptor = {
+	/** The cache key for this file (typically the file path) */
 	key: string;
+	/** Whether the file has changed since last cache check */
 	changed?: boolean;
+	/** Metadata about the file */
 	meta: FileDescriptorMeta;
+	/** Whether the file was not found */
 	notFound?: boolean;
+	/** Error encountered when accessing the file */
 	err?: Error;
 };
 
 export type FileDescriptorMeta = {
+	/** File size in bytes */
 	size?: number;
+	/** File modification time (timestamp in milliseconds) */
 	mtime?: number;
+	/** File content hash (when useCheckSum is enabled) */
 	hash?: string;
+	/** Custom data associated with the file (e.g., lint results, metadata) */
 	data?: unknown;
 };
 
 export type AnalyzedFiles = {
+	/** Array of file paths that have changed since last cache */
 	changedFiles: string[];
+	/** Array of file paths that were not found */
 	notFoundFiles: string[];
+	/** Array of file paths that have not changed since last cache */
 	notChangedFiles: string[];
 };
 
+/**
+ * Create a new FileEntryCache instance from a file path
+ * @param filePath - The path to the cache file
+ * @param useCheckSum - Whether to use checksum to detect file changes (default: false)
+ * @param cwd - The current working directory for resolving relative paths (default: process.cwd())
+ * @returns A new FileEntryCache instance
+ */
 export function createFromFile(
 	filePath: string,
 	useCheckSum?: boolean,
+	cwd?: string,
 ): FileEntryCache {
 	const fname = path.basename(filePath);
 	const directory = path.dirname(filePath);
-	return create(fname, directory, useCheckSum);
+	return create(fname, directory, useCheckSum, cwd);
 }
 
+/**
+ * Create a new FileEntryCache instance
+ * @param cacheId - The cache file name
+ * @param cacheDirectory - The directory to store the cache file (default: undefined, cache won't be persisted)
+ * @param useCheckSum - Whether to use checksum to detect file changes (default: false)
+ * @param cwd - The current working directory for resolving relative paths (default: process.cwd())
+ * @returns A new FileEntryCache instance
+ */
 export function create(
 	cacheId: string,
 	cacheDirectory?: string,
 	useCheckSum?: boolean,
+	cwd?: string,
 ): FileEntryCache {
 	const options: FileEntryCacheOptions = {
 		useCheckSum,
+		cwd,
 		cache: {
 			cacheId,
 			cacheDir: cacheDirectory,
@@ -86,10 +126,12 @@ export class FileEntryCache {
 	private _useCheckSum = false;
 	private _useModifiedTime = true;
 	private _hashAlgorithm = "md5";
+	private _cwd: string = process.cwd();
+	private _strictPaths = true;
 
 	/**
 	 * Create a new FileEntryCache instance
-	 * @param options - The options for the FileEntryCache
+	 * @param options - The options for the FileEntryCache (all properties are optional with defaults)
 	 */
 	constructor(options?: FileEntryCacheOptions) {
 		if (options?.cache) {
@@ -106,6 +148,14 @@ export class FileEntryCache {
 
 		if (options?.hashAlgorithm) {
 			this._hashAlgorithm = options.hashAlgorithm;
+		}
+
+		if (options?.cwd) {
+			this._cwd = options.cwd;
+		}
+
+		if (options?.strictPaths !== undefined) {
+			this._strictPaths = options.strictPaths;
 		}
 	}
 
@@ -127,7 +177,7 @@ export class FileEntryCache {
 
 	/**
 	 * Use the hash to check if the file has changed
-	 * @returns {boolean} if the hash is used to check if the file has changed
+	 * @returns {boolean} if the hash is used to check if the file has changed (default: false)
 	 */
 	public get useCheckSum(): boolean {
 		return this._useCheckSum;
@@ -143,7 +193,7 @@ export class FileEntryCache {
 
 	/**
 	 * Use the modified time to check if the file has changed
-	 * @returns {boolean} if the modified time is used to check if the file has changed
+	 * @returns {boolean} if the modified time is used to check if the file has changed (default: true)
 	 */
 	public get useModifiedTime(): boolean {
 		return this._useModifiedTime;
@@ -159,7 +209,7 @@ export class FileEntryCache {
 
 	/**
 	 * Get the hash algorithm
-	 * @returns {string} The hash algorithm
+	 * @returns {string} The hash algorithm (default: 'md5')
 	 */
 	public get hashAlgorithm(): string {
 		return this._hashAlgorithm;
@@ -171,6 +221,38 @@ export class FileEntryCache {
 	 */
 	public set hashAlgorithm(value: string) {
 		this._hashAlgorithm = value;
+	}
+
+	/**
+	 * Get the current working directory
+	 * @returns {string} The current working directory (default: process.cwd())
+	 */
+	public get cwd(): string {
+		return this._cwd;
+	}
+
+	/**
+	 * Set the current working directory
+	 * @param {string} value - The value to set
+	 */
+	public set cwd(value: string) {
+		this._cwd = value;
+	}
+
+	/**
+	 * Get whether to restrict paths to cwd boundaries
+	 * @returns {boolean} Whether strict path checking is enabled (default: true)
+	 */
+	public get strictPaths(): boolean {
+		return this._strictPaths;
+	}
+
+	/**
+	 * Set whether to restrict paths to cwd boundaries
+	 * @param {boolean} value - The value to set
+	 */
+	public set strictPaths(value: boolean) {
+		this._strictPaths = value;
 	}
 
 	/**
@@ -449,13 +531,81 @@ export class FileEntryCache {
 
 	/**
 	 * Get the Absolute Path. If it is already absolute it will return the path as is.
+	 * When strictPaths is enabled, ensures the resolved path stays within cwd boundaries.
 	 * @method getAbsolutePath
 	 * @param filePath - The file path to get the absolute path for
 	 * @returns {string}
+	 * @throws {Error} When strictPaths is true and path would resolve outside cwd
 	 */
 	public getAbsolutePath(filePath: string): string {
 		if (this.isRelativePath(filePath)) {
-			return path.resolve(process.cwd(), filePath);
+			// Sanitize the path to remove any null bytes
+			const sanitizedPath = filePath.replace(/\0/g, "");
+
+			// Resolve the path - this handles all .. and . sequences correctly
+			const resolved = path.resolve(this._cwd, sanitizedPath);
+
+			// Check if strict path checking is enabled
+			if (this._strictPaths) {
+				// Normalize both paths for comparison to handle edge cases
+				const normalizedResolved = path.normalize(resolved);
+				const normalizedCwd = path.normalize(this._cwd);
+
+				// Check if the resolved path is within the cwd boundaries
+				// We need to handle both the case where it equals cwd and where it's a subdirectory
+				const isWithinCwd =
+					normalizedResolved === normalizedCwd ||
+					normalizedResolved.startsWith(normalizedCwd + path.sep);
+
+				if (!isWithinCwd) {
+					throw new Error(
+						`Path traversal attempt blocked: "${filePath}" resolves outside of working directory "${this._cwd}"`,
+					);
+				}
+			}
+
+			return resolved;
+		}
+		return filePath;
+	}
+
+	/**
+	 * Get the Absolute Path with a custom working directory. If it is already absolute it will return the path as is.
+	 * When strictPaths is enabled, ensures the resolved path stays within the provided cwd boundaries.
+	 * @method getAbsolutePathWithCwd
+	 * @param filePath - The file path to get the absolute path for
+	 * @param cwd - The custom working directory to resolve relative paths from
+	 * @returns {string}
+	 * @throws {Error} When strictPaths is true and path would resolve outside the provided cwd
+	 */
+	public getAbsolutePathWithCwd(filePath: string, cwd: string): string {
+		if (this.isRelativePath(filePath)) {
+			// Sanitize the path to remove any null bytes
+			const sanitizedPath = filePath.replace(/\0/g, "");
+
+			// Resolve the path - this handles all .. and . sequences correctly
+			const resolved = path.resolve(cwd, sanitizedPath);
+
+			// Check if strict path checking is enabled
+			if (this._strictPaths) {
+				// Normalize both paths for comparison to handle edge cases
+				const normalizedResolved = path.normalize(resolved);
+				const normalizedCwd = path.normalize(cwd);
+
+				// Check if the resolved path is within the cwd boundaries
+				// We need to handle both the case where it equals cwd and where it's a subdirectory
+				const isWithinCwd =
+					normalizedResolved === normalizedCwd ||
+					normalizedResolved.startsWith(normalizedCwd + path.sep);
+
+				if (!isWithinCwd) {
+					throw new Error(
+						`Path traversal attempt blocked: "${filePath}" resolves outside of working directory "${cwd}"`,
+					);
+				}
+			}
+
+			return resolved;
 		}
 		return filePath;
 	}
