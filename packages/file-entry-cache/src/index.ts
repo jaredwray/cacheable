@@ -24,10 +24,8 @@ export type FileEntryCacheOptions = {
 };
 
 export type GetFileDescriptorOptions = {
-	/** Whether to use checksum for this specific file check (overrides instance setting) */
+	/** Whether to use checksum for this specific file check instead of modified time (mtime) (overrides instance setting) */
 	useCheckSum?: boolean;
-	/** Whether to use modified time for this specific file check (overrides instance setting) */
-	useModifiedTime?: boolean;
 };
 
 export type FileDescriptor = {
@@ -124,7 +122,6 @@ export default class FileEntryDefault {
 export class FileEntryCache {
 	private _cache: FlatCache = new FlatCache({ useClone: false });
 	private _useCheckSum = false;
-	private _useModifiedTime = true;
 	private _hashAlgorithm = "md5";
 	private _cwd: string = process.cwd();
 	private _strictPaths = true;
@@ -136,10 +133,6 @@ export class FileEntryCache {
 	constructor(options?: FileEntryCacheOptions) {
 		if (options?.cache) {
 			this._cache = new FlatCache(options.cache);
-		}
-
-		if (options?.useModifiedTime) {
-			this._useModifiedTime = options.useModifiedTime;
 		}
 
 		if (options?.useCheckSum) {
@@ -189,22 +182,6 @@ export class FileEntryCache {
 	 */
 	public set useCheckSum(value: boolean) {
 		this._useCheckSum = value;
-	}
-
-	/**
-	 * Use the modified time to check if the file has changed
-	 * @returns {boolean} if the modified time is used to check if the file has changed (default: true)
-	 */
-	public get useModifiedTime(): boolean {
-		return this._useModifiedTime;
-	}
-
-	/**
-	 * Set the useModifiedTime value
-	 * @param {boolean} value - The value to set
-	 */
-	public set useModifiedTime(value: boolean) {
-		this._useModifiedTime = value;
 	}
 
 	/**
@@ -371,8 +348,6 @@ export class FileEntryCache {
 		const absolutePath = this.getAbsolutePath(filePath);
 
 		const useCheckSumValue = options?.useCheckSum ?? this._useCheckSum;
-		const useModifiedTimeValue =
-			options?.useModifiedTime ?? this._useModifiedTime;
 
 		try {
 			fstat = fs.statSync(absolutePath);
@@ -419,7 +394,7 @@ export class FileEntryCache {
 
 		// If the file is in the cache, check if the file has changed
 		/* c8 ignore next 3 */
-		if (useModifiedTimeValue && metaCache?.mtime !== result.meta?.mtime) {
+		if (useCheckSumValue === false && metaCache?.mtime !== result.meta?.mtime) {
 			result.changed = true;
 		}
 
