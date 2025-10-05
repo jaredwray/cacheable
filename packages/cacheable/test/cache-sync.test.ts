@@ -727,4 +727,239 @@ describe("CacheSync", () => {
 			expect(await cacheable2.get("a")).toBeUndefined();
 		});
 	});
+
+	describe("error handling", () => {
+		test("should emit ERROR event when subscribe fails during construction", async () => {
+			const errorSpy = vi.fn();
+
+			// Create a qified instance and spy on subscribe to make it reject
+			const testQified = new Qified({
+				messageProviders: [sharedProvider],
+			});
+
+			const subscribeError = new Error("Subscribe failed");
+			vi.spyOn(testQified, "subscribe").mockRejectedValueOnce(subscribeError);
+
+			sync1 = new CacheSync({
+				cacheable: cacheable1,
+				qified: testQified,
+				enableSubscribe: true,
+			});
+
+			sync1.on(CacheSyncEvents.ERROR, errorSpy);
+
+			// Wait for async subscribe to fail
+			await sleep(50);
+
+			expect(errorSpy).toHaveBeenCalledWith(subscribeError);
+		});
+
+		test("should emit ERROR event when publish fails", async () => {
+			const errorSpy = vi.fn();
+
+			// Create sync instance
+			sync1 = new CacheSync({
+				cacheable: cacheable1,
+				qified: sharedQified,
+				enableSubscribe: false,
+			});
+
+			sync1.on(CacheSyncEvents.ERROR, errorSpy);
+
+			// Spy on qified.publish to make it reject
+			const publishError = new Error("Publish failed");
+			vi.spyOn(sync1.qified, "publish").mockRejectedValueOnce(publishError);
+
+			// This should trigger the publish error
+			await sync1.syncSet("key", "value");
+
+			await sleep(50);
+
+			expect(errorSpy).toHaveBeenCalledWith(publishError);
+		});
+
+		test("should emit ERROR event when apply fails", async () => {
+			const spy = vi.fn();
+
+			// Create a cacheable that throws on set
+			const brokenCacheable = {
+				cacheId: "broken",
+				async set() {
+					throw new Error("Set failed");
+				},
+				async setMany() {},
+				async delete() {},
+				async deleteMany() {},
+				async clear() {},
+			};
+
+			sync1 = new CacheSync({
+				cacheable: cacheable1,
+				qified: sharedQified,
+				instanceId: "instance1",
+				topic: "error-topic",
+			});
+
+			sync2 = new CacheSync({
+				// biome-ignore lint/suspicious/noExplicitAny: broken cacheable
+				cacheable: brokenCacheable as any,
+				qified: sharedQified,
+				instanceId: "instance2",
+				topic: "error-topic",
+			});
+
+			sync2.on(CacheSyncEvents.ERROR, spy);
+
+			await sleep(50);
+
+			await sync1.syncSet("key", "value");
+
+			await sleep(50);
+
+			expect(spy).toHaveBeenCalled();
+		});
+	});
+
+	describe("disabled operations coverage", () => {
+		test("should not sync setMany when not in syncOperations", async () => {
+			sync1 = new CacheSync({
+				cacheable: cacheable1,
+				qified: sharedQified,
+				instanceId: "instance1",
+				topic: "disabled-ops-topic",
+				syncOperations: ["set"], // Only allow set
+			});
+
+			sync2 = new CacheSync({
+				cacheable: cacheable2,
+				qified: sharedQified,
+				instanceId: "instance2",
+				topic: "disabled-ops-topic",
+			});
+
+			await sleep(50);
+
+			const items = [
+				{ key: "key1", value: "value1" },
+				{ key: "key2", value: "value2" },
+			];
+
+			await sync1.syncSetMany(items);
+
+			await sleep(50);
+
+			// Should not have synced
+			const value1 = await cacheable2.get("key1");
+			const value2 = await cacheable2.get("key2");
+
+			expect(value1).toBeUndefined();
+			expect(value2).toBeUndefined();
+		});
+
+		test("should not sync deleteMany when not in syncOperations", async () => {
+			sync1 = new CacheSync({
+				cacheable: cacheable1,
+				qified: sharedQified,
+				instanceId: "instance1",
+				topic: "disabled-deletemany-topic",
+				syncOperations: ["set"], // Only allow set
+			});
+
+			sync2 = new CacheSync({
+				cacheable: cacheable2,
+				qified: sharedQified,
+				instanceId: "instance2",
+				topic: "disabled-deletemany-topic",
+			});
+
+			await sleep(50);
+
+			// Set up some values
+			await cacheable1.set("key1", "value1");
+			await cacheable2.set("key1", "value1");
+			await cacheable1.set("key2", "value2");
+			await cacheable2.set("key2", "value2");
+
+			await sync1.syncDeleteMany(["key1", "key2"]);
+
+			await sleep(50);
+
+			// Should still exist
+			const value1 = await cacheable2.get("key1");
+			const value2 = await cacheable2.get("key2");
+
+			expect(value1).toBe("value1");
+			expect(value2).toBe("value2");
+		});
+
+		test("should not sync clear when not in syncOperations", async () => {
+			sync1 = new CacheSync({
+				cacheable: cacheable1,
+				qified: sharedQified,
+				instanceId: "instance1",
+				topic: "disabled-clear-topic",
+				syncOperations: ["set"], // Only allow set
+			});
+
+			sync2 = new CacheSync({
+				cacheable: cacheable2,
+				qified: sharedQified,
+				instanceId: "instance2",
+				topic: "disabled-clear-topic",
+			});
+
+			await sleep(50);
+
+			// Set up some values
+			await cacheable2.set("key1", "value1");
+
+			await sync1.syncClear();
+
+			await sleep(50);
+
+			// Should still exist
+			const value1 = await cacheable2.get("key1");
+
+			expect(value1).toBe("value1");
+		});
+
+		test("should not apply operations when disabled via syncOperations on receiver", async () => {
+			sync1 = new CacheSync({
+				cacheable: cacheable1,
+				qified: sharedQified,
+				instanceId: "instance1",
+				topic: "receiver-filter-topic",
+			});
+
+			sync2 = new CacheSync({
+				cacheable: cacheable2,
+				qified: sharedQified,
+				instanceId: "instance2",
+				topic: "receiver-filter-topic",
+				syncOperations: ["delete"], // Only apply delete operations
+			});
+
+			await sleep(50);
+
+			// Try to sync a set operation
+			await sync1.syncSet("key1", "value1");
+
+			await sleep(50);
+
+			// Should not have been applied
+			const value1 = await cacheable2.get("key1");
+			expect(value1).toBeUndefined();
+
+			// Now test delete which should work
+			await cacheable1.set("key2", "value2");
+			await cacheable2.set("key2", "value2");
+
+			await sync1.syncDelete("key2");
+
+			await sleep(50);
+
+			const value2 = await cacheable2.get("key2");
+			expect(value2).toBeUndefined();
+		});
+	});
 });
