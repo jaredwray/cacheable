@@ -25,6 +25,7 @@ import {
 	type StoredDataRaw,
 } from "keyv";
 import { CacheableEvents, CacheableHooks } from "./enums.js";
+import { CacheableSync, CacheableSyncEvents } from "./sync.js";
 import type { CacheableOptions, GetOptions } from "./types.js";
 
 export class Cacheable extends Hookified {
@@ -35,6 +36,7 @@ export class Cacheable extends Hookified {
 	private readonly _stats = new CacheableStats({ enabled: false });
 	private _namespace?: string | (() => string);
 	private _cacheId: string = Math.random().toString(36).slice(2);
+	private _sync?: CacheableSync;
 	/**
 	 * Creates a new cacheable instance
 	 * @param {CacheableOptions} [options] The options for the cacheable instance
@@ -72,6 +74,16 @@ export class Cacheable extends Hookified {
 			if (this._secondary) {
 				this._secondary.namespace = this.getNameSpace();
 			}
+		}
+
+		if (options?.sync) {
+			this._sync =
+				options.sync instanceof CacheableSync
+					? options.sync
+					: new CacheableSync(options.sync);
+
+			// Subscribe to sync events to update local cache
+			this._sync.subscribe(this._primary, this._cacheId);
 		}
 	}
 
@@ -220,6 +232,27 @@ export class Cacheable extends Hookified {
 	 */
 	public set cacheId(cacheId: string) {
 		this._cacheId = cacheId;
+	}
+
+	/**
+	 * Gets the sync instance for the cacheable instance
+	 * @returns {CacheableSync | undefined} The sync instance for the cacheable instance
+	 */
+	public get sync(): CacheableSync | undefined {
+		return this._sync;
+	}
+
+	/**
+	 * Sets the sync instance for the cacheable instance
+	 * @param {CacheableSync | undefined} sync The sync instance for the cacheable instance
+	 */
+	public set sync(sync: CacheableSync | undefined) {
+		this._sync = sync;
+
+		if (this._sync) {
+			// Subscribe to sync events to update local cache
+			this._sync.subscribe(this._primary, this._cacheId);
+		}
 	}
 
 	/**
@@ -526,6 +559,16 @@ export class Cacheable extends Hookified {
 			}
 
 			await this.hook(CacheableHooks.AFTER_SET, item);
+
+			// Publish to sync if enabled
+			if (this._sync && result) {
+				await this._sync.publish(CacheableSyncEvents.SET, {
+					cacheId: this._cacheId,
+					key: item.key,
+					value: item.value,
+					ttl: item.ttl,
+				});
+			}
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
@@ -563,6 +606,18 @@ export class Cacheable extends Hookified {
 			}
 
 			await this.hook(CacheableHooks.AFTER_SET_MANY, items);
+
+			// Publish to sync if enabled
+			if (this._sync && result) {
+				for (const item of items) {
+					await this._sync.publish(CacheableSyncEvents.SET, {
+						cacheId: this._cacheId,
+						key: item.key,
+						value: item.value,
+						ttl: shorthandToMilliseconds(item.ttl),
+					});
+				}
+			}
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
@@ -686,6 +741,14 @@ export class Cacheable extends Hookified {
 			result = resultAll[0];
 		}
 
+		// Publish to sync if enabled
+		if (this._sync && result) {
+			await this._sync.publish(CacheableSyncEvents.DELETE, {
+				cacheId: this._cacheId,
+				key,
+			});
+		}
+
 		return result;
 	}
 
@@ -714,6 +777,16 @@ export class Cacheable extends Hookified {
 				});
 			} else {
 				await this._secondary.deleteMany(keys);
+			}
+		}
+
+		// Publish to sync if enabled
+		if (this._sync && result) {
+			for (const key of keys) {
+				await this._sync.publish(CacheableSyncEvents.DELETE, {
+					cacheId: this._cacheId,
+					key,
+				});
 			}
 		}
 
@@ -1151,4 +1224,10 @@ export {
 } from "@cacheable/utils";
 export { Keyv, KeyvHooks, type KeyvOptions, type KeyvStoreAdapter } from "keyv";
 export { CacheableEvents, CacheableHooks } from "./enums.js";
+export {
+	CacheableSync,
+	CacheableSyncEvents,
+	type CacheableSyncItem,
+	type CacheableSyncOptions,
+} from "./sync.js";
 export { CacheableOptions } from "./types.js";
