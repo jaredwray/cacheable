@@ -2,6 +2,11 @@ import { Keyv } from "keyv";
 
 // biome-ignore lint/suspicious/noExplicitAny: type format
 export function isKeyvInstance(keyv: any): boolean {
+	// Check if keyv is null or undefined
+	if (keyv === null || keyv === undefined) {
+		return false;
+	}
+
 	// Check if the object is an instance of Keyv
 	if (keyv instanceof Keyv) {
 		return true;
