@@ -82,13 +82,13 @@ describe("CacheableSync", () => {
 			const sync = new CacheableSync({ qified: provider });
 
 			let receivedMessage: Message | undefined;
-			await sync.qified.subscribe(CacheableSyncEvents.set, {
+			await sync.qified.subscribe(CacheableSyncEvents.SET, {
 				handler: async (message) => {
 					receivedMessage = message;
 				},
 			});
 
-			await sync.publish(CacheableSyncEvents.set, {
+			await sync.publish(CacheableSyncEvents.SET, {
 				cacheId: "cache1",
 				key: "testKey",
 				value: "testValue",
@@ -108,13 +108,13 @@ describe("CacheableSync", () => {
 			const sync = new CacheableSync({ qified: provider });
 
 			let receivedMessage: Message | undefined;
-			await sync.qified.subscribe(CacheableSyncEvents.delete, {
+			await sync.qified.subscribe(CacheableSyncEvents.DELETE, {
 				handler: async (message) => {
 					receivedMessage = message;
 				},
 			});
 
-			await sync.publish(CacheableSyncEvents.delete, {
+			await sync.publish(CacheableSyncEvents.DELETE, {
 				cacheId: "cache1",
 				key: "testKey",
 			});

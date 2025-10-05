@@ -1,4 +1,5 @@
 import type { Keyv, KeyvStoreAdapter } from "keyv";
+import type { CacheableSync, CacheableSyncOptions } from "./sync.js";
 
 export enum CacheableHooks {
 	BEFORE_SET = "BEFORE_SET",
@@ -51,6 +52,10 @@ export type CacheableOptions = {
 	 * If it is not set then it will be a random string that is generated
 	 */
 	cacheId?: string;
+	/**
+	 * The sync instance for the cacheable instance to enable synchronization across cache instances
+	 */
+	sync?: CacheableSync | CacheableSyncOptions;
 };
 
 export type GetOptions = {

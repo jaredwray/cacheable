@@ -25,7 +25,7 @@ import {
 	type StoredDataRaw,
 } from "keyv";
 import { CacheableEvents, CacheableHooks } from "./enums.js";
-import type { CacheableSync } from "./sync.js";
+import { CacheableSync } from "./sync.js";
 import type { CacheableOptions, GetOptions } from "./types.js";
 
 export class Cacheable extends Hookified {
@@ -74,6 +74,13 @@ export class Cacheable extends Hookified {
 			if (this._secondary) {
 				this._secondary.namespace = this.getNameSpace();
 			}
+		}
+
+		if (options?.sync) {
+			this._sync =
+				options.sync instanceof CacheableSync
+					? options.sync
+					: new CacheableSync(options.sync);
 		}
 	}
 
