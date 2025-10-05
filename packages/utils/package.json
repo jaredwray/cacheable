@@ -52,5 +52,8 @@
 	"files": [
 		"dist",
 		"LICENSE"
-	]
+	],
+	"dependencies": {
+		"keyv": "^5.5.3"
+	}
 }
