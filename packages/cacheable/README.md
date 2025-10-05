@@ -365,15 +365,11 @@ const cache = new Cacheable({secondary, nonBlocking: true});
 
 ## How It Works
 
-CacheSync uses message providers from Qified to broadcast cache operations (SET and DELETE) to all connected cache instances. Each instance subscribes to these events and automatically updates its local storage when receiving updates from other instances.
+`CacheableSync` uses message providers from Qified to broadcast cache operations (SET and DELETE) to all connected cache instances. Each instance subscribes to these events and automatically updates its `primary` (example: in-memory) storage when receiving updates from other instances.
 
 ## Supported Message Providers
 
-CacheSync supports all Qified message providers including:
-
-* **Redis** - `@qified/redis` - Redis Pub/Sub
-* **RabbitMQ** - `@qified/rabbitmq` - RabbitMQ message broker
-* **NATS** - `@qified/nats` - NATS messaging system
+`Qified` supports multiple providers and you can learn more by going to https://qified.org.
 
 ## Basic Usage
 
@@ -397,6 +393,8 @@ const cache2 = new Cacheable({
 
 // Set a value in cache1
 await cache1.set('key', 'value');
+
+// Note: you might want to sleep for a bit based on the backend.
 
 // The value is automatically synced to cache2
 const value = await cache2.get('key'); // Returns 'value'
@@ -444,46 +442,25 @@ const cache = new Cacheable({
 });
 ```
 
-## Programmatically Setting Sync
-
-You can also set the sync property after creating a cache instance:
-
-```javascript
-import { Cacheable, CacheableSync } from 'cacheable';
-import { RedisMessageProvider } from '@qified/redis';
-
-const cache = new Cacheable();
-
-const provider = new RedisMessageProvider({
-  connection: { host: 'localhost', port: 6379 }
-});
-
-const sync = new CacheableSync({ qified: provider });
-cache.sync = sync;
-```
-
 ## How Sync Works
 
-When sync is enabled:
-
 1. **SET Operations**: When you call `cache.set()` or `cache.setMany()`, the cache:
-   - Updates the local primary storage
+   - Updates the local primary storage and secondary storage
    - Publishes a `cache:set` event with the key, value, ttl, and cacheId
-   - Other cache instances receive the event and update their local storage (excluding the originating instance)
+   - Other cache instances receive the event and update their `primary` storage (excluding the originating instance)
 
 2. **DELETE Operations**: When you call `cache.delete()` or `cache.deleteMany()`, the cache:
-   - Removes the key from local primary storage
+   - Removes the key from primary and secondary storage
    - Publishes a `cache:delete` event with the key and cacheId
    - Other cache instances receive the event and remove the key from their storage
 
-3. **Instance Filtering**: Each cache instance has a unique `cacheId`. Events are only applied if they come from a different instance, preventing infinite loops.
-
 ## Important Notes
 
-* Cache sync only works with the **primary storage layer**. Secondary storage is not synchronized.
-* Each cache instance should have a unique `cacheId` to properly filter sync events.
+* Cache sync only works with the **primary storage layer**. Secondary storage is usually handled by the instance doing the initial work.
+* Each cache instance should have a unique `cacheId` to properly filter sync events. This is setup by default but you can set it if you want.
 * Sync events are **eventually consistent** - there may be a small delay between when a value is set and when it appears in other instances.
-* The sync feature requires a message provider to be running and accessible by all cache instances. 
+* The sync feature requires a message provider to be running and accessible by all cache instances.
+* Each cache instance has a unique `cacheId`. Events are only applied if they come from a different instance, preventing infinite loops.
 
 # Cacheable Options
 
