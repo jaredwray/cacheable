@@ -6,7 +6,8 @@ import { type MessageProvider, Qified } from "qified";
  */
 export enum CacheableSyncEvents {
 	error = "error",
-	cacheAdd = "cache:add",
+	set = "cache:set",
+	delete = "cache:delete",
 }
 
 /**

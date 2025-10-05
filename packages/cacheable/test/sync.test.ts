@@ -77,18 +77,18 @@ describe("CacheableSync", () => {
 	});
 
 	describe("publish", () => {
-		test("should publish cache add event", async () => {
+		test("should publish cache set event", async () => {
 			const provider = new MemoryMessageProvider({ id: "test" });
 			const sync = new CacheableSync({ qified: provider });
 
 			let receivedMessage: Message | undefined;
-			await sync.qified.subscribe("cache:add", {
+			await sync.qified.subscribe(CacheableSyncEvents.set, {
 				handler: async (message) => {
 					receivedMessage = message;
 				},
 			});
 
-			await sync.publish(CacheableSyncEvents.cacheAdd, {
+			await sync.publish(CacheableSyncEvents.set, {
 				cacheId: "cache1",
 				key: "testKey",
 				value: "testValue",
@@ -100,6 +100,28 @@ describe("CacheableSync", () => {
 			expect(receivedMessage?.data.key).toBe("testKey");
 			expect(receivedMessage?.data.value).toBe("testValue");
 			expect(receivedMessage?.data.ttl).toBe(1000);
+			expect(receivedMessage?.id).toBeDefined();
+		});
+
+		test("should publish cache delete event", async () => {
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const sync = new CacheableSync({ qified: provider });
+
+			let receivedMessage: Message | undefined;
+			await sync.qified.subscribe(CacheableSyncEvents.delete, {
+				handler: async (message) => {
+					receivedMessage = message;
+				},
+			});
+
+			await sync.publish(CacheableSyncEvents.delete, {
+				cacheId: "cache1",
+				key: "testKey",
+			});
+
+			expect(receivedMessage).toBeDefined();
+			expect(receivedMessage?.data.cacheId).toBe("cache1");
+			expect(receivedMessage?.data.key).toBe("testKey");
 			expect(receivedMessage?.id).toBeDefined();
 		});
 	});
