@@ -8,7 +8,7 @@
 [![npm](https://img.shields.io/npm/v/cacheable)](https://www.npmjs.com/package/cacheable)
 [![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
 
-`cacheable` is a high performance layer 1 / layer 2 caching engine that is focused on distributed caching with enterprise features such as `CacheSync` (coming soon). It is built on top of the robust storage engine [Keyv](https://keyv.org) and provides a simple API to cache and retrieve data.
+`cacheable` is a high performance layer 1 / layer 2 caching engine that is focused on distributed caching with enterprise features such as `CacheSync`. It is built on top of the robust storage engine [Keyv](https://keyv.org) and provides a simple API to cache and retrieve data.
 
 * Simple to use with robust API
 * Not bloated with additional modules
@@ -19,7 +19,7 @@
 * Hooks and Events to extend functionality
 * Shorthand for ttl in milliseconds `(1m = 60000) (1h = 3600000) (1d = 86400000)`
 * Non-blocking operations for layer 2 caching
-* Distributed Caching Sync via Pub/Sub (coming soon)
+* **Distributed Caching Sync via Pub/Sub with CacheSync**
 * Comprehensive testing and code coverage
 * ESM and CommonJS support with Typescript
 * Maintained and supported regularly
@@ -361,15 +361,129 @@ const cache = new Cacheable({secondary, nonBlocking: true});
 
 # CacheSync - Distributed Updates
 
-`cacheable` has a feature called `CacheSync` that is coming soon. This feature will allow you to have distributed caching with Pub/Sub. This will allow you to have multiple instances of `cacheable` running and when a value is set, deleted, or cleared it will update all instances of `cacheable` with the same value. Current plan is to support the following:
+`cacheable` includes `CacheSync`, a feature that enables distributed cache synchronization across multiple instances using Pub/Sub messaging via [Qified](https://github.com/jaredwray/qified). When a value is set or deleted in one cache instance, all other connected instances automatically receive and apply the update.
 
-* [AWS SQS](https://aws.amazon.com/sqs)
-* [RabbitMQ](https://www.rabbitmq.com)
-* [Nats](https://nats.io)
-* [Azure Service Bus](https://azure.microsoft.com/en-us/services/service-bus)
-* [Redis Pub/Sub](https://redis.io/topics/pubsub)
+## How It Works
 
-This feature should be live by end of year. 
+CacheSync uses message providers from Qified to broadcast cache operations (SET and DELETE) to all connected cache instances. Each instance subscribes to these events and automatically updates its local storage when receiving updates from other instances.
+
+## Supported Message Providers
+
+CacheSync supports all Qified message providers including:
+
+* **Redis** - `@qified/redis` - Redis Pub/Sub
+* **RabbitMQ** - `@qified/rabbitmq` - RabbitMQ message broker
+* **NATS** - `@qified/nats` - NATS messaging system
+
+## Basic Usage
+
+```javascript
+import { Cacheable } from 'cacheable';
+import { RedisMessageProvider } from '@qified/redis';
+
+// Create a Redis message provider
+const provider = new RedisMessageProvider({
+  connection: { host: 'localhost', port: 6379 }
+});
+
+// Create cache instances with sync enabled
+const cache1 = new Cacheable({
+  sync: { qified: provider }
+});
+
+const cache2 = new Cacheable({
+  sync: { qified: provider }
+});
+
+// Set a value in cache1
+await cache1.set('key', 'value');
+
+// The value is automatically synced to cache2
+const value = await cache2.get('key'); // Returns 'value'
+```
+
+## Using Multiple Message Providers
+
+You can use multiple message providers for redundancy:
+
+```javascript
+import { Cacheable } from 'cacheable';
+import { RedisMessageProvider } from '@qified/redis';
+import { NatsMessageProvider } from '@qified/nats';
+
+const redisProvider = new RedisMessageProvider({
+  connection: { host: 'localhost', port: 6379 }
+});
+
+const natsProvider = new NatsMessageProvider({
+  servers: ['nats://localhost:4222']
+});
+
+const cache = new Cacheable({
+  sync: { qified: [redisProvider, natsProvider] }
+});
+```
+
+## Using an Existing Qified Instance
+
+You can also pass a pre-configured Qified instance:
+
+```javascript
+import { Cacheable } from 'cacheable';
+import { Qified } from 'qified';
+import { RedisMessageProvider } from '@qified/redis';
+
+const provider = new RedisMessageProvider({
+  connection: { host: 'localhost', port: 6379 }
+});
+
+const qified = new Qified({ messageProviders: [provider] });
+
+const cache = new Cacheable({
+  sync: { qified }
+});
+```
+
+## Programmatically Setting Sync
+
+You can also set the sync property after creating a cache instance:
+
+```javascript
+import { Cacheable, CacheableSync } from 'cacheable';
+import { RedisMessageProvider } from '@qified/redis';
+
+const cache = new Cacheable();
+
+const provider = new RedisMessageProvider({
+  connection: { host: 'localhost', port: 6379 }
+});
+
+const sync = new CacheableSync({ qified: provider });
+cache.sync = sync;
+```
+
+## How Sync Works
+
+When sync is enabled:
+
+1. **SET Operations**: When you call `cache.set()` or `cache.setMany()`, the cache:
+   - Updates the local primary storage
+   - Publishes a `cache:set` event with the key, value, ttl, and cacheId
+   - Other cache instances receive the event and update their local storage (excluding the originating instance)
+
+2. **DELETE Operations**: When you call `cache.delete()` or `cache.deleteMany()`, the cache:
+   - Removes the key from local primary storage
+   - Publishes a `cache:delete` event with the key and cacheId
+   - Other cache instances receive the event and remove the key from their storage
+
+3. **Instance Filtering**: Each cache instance has a unique `cacheId`. Events are only applied if they come from a different instance, preventing infinite loops.
+
+## Important Notes
+
+* Cache sync only works with the **primary storage layer**. Secondary storage is not synchronized.
+* Each cache instance should have a unique `cacheId` to properly filter sync events.
+* Sync events are **eventually consistent** - there may be a small delay between when a value is set and when it appears in other instances.
+* The sync feature requires a message provider to be running and accessible by all cache instances. 
 
 # Cacheable Options
 
@@ -381,6 +495,10 @@ The following options are available for you to configure `cacheable`:
 * `stats`: To enable statistics for this instance. Default is `false`.
 * `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
 * `namespace`: The namespace for the cache. Default is `undefined`.
+* `cacheId`: A unique identifier for this cache instance. Used for sync filtering. Default is a random string.
+* `sync`: Enable distributed cache synchronization. Can be:
+  - `CacheableSync` instance
+  - `CacheableSyncOptions` object with `{ qified: MessageProvider | MessageProvider[] | Qified }`
 
 # Cacheable Statistics (Instance Only)
 
