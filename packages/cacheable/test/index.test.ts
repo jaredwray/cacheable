@@ -101,6 +101,21 @@ describe("cacheable options and properties", async () => {
 		cacheable.cacheId = "test2";
 		expect(cacheable.cacheId).toEqual("test2");
 	});
+
+	test("should be able to get and set the sync property", async () => {
+		const cacheable = new Cacheable();
+		expect(cacheable.sync).toBeUndefined();
+	});
+
+	test("should be able to set the sync property", async () => {
+		const cacheable = new Cacheable();
+		const { CacheableSync } = await import("../src/sync.js");
+		const { MemoryMessageProvider } = await import("qified");
+		const provider = new MemoryMessageProvider();
+		const sync = new CacheableSync({ qified: provider });
+		cacheable.sync = sync;
+		expect(cacheable.sync).toBe(sync);
+	});
 });
 
 describe("cacheable stats", async () => {

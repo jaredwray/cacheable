@@ -25,6 +25,7 @@ import {
 	type StoredDataRaw,
 } from "keyv";
 import { CacheableEvents, CacheableHooks } from "./enums.js";
+import type { CacheableSync } from "./sync.js";
 import type { CacheableOptions, GetOptions } from "./types.js";
 
 export class Cacheable extends Hookified {
@@ -35,6 +36,7 @@ export class Cacheable extends Hookified {
 	private readonly _stats = new CacheableStats({ enabled: false });
 	private _namespace?: string | (() => string);
 	private _cacheId: string = Math.random().toString(36).slice(2);
+	private _sync?: CacheableSync;
 	/**
 	 * Creates a new cacheable instance
 	 * @param {CacheableOptions} [options] The options for the cacheable instance
@@ -220,6 +222,22 @@ export class Cacheable extends Hookified {
 	 */
 	public set cacheId(cacheId: string) {
 		this._cacheId = cacheId;
+	}
+
+	/**
+	 * Gets the sync instance for the cacheable instance
+	 * @returns {CacheableSync | undefined} The sync instance for the cacheable instance
+	 */
+	public get sync(): CacheableSync | undefined {
+		return this._sync;
+	}
+
+	/**
+	 * Sets the sync instance for the cacheable instance
+	 * @param {CacheableSync | undefined} sync The sync instance for the cacheable instance
+	 */
+	public set sync(sync: CacheableSync | undefined) {
+		this._sync = sync;
 	}
 
 	/**
@@ -1151,4 +1169,10 @@ export {
 } from "@cacheable/utils";
 export { Keyv, KeyvHooks, type KeyvOptions, type KeyvStoreAdapter } from "keyv";
 export { CacheableEvents, CacheableHooks } from "./enums.js";
+export {
+	CacheableSync,
+	CacheableSyncEvents,
+	type CacheableSyncItem,
+	type CacheableSyncOptions,
+} from "./sync.js";
 export { CacheableOptions } from "./types.js";
