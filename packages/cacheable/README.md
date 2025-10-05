@@ -34,7 +34,7 @@
 * [Shorthand for Time to Live (ttl)](#shorthand-for-time-to-live-ttl)
 * [Non-Blocking Operations](#non-blocking-operations)
 * [Non-Blocking with @keyv/redis](#non-blocking-with-keyvredis)
-* [CacheSync - Distributed Updates](#cachesync---distributed-updates)
+* [CacheableSync - Distributed Updates](#cacheablesync---distributed-updates)
 * [Cacheable Options](#cacheable-options)
 * [Cacheable Statistics (Instance Only)](#cacheable-statistics-instance-only)
 * [Cacheable - API](#cacheable---api)
@@ -359,9 +359,9 @@ const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
 const cache = new Cacheable({secondary, nonBlocking: true});
 ```
 
-# CacheSync - Distributed Updates
+# CacheableSync - Distributed Updates
 
-`cacheable` includes `CacheSync`, a feature that enables distributed cache synchronization across multiple instances using Pub/Sub messaging via [Qified](https://github.com/jaredwray/qified). When a value is set or deleted in one cache instance, all other connected instances automatically receive and apply the update.
+`cacheable` includes `CacheableSync`, a feature that enables distributed cache synchronization across multiple instances using Pub/Sub messaging via [Qified](https://github.com/jaredwray/qified). When a value is set or deleted in one cache instance, all other connected instances automatically receive and apply the update.
 
 ## How It Works
 
