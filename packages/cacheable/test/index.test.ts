@@ -133,6 +133,34 @@ describe("cacheable options and properties", async () => {
 		expect(cacheable.sync).toBeDefined();
 		expect(cacheable.sync?.qified).toBeDefined();
 	});
+
+	test("should publish to sync when set is called", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const { CacheableSyncEvents } = await import("../src/sync.js");
+		const provider = new RedisMessageProvider({
+			id: "test-provider",
+			connection: { host: "localhost", port: 6379 },
+		});
+		const cacheable = new Cacheable({ sync: { qified: provider } });
+
+		// biome-ignore lint/suspicious/noExplicitAny: Message type not exported from qified
+		let receivedMessage: any;
+		await cacheable.sync?.qified.subscribe(CacheableSyncEvents.SET, {
+			handler: async (message) => {
+				receivedMessage = message;
+			},
+		});
+
+		await cacheable.set("testKey", "testValue", 1000);
+
+		expect(receivedMessage).toBeDefined();
+		expect(receivedMessage?.data.cacheId).toBe(cacheable.cacheId);
+		expect(receivedMessage?.data.key).toBe("testKey");
+		expect(receivedMessage?.data.value).toBe("testValue");
+		expect(receivedMessage?.data.ttl).toBe(1000);
+
+		await provider.disconnect();
+	});
 });
 
 describe("cacheable stats", async () => {

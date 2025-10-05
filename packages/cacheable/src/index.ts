@@ -25,7 +25,7 @@ import {
 	type StoredDataRaw,
 } from "keyv";
 import { CacheableEvents, CacheableHooks } from "./enums.js";
-import { CacheableSync } from "./sync.js";
+import { CacheableSync, CacheableSyncEvents } from "./sync.js";
 import type { CacheableOptions, GetOptions } from "./types.js";
 
 export class Cacheable extends Hookified {
@@ -551,6 +551,16 @@ export class Cacheable extends Hookified {
 			}
 
 			await this.hook(CacheableHooks.AFTER_SET, item);
+
+			// Publish to sync if enabled
+			if (this._sync && result) {
+				await this._sync.publish(CacheableSyncEvents.SET, {
+					cacheId: this._cacheId,
+					key: item.key,
+					value: item.value,
+					ttl: item.ttl,
+				});
+			}
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
