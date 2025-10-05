@@ -225,11 +225,14 @@ describe("cacheable options and properties", async () => {
 			},
 		});
 
+		// Wait for subscription to be ready
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
 		await cacheable.set("deleteKey", "value");
 		await cacheable.delete("deleteKey");
 
 		// Wait for message to be received
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		await new Promise((resolve) => setTimeout(resolve, 200));
 
 		expect(receivedMessage).toBeDefined();
 		expect(receivedMessage?.data.cacheId).toBe(cacheable.cacheId);
