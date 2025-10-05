@@ -151,10 +151,13 @@ describe("cacheable options and properties", async () => {
 			},
 		});
 
+		// Wait for subscription to be ready
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
 		await cacheable.set("testKey", "testValue", 1000);
 
 		// Wait for message to be received
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		await new Promise((resolve) => setTimeout(resolve, 200));
 
 		expect(receivedMessage).toBeDefined();
 		expect(receivedMessage?.data.cacheId).toBe(cacheable.cacheId);
@@ -182,13 +185,16 @@ describe("cacheable options and properties", async () => {
 			},
 		});
 
+		// Wait for subscription to be ready
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
 		await cacheable.setMany([
 			{ key: "key1", value: "value1", ttl: 1000 },
 			{ key: "key2", value: "value2", ttl: 2000 },
 		]);
 
 		// Wait for messages to be received
-		await new Promise((resolve) => setTimeout(resolve, 100));
+		await new Promise((resolve) => setTimeout(resolve, 200));
 
 		expect(receivedMessages).toHaveLength(2);
 		expect(receivedMessages[0]?.data.cacheId).toBe(cacheable.cacheId);
@@ -260,6 +266,66 @@ describe("cacheable options and properties", async () => {
 		expect(receivedMessages[0]?.data.cacheId).toBe(cacheable.cacheId);
 		expect(receivedMessages[0]?.data.key).toBe("key1");
 		expect(receivedMessages[1]?.data.key).toBe("key2");
+
+		await provider.disconnect();
+	});
+
+	test("should sync set events between two cache instances", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const provider = new RedisMessageProvider({
+			id: "test-provider-sync",
+			connection: { host: "localhost", port: 6379 },
+		});
+
+		const cacheable1 = new Cacheable({
+			cacheId: "cache1",
+			sync: { qified: provider },
+		});
+		const cacheable2 = new Cacheable({
+			cacheId: "cache2",
+			sync: { qified: provider },
+		});
+
+		// Wait for subscriptions to be ready
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		await cacheable1.set("syncKey", "syncValue", 5000);
+
+		// Wait for sync to propagate
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		const value = await cacheable2.get("syncKey");
+		expect(value).toBe("syncValue");
+
+		await provider.disconnect();
+	});
+
+	test("should sync delete events between two cache instances", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const provider = new RedisMessageProvider({
+			id: "test-provider-sync-delete",
+			connection: { host: "localhost", port: 6379 },
+		});
+
+		const cacheable1 = new Cacheable({
+			cacheId: "cache1",
+			sync: { qified: provider },
+		});
+		const cacheable2 = new Cacheable({
+			cacheId: "cache2",
+			sync: { qified: provider },
+		});
+
+		await cacheable1.set("deleteSync", "value");
+		await cacheable2.set("deleteSync", "value");
+
+		await cacheable1.delete("deleteSync");
+
+		// Wait for sync to propagate
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		const value = await cacheable2.get("deleteSync");
+		expect(value).toBeUndefined();
 
 		await provider.disconnect();
 	});

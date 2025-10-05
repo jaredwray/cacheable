@@ -81,6 +81,9 @@ export class Cacheable extends Hookified {
 				options.sync instanceof CacheableSync
 					? options.sync
 					: new CacheableSync(options.sync);
+
+			// Subscribe to sync events to update local cache
+			this._sync.subscribe(this._primary, this._cacheId);
 		}
 	}
 
@@ -245,6 +248,11 @@ export class Cacheable extends Hookified {
 	 */
 	public set sync(sync: CacheableSync | undefined) {
 		this._sync = sync;
+
+		if (this._sync) {
+			// Subscribe to sync events to update local cache
+			this._sync.subscribe(this._primary, this._cacheId);
+		}
 	}
 
 	/**

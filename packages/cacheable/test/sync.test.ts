@@ -125,4 +125,80 @@ describe("CacheableSync", () => {
 			expect(receivedMessage?.id).toBeDefined();
 		});
 	});
+
+	describe("subscribe", () => {
+		test("should subscribe to SET events and update storage", async () => {
+			const { Keyv } = await import("keyv");
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const sync = new CacheableSync({ qified: provider });
+			const storage = new Keyv();
+
+			sync.subscribe(storage, "cache1");
+
+			// Wait for subscription to be ready
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			await sync.publish(CacheableSyncEvents.SET, {
+				cacheId: "cache2",
+				key: "testKey",
+				value: "testValue",
+				ttl: 1000,
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			const value = await storage.get("testKey");
+			expect(value).toBe("testValue");
+		});
+
+		test("should not update storage for messages from same cacheId", async () => {
+			const { Keyv } = await import("keyv");
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const sync = new CacheableSync({ qified: provider });
+			const storage = new Keyv();
+
+			sync.subscribe(storage, "cache1");
+
+			// Wait for subscription to be ready
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			await sync.publish(CacheableSyncEvents.SET, {
+				cacheId: "cache1",
+				key: "testKey",
+				value: "testValue",
+				ttl: 1000,
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			const value = await storage.get("testKey");
+			expect(value).toBeUndefined();
+		});
+
+		test("should subscribe to DELETE events and update storage", async () => {
+			const { Keyv } = await import("keyv");
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const sync = new CacheableSync({ qified: provider });
+			const storage = new Keyv();
+
+			await storage.set("testKey", "testValue");
+			sync.subscribe(storage, "cache1");
+
+			// Wait for subscription to be ready
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			await sync.publish(CacheableSyncEvents.DELETE, {
+				cacheId: "cache2",
+				key: "testKey",
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			const value = await storage.get("testKey");
+			expect(value).toBeUndefined();
+		});
+	});
 });

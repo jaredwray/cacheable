@@ -1,4 +1,5 @@
 import { Hookified, type HookifiedOptions } from "hookified";
+import type { Keyv } from "keyv";
 import { type MessageProvider, Qified } from "qified";
 
 /**
@@ -71,6 +72,35 @@ export class CacheableSync extends Hookified {
 		await this._qified.publish(event, {
 			id: crypto.randomUUID(),
 			data,
+		});
+	}
+
+	/**
+	 * Subscribes to sync events and updates the provided storage
+	 * @param storage - The Keyv storage instance to update
+	 * @param cacheId - The cache ID to identify this instance
+	 */
+	public subscribe(storage: Keyv, cacheId: string): void {
+		// Subscribe to SET events to update local cache
+		this._qified.subscribe(CacheableSyncEvents.SET, {
+			handler: async (message) => {
+				const data = message.data as CacheableSyncItem;
+				// Only process messages from other cache instances
+				if (data.cacheId !== cacheId) {
+					await storage.set(data.key, data.value, data.ttl);
+				}
+			},
+		});
+
+		// Subscribe to DELETE events to update local cache
+		this._qified.subscribe(CacheableSyncEvents.DELETE, {
+			handler: async (message) => {
+				const data = message.data as CacheableSyncItem;
+				// Only process messages from other cache instances
+				if (data.cacheId !== cacheId) {
+					await storage.delete(data.key);
+				}
+			},
 		});
 	}
 
