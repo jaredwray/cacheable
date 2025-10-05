@@ -1150,5 +1150,14 @@ export {
 	shorthandToTime,
 } from "@cacheable/utils";
 export { Keyv, KeyvHooks, type KeyvOptions, type KeyvStoreAdapter } from "keyv";
+export {
+	type CacheableInterface,
+	CacheSync,
+	CacheSyncEvents,
+	CacheSyncHooks,
+	type CacheSyncOptions,
+	type SyncMessage,
+	type SyncOperation,
+} from "./cache-sync.js";
 export { CacheableEvents, CacheableHooks } from "./enums.js";
 export { CacheableOptions } from "./types.js";
