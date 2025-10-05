@@ -15,6 +15,7 @@ import {
 	getCascadingTtl,
 	HashAlgorithm,
 	hash,
+	isKeyvInstance,
 	shorthandToMilliseconds,
 } from "@cacheable/utils";
 import { Hookified } from "hookified";
@@ -261,7 +262,7 @@ export class Cacheable extends Hookified {
 	 * @returns {void}
 	 */
 	public setPrimary(primary: Keyv | KeyvStoreAdapter): void {
-		if (this.isKeyvInstance(primary)) {
+		if (isKeyvInstance(primary)) {
 			// If the primary is already a Keyv instance, we can use it directly
 			this._primary = primary as Keyv;
 		} else {
@@ -280,7 +281,7 @@ export class Cacheable extends Hookified {
 	 * @returns {void}
 	 */
 	public setSecondary(secondary: Keyv | KeyvStoreAdapter): void {
-		if (this.isKeyvInstance(secondary)) {
+		if (isKeyvInstance(secondary)) {
 			// If the secondary is already a Keyv instance, we can use it directly
 			this._secondary = secondary as Keyv;
 		} else {
@@ -291,32 +292,6 @@ export class Cacheable extends Hookified {
 		this._secondary.on("error", (error: unknown) => {
 			this.emit(CacheableEvents.ERROR, error);
 		});
-	}
-
-	// biome-ignore lint/suspicious/noExplicitAny: type format
-	public isKeyvInstance(keyv: any): boolean {
-		// Check if the object is an instance of Keyv
-		if (keyv instanceof Keyv) {
-			return true;
-		}
-
-		// Check if the object has the Keyv methods and properties
-		const keyvMethods = [
-			"generateIterator",
-			"get",
-			"getMany",
-			"set",
-			"setMany",
-			"delete",
-			"deleteMany",
-			"has",
-			"hasMany",
-			"clear",
-			"disconnect",
-			"serialize",
-			"deserialize",
-		];
-		return keyvMethods.every((method) => typeof keyv[method] === "function");
 	}
 
 	public getNameSpace(): string | undefined {

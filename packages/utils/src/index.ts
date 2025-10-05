@@ -8,6 +8,7 @@ export type {
 } from "./cacheable-item-types.js";
 export { coalesceAsync } from "./coalesce-async.js";
 export { HashAlgorithm, hash, hashToNumber } from "./hash.js";
+export { isKeyvInstance } from "./is-keyv-instance.js";
 export { isObject } from "./is-object.js";
 export { lessThan } from "./less-than.js";
 export { runIfFn } from "./run-if-fn.js";
