@@ -153,11 +153,113 @@ describe("cacheable options and properties", async () => {
 
 		await cacheable.set("testKey", "testValue", 1000);
 
+		// Wait for message to be received
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
 		expect(receivedMessage).toBeDefined();
 		expect(receivedMessage?.data.cacheId).toBe(cacheable.cacheId);
 		expect(receivedMessage?.data.key).toBe("testKey");
 		expect(receivedMessage?.data.value).toBe("testValue");
 		expect(receivedMessage?.data.ttl).toBe(1000);
+
+		await provider.disconnect();
+	});
+
+	test("should publish to sync when setMany is called", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const { CacheableSyncEvents } = await import("../src/sync.js");
+		const provider = new RedisMessageProvider({
+			id: "test-provider-many",
+			connection: { host: "localhost", port: 6379 },
+		});
+		const cacheable = new Cacheable({ sync: { qified: provider } });
+
+		// biome-ignore lint/suspicious/noExplicitAny: Message type not exported from qified
+		const receivedMessages: any[] = [];
+		await cacheable.sync?.qified.subscribe(CacheableSyncEvents.SET, {
+			handler: async (message) => {
+				receivedMessages.push(message);
+			},
+		});
+
+		await cacheable.setMany([
+			{ key: "key1", value: "value1", ttl: 1000 },
+			{ key: "key2", value: "value2", ttl: 2000 },
+		]);
+
+		// Wait for messages to be received
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		expect(receivedMessages).toHaveLength(2);
+		expect(receivedMessages[0]?.data.cacheId).toBe(cacheable.cacheId);
+		expect(receivedMessages[0]?.data.key).toBe("key1");
+		expect(receivedMessages[0]?.data.value).toBe("value1");
+		expect(receivedMessages[0]?.data.ttl).toBe(1000);
+		expect(receivedMessages[1]?.data.key).toBe("key2");
+		expect(receivedMessages[1]?.data.value).toBe("value2");
+		expect(receivedMessages[1]?.data.ttl).toBe(2000);
+
+		await provider.disconnect();
+	});
+
+	test("should publish to sync when delete is called", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const { CacheableSyncEvents } = await import("../src/sync.js");
+		const provider = new RedisMessageProvider({
+			id: "test-provider-delete",
+			connection: { host: "localhost", port: 6379 },
+		});
+		const cacheable = new Cacheable({ sync: { qified: provider } });
+
+		// biome-ignore lint/suspicious/noExplicitAny: Message type not exported from qified
+		let receivedMessage: any;
+		await cacheable.sync?.qified.subscribe(CacheableSyncEvents.DELETE, {
+			handler: async (message) => {
+				receivedMessage = message;
+			},
+		});
+
+		await cacheable.set("deleteKey", "value");
+		await cacheable.delete("deleteKey");
+
+		// Wait for message to be received
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		expect(receivedMessage).toBeDefined();
+		expect(receivedMessage?.data.cacheId).toBe(cacheable.cacheId);
+		expect(receivedMessage?.data.key).toBe("deleteKey");
+
+		await provider.disconnect();
+	});
+
+	test("should publish to sync when deleteMany is called", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const { CacheableSyncEvents } = await import("../src/sync.js");
+		const provider = new RedisMessageProvider({
+			id: "test-provider-delete-many",
+			connection: { host: "localhost", port: 6379 },
+		});
+		const cacheable = new Cacheable({ sync: { qified: provider } });
+
+		// biome-ignore lint/suspicious/noExplicitAny: Message type not exported from qified
+		const receivedMessages: any[] = [];
+		await cacheable.sync?.qified.subscribe(CacheableSyncEvents.DELETE, {
+			handler: async (message) => {
+				receivedMessages.push(message);
+			},
+		});
+
+		await cacheable.set("key1", "value1");
+		await cacheable.set("key2", "value2");
+		await cacheable.deleteMany(["key1", "key2"]);
+
+		// Wait for messages to be received
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		expect(receivedMessages).toHaveLength(2);
+		expect(receivedMessages[0]?.data.cacheId).toBe(cacheable.cacheId);
+		expect(receivedMessages[0]?.data.key).toBe("key1");
+		expect(receivedMessages[1]?.data.key).toBe("key2");
 
 		await provider.disconnect();
 	});

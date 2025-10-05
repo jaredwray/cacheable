@@ -598,6 +598,18 @@ export class Cacheable extends Hookified {
 			}
 
 			await this.hook(CacheableHooks.AFTER_SET_MANY, items);
+
+			// Publish to sync if enabled
+			if (this._sync && result) {
+				for (const item of items) {
+					await this._sync.publish(CacheableSyncEvents.SET, {
+						cacheId: this._cacheId,
+						key: item.key,
+						value: item.value,
+						ttl: shorthandToMilliseconds(item.ttl),
+					});
+				}
+			}
 		} catch (error: unknown) {
 			this.emit(CacheableEvents.ERROR, error);
 		}
@@ -721,6 +733,14 @@ export class Cacheable extends Hookified {
 			result = resultAll[0];
 		}
 
+		// Publish to sync if enabled
+		if (this._sync && result) {
+			await this._sync.publish(CacheableSyncEvents.DELETE, {
+				cacheId: this._cacheId,
+				key,
+			});
+		}
+
 		return result;
 	}
 
@@ -749,6 +769,16 @@ export class Cacheable extends Hookified {
 				});
 			} else {
 				await this._secondary.deleteMany(keys);
+			}
+		}
+
+		// Publish to sync if enabled
+		if (this._sync && result) {
+			for (const key of keys) {
+				await this._sync.publish(CacheableSyncEvents.DELETE, {
+					cacheId: this._cacheId,
+					key,
+				});
 			}
 		}
 
