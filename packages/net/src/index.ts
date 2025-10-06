@@ -610,6 +610,7 @@ export {
 	type DataResponse,
 	del,
 	type FetchOptions,
+	type FetchRequestInit,
 	fetch,
 	type GetResponse,
 	get,
