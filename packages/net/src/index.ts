@@ -610,6 +610,7 @@ export {
 	type DataResponse,
 	del,
 	type FetchOptions,
+	type FetchRequestInit,
 	fetch,
 	type GetResponse,
 	get,
@@ -617,5 +618,4 @@ export {
 	patch,
 	post,
 	type Response as FetchResponse,
-	type FetchRequestInit,
 } from "./fetch.js";
