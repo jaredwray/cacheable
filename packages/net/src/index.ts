@@ -617,4 +617,5 @@ export {
 	patch,
 	post,
 	type Response as FetchResponse,
+	type FetchRequestInit,
 } from "./fetch.js";
