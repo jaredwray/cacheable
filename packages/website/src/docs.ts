@@ -1,4 +1,5 @@
-import fs from "fs-extra";
+import { existsSync } from "node:fs";
+import { readdir, readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
 
 async function main() {
 
@@ -11,7 +12,7 @@ async function main() {
 
 async function copyPackages() {
     const packagesPath = getRelativePackagePath();
-    const packageList = await fs.promises.readdir(`${packagesPath}`);
+    const packageList = await readdir(`${packagesPath}`);
     const filterList = ["website", ".DS_Store"];
 
     for (const packageName of packageList) {
@@ -26,8 +27,8 @@ async function copyCacheableSymbol() {
     const rootPath = getRelativeRootPath();
     const packagesPath = getRelativePackagePath();
     const outputPath = `${packagesPath}/website/dist`;
-    await fs.ensureDir(`${outputPath}`);
-    await fs.copy(`${packagesPath}/website/site/symbol.svg`, `${outputPath}/symbol.svg`);
+    await mkdir(`${outputPath}`, { recursive: true });
+    await copyFile(`${packagesPath}/website/site/symbol.svg`, `${outputPath}/symbol.svg`);
 }
 
 async function copyGettingStarted() {
@@ -35,7 +36,7 @@ async function copyGettingStarted() {
     const rootPath = getRelativeRootPath();
     const packagesPath = getRelativePackagePath();
     const outputPath = `${packagesPath}/website/site/docs`;
-    const originalFileText = await fs.readFile(`${rootPath}/README.md`, "utf8");
+    const originalFileText = await readFile(`${rootPath}/README.md`, "utf8");
     let newFileText = "---\n";
     newFileText += `title: 'Getting Started Guide'\n`;
     newFileText += `order: 1\n`;
@@ -46,8 +47,8 @@ async function copyGettingStarted() {
 
     newFileText = cleanDocumentFromImage(newFileText);
 
-    await fs.ensureDir(`${outputPath}`);
-    await fs.writeFile(`${outputPath}/index.md`, newFileText);
+    await mkdir(`${outputPath}`, { recursive: true });
+    await writeFile(`${outputPath}/index.md`, newFileText);
 }
 
 function cleanDocumentFromImage(document: string) {
@@ -57,7 +58,7 @@ function cleanDocumentFromImage(document: string) {
 };
 
 function getRelativePackagePath() {
-    if(fs.pathExistsSync("packages")) {
+    if(existsSync("packages")) {
         //we are in the root
         return "packages";
     }
@@ -67,7 +68,7 @@ function getRelativePackagePath() {
 }
 
 function getRelativeRootPath() {
-    if(fs.pathExistsSync("packages")) {
+    if(existsSync("packages")) {
         //we are in the root
         return "./";
     }
@@ -80,8 +81,8 @@ async function createDoc(packageName: string, path: string, outputPath: string) 
     const originalFileName = "README.md";
     const newFileName = `${packageName}.md`;
     const packageJSONPath = `${path}/${packageName}/package.json`;
-    const packageJSON = await fs.readJSON(packageJSONPath);
-    const originalFileText = await fs.readFile(`${path}/${packageName}/${originalFileName}`, "utf8");
+    const packageJSON = JSON.parse(await readFile(packageJSONPath, "utf8"));
+    const originalFileText = await readFile(`${path}/${packageName}/${originalFileName}`, "utf8");
     let newFileText = "---\n";
     newFileText += `title: '${packageJSON.name}'\n`;
     newFileText += `sidebarTitle: '${packageJSON.name}'\n`;
@@ -92,8 +93,8 @@ async function createDoc(packageName: string, path: string, outputPath: string) 
 
     newFileText = cleanDocumentFromImage(newFileText);
 
-    await fs.ensureDir(`${outputPath}`);
-    await fs.writeFile(`${outputPath}/${newFileName}`, newFileText);
+    await mkdir(`${outputPath}`, { recursive: true });
+    await writeFile(`${outputPath}/${newFileName}`, newFileText);
 }
 
 main();
