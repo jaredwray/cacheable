@@ -7,19 +7,15 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "generate-docs": "npx tsx ./src/docs.cts",
+    "generate-docs": "npx tsx ./src/docs.ts",
     "website:build": "rimraf ./site/docs && pnpm generate-docs && docula build",
     "website:serve": "rimraf ./site/docs && pnpm generate-docs && docula serve",
     "clean": "rimraf ./dist"
   },
   "devDependencies": {
     "@types/node": "^24.7.0",
-    "docula": "^0.20.0",
+    "docula": "^0.30.0",
     "rimraf": "^6.0.1",
     "tsx": "^4.20.6"
-  },
-  "dependencies": {
-    "@types/fs-extra": "^11.0.4",
-    "fs-extra": "^11.3.1"
   }
 }
