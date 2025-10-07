@@ -181,11 +181,21 @@ export class FlatCache extends Hookified {
 	public loadFile(pathToFile: string) {
 		if (fs.existsSync(pathToFile)) {
 			const data = fs.readFileSync(pathToFile, "utf8");
-			const items = this._parse(data);
-			for (const key of Object.keys(items)) {
-				this._cache.set(items[key].key as string, items[key].value, {
-					expire: items[key].expires as number,
-				});
+			// biome-ignore lint/suspicious/noExplicitAny: legacy format
+			const items = this._parse(data) as any;
+			// legacy array
+			if (Array.isArray(items)) {
+				for (const item of items) {
+					if (item && typeof item === "object" && "key" in item) {
+						this._cache.set(item.key, item.value);
+					}
+				}
+			} else {
+				for (const key of Object.keys(items)) {
+					this._cache.set(items[key].key as string, items[key].value, {
+						expire: items[key].expires as number,
+					});
+				}
 			}
 
 			this._changesSinceLastSave = true;
