@@ -78,6 +78,175 @@ describe("file-entry-cache with options", () => {
 		expect(fileEntryCache.logger?.info).toBeDefined();
 		expect(fileEntryCache.logger?.error).toBeDefined();
 	});
+
+	test("should log detailed information during getFileDescriptor operations", async () => {
+		const logs: Array<{ level: string; msg: string; data?: unknown }> = [];
+
+		// Create a mock logger that captures all log calls
+		const logger = {
+			level: "trace",
+			trace: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "trace", msg: message || "", data: logData });
+			},
+			debug: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "debug", msg: message || "", data: logData });
+			},
+			info: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "info", msg: message || "", data: logData });
+			},
+			warn: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "warn", msg: message || "", data: logData });
+			},
+			error: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "error", msg: message || "", data: logData });
+			},
+			fatal: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "fatal", msg: message || "", data: logData });
+			},
+		};
+
+		const testFile = path.join(__dirname, "test-logger-file-unique.txt");
+
+		// Clean up any existing file and cache
+		if (fs.existsSync(testFile)) {
+			fs.unlinkSync(testFile);
+		}
+
+		fs.writeFileSync(testFile, "initial content");
+
+		const fileEntryCache = new FileEntryCache({
+			logger,
+			useCheckSum: true,
+		});
+
+		// First call - file not in cache
+		logs.length = 0;
+		let descriptor = fileEntryCache.getFileDescriptor(testFile);
+
+		// Verify logs for first call (lines 380, 389, 396, 404, 407, 418, 427, 450)
+		expect(logs.some((l) => l.msg === "Getting file descriptor")).toBe(true); // 380
+		expect(logs.some((l) => l.msg === "Created file key")).toBe(true); // 389
+		expect(logs.some((l) => l.msg === "No cached meta found")).toBe(true); // 396
+		expect(logs.some((l) => l.msg === "Resolved absolute path")).toBe(true); // 404
+		expect(logs.some((l) => l.msg === "Using checksum setting")).toBe(true); // 407
+		expect(logs.some((l) => l.msg === "Read file stats")).toBe(true); // 418
+		expect(logs.some((l) => l.msg === "Calculated file hash")).toBe(true); // 427
+		expect(
+			logs.some((l) => l.msg === "File not in cache, marked as changed"),
+		).toBe(true); // 450
+
+		// Second call - file in cache, unchanged
+		logs.length = 0;
+		descriptor = fileEntryCache.getFileDescriptor(testFile);
+
+		// Verify logs for cached file (lines 394, 485)
+		expect(logs.some((l) => l.msg === "Found cached meta")).toBe(true); // 394
+		expect(logs.some((l) => l.msg === "File unchanged")).toBe(true); // 485
+
+		// Third call - file changed (size and hash)
+		logs.length = 0;
+		fs.writeFileSync(testFile, "modified content with different size");
+		descriptor = fileEntryCache.getFileDescriptor(testFile);
+
+		// Verify logs for changed file (lines 466, 474, 483)
+		expect(logs.some((l) => l.msg === "File changed: size differs")).toBe(true); // 466
+		expect(logs.some((l) => l.msg === "File changed: hash differs")).toBe(true); // 474
+		expect(logs.some((l) => l.msg === "File has changed")).toBe(true); // 483
+
+		// Fourth call - file not found error
+		logs.length = 0;
+		fs.unlinkSync(testFile);
+		descriptor = fileEntryCache.getFileDescriptor(testFile);
+
+		// Verify logs for error (lines 430, 435)
+		expect(logs.some((l) => l.msg === "Error reading file")).toBe(true); // 430
+		expect(logs.some((l) => l.msg === "File not found")).toBe(true); // 435
+		expect(descriptor.notFound).toBe(true);
+	});
+
+	test("should log mtime change when useCheckSum is false", async () => {
+		const logs: Array<{ level: string; msg: string; data?: unknown }> = [];
+
+		const logger = {
+			level: "trace",
+			trace: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "trace", msg: message || "", data: logData });
+			},
+			debug: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "debug", msg: message || "", data: logData });
+			},
+			info: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "info", msg: message || "", data: logData });
+			},
+			warn: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "warn", msg: message || "", data: logData });
+			},
+			error: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "error", msg: message || "", data: logData });
+			},
+			fatal: (data: unknown, msg?: string) => {
+				const message = typeof data === "string" ? data : msg;
+				const logData = typeof data === "string" ? undefined : data;
+				logs.push({ level: "fatal", msg: message || "", data: logData });
+			},
+		};
+
+		const testFile = path.join(__dirname, "test-mtime-logger.txt");
+
+		// Clean up any existing file
+		if (fs.existsSync(testFile)) {
+			fs.unlinkSync(testFile);
+		}
+
+		fs.writeFileSync(testFile, "initial content");
+
+		const fileEntryCache = new FileEntryCache({
+			logger,
+			useCheckSum: false, // Disable checksum to use mtime
+		});
+
+		// First call - add file to cache
+		fileEntryCache.getFileDescriptor(testFile);
+
+		// Wait a bit and modify the file to change mtime
+		await new Promise((resolve) => setTimeout(resolve, 10));
+		fs.writeFileSync(testFile, "initial content"); // Same content but different mtime
+
+		// Second call - should detect mtime change
+		logs.length = 0;
+		const descriptor = fileEntryCache.getFileDescriptor(testFile);
+
+		// Verify the mtime change was logged (line 452)
+		expect(logs.some((l) => l.msg === "File changed: mtime differs")).toBe(
+			true,
+		);
+		expect(descriptor.changed).toBe(true);
+
+		// Clean up
+		fs.unlinkSync(testFile);
+	});
 });
 
 describe("getHash", () => {

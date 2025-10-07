@@ -452,7 +452,6 @@ export class FileEntryCache {
 		}
 
 		// If the file is in the cache, check if the file has changed
-		/* c8 ignore next 3 */
 		if (useCheckSumValue === false && metaCache?.mtime !== result.meta?.mtime) {
 			result.changed = true;
 			this._logger?.debug(
