@@ -8,6 +8,23 @@ import {
 	type FlatCacheOptions,
 } from "flat-cache";
 
+export type ILogger = {
+	/** Current log level */
+	level?: string;
+	/** Trace level logging */
+	trace: (message: string | object, ...args: any[]) => void;
+	/** Debug level logging */
+	debug: (message: string | object, ...args: any[]) => void;
+	/** Info level logging */
+	info: (message: string | object, ...args: any[]) => void;
+	/** Warning level logging */
+	warn: (message: string | object, ...args: any[]) => void;
+	/** Error level logging */
+	error: (message: string | object, ...args: any[]) => void;
+	/** Fatal level logging */
+	fatal: (message: string | object, ...args: any[]) => void;
+};
+
 export type FileEntryCacheOptions = {
 	/** Whether to use file modified time for change detection (default: true) */
 	useModifiedTime?: boolean;
