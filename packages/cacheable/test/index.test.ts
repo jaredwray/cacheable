@@ -139,7 +139,7 @@ describe("cacheable options and properties", async () => {
 		const { CacheableSyncEvents } = await import("../src/sync.js");
 		const provider = new RedisMessageProvider({
 			id: "test-provider",
-			connection: { host: "localhost", port: 6379 },
+			uri: "redis://localhost:6379",
 		});
 		const cacheable = new Cacheable({ sync: { qified: provider } });
 
@@ -173,7 +173,7 @@ describe("cacheable options and properties", async () => {
 		const { CacheableSyncEvents } = await import("../src/sync.js");
 		const provider = new RedisMessageProvider({
 			id: "test-provider-many",
-			connection: { host: "localhost", port: 6379 },
+			uri: "redis://localhost:6379",
 		});
 		const cacheable = new Cacheable({ sync: { qified: provider } });
 
@@ -213,7 +213,7 @@ describe("cacheable options and properties", async () => {
 		const { CacheableSyncEvents } = await import("../src/sync.js");
 		const provider = new RedisMessageProvider({
 			id: "test-provider-delete",
-			connection: { host: "localhost", port: 6379 },
+			uri: "redis://localhost:6379",
 		});
 		const cacheable = new Cacheable({ sync: { qified: provider } });
 
@@ -246,7 +246,7 @@ describe("cacheable options and properties", async () => {
 		const { CacheableSyncEvents } = await import("../src/sync.js");
 		const provider = new RedisMessageProvider({
 			id: "test-provider-delete-many",
-			connection: { host: "localhost", port: 6379 },
+			uri: "redis://localhost:6379",
 		});
 		const cacheable = new Cacheable({ sync: { qified: provider } });
 
@@ -277,7 +277,7 @@ describe("cacheable options and properties", async () => {
 		const { RedisMessageProvider } = await import("@qified/redis");
 		const provider = new RedisMessageProvider({
 			id: "test-provider-sync",
-			connection: { host: "localhost", port: 6379 },
+			uri: "redis://localhost:6379",
 		});
 
 		const cacheable1 = new Cacheable({
@@ -307,7 +307,7 @@ describe("cacheable options and properties", async () => {
 		const { RedisMessageProvider } = await import("@qified/redis");
 		const provider = new RedisMessageProvider({
 			id: "test-provider-sync-delete",
-			connection: { host: "localhost", port: 6379 },
+			uri: "redis://localhost:6379",
 		});
 
 		const cacheable1 = new Cacheable({
