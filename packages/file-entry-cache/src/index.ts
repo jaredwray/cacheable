@@ -12,17 +12,17 @@ export type ILogger = {
 	/** Current log level */
 	level?: string;
 	/** Trace level logging */
-	trace: (message: string | object, ...args: any[]) => void;
+	trace: (message: string | object, ...args: unknown[]) => void;
 	/** Debug level logging */
-	debug: (message: string | object, ...args: any[]) => void;
+	debug: (message: string | object, ...args: unknown[]) => void;
 	/** Info level logging */
-	info: (message: string | object, ...args: any[]) => void;
+	info: (message: string | object, ...args: unknown[]) => void;
 	/** Warning level logging */
-	warn: (message: string | object, ...args: any[]) => void;
+	warn: (message: string | object, ...args: unknown[]) => void;
 	/** Error level logging */
-	error: (message: string | object, ...args: any[]) => void;
+	error: (message: string | object, ...args: unknown[]) => void;
 	/** Fatal level logging */
-	fatal: (message: string | object, ...args: any[]) => void;
+	fatal: (message: string | object, ...args: unknown[]) => void;
 };
 
 export type FileEntryCacheOptions = {
@@ -144,6 +144,7 @@ export class FileEntryCache {
 	private _hashAlgorithm = "md5";
 	private _cwd: string = process.cwd();
 	private _strictPaths = true;
+	private _logger?: ILogger;
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -185,6 +186,22 @@ export class FileEntryCache {
 	 */
 	public set cache(cache: FlatCache) {
 		this._cache = cache;
+	}
+
+	/**
+	 * Get the logger
+	 * @returns {ILogger | undefined} The logger instance
+	 */
+	public get logger(): ILogger | undefined {
+		return this._logger;
+	}
+
+	/**
+	 * Set the logger
+	 * @param {ILogger | undefined} logger - The logger to set
+	 */
+	public set logger(logger: ILogger | undefined) {
+		this._logger = logger;
 	}
 
 	/**

@@ -56,6 +56,19 @@ describe("file-entry-cache with options", () => {
 		fileEntryCache.hashAlgorithm = "md5";
 		expect(fileEntryCache.hashAlgorithm).toBe("md5");
 	});
+
+	test("should be able to get and set logger", async () => {
+		const pino = await import("pino");
+		const logger = pino.default();
+		const fileEntryCache = new FileEntryCache();
+		expect(fileEntryCache.logger).toBeUndefined();
+		fileEntryCache.logger = logger;
+		expect(fileEntryCache.logger).toBe(logger);
+		expect(fileEntryCache.logger?.info).toBeDefined();
+		expect(fileEntryCache.logger?.error).toBeDefined();
+		fileEntryCache.logger = undefined;
+		expect(fileEntryCache.logger).toBeUndefined();
+	});
 });
 
 describe("getHash", () => {
