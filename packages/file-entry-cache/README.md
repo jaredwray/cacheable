@@ -117,6 +117,7 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `hashAlgorithm?` - The algorithm to use for the checksum. Default is `md5` but can be any algorithm supported by `crypto.createHash`
 - `cwd?` - The current working directory for resolving relative paths. Default is `process.cwd()`
 - `strictPaths?` - If `true` restricts file access to within `cwd` boundaries, preventing path traversal attacks. Default is `true`
+- `logger?` - A logger instance compatible with Pino logger interface for debugging and monitoring. Default is `undefined`
 - `cache.ttl?` - The time to live for the cache in milliseconds. Default is `0` which means no expiration
 - `cache.lruSize?` - The number of items to keep in the cache. Default is `0` which means no limit
 - `cache.useClone?` - If `true` it will clone the data before returning it. Default is `false`
@@ -135,6 +136,7 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `getHash(buffer: Buffer): string` - Gets the hash of a buffer used for checksums
 - `cwd: string` - The current working directory for resolving relative paths. Default is `process.cwd()`
 - `strictPaths: boolean` - If `true` restricts file access to within `cwd` boundaries. Default is `true`
+- `logger: ILogger | undefined` - A logger instance for debugging and monitoring cache operations
 - `createFileKey(filePath: string): string` - Returns the cache key for the file path (returns the path exactly as provided).
 - `deleteCacheFile(): boolean` - Deletes the cache file from disk
 - `destroy(): void` - Destroys the cache. This will clear the cache in memory. If using cache persistence it will stop the interval.
@@ -396,13 +398,132 @@ const fileDescriptor = fileEntryCache.getFileDescriptor('file.txt', { useCheckSu
 
 # Setting Additional Meta Data
 
-In the past we have seen people do random values on the `meta` object. This can cause issues with the `meta` object. To avoid this we have `data` which can be anything. 
+In the past we have seen people do random values on the `meta` object. This can cause issues with the `meta` object. To avoid this we have `data` which can be anything.
 
-```javascript 
+```javascript
 const fileEntryCache = new FileEntryCache();
 const fileDescriptor = fileEntryCache.getFileDescriptor('file.txt');
 fileDescriptor.meta.data = { myData: 'myData' }; //anything you want
 ```
+
+# Logger Support
+
+The `FileEntryCache` supports logging through a Pino-compatible logger interface. This is useful for debugging and monitoring cache operations in production environments.
+
+## Logger Interface
+
+The logger must implement the following interface:
+
+```typescript
+interface ILogger {
+  level?: string;
+  trace: (message: string | object, ...args: unknown[]) => void;
+  debug: (message: string | object, ...args: unknown[]) => void;
+  info: (message: string | object, ...args: unknown[]) => void;
+  warn: (message: string | object, ...args: unknown[]) => void;
+  error: (message: string | object, ...args: unknown[]) => void;
+  fatal: (message: string | object, ...args: unknown[]) => void;
+}
+```
+
+## Using Pino Logger
+
+You can pass a Pino logger instance to the `FileEntryCache` constructor or set it via the `logger` property:
+
+```javascript
+import pino from 'pino';
+import fileEntryCache from 'file-entry-cache';
+
+// Create a Pino logger
+const logger = pino({
+  level: 'debug',
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      colorize: true
+    }
+  }
+});
+
+// Pass logger in constructor
+const cache = new fileEntryCache.FileEntryCache({
+  logger,
+  cacheId: 'my-cache'
+});
+
+// Or set it after creation
+cache.logger = logger;
+
+// Now all cache operations will be logged
+const descriptor = cache.getFileDescriptor('./src/file.txt');
+```
+
+## Log Levels
+
+The logger will output different levels of information:
+
+- **trace**: Detailed internal operations (key creation, cached meta lookup, file stats)
+- **debug**: Method entry, checksum settings, change detection, file status
+- **info**: Important state changes (file has changed)
+- **error**: File read errors and exceptions
+
+## Example with Custom Log Levels
+
+```javascript
+import pino from 'pino';
+import { FileEntryCache } from 'file-entry-cache';
+
+// Create logger with specific level
+const logger = pino({ level: 'info' });
+
+const cache = new FileEntryCache({
+  logger,
+  useCheckSum: true
+});
+
+// This will log at info level when files change
+const files = ['./src/index.js', './src/utils.js'];
+files.forEach(file => {
+  const descriptor = cache.getFileDescriptor(file);
+  if (descriptor.changed) {
+    console.log(`Processing changed file: ${file}`);
+  }
+});
+
+cache.reconcile();
+```
+
+## Debugging Cache Operations
+
+For detailed debugging, set the logger level to `debug` or `trace`:
+
+```javascript
+import pino from 'pino';
+import { FileEntryCache } from 'file-entry-cache';
+
+const logger = pino({
+  level: 'trace',
+  transport: {
+    target: 'pino-pretty'
+  }
+});
+
+const cache = new FileEntryCache({
+  logger,
+  useCheckSum: true,
+  cwd: '/project/root'
+});
+
+// Will log detailed information about:
+// - File path resolution
+// - Cache key creation
+// - Cached metadata lookup
+// - File stats reading
+// - Hash calculation (if using checksums)
+// - Change detection logic
+const descriptor = cache.getFileDescriptor('./src/app.js');
+```
+
 # How to Contribute
 
 You can contribute by forking the repo and submitting a pull request. Please make sure to add tests and update the documentation. To learn more about how to contribute go to our main README [https://github.com/jaredwray/cacheable](https://github.com/jaredwray/cacheable). This will talk about how to `Open a Pull Request`, `Ask a Question`, or `Post an Issue`.
