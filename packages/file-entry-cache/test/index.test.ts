@@ -69,6 +69,15 @@ describe("file-entry-cache with options", () => {
 		fileEntryCache.logger = undefined;
 		expect(fileEntryCache.logger).toBeUndefined();
 	});
+
+	test("should initialize with logger in options", async () => {
+		const pino = await import("pino");
+		const logger = pino.default();
+		const fileEntryCache = new FileEntryCache({ logger });
+		expect(fileEntryCache.logger).toBe(logger);
+		expect(fileEntryCache.logger?.info).toBeDefined();
+		expect(fileEntryCache.logger?.error).toBeDefined();
+	});
 });
 
 describe("getHash", () => {

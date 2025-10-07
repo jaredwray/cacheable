@@ -36,6 +36,8 @@ export type FileEntryCacheOptions = {
 	cwd?: string;
 	/** Restrict file access to within cwd boundaries (default: true) */
 	strictPaths?: boolean;
+	/** Logger instance for logging (default: undefined) */
+	logger?: ILogger;
 	/** Options for the underlying flat cache */
 	cache?: FlatCacheOptions;
 };
@@ -169,6 +171,10 @@ export class FileEntryCache {
 
 		if (options?.strictPaths !== undefined) {
 			this._strictPaths = options.strictPaths;
+		}
+
+		if (options?.logger) {
+			this._logger = options.logger;
 		}
 	}
 
