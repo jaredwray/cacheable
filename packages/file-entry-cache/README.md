@@ -36,6 +36,12 @@
 - [Path Security and Traversal Prevention](#path-security-and-traversal-prevention)
 - [Using Checksums to Determine if a File has Changed (useCheckSum)](#using-checksums-to-determine-if-a-file-has-changed-usechecksum)
 - [Setting Additional Meta Data](#setting-additional-meta-data)
+- [Logger Support](#logger-support)
+  - [Logger Interface](#logger-interface)
+  - [Using Pino Logger](#using-pino-logger)
+  - [Log Levels](#log-levels)
+  - [Example with Custom Log Levels](#example-with-custom-log-levels)
+  - [Debugging Cache Operations](#debugging-cache-operations)
 - [How to Contribute](#how-to-contribute)
 - [License and Copyright](#license-and-copyright)
 
