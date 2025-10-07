@@ -377,6 +377,8 @@ export class FileEntryCache {
 		filePath: string,
 		options?: GetFileDescriptorOptions,
 	): FileDescriptor {
+		this._logger?.debug({ filePath, options }, "Getting file descriptor");
+
 		let fstat: fs.Stats;
 		const result: FileDescriptor = {
 			key: this.createFileKey(filePath),
@@ -384,15 +386,28 @@ export class FileEntryCache {
 			meta: {},
 		};
 
+		this._logger?.trace({ key: result.key }, "Created file key");
+
 		const metaCache = this._cache.getKey<FileDescriptorMeta>(result.key);
+
+		if (metaCache) {
+			this._logger?.trace({ metaCache }, "Found cached meta");
+		} else {
+			this._logger?.trace("No cached meta found");
+		}
 
 		// Start with cached meta to preserve custom properties
 		result.meta = metaCache ? { ...metaCache } : {};
 
 		// Convert to absolute path for file system operations
 		const absolutePath = this.getAbsolutePath(filePath);
+		this._logger?.trace({ absolutePath }, "Resolved absolute path");
 
 		const useCheckSumValue = options?.useCheckSum ?? this._useCheckSum;
+		this._logger?.debug(
+			{ useCheckSum: useCheckSumValue },
+			"Using checksum setting",
+		);
 
 		try {
 			fstat = fs.statSync(absolutePath);
@@ -400,16 +415,24 @@ export class FileEntryCache {
 			result.meta.size = fstat.size;
 			result.meta.mtime = fstat.mtime.getTime();
 
+			this._logger?.trace(
+				{ size: result.meta.size, mtime: result.meta.mtime },
+				"Read file stats",
+			);
+
 			if (useCheckSumValue) {
 				// Get the file hash
 				const buffer = fs.readFileSync(absolutePath);
 				result.meta.hash = this.getHash(buffer);
+				this._logger?.trace({ hash: result.meta.hash }, "Calculated file hash");
 			}
 		} catch (error) {
+			this._logger?.error({ filePath, error }, "Error reading file");
 			this.removeEntry(filePath);
 			let notFound = false;
 			if ((error as Error).message.includes("ENOENT")) {
 				notFound = true;
+				this._logger?.debug({ filePath }, "File not found");
 			}
 
 			return {
@@ -424,6 +447,7 @@ export class FileEntryCache {
 		if (!metaCache) {
 			result.changed = true;
 			this._cache.setKey(result.key, result.meta);
+			this._logger?.debug({ filePath }, "File not in cache, marked as changed");
 			return result;
 		}
 
@@ -431,17 +455,35 @@ export class FileEntryCache {
 		/* c8 ignore next 3 */
 		if (useCheckSumValue === false && metaCache?.mtime !== result.meta?.mtime) {
 			result.changed = true;
+			this._logger?.debug(
+				{ filePath, oldMtime: metaCache.mtime, newMtime: result.meta.mtime },
+				"File changed: mtime differs",
+			);
 		}
 
 		if (metaCache?.size !== result.meta?.size) {
 			result.changed = true;
+			this._logger?.debug(
+				{ filePath, oldSize: metaCache.size, newSize: result.meta.size },
+				"File changed: size differs",
+			);
 		}
 
 		if (useCheckSumValue && metaCache?.hash !== result.meta?.hash) {
 			result.changed = true;
+			this._logger?.debug(
+				{ filePath, oldHash: metaCache.hash, newHash: result.meta.hash },
+				"File changed: hash differs",
+			);
 		}
 
 		this._cache.setKey(result.key, result.meta);
+
+		if (result.changed) {
+			this._logger?.info({ filePath }, "File has changed");
+		} else {
+			this._logger?.debug({ filePath }, "File unchanged");
+		}
 
 		return result;
 	}
