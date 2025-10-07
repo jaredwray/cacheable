@@ -50,6 +50,8 @@ export type FileDescriptorMeta = {
 	hash?: string;
 	/** Custom data associated with the file (e.g., lint results, metadata) */
 	data?: unknown;
+	/** Allow any additional custom properties */
+	[key: string]: unknown;
 };
 
 export type AnalyzedFiles = {
@@ -342,7 +344,10 @@ export class FileEntryCache {
 			meta: {},
 		};
 
-		result.meta = this._cache.getKey<FileDescriptorMeta>(result.key) ?? {};
+		const metaCache = this._cache.getKey<FileDescriptorMeta>(result.key);
+
+		// Start with cached meta to preserve custom properties
+		result.meta = metaCache ? { ...metaCache } : {};
 
 		// Convert to absolute path for file system operations
 		const absolutePath = this.getAbsolutePath(filePath);
@@ -351,11 +356,8 @@ export class FileEntryCache {
 
 		try {
 			fstat = fs.statSync(absolutePath);
-			// Get the file size
-			result.meta = {
-				size: fstat.size,
-			};
-			// Get the file modification time
+			// Update the file stats while preserving existing meta properties
+			result.meta.size = fstat.size;
 			result.meta.mtime = fstat.mtime.getTime();
 
 			if (useCheckSumValue) {
@@ -378,18 +380,11 @@ export class FileEntryCache {
 			};
 		}
 
-		const metaCache = this._cache.getKey<FileDescriptorMeta>(result.key);
-
 		// If the file is not in the cache, add it
 		if (!metaCache) {
 			result.changed = true;
 			this._cache.setKey(result.key, result.meta);
 			return result;
-		}
-
-		// Set the data from the cache
-		if (result.meta.data === undefined) {
-			result.meta.data = metaCache.data;
 		}
 
 		// If the file is in the cache, check if the file has changed

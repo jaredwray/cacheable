@@ -220,6 +220,80 @@ describe("getFileDescriptor()", () => {
 		expect(fileDescriptor4.changed).toEqual(false);
 	});
 
+	test("should preserve custom meta properties like meta.results and meta.hashOfConfig", () => {
+		const fileEntryCache = new FileEntryCache({ useCheckSum: true });
+		const testFile1 = path.resolve("./.cacheGFD/test1.txt");
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+
+		// Add custom properties directly to meta
+		fileDescriptor.meta.results = { errors: 0, warnings: 2 };
+		fileDescriptor.meta.hashOfConfig = "abc123def456";
+		fileDescriptor.meta.customData = { foo: "bar" };
+
+		expect(fileDescriptor).toBeDefined();
+		fileEntryCache.reconcile();
+
+		// Load from cache and verify custom properties are preserved
+		const fileEntryCache2 = createFromFile(
+			fileEntryCache.cache.cacheFilePath,
+			true,
+		);
+		const fileDescriptor2 = fileEntryCache2.getFileDescriptor(testFile1);
+		expect(fileDescriptor2).toBeDefined();
+		expect(fileDescriptor2.meta.results).toEqual({ errors: 0, warnings: 2 });
+		expect(fileDescriptor2.meta.hashOfConfig).toEqual("abc123def456");
+		expect(fileDescriptor2.meta.customData).toEqual({ foo: "bar" });
+		expect(fileDescriptor2.changed).toEqual(false);
+
+		// Update custom properties
+		fileDescriptor2.meta.results = { errors: 1, warnings: 0 };
+		fileDescriptor2.meta.hashOfConfig = "xyz789ghi012";
+		fileEntryCache2.reconcile();
+
+		// Verify updates are preserved
+		const fileEntryCache3 = createFromFile(
+			fileEntryCache.cache.cacheFilePath,
+			true,
+		);
+		const fileDescriptor3 = fileEntryCache3.getFileDescriptor(testFile1);
+		expect(fileDescriptor3.meta.results).toEqual({ errors: 1, warnings: 0 });
+		expect(fileDescriptor3.meta.hashOfConfig).toEqual("xyz789ghi012");
+		expect(fileDescriptor3.meta.customData).toEqual({ foo: "bar" });
+	});
+
+	test("should preserve custom meta properties across file changes", () => {
+		const fileEntryCache = new FileEntryCache({ useCheckSum: true });
+		const testFile1 = path.resolve("./.cacheGFD/test1.txt");
+		const fileDescriptor = fileEntryCache.getFileDescriptor(testFile1);
+
+		// Add custom properties
+		fileDescriptor.meta.results = { linted: true };
+		fileDescriptor.meta.hashOfConfig = "config123";
+		fileEntryCache.reconcile();
+
+		// Modify the file
+		fs.writeFileSync(testFile1, "modified content");
+
+		// Get descriptor again - file should be marked as changed but custom props preserved
+		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor2.changed).toBe(true);
+		expect(fileDescriptor2.meta.results).toEqual({ linted: true });
+		expect(fileDescriptor2.meta.hashOfConfig).toEqual("config123");
+
+		// Update custom properties after file change
+		fileDescriptor2.meta.results = { linted: true, revalidated: true };
+		fileEntryCache.reconcile();
+
+		// Verify both file stats and custom properties are updated
+		const fileDescriptor3 = fileEntryCache.getFileDescriptor(testFile1);
+		expect(fileDescriptor3.changed).toBe(false);
+		expect(fileDescriptor3.meta.results).toEqual({
+			linted: true,
+			revalidated: true,
+		});
+		expect(fileDescriptor3.meta.hashOfConfig).toEqual("config123");
+	});
+
 	test("should return a file descriptor", () => {
 		const fileEntryCache = new FileEntryCache();
 		const testFile1 = path.resolve("./.cacheGFD/test1.txt");
