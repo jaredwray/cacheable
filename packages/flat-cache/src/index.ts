@@ -187,7 +187,8 @@ export class FlatCache extends Hookified {
 			if (Array.isArray(items)) {
 				for (const item of items) {
 					if (item && typeof item === "object" && "key" in item) {
-						this._cache.set(item.key, item.value, item.expires);
+						const ttl = this.convertExpiresToTtl(item.expires);
+						this._cache.set(item.key, item.value, ttl);
 					}
 				}
 			} else {
@@ -200,6 +201,16 @@ export class FlatCache extends Hookified {
 
 			this._changesSinceLastSave = true;
 		}
+	}
+
+	private convertExpiresToTtl(expires?: number): number | undefined {
+		if (!expires) {
+			return undefined;
+		}
+
+		const now = Date.now();
+		const ttl = expires - now;
+		return ttl > 0 ? ttl : 0;
 	}
 
 	public loadFileStream(
