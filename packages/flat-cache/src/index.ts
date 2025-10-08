@@ -181,15 +181,45 @@ export class FlatCache extends Hookified {
 	public loadFile(pathToFile: string) {
 		if (fs.existsSync(pathToFile)) {
 			const data = fs.readFileSync(pathToFile, "utf8");
-			const items = this._parse(data);
-			for (const key of Object.keys(items)) {
-				this._cache.set(items[key].key as string, items[key].value, {
-					expire: items[key].expires as number,
-				});
+			// biome-ignore lint/suspicious/noExplicitAny: legacy format
+			const items = this._parse(data) as any;
+			// legacy array
+			if (Array.isArray(items)) {
+				for (const item of items) {
+					if (item && typeof item === "object" && "key" in item) {
+						const ttl = this.convertExpiresToTtl(item.expires);
+						this._cache.set(item.key, item.value, ttl);
+					}
+				}
+			} else {
+				// legacy object format - check if items have "key" property or are direct key-value pairs
+				for (const key of Object.keys(items)) {
+					const item = items[key];
+					// Check if this is the new format with key/value/expires properties
+					/* c8 ignore next 4 */
+					if (item && typeof item === "object" && "key" in item) {
+						this._cache.set(item.key as string, item.value, {
+							expire: item.expires as number,
+						});
+					} else {
+						// Old legacy format - key is the cache key, value is the cache value
+						this._cache.set(key, item);
+					}
+				}
 			}
 
 			this._changesSinceLastSave = true;
 		}
+	}
+
+	private convertExpiresToTtl(expires?: number): number | undefined {
+		if (!expires) {
+			return undefined;
+		}
+
+		const now = Date.now();
+		const ttl = expires - now;
+		return ttl > 0 ? ttl : 0;
 	}
 
 	public loadFileStream(

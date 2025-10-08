@@ -205,7 +205,7 @@ describe("flat-cache load from persisted cache", () => {
 	});
 
 	test("should load the cache from the file with expiration", async () => {
-		const cacheDir = ".cachefoo3";
+		const cacheDir = ".cachefoo456";
 		const cacheId = "cache4";
 		const firstCache = new FlatCache({ cacheDir, cacheId });
 		firstCache.setKey("foo", "bar", 250);
