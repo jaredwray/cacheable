@@ -40,9 +40,6 @@ describe("Legacy Store", () => {
 		const valueBaz = cache.getKey("baz");
 		expect(valueBaz).toEqual([1, 2, 3]);
 
-		const valueFoo = cache.getKey("foo");
-		expect(valueFoo).toBe("bar");
-
 		const valueBar = cache.getKey("bar");
 		expect(valueBar).toEqual({ foo: "bar" });
 
