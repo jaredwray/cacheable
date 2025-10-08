@@ -223,7 +223,7 @@ describe("flat-cache load from persisted cache", () => {
 		expect(secondCache.getKey("baz")).toEqual([1, 2, 3]);
 		await sleep(300);
 		expect(secondCache.getKey("bar")).toBeUndefined();
-		//firstCache.destroy(true);
+		firstCache.destroy(true);
 	});
 
 	test("should load cache via file stream", async () => {

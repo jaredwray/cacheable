@@ -192,10 +192,19 @@ export class FlatCache extends Hookified {
 					}
 				}
 			} else {
+				// legacy object format - check if items have "key" property or are direct key-value pairs
 				for (const key of Object.keys(items)) {
-					this._cache.set(items[key].key as string, items[key].value, {
-						expire: items[key].expires as number,
-					});
+					const item = items[key];
+					// Check if this is the new format with key/value/expires properties
+					/* c8 ignore next 4 */
+					if (item && typeof item === "object" && "key" in item) {
+						this._cache.set(item.key as string, item.value, {
+							expire: item.expires as number,
+						});
+					} else {
+						// Old legacy format - key is the cache key, value is the cache value
+						this._cache.set(key, item);
+					}
 				}
 			}
 

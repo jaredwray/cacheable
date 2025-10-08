@@ -36,7 +36,7 @@ describe("Legacy Store", () => {
 		cache.loadFile(cache4Path);
 
 		// Verify the data was loaded correctly from cache4
-		// The file contains: baz, foo, bar
+		// The file contains: baz (no expiration), foo (with future expiration), bar (with future expiration)
 		const valueBaz = cache.getKey("baz");
 		expect(valueBaz).toEqual([1, 2, 3]);
 
@@ -46,11 +46,29 @@ describe("Legacy Store", () => {
 		const valueBar = cache.getKey("bar");
 		expect(valueBar).toEqual({ foo: "bar" });
 
-		// Check that all keys are present
+		// All three keys should be present
 		const keys = cache.keys();
 		expect(keys).toContain("baz");
 		expect(keys).toContain("foo");
 		expect(keys).toContain("bar");
 		expect(keys.length).toBe(3);
+	});
+
+	test("Load cache1 legacy format via FlatCache", () => {
+		const cache = new FlatCache();
+		const cache1Path = path.resolve(__dirname, "fixtures/.cache/cache1");
+
+		cache.loadFile(cache1Path);
+
+		// Verify the data was loaded correctly from cache1
+		const value = cache.getKey("testKey");
+		expect(value).toBeDefined();
+		expect(value).toHaveProperty("data", "test data");
+		expect(value).toHaveProperty("timestamp", 1752265142859);
+
+		// Check that the key is present
+		const keys = cache.keys();
+		expect(keys).toContain("testKey");
+		expect(keys.length).toBe(1);
 	});
 });
