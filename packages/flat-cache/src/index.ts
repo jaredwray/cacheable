@@ -187,7 +187,7 @@ export class FlatCache extends Hookified {
 			if (Array.isArray(items)) {
 				for (const item of items) {
 					if (item && typeof item === "object" && "key" in item) {
-						this._cache.set(item.key, item.value);
+						this._cache.set(item.key, item.value, item.expires);
 					}
 				}
 			} else {

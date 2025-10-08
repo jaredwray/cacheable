@@ -205,7 +205,7 @@ describe("flat-cache load from persisted cache", () => {
 	});
 
 	test("should load the cache from the file with expiration", async () => {
-		const cacheDir = ".cachefoo3";
+		const cacheDir = ".cachefoo456";
 		const cacheId = "cache4";
 		const firstCache = new FlatCache({ cacheDir, cacheId });
 		firstCache.setKey("foo", "bar", 250);
@@ -223,7 +223,7 @@ describe("flat-cache load from persisted cache", () => {
 		expect(secondCache.getKey("baz")).toEqual([1, 2, 3]);
 		await sleep(300);
 		expect(secondCache.getKey("bar")).toBeUndefined();
-		firstCache.destroy(true);
+		//firstCache.destroy(true);
 	});
 
 	test("should load cache via file stream", async () => {

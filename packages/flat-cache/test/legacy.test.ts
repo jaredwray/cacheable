@@ -28,4 +28,29 @@ describe("Legacy Store", () => {
 		expect(value).toBeDefined();
 		expect(value).toHaveProperty("data", "test data");
 	});
+
+	test("Load cache4 legacy format via FlatCache", () => {
+		const cache = new FlatCache();
+		const cache4Path = path.resolve(__dirname, "fixtures/.cache/cache4");
+
+		cache.loadFile(cache4Path);
+
+		// Verify the data was loaded correctly from cache4
+		// The file contains: baz, foo, bar
+		const valueBaz = cache.getKey("baz");
+		expect(valueBaz).toEqual([1, 2, 3]);
+
+		const valueFoo = cache.getKey("foo");
+		expect(valueFoo).toBe("bar");
+
+		const valueBar = cache.getKey("bar");
+		expect(valueBar).toEqual({ foo: "bar" });
+
+		// Check that all keys are present
+		const keys = cache.keys();
+		expect(keys).toContain("baz");
+		expect(keys).toContain("foo");
+		expect(keys).toContain("bar");
+		expect(keys.length).toBe(3);
+	});
 });
