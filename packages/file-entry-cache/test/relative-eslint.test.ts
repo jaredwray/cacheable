@@ -1,7 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
-import fileEntryCache from "../src/index.js";
+import fileEntryCache, {
+	FileEntryCache,
+	type FileEntryCacheOptions,
+} from "../src/index.js";
 
 describe("eslint tests scenarios", () => {
 	test("relative pathing works on files and cache", () => {
@@ -75,5 +78,37 @@ describe("eslint tests scenarios", () => {
 			recursive: true,
 			force: true,
 		});
+	});
+	test("Need to use the cache directory as the cwd and use absolute path key", () => {
+		const cacheDirectory = "./.cache";
+		const cacheId = ".eslintcache-2020111";
+		const file = "../src/index.ts";
+		const useCheckSum = true;
+		const useAbsolutePathAsKey = true;
+		const cwd = cacheDirectory;
+
+		const options: FileEntryCacheOptions = {
+			useCheckSum,
+			useAbsolutePathAsKey,
+			cwd,
+			cache: {
+				cacheId,
+				cacheDir: cacheDirectory,
+			},
+		};
+
+		const cache = new FileEntryCache(options);
+
+		const fileDescriptor = cache.getFileDescriptor(file);
+
+		expect(fileDescriptor.changed).toBe(true);
+		expect(fileDescriptor.meta.hash).toBeDefined();
+
+		cache.reconcile();
+
+		const fileDescriptor2 = cache.getFileDescriptor(file);
+
+		expect(fileDescriptor2.changed).toBe(false);
+		expect(fileDescriptor2.meta.hash).toBeDefined();
 	});
 });

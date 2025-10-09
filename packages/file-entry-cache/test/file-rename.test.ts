@@ -87,8 +87,6 @@ describe("file-rename with cwd", () => {
 			renamedPath, // cwd now points to the renamed folder
 		);
 
-		cache2.useAbsolutePathAsKey = false;
-
 		// Step 7: Access the file using the same relative path
 		const descriptor2 = cache2.getFileDescriptor(testFileName);
 

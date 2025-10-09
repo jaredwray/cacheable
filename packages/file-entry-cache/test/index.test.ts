@@ -268,24 +268,24 @@ describe("getHash", () => {
 
 describe("getFileKey", () => {
 	test("should return a key", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		const key = fileEntryCache.createFileKey("test");
 		expect(key).toBe("test");
 	});
 	test("should return a correct path key", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		const path = "/usr/src/test2/test";
 		const key = fileEntryCache.createFileKey(path);
 		expect(key).toBe(path);
 	});
 	test("should return path as-is for relative paths", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		const path = "./test/file.js";
 		const key = fileEntryCache.createFileKey(path);
 		expect(key).toBe(path);
 	});
 	test("should return path as-is for absolute paths", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		const path = "/usr/src/test2/file.js";
 		const key = fileEntryCache.createFileKey(path);
 		expect(key).toBe(path);
@@ -304,7 +304,7 @@ describe("destroy()", () => {
 
 describe("removeEntry()", () => {
 	test("should remove entry using exact key match", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		fileEntryCache.cache.setKey("test.js", "bar");
 		expect(fileEntryCache.cache.all()).toEqual({
 			"test.js": "bar",
@@ -367,7 +367,7 @@ describe("getFileDescriptor()", () => {
 	});
 
 	test("should return non-existent file descriptor", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		const fileDescriptor =
 			fileEntryCache.getFileDescriptor("non-existent-file");
 		expect(fileDescriptor).toBeDefined();
@@ -590,7 +590,7 @@ describe("getFileDescriptor()", () => {
 	});
 
 	test("should work with relative paths", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		const fileDescriptor = fileEntryCache.getFileDescriptor(
 			"./.cacheGFD/test1.txt",
 		);
@@ -601,7 +601,7 @@ describe("getFileDescriptor()", () => {
 	});
 
 	test("should preserve relative paths as keys", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		const fileDescriptor = fileEntryCache.getFileDescriptor(
 			".cacheGFD/test1.txt",
 		);
@@ -621,7 +621,7 @@ describe("getFileDescriptor()", () => {
 	});
 
 	test("relative and absolute paths are different keys", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		const relPath = "./.cacheGFD/test1.txt";
 		const absPath = path.resolve(relPath);
 
@@ -708,7 +708,7 @@ describe("normalizeEntries()", () => {
 		expect(entries).toEqual([]);
 	});
 	test("should return an array of entries", () => {
-		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: false });
+		const fileEntryCache = new FileEntryCache();
 		const file1 = `./${fileCacheName}/test1.txt`;
 		const file2 = `./${fileCacheName}/test2.txt`;
 		fileEntryCache.getFileDescriptor(file2);

@@ -149,7 +149,7 @@ export class FileEntryCache {
 	private _cwd: string = process.cwd();
 	private _strictPaths = false;
 	private _logger?: ILogger;
-	private _useAbsolutePathAsKey = true;
+	private _useAbsolutePathAsKey = false;
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -283,7 +283,7 @@ export class FileEntryCache {
 
 	/**
 	 * Get whether to use absolute path as cache key
-	 * @returns {boolean} Whether cache keys use absolute paths (default: true)
+	 * @returns {boolean} Whether cache keys use absolute paths (default: false)
 	 */
 	public get useAbsolutePathAsKey(): boolean {
 		return this._useAbsolutePathAsKey;
@@ -319,8 +319,6 @@ export class FileEntryCache {
 		if (this._useAbsolutePathAsKey && this.isRelativePath(filePath)) {
 			result = this.getAbsolutePathWithCwd(filePath, this._cwd);
 		}
-
-		console.log(result);
 
 		return result;
 	}
