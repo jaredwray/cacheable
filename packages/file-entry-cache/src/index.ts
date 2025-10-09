@@ -147,6 +147,7 @@ export class FileEntryCache {
 	private _cwd: string = process.cwd();
 	private _strictPaths = false;
 	private _logger?: ILogger;
+	private _keyAsAbsolutePath = true;
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -275,6 +276,22 @@ export class FileEntryCache {
 	}
 
 	/**
+	 * Get whether to use absolute path as cache key
+	 * @returns {boolean} Whether cache keys use absolute paths (default: true)
+	 */
+	public get keyAsAbsolutePath(): boolean {
+		return this._keyAsAbsolutePath;
+	}
+
+	/**
+	 * Set whether to use absolute path as cache key
+	 * @param {boolean} value - The value to set
+	 */
+	public set keyAsAbsolutePath(value: boolean) {
+		this._keyAsAbsolutePath = value;
+	}
+
+	/**
 	 * Given a buffer, calculate md5 hash of its content.
 	 * @method getHash
 	 * @param  {Buffer} buffer   buffer to calculate hash on
@@ -291,7 +308,14 @@ export class FileEntryCache {
 	 * @return {String}
 	 */
 	public createFileKey(filePath: string): string {
-		const result = filePath;
+		let result = filePath;
+
+		if(this._keyAsAbsolutePath && this.isRelativePath(filePath)) {
+			result = this.getAbsolutePathWithCwd(filePath, this._cwd);
+		}
+
+		console.log(result);
+
 		return result;
 	}
 
