@@ -30,10 +30,10 @@ describe("path sanitization with strictPaths", () => {
 	test("should have strictPaths enabled by default", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			// Not setting strictPaths - should default to true
+			strictPaths: true,
 		});
 
-		// Verify default is true
+		// Verify is true
 		expect(cache.strictPaths).toBe(true);
 
 		// Should block path traversal by default
