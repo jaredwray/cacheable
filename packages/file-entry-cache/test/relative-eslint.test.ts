@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 import fileEntryCache, {
+	type CreateOptions,
 	FileEntryCache,
 	type FileEntryCacheOptions,
 } from "../src/index.js";
@@ -96,6 +97,35 @@ describe("eslint tests scenarios", () => {
 		};
 
 		const cache = new FileEntryCache(options);
+
+		const fileDescriptor = cache.getFileDescriptor(file);
+
+		expect(fileDescriptor.changed).toBe(true);
+		expect(fileDescriptor.meta.hash).toBeDefined();
+
+		cache.reconcile();
+
+		const fileDescriptor2 = cache.getFileDescriptor(file);
+
+		expect(fileDescriptor2.changed).toBe(false);
+		expect(fileDescriptor2.meta.hash).toBeDefined();
+	});
+
+	test("create with cwd and use absolute path key", () => {
+		const cacheDirectory = "./.cache";
+		const cacheId = ".eslintcache-202121212";
+		const file = "../src/index.ts";
+		const useCheckSum = true;
+		const useAbsolutePathAsKey = true;
+		const cwd = cacheDirectory;
+
+		const options: CreateOptions = {
+			useCheckSum,
+			useAbsolutePathAsKey,
+			cwd,
+		};
+
+		const cache = fileEntryCache.create(cacheId, cacheDirectory, options);
 
 		const fileDescriptor = cache.getFileDescriptor(file);
 
