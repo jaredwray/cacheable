@@ -145,7 +145,7 @@ export class FileEntryCache {
 	private _useCheckSum = false;
 	private _hashAlgorithm = "md5";
 	private _cwd: string = process.cwd();
-	private _strictPaths = true;
+	private _strictPaths = false;
 	private _logger?: ILogger;
 
 	/**
@@ -291,7 +291,8 @@ export class FileEntryCache {
 	 * @return {String}
 	 */
 	public createFileKey(filePath: string): string {
-		return filePath;
+		const result = filePath;
+		return result;
 	}
 
 	/**
