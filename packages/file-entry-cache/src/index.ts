@@ -36,6 +36,8 @@ export type FileEntryCacheOptions = {
 	cwd?: string;
 	/** Restrict file access to within cwd boundaries (default: true) */
 	strictPaths?: boolean;
+	/** Whether to use absolute path as cache key (default: true) */
+	keyAsAbsolutePath?: boolean;
 	/** Logger instance for logging (default: undefined) */
 	logger?: ILogger;
 	/** Options for the underlying flat cache */
@@ -174,6 +176,10 @@ export class FileEntryCache {
 			this._strictPaths = options.strictPaths;
 		}
 
+		if (options?.keyAsAbsolutePath !== undefined) {
+			this._keyAsAbsolutePath = options.keyAsAbsolutePath;
+		}
+
 		if (options?.logger) {
 			this._logger = options.logger;
 		}
@@ -310,7 +316,7 @@ export class FileEntryCache {
 	public createFileKey(filePath: string): string {
 		let result = filePath;
 
-		if(this._keyAsAbsolutePath && this.isRelativePath(filePath)) {
+		if (this._keyAsAbsolutePath && this.isRelativePath(filePath)) {
 			result = this.getAbsolutePathWithCwd(filePath, this._cwd);
 		}
 
