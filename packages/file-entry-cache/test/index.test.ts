@@ -127,6 +127,7 @@ describe("file-entry-cache with options", () => {
 		fs.writeFileSync(testFile, "initial content");
 
 		const fileEntryCache = new FileEntryCache({
+			// @ts-expect-error as test
 			logger,
 			useCheckSum: true,
 		});
@@ -223,6 +224,7 @@ describe("file-entry-cache with options", () => {
 		fs.writeFileSync(testFile, "initial content");
 
 		const fileEntryCache = new FileEntryCache({
+			// @ts-expect-error
 			logger,
 			useCheckSum: false, // Disable checksum to use mtime
 		});
@@ -720,6 +722,7 @@ describe("normalizeEntries()", () => {
 	test("should return all entries", () => {
 		const fileEntryCache = new FileEntryCache({
 			useCheckSum: true,
+			useAbsolutePathAsKey: false,
 		});
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test1.txt`);
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test2.txt`);
@@ -906,7 +909,9 @@ describe("getUpdatedFiles()", () => {
 	});
 
 	test("should return empty array on get updated files", () => {
-		const fileEntryCache = new FileEntryCache();
+		const fileEntryCache = new FileEntryCache({
+			useAbsolutePathAsKey: false,
+		});
 		const files = [
 			`./${fileCacheName}/test1.txt`,
 			`./${fileCacheName}/test2.txt`,
@@ -920,7 +925,9 @@ describe("getUpdatedFiles()", () => {
 	});
 
 	test("should return updated files if one is updated", () => {
-		const fileEntryCache = new FileEntryCache();
+		const fileEntryCache = new FileEntryCache({
+			useAbsolutePathAsKey: false,
+		});
 		const files = [
 			`./${fileCacheName}/test1.txt`,
 			`./${fileCacheName}/test2.txt`,
@@ -1041,7 +1048,9 @@ describe("getFileDescriptorsByPath()", () => {
 	});
 
 	test("should return an array of file descriptors", () => {
-		const fileEntryCache = new FileEntryCache();
+		const fileEntryCache = new FileEntryCache({
+			useAbsolutePathAsKey: false,
+		});
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test1.txt`);
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test2.txt`);
 		const fileDescriptors = fileEntryCache.getFileDescriptorsByPath(

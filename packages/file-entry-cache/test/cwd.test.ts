@@ -60,6 +60,8 @@ describe("cwd functionality", () => {
 			testBaseDir,
 		);
 
+		cache.useAbsolutePathAsKey = false;
+
 		// Get file descriptor using relative path
 		const descriptor = cache.getFileDescriptor("src/index.js");
 

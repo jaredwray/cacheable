@@ -48,6 +48,8 @@ describe("file-rename with cwd", () => {
 			originalPath, // cwd set to the unique folder
 		);
 
+		cache1.useAbsolutePathAsKey = false;
+
 		// Step 3: Get file descriptor using relative path
 		const descriptor1 = cache1.getFileDescriptor(testFileName);
 
@@ -140,6 +142,8 @@ describe("file-rename with cwd", () => {
 			originalPath,
 		);
 
+		cache1.useAbsolutePathAsKey = false;
+
 		// Process all files
 		files.forEach((file) => {
 			const desc = cache1.getFileDescriptor(file.name);
@@ -162,6 +166,8 @@ describe("file-rename with cwd", () => {
 			true,
 			renamedPath,
 		);
+
+		cache2.useAbsolutePathAsKey = false;
 
 		// Verify all files are still cached and unchanged
 		files.forEach((file) => {
