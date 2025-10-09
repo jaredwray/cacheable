@@ -177,7 +177,6 @@ export class FlatCache extends Hookified {
 	 * @method loadFile
 	 * @param  {String} pathToFile the path to the file containing the info for the cache
 	 */
-
 	public loadFile(pathToFile: string) {
 		if (fs.existsSync(pathToFile)) {
 			const data = fs.readFileSync(pathToFile, "utf8");
@@ -187,7 +186,10 @@ export class FlatCache extends Hookified {
 			if (Array.isArray(items)) {
 				for (const item of items) {
 					if (item && typeof item === "object" && "key" in item) {
-						const ttl = this.convertExpiresToTtl(item.expires);
+						let ttl = this.convertExpiresToTtl(item.expires);
+						if (item.timestamp) {
+							ttl = this.convertExpiresToTtl(item.timestamp);
+						}
 						this._cache.set(item.key, item.value, ttl);
 					}
 				}
@@ -203,7 +205,13 @@ export class FlatCache extends Hookified {
 						});
 					} else {
 						// Old legacy format - key is the cache key, value is the cache value
-						this._cache.set(key, item);
+						
+						let ttl;
+						if(item.timestamp) {
+							ttl = this.convertExpiresToTtl(item.timestamp);
+						}
+
+						this._cache.set(key, item, ttl);
 					}
 				}
 			}
