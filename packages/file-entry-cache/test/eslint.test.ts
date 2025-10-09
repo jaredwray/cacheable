@@ -42,11 +42,9 @@ describe("eslint tests scenarios", () => {
 			force: true,
 		});
 		// This is setting .eslintcache with cache directory
-		const cache = fileEntryCache.create(
-			eslintCacheName,
-			eslintDirectory,
+		const cache = fileEntryCache.create(eslintCacheName, eslintDirectory, {
 			useCheckSum,
-		);
+		});
 		const myFileJavascriptPath = path.resolve(
 			`./${fileCacheName}/src/my-file.js`,
 		); // Absolute path

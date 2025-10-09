@@ -14,12 +14,10 @@ describe("eslint tests scenarios", () => {
 		const useCheckSum = true;
 		const testFixturesPath = "./test/fixtures-relative";
 		const testFixturesPathRename = "./test/fixtures-relative-foo";
-		const cache = fileEntryCache.create(
-			".eslintcache-foo43",
-			cacheDirectory,
+		const cache = fileEntryCache.create(".eslintcache-foo43", cacheDirectory, {
 			useCheckSum,
-			path.resolve("./src"),
-		);
+			cwd: path.resolve("./src"),
+		});
 
 		if (cache.useAbsolutePathAsKey) {
 			cache.useAbsolutePathAsKey = false;

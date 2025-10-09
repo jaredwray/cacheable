@@ -42,25 +42,20 @@ describe("cwd functionality", () => {
 	});
 
 	test("should set cwd via create function", () => {
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		expect(cache.cwd).toBe(testBaseDir);
 	});
 
 	test("should use cwd for relative path resolution", () => {
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
-
-		cache.useAbsolutePathAsKey = false;
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+			useAbsolutePathAsKey: false,
+		});
 
 		// Get file descriptor using relative path
 		const descriptor = cache.getFileDescriptor("src/index.js");
@@ -73,7 +68,9 @@ describe("cwd functionality", () => {
 	});
 
 	test("should allow changing cwd via setter", () => {
-		const cache = fileEntryCache.create(".testcache", cacheDirectory, true);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+		});
 
 		// Initially uses process.cwd()
 		expect(cache.cwd).toBe(process.cwd());
@@ -89,12 +86,10 @@ describe("cwd functionality", () => {
 	});
 
 	test("should work with reconcile() using class-level cwd", () => {
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		// Get descriptors for both files
 		const descriptor1 = cache.getFileDescriptor("src/index.js");
@@ -115,12 +110,10 @@ describe("cwd functionality", () => {
 		cache.reconcile();
 
 		// Create new cache instance with same cwd
-		const cache2 = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache2 = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		// Files should be cached
 		const cached1 = cache2.getFileDescriptor("src/index.js");
@@ -138,12 +131,10 @@ describe("cwd functionality", () => {
 		const nestedFile = path.join(nestedDir, "Button.js");
 		fs.writeFileSync(nestedFile, "export const Button = () => {};\n"); // 32 bytes
 
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		const descriptor = cache.getFileDescriptor("src/components/Button.js");
 
@@ -156,15 +147,11 @@ describe("cwd functionality", () => {
 		const childDir = path.join(testBaseDir, "child");
 		fs.mkdirSync(childDir, { recursive: true });
 
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			childDir, // Set cwd to child directory
-		);
-
-		// Explicitly disable strictPaths to allow parent directory access
-		cache.strictPaths = false;
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: childDir, // Set cwd to child directory
+			strictPaths: false, // Explicitly disable strictPaths to allow parent directory access
+		});
 
 		// Access parent directory file
 		const descriptor = cache.getFileDescriptor("../src/index.js");
@@ -175,12 +162,10 @@ describe("cwd functionality", () => {
 	});
 
 	test("should handle absolute paths regardless of cwd", () => {
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			"/some/other/directory",
-		);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: "/some/other/directory",
+		});
 
 		// Use absolute path
 		const descriptor = cache.getFileDescriptor(testFile1);
@@ -193,12 +178,10 @@ describe("cwd functionality", () => {
 
 	test("should persist cache across instances with same cwd", () => {
 		// First cache instance
-		const cache1 = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache1 = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		const descriptor = cache1.getFileDescriptor("src/index.js");
 		if (descriptor.meta) {
@@ -212,12 +195,10 @@ describe("cwd functionality", () => {
 		cache1.reconcile();
 
 		// Second cache instance with same cwd
-		const cache2 = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache2 = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		const cached = cache2.getFileDescriptor("src/index.js");
 		expect(cached.changed).toBe(false);
@@ -228,24 +209,20 @@ describe("cwd functionality", () => {
 		});
 
 		// Third cache instance with different cwd should not find the file
-		const cache3 = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			process.cwd(), // Different cwd
-		);
+		const cache3 = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: process.cwd(), // Different cwd
+		});
 
 		const notFound = cache3.getFileDescriptor("src/index.js");
 		expect(notFound.notFound).toBe(true);
 	});
 
 	test("should detect file changes with cwd", () => {
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		// First check
 		const descriptor1 = cache.getFileDescriptor("src/index.js");
@@ -264,12 +241,10 @@ describe("cwd functionality", () => {
 		);
 
 		// Create new cache instance
-		const cache2 = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache2 = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		const descriptor2 = cache2.getFileDescriptor("src/index.js");
 		expect(descriptor2.changed).toBe(true); // File content changed
@@ -279,12 +254,10 @@ describe("cwd functionality", () => {
 	});
 
 	test("should handle multiple files with different relative paths", () => {
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		const files = ["src/index.js", "lib/utils.js"];
 
@@ -306,12 +279,10 @@ describe("cwd functionality", () => {
 		cache.reconcile();
 
 		// Create new instance and verify
-		const cache2 = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache2 = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		files.forEach((file) => {
 			const desc = cache2.getFileDescriptor(file);
@@ -321,12 +292,10 @@ describe("cwd functionality", () => {
 	});
 
 	test("should correctly resolve paths with getAbsolutePath", () => {
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			testBaseDir,
-		);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: testBaseDir,
+		});
 
 		// Test relative path
 		const absPath1 = cache.getAbsolutePath("src/index.js");
@@ -337,27 +306,21 @@ describe("cwd functionality", () => {
 		expect(absPath2).toBe("/absolute/path/file.js");
 
 		// Test parent directory reference (with strictPaths disabled)
-		const childCache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			true,
-			path.join(testBaseDir, "child"),
-		);
-
-		// Disable strictPaths to allow parent directory access
-		childCache.strictPaths = false;
+		const childCache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+			cwd: path.join(testBaseDir, "child"),
+			strictPaths: false, // Disable strictPaths to allow parent directory access
+		});
 
 		const absPath3 = childCache.getAbsolutePath("../src/index.js");
 		expect(absPath3).toBe(path.join(testBaseDir, "src/index.js"));
 	});
 
 	test("should handle empty cache with cwd", () => {
-		const cache = fileEntryCache.create(
-			".testcache",
-			cacheDirectory,
-			false, // No checksum
-			testBaseDir,
-		);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: false, // No checksum
+			cwd: testBaseDir,
+		});
 
 		// Get descriptor for non-existent file
 		const descriptor = cache.getFileDescriptor("non-existent.js");
@@ -376,7 +339,9 @@ describe("cwd functionality", () => {
 	});
 
 	test("deprecated getAbsolutePathWithCwd should still work", () => {
-		const cache = fileEntryCache.create(".testcache", cacheDirectory, true);
+		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
+			useCheckSum: true,
+		});
 
 		// Use deprecated method
 		const absPath = cache.getAbsolutePathWithCwd("src/index.js", testBaseDir);
@@ -396,8 +361,10 @@ describe("cwd functionality", () => {
 		const cache = fileEntryCache.create(
 			".eslintcache",
 			path.join(projectRoot, ".cache"),
-			true,
-			projectRoot,
+			{
+				useCheckSum: true,
+				cwd: projectRoot,
+			},
 		);
 
 		// Process multiple files as ESLint would
@@ -435,8 +402,10 @@ describe("cwd functionality", () => {
 		const cache2 = fileEntryCache.create(
 			".eslintcache",
 			path.join(projectRoot, ".cache"),
-			true,
-			projectRoot,
+			{
+				useCheckSum: true,
+				cwd: projectRoot,
+			},
 		);
 
 		filesToLint.forEach((file) => {
