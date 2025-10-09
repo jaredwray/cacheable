@@ -41,6 +41,13 @@ describe("file-entry-cache with options", () => {
 		expect(fileEntryCache.useCheckSum).toBe(false);
 	});
 
+	test("should be able to get and set useAbsolutePathAsKey", () => {
+		const fileEntryCache = new FileEntryCache({ useAbsolutePathAsKey: true });
+		expect(fileEntryCache.useAbsolutePathAsKey).toBe(true);
+		fileEntryCache.useAbsolutePathAsKey = false;
+		expect(fileEntryCache.useAbsolutePathAsKey).toBe(false);
+	});
+
 	test("create should initialize a file-entry-cache", () => {
 		const fileEntryCache = defaultFileEntryCache.create("test1");
 		expect(fileEntryCache).toBeDefined();

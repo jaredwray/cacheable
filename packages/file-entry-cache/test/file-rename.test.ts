@@ -41,14 +41,11 @@ describe("file-rename with cwd", () => {
 		fs.writeFileSync(testFilePath, testFileContent);
 
 		// Step 2: Create file-entry-cache with cwd pointing to the unique folder
-		const cache1 = fileEntryCache.create(
-			cacheFile,
-			cacheDir,
-			true, // useCheckSum for more reliable change detection
-			originalPath, // cwd set to the unique folder
-		);
-
-		cache1.useAbsolutePathAsKey = false;
+		const cache1 = fileEntryCache.create(cacheFile, cacheDir, {
+			useCheckSum: true, // useCheckSum for more reliable change detection
+			cwd: originalPath, // cwd set to the unique folder
+			useAbsolutePathAsKey: false,
+		});
 
 		// Step 3: Get file descriptor using relative path
 		const descriptor1 = cache1.getFileDescriptor(testFileName);
@@ -80,12 +77,10 @@ describe("file-rename with cwd", () => {
 		fs.renameSync(originalPath, renamedPath);
 
 		// Step 6: Create new file-entry-cache instance with cwd pointing to renamed folder
-		const cache2 = fileEntryCache.create(
-			cacheFile,
-			cacheDir,
-			true, // useCheckSum
-			renamedPath, // cwd now points to the renamed folder
-		);
+		const cache2 = fileEntryCache.create(cacheFile, cacheDir, {
+			useCheckSum: true, // useCheckSum
+			cwd: renamedPath, // cwd now points to the renamed folder
+		});
 
 		// Step 7: Access the file using the same relative path
 		const descriptor2 = cache2.getFileDescriptor(testFileName);
@@ -135,14 +130,11 @@ describe("file-rename with cwd", () => {
 		});
 
 		// Create cache with original folder
-		const cache1 = fileEntryCache.create(
-			cacheFile,
-			cacheDir,
-			true,
-			originalPath,
-		);
-
-		cache1.useAbsolutePathAsKey = false;
+		const cache1 = fileEntryCache.create(cacheFile, cacheDir, {
+			useCheckSum: true,
+			cwd: originalPath,
+			useAbsolutePathAsKey: false,
+		});
 
 		// Process all files
 		files.forEach((file) => {
@@ -160,14 +152,11 @@ describe("file-rename with cwd", () => {
 		fs.renameSync(originalPath, renamedPath);
 
 		// Create new cache with renamed folder
-		const cache2 = fileEntryCache.create(
-			cacheFile,
-			cacheDir,
-			true,
-			renamedPath,
-		);
-
-		cache2.useAbsolutePathAsKey = false;
+		const cache2 = fileEntryCache.create(cacheFile, cacheDir, {
+			useCheckSum: true,
+			cwd: renamedPath,
+			useAbsolutePathAsKey: false,
+		});
 
 		// Verify all files are still cached and unchanged
 		files.forEach((file) => {

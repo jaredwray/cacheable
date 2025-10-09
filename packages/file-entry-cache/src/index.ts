@@ -87,49 +87,46 @@ export type AnalyzedFiles = {
 /**
  * Create a new FileEntryCache instance from a file path
  * @param filePath - The path to the cache file
- * @param useCheckSum - Whether to use checksum to detect file changes (default: false)
- * @param cwd - The current working directory for resolving relative paths (default: process.cwd())
+ * @param options - create options such as useChecksum, cwd, and more
  * @returns A new FileEntryCache instance
  */
 export function createFromFile(
 	filePath: string,
-	useCheckSum?: boolean,
-	cwd?: string,
+	options?: CreateOptions,
 ): FileEntryCache {
 	const fname = path.basename(filePath);
 	const directory = path.dirname(filePath);
-	return create(fname, directory, useCheckSum, cwd);
+	return create(fname, directory, options);
 }
+
+export type CreateOptions = Omit<FileEntryCacheOptions, "cache">;
 
 /**
  * Create a new FileEntryCache instance
  * @param cacheId - The cache file name
  * @param cacheDirectory - The directory to store the cache file (default: undefined, cache won't be persisted)
- * @param useCheckSum - Whether to use checksum to detect file changes (default: false)
- * @param cwd - The current working directory for resolving relative paths (default: process.cwd())
+ * @param options - Whether to use checksum to detect file changes (default: false)
  * @returns A new FileEntryCache instance
  */
 export function create(
 	cacheId: string,
 	cacheDirectory?: string,
-	useCheckSum?: boolean,
-	cwd?: string,
+	options?: CreateOptions,
 ): FileEntryCache {
-	const options: FileEntryCacheOptions = {
-		useCheckSum,
-		cwd,
+	const opts: FileEntryCacheOptions = {
+		...options,
 		cache: {
 			cacheId,
 			cacheDir: cacheDirectory,
 		},
 	};
 
-	const fileEntryCache = new FileEntryCache(options);
+	const fileEntryCache = new FileEntryCache(opts);
 
 	if (cacheDirectory) {
 		const cachePath = `${cacheDirectory}/${cacheId}`;
 		if (fs.existsSync(cachePath)) {
-			fileEntryCache.cache = createFlatCacheFile(cachePath, options.cache);
+			fileEntryCache.cache = createFlatCacheFile(cachePath, opts.cache);
 		}
 	}
 
