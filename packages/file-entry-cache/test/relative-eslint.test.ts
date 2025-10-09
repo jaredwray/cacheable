@@ -18,7 +18,9 @@ describe("eslint tests scenarios", () => {
 			path.resolve("./src"),
 		);
 
-		cache.keyAsAbsolutePath = false;
+		if (cache.useAbsolutePathAsKey) {
+			cache.useAbsolutePathAsKey = false;
+		}
 
 		const indexDescriptor1 = cache.getFileDescriptor(file);
 

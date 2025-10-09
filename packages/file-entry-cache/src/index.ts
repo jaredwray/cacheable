@@ -36,8 +36,8 @@ export type FileEntryCacheOptions = {
 	cwd?: string;
 	/** Restrict file access to within cwd boundaries (default: true) */
 	strictPaths?: boolean;
-	/** Whether to use absolute path as cache key (default: true) */
-	keyAsAbsolutePath?: boolean;
+	/** Whether to use absolute path as cache key (default: false) */
+	useAbsolutePathAsKey?: boolean;
 	/** Logger instance for logging (default: undefined) */
 	logger?: ILogger;
 	/** Options for the underlying flat cache */
@@ -149,7 +149,7 @@ export class FileEntryCache {
 	private _cwd: string = process.cwd();
 	private _strictPaths = false;
 	private _logger?: ILogger;
-	private _keyAsAbsolutePath = true;
+	private _useAbsolutePathAsKey = true;
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -176,8 +176,8 @@ export class FileEntryCache {
 			this._strictPaths = options.strictPaths;
 		}
 
-		if (options?.keyAsAbsolutePath !== undefined) {
-			this._keyAsAbsolutePath = options.keyAsAbsolutePath;
+		if (options?.useAbsolutePathAsKey !== undefined) {
+			this._useAbsolutePathAsKey = options.useAbsolutePathAsKey;
 		}
 
 		if (options?.logger) {
@@ -285,16 +285,16 @@ export class FileEntryCache {
 	 * Get whether to use absolute path as cache key
 	 * @returns {boolean} Whether cache keys use absolute paths (default: true)
 	 */
-	public get keyAsAbsolutePath(): boolean {
-		return this._keyAsAbsolutePath;
+	public get useAbsolutePathAsKey(): boolean {
+		return this._useAbsolutePathAsKey;
 	}
 
 	/**
 	 * Set whether to use absolute path as cache key
 	 * @param {boolean} value - The value to set
 	 */
-	public set keyAsAbsolutePath(value: boolean) {
-		this._keyAsAbsolutePath = value;
+	public set useAbsolutePathAsKey(value: boolean) {
+		this._useAbsolutePathAsKey = value;
 	}
 
 	/**
@@ -316,7 +316,7 @@ export class FileEntryCache {
 	public createFileKey(filePath: string): string {
 		let result = filePath;
 
-		if (this._keyAsAbsolutePath && this.isRelativePath(filePath)) {
+		if (this._useAbsolutePathAsKey && this.isRelativePath(filePath)) {
 			result = this.getAbsolutePathWithCwd(filePath, this._cwd);
 		}
 
