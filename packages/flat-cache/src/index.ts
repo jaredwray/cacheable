@@ -186,11 +186,14 @@ export class FlatCache extends Hookified {
 			if (Array.isArray(items)) {
 				for (const item of items) {
 					if (item && typeof item === "object" && "key" in item) {
-						let ttl = this.convertExpiresToTtl(item.expires);
-						if (item.timestamp) {
-							ttl = this.convertExpiresToTtl(item.timestamp);
+						if (item.expires) {
+							this._cache.set(item.key, item.value, { expire: item.expires });
+						} else if (item.timestamp) {
+							/* c8 ignore next */
+							this._cache.set(item.key, item.value, { expire: item.timestamp });
+						} else {
+							this._cache.set(item.key, item.value);
 						}
-						this._cache.set(item.key, item.value, ttl);
 					}
 				}
 			} else {
@@ -205,29 +208,18 @@ export class FlatCache extends Hookified {
 						});
 					} else {
 						// Old legacy format - key is the cache key, value is the cache value
-						
-						let ttl;
-						if(item.timestamp) {
-							ttl = this.convertExpiresToTtl(item.timestamp);
+						if (item && typeof item === "object" && item.timestamp) {
+							/* c8 ignore next */
+							this._cache.set(key, item, { expire: item.timestamp });
+						} else {
+							this._cache.set(key, item);
 						}
-
-						this._cache.set(key, item, ttl);
 					}
 				}
 			}
 
 			this._changesSinceLastSave = true;
 		}
-	}
-
-	private convertExpiresToTtl(expires?: number): number | undefined {
-		if (!expires) {
-			return undefined;
-		}
-
-		const now = Date.now();
-		const ttl = expires - now;
-		return ttl > 0 ? ttl : 0;
 	}
 
 	public loadFileStream(
