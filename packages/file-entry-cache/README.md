@@ -174,6 +174,7 @@ const cache2 = fileEntryCache.createFromFile('/path/to/cache/file', {
 **NEW FEATURES:**
 - **Added `cwd` option** - You can now specify a custom current working directory for resolving relative paths
 - **Added `restrictAccessToCwd` option** - Provides protection against path traversal attacks (disabled by default for backwards compatibility)
+- **Added `useAbsolutePathAsKey` option** - When `true`, cache keys use absolute paths instead of the provided paths. Default is `false` for better cache portability with relative paths
 - **Improved cache portability** - When using relative paths with the same `cwd`, cache files are portable across different environments
 
 # Changes from v9 to v10
@@ -226,8 +227,9 @@ All options from `FileEntryCacheOptions` except `cache`:
 - `getHash(buffer: Buffer): string` - Gets the hash of a buffer used for checksums
 - `cwd: string` - The current working directory for resolving relative paths. Default is `process.cwd()`
 - `restrictAccessToCwd: boolean` - If `true` restricts file access to within `cwd` boundaries. Default is `true`
+- `useAbsolutePathAsKey: boolean` - If `true` uses absolute paths as cache keys. Default is `false` to maintain better cache portability
 - `logger: ILogger | undefined` - A logger instance for debugging and monitoring cache operations
-- `createFileKey(filePath: string): string` - Returns the cache key for the file path (returns the path exactly as provided).
+- `createFileKey(filePath: string): string` - Returns the cache key for the file path (returns the path exactly as provided when `useAbsolutePathAsKey` is `false`, otherwise returns the absolute path).
 - `deleteCacheFile(): boolean` - Deletes the cache file from disk
 - `destroy(): void` - Destroys the cache. This will clear the cache in memory. If using cache persistence it will stop the interval.
 - `removeEntry(filePath: string): void` - Removes an entry from the cache.
