@@ -35,7 +35,7 @@ export type FileEntryCacheOptions = {
 	/** Current working directory for resolving relative paths (default: process.cwd()) */
 	cwd?: string;
 	/** Restrict file access to within cwd boundaries (default: true) */
-	strictPaths?: boolean;
+	restrictAccessToCwd?: boolean;
 	/** Whether to use absolute path as cache key (default: false) */
 	useAbsolutePathAsKey?: boolean;
 	/** Logger instance for logging (default: undefined) */
@@ -144,7 +144,7 @@ export class FileEntryCache {
 	private _useCheckSum = false;
 	private _hashAlgorithm = "md5";
 	private _cwd: string = process.cwd();
-	private _strictPaths = false;
+	private _restrictAccessToCwd = false;
 	private _logger?: ILogger;
 	private _useAbsolutePathAsKey = false;
 
@@ -169,8 +169,8 @@ export class FileEntryCache {
 			this._cwd = options.cwd;
 		}
 
-		if (options?.strictPaths !== undefined) {
-			this._strictPaths = options.strictPaths;
+		if (options?.restrictAccessToCwd !== undefined) {
+			this._restrictAccessToCwd = options.restrictAccessToCwd;
 		}
 
 		if (options?.useAbsolutePathAsKey !== undefined) {
@@ -266,16 +266,16 @@ export class FileEntryCache {
 	 * Get whether to restrict paths to cwd boundaries
 	 * @returns {boolean} Whether strict path checking is enabled (default: true)
 	 */
-	public get strictPaths(): boolean {
-		return this._strictPaths;
+	public get restrictAccessToCwd(): boolean {
+		return this._restrictAccessToCwd;
 	}
 
 	/**
 	 * Set whether to restrict paths to cwd boundaries
 	 * @param {boolean} value - The value to set
 	 */
-	public set strictPaths(value: boolean) {
-		this._strictPaths = value;
+	public set restrictAccessToCwd(value: boolean) {
+		this._restrictAccessToCwd = value;
 	}
 
 	/**
@@ -608,11 +608,11 @@ export class FileEntryCache {
 
 	/**
 	 * Get the Absolute Path. If it is already absolute it will return the path as is.
-	 * When strictPaths is enabled, ensures the resolved path stays within cwd boundaries.
+	 * When restrictAccessToCwd is enabled, ensures the resolved path stays within cwd boundaries.
 	 * @method getAbsolutePath
 	 * @param filePath - The file path to get the absolute path for
 	 * @returns {string}
-	 * @throws {Error} When strictPaths is true and path would resolve outside cwd
+	 * @throws {Error} When restrictAccessToCwd is true and path would resolve outside cwd
 	 */
 	public getAbsolutePath(filePath: string): string {
 		if (this.isRelativePath(filePath)) {
@@ -623,7 +623,7 @@ export class FileEntryCache {
 			const resolved = path.resolve(this._cwd, sanitizedPath);
 
 			// Check if strict path checking is enabled
-			if (this._strictPaths) {
+			if (this._restrictAccessToCwd) {
 				// Normalize both paths for comparison to handle edge cases
 				const normalizedResolved = path.normalize(resolved);
 				const normalizedCwd = path.normalize(this._cwd);
@@ -648,12 +648,12 @@ export class FileEntryCache {
 
 	/**
 	 * Get the Absolute Path with a custom working directory. If it is already absolute it will return the path as is.
-	 * When strictPaths is enabled, ensures the resolved path stays within the provided cwd boundaries.
+	 * When restrictAccessToCwd is enabled, ensures the resolved path stays within the provided cwd boundaries.
 	 * @method getAbsolutePathWithCwd
 	 * @param filePath - The file path to get the absolute path for
 	 * @param cwd - The custom working directory to resolve relative paths from
 	 * @returns {string}
-	 * @throws {Error} When strictPaths is true and path would resolve outside the provided cwd
+	 * @throws {Error} When restrictAccessToCwd is true and path would resolve outside the provided cwd
 	 */
 	public getAbsolutePathWithCwd(filePath: string, cwd: string): string {
 		if (this.isRelativePath(filePath)) {
@@ -664,7 +664,7 @@ export class FileEntryCache {
 			const resolved = path.resolve(cwd, sanitizedPath);
 
 			// Check if strict path checking is enabled
-			if (this._strictPaths) {
+			if (this._restrictAccessToCwd) {
 				// Normalize both paths for comparison to handle edge cases
 				const normalizedResolved = path.normalize(resolved);
 				const normalizedCwd = path.normalize(cwd);

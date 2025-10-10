@@ -48,6 +48,13 @@ describe("file-entry-cache with options", () => {
 		expect(fileEntryCache.useAbsolutePathAsKey).toBe(false);
 	});
 
+	test("should be able to get and set restrictAccessToCwd", () => {
+		const fileEntryCache = new FileEntryCache({ restrictAccessToCwd: true });
+		expect(fileEntryCache.restrictAccessToCwd).toBe(true);
+		fileEntryCache.restrictAccessToCwd = false;
+		expect(fileEntryCache.restrictAccessToCwd).toBe(false);
+	});
+
 	test("create should initialize a file-entry-cache", () => {
 		const fileEntryCache = defaultFileEntryCache.create("test1");
 		expect(fileEntryCache).toBeDefined();
