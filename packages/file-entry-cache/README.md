@@ -72,6 +72,23 @@ fileDescriptor = cache.getFileDescriptor('./src/file.txt');
 console.log(fileDescriptor.changed); // true
 ```
 
+Using `create()` with options for more control:
+```javascript
+import fileEntryCache from 'file-entry-cache';
+
+// Create cache with options
+const cache = fileEntryCache.create('myCache', './.cache', {
+  useCheckSum: true,              // Use checksums for more reliable change detection
+  cwd: '/path/to/project',        // Custom working directory
+  restrictAccessToCwd: false,     // Allow access outside cwd (use with caution)
+  useAbsolutePathAsKey: false     // Store relative paths in cache
+});
+
+let fileDescriptor = cache.getFileDescriptor('./src/file.txt');
+console.log(fileDescriptor.changed); // true
+console.log(fileDescriptor.meta.hash); // checksum hash
+```
+
 Save it to Disk and Reconcile files that are no longer found
 ```javascript
 import fileEntryCache from 'file-entry-cache';
@@ -85,9 +102,17 @@ Load the cache from a file:
 
 ```javascript
 import fileEntryCache from 'file-entry-cache';
+
+// Basic usage
 const cache = fileEntryCache.createFromFile('/path/to/cache/file');
 let fileDescriptor = cache.getFileDescriptor('./src/file.txt');
 console.log(fileDescriptor.changed); // false as it has not changed from the saved cache.
+
+// With options
+const cache2 = fileEntryCache.createFromFile('/path/to/cache/file', {
+  useCheckSum: true,
+  cwd: '/path/to/project'
+});
 ```
 
 
@@ -95,12 +120,48 @@ console.log(fileDescriptor.changed); // false as it has not changed from the sav
 
 **BREAKING CHANGES:**
 
+- **`create()` and `createFromFile()` now use `CreateOptions` object** - The function signatures have changed to accept an options object instead of individual parameters for better extensibility and clarity.
+
+  **Old API (v10):**
+  ```javascript
+  // v10 - positional parameters
+  const cache = fileEntryCache.create(cacheId, cacheDirectory, useCheckSum, cwd);
+  const cache2 = fileEntryCache.createFromFile(filePath, useCheckSum, cwd);
+  ```
+
+  **New API (v11):**
+  ```javascript
+  // v11 - options object
+  const cache = fileEntryCache.create(cacheId, cacheDirectory, {
+    useCheckSum: true,
+    cwd: '/path/to/project',
+    restrictAccessToCwd: false
+  });
+
+  const cache2 = fileEntryCache.createFromFile(filePath, {
+    useCheckSum: true,
+    cwd: '/path/to/project',
+    restrictAccessToCwd: false
+  });
+  ```
+
+- **Renamed `strictPaths` to `restrictAccessToCwd`** - For better clarity and self-documentation, the option that restricts file access to the current working directory has been renamed.
+
+  **Migration:**
+  ```javascript
+  // Old
+  const cache = new FileEntryCache({ strictPaths: true });
+  cache.strictPaths = false;
+
+  // New
+  const cache = new FileEntryCache({ restrictAccessToCwd: true });
+  cache.restrictAccessToCwd = false;
+  ```
 
 **NEW FEATURES:**
 - **Added `cwd` option** - You can now specify a custom current working directory for resolving relative paths
-- **Added `restrictAccessToCwd` option** - Provides protection against path traversal attacks (enabled by default)
+- **Added `restrictAccessToCwd` option** - Provides protection against path traversal attacks (disabled by default for backwards compatibility)
 - **Improved cache portability** - When using relative paths with the same `cwd`, cache files are portable across different environments
-- **`restrictAccessToCwd` now defaults to `false`** - Path traversal protection is enabled by default for security. In the future this could be set to `true`
 
 # Changes from v9 to v10
 
@@ -115,8 +176,17 @@ There have been many features added and changes made to the `file-entry-cache` c
 - On `FileEntryDescriptor.meta` if using typescript you need to use the `meta.data` to set additional information. This is to allow for better type checking and to avoid conflicts with the `meta` object which was `any`.
 
 # Global Default Functions
-- `create(cacheId: string, cacheDirectory?: string, useCheckSum?: boolean, cwd?: string)` - Creates a new instance of the `FileEntryCache` class
-- `createFromFile(cachePath: string, useCheckSum?: boolean, cwd?: string)` - Creates a new instance of the `FileEntryCache` class and loads the cache from a file.
+- `create(cacheId: string, cacheDirectory?: string, options?: CreateOptions)` - Creates a new instance of the `FileEntryCache` class
+- `createFromFile(filePath: string, options?: CreateOptions)` - Creates a new instance of the `FileEntryCache` class and loads the cache from a file.
+
+## CreateOptions Type
+All options from `FileEntryCacheOptions` except `cache`:
+- `useCheckSum?` - If `true` it will use a checksum to determine if the file has changed. Default is `false`
+- `hashAlgorithm?` - The algorithm to use for the checksum. Default is `md5`
+- `cwd?` - The current working directory for resolving relative paths. Default is `process.cwd()`
+- `restrictAccessToCwd?` - If `true` restricts file access to within `cwd` boundaries. Default is `false`
+- `useAbsolutePathAsKey?` - If `true` uses absolute paths as cache keys. Default is `false`
+- `logger?` - A logger instance for debugging. Default is `undefined`
 
 # FileEntryCache Options (FileEntryCacheOptions)
 - `useModifiedTime?` - If `true` it will use the modified time to determine if the file has changed. Default is `true`
