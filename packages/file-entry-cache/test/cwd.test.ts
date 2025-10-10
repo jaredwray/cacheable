@@ -143,14 +143,14 @@ describe("cwd functionality", () => {
 		expect(descriptor.meta?.size).toBe(32);
 	});
 
-	test("should handle parent directory references with cwd when strictPaths is disabled", () => {
+	test("should handle parent directory references with cwd when restrictAccessToCwd is disabled", () => {
 		const childDir = path.join(testBaseDir, "child");
 		fs.mkdirSync(childDir, { recursive: true });
 
 		const cache = fileEntryCache.create(".testcache", cacheDirectory, {
 			useCheckSum: true,
 			cwd: childDir, // Set cwd to child directory
-			strictPaths: false, // Explicitly disable strictPaths to allow parent directory access
+			restrictAccessToCwd: false, // Explicitly disable restrictAccessToCwd to allow parent directory access
 		});
 
 		// Access parent directory file
@@ -305,11 +305,11 @@ describe("cwd functionality", () => {
 		const absPath2 = cache.getAbsolutePath("/absolute/path/file.js");
 		expect(absPath2).toBe("/absolute/path/file.js");
 
-		// Test parent directory reference (with strictPaths disabled)
+		// Test parent directory reference (with restrictAccessToCwd disabled)
 		const childCache = fileEntryCache.create(".testcache", cacheDirectory, {
 			useCheckSum: true,
 			cwd: path.join(testBaseDir, "child"),
-			strictPaths: false, // Disable strictPaths to allow parent directory access
+			restrictAccessToCwd: false, // Disable restrictAccessToCwd to allow parent directory access
 		});
 
 		const absPath3 = childCache.getAbsolutePath("../src/index.js");

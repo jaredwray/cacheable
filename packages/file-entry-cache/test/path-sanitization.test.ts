@@ -3,7 +3,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import { FileEntryCache } from "../src/index.js";
 
-describe("path sanitization with strictPaths", () => {
+describe("path sanitization with restrictAccessToCwd", () => {
 	const testBaseDir = path.resolve(process.cwd(), "../test-sanitize-base");
 	const safeDir = path.join(testBaseDir, "safe");
 	const cacheDir = path.resolve(__dirname, "cache-sanitize");
@@ -27,14 +27,14 @@ describe("path sanitization with strictPaths", () => {
 		}
 	});
 
-	test("should have strictPaths enabled by default", () => {
+	test("should have restrictAccessToCwd enabled by default", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Verify is true
-		expect(cache.strictPaths).toBe(true);
+		expect(cache.restrictAccessToCwd).toBe(true);
 
 		// Should block path traversal by default
 		expect(() => cache.getAbsolutePath("../sensitive.txt")).toThrowError(
@@ -42,10 +42,10 @@ describe("path sanitization with strictPaths", () => {
 		);
 	});
 
-	test("should allow access outside cwd when strictPaths is explicitly false", () => {
+	test("should allow access outside cwd when restrictAccessToCwd is explicitly false", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: false, // explicitly disable
+			restrictAccessToCwd: false, // explicitly disable
 		});
 
 		// Should allow access to parent directories
@@ -59,10 +59,10 @@ describe("path sanitization with strictPaths", () => {
 		expect(safePath).toBe(path.normalize(path.join(safeDir, "allowed.js")));
 	});
 
-	test("should block path traversal when strictPaths is true", () => {
+	test("should block path traversal when restrictAccessToCwd is true", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Should throw for parent directory access
@@ -81,10 +81,10 @@ describe("path sanitization with strictPaths", () => {
 		);
 	});
 
-	test("should allow access within cwd when strictPaths is true", () => {
+	test("should allow access within cwd when restrictAccessToCwd is true", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Should allow files in the current directory
@@ -96,10 +96,10 @@ describe("path sanitization with strictPaths", () => {
 		expect(subDir).toBe(path.normalize(path.join(safeDir, "subdir/file.js")));
 	});
 
-	test("should handle absolute paths regardless of strictPaths", () => {
+	test("should handle absolute paths regardless of restrictAccessToCwd", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Absolute paths bypass the check as they don't use cwd
@@ -110,7 +110,7 @@ describe("path sanitization with strictPaths", () => {
 	test("should sanitize null bytes from paths", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: false,
+			restrictAccessToCwd: false,
 		});
 
 		// Null bytes should be removed
@@ -119,10 +119,10 @@ describe("path sanitization with strictPaths", () => {
 		expect(sanitized).toBe(path.normalize(path.join(safeDir, "file.js")));
 	});
 
-	test("should work with getAbsolutePathWithCwd and strictPaths", () => {
+	test("should work with getAbsolutePathWithCwd and restrictAccessToCwd", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		const customCwd = path.join(testBaseDir, "custom");
@@ -141,7 +141,7 @@ describe("path sanitization with strictPaths", () => {
 	test("should handle complex traversal patterns", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Mixed traversal patterns
@@ -161,7 +161,7 @@ describe("path sanitization with strictPaths", () => {
 	test("should handle edge cases correctly", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Empty string
@@ -177,14 +177,14 @@ describe("path sanitization with strictPaths", () => {
 		expect(currentDir).toBe(path.normalize(safeDir));
 	});
 
-	test("should allow toggling strictPaths via setter", () => {
+	test("should allow toggling restrictAccessToCwd via setter", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true, // Start with true
+			restrictAccessToCwd: true, // Start with true
 		});
 
 		// Check initial value via getter
-		expect(cache.strictPaths).toBe(true);
+		expect(cache.restrictAccessToCwd).toBe(true);
 
 		// Initially blocks traversal
 		expect(() => cache.getAbsolutePath("../sensitive.txt")).toThrowError(
@@ -192,8 +192,8 @@ describe("path sanitization with strictPaths", () => {
 		);
 
 		// Disable strict mode
-		cache.strictPaths = false;
-		expect(cache.strictPaths).toBe(false);
+		cache.restrictAccessToCwd = false;
+		expect(cache.restrictAccessToCwd).toBe(false);
 
 		// Now allows traversal
 		const parentPath = cache.getAbsolutePath("../sensitive.txt");
@@ -202,8 +202,8 @@ describe("path sanitization with strictPaths", () => {
 		);
 
 		// Re-enable strict mode
-		cache.strictPaths = true;
-		expect(cache.strictPaths).toBe(true);
+		cache.restrictAccessToCwd = true;
+		expect(cache.restrictAccessToCwd).toBe(true);
 
 		// Blocks traversal again
 		expect(() => cache.getAbsolutePath("../sensitive.txt")).toThrowError(
@@ -214,7 +214,7 @@ describe("path sanitization with strictPaths", () => {
 	test("should properly validate paths at cwd boundary", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Path that resolves exactly to cwd should be allowed
@@ -230,7 +230,7 @@ describe("path sanitization with strictPaths", () => {
 	test("should handle Windows-style paths correctly", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Windows-style paths should be normalized
@@ -248,7 +248,7 @@ describe("path sanitization with strictPaths", () => {
 	test("should block advanced path traversal attacks", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Test various path traversal patterns that attackers might use
@@ -279,7 +279,7 @@ describe("path sanitization with strictPaths", () => {
 	test("should properly validate after path resolution", () => {
 		const cache = new FileEntryCache({
 			cwd: safeDir,
-			strictPaths: true,
+			restrictAccessToCwd: true,
 		});
 
 		// Create a subdirectory for testing

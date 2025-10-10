@@ -94,12 +94,13 @@ console.log(fileDescriptor.changed); // false as it has not changed from the sav
 # Changes from v10 to v11
 
 **BREAKING CHANGES:**
-- **`strictPaths` now defaults to `true`** - Path traversal protection is enabled by default for security. To restore v10 behavior, explicitly set `strictPaths: false`
+
 
 **NEW FEATURES:**
 - **Added `cwd` option** - You can now specify a custom current working directory for resolving relative paths
-- **Added `strictPaths` option** - Provides protection against path traversal attacks (enabled by default)
+- **Added `restrictAccessToCwd` option** - Provides protection against path traversal attacks (enabled by default)
 - **Improved cache portability** - When using relative paths with the same `cwd`, cache files are portable across different environments
+- **`restrictAccessToCwd` now defaults to `false`** - Path traversal protection is enabled by default for security. In the future this could be set to `true`
 
 # Changes from v9 to v10
 
@@ -122,7 +123,7 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `useCheckSum?` - If `true` it will use a checksum to determine if the file has changed. Default is `false`
 - `hashAlgorithm?` - The algorithm to use for the checksum. Default is `md5` but can be any algorithm supported by `crypto.createHash`
 - `cwd?` - The current working directory for resolving relative paths. Default is `process.cwd()`
-- `strictPaths?` - If `true` restricts file access to within `cwd` boundaries, preventing path traversal attacks. Default is `true`
+- `restrictAccessToCwd?` - If `true` restricts file access to within `cwd` boundaries, preventing path traversal attacks. Default is `true`
 - `logger?` - A logger instance compatible with Pino logger interface for debugging and monitoring. Default is `undefined`
 - `cache.ttl?` - The time to live for the cache in milliseconds. Default is `0` which means no expiration
 - `cache.lruSize?` - The number of items to keep in the cache. Default is `0` which means no limit
@@ -141,7 +142,7 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `hashAlgorithm: string` - The algorithm to use for the checksum. Default is `md5` but can be any algorithm supported by `crypto.createHash`
 - `getHash(buffer: Buffer): string` - Gets the hash of a buffer used for checksums
 - `cwd: string` - The current working directory for resolving relative paths. Default is `process.cwd()`
-- `strictPaths: boolean` - If `true` restricts file access to within `cwd` boundaries. Default is `true`
+- `restrictAccessToCwd: boolean` - If `true` restricts file access to within `cwd` boundaries. Default is `true`
 - `logger: ILogger | undefined` - A logger instance for debugging and monitoring cache operations
 - `createFileKey(filePath: string): string` - Returns the cache key for the file path (returns the path exactly as provided).
 - `deleteCacheFile(): boolean` - Deletes the cache file from disk
@@ -154,8 +155,8 @@ There have been many features added and changes made to the `file-entry-cache` c
 - `analyzeFiles(files: string[])` will return `AnalyzedFiles` object with `changedFiles`, `notFoundFiles`, and `notChangedFiles` as FileDescriptor arrays.
 - `getUpdatedFiles(files: string[])` will return an array of `FileEntryDescriptor` objects that have changed.
 - `getFileDescriptorsByPath(filePath: string): FileEntryDescriptor[]` will return an array of `FileEntryDescriptor` objects that starts with the path prefix specified.
-- `getAbsolutePath(filePath: string): string` - Resolves a relative path to absolute using the configured `cwd`. Returns absolute paths unchanged. When `strictPaths` is enabled, throws an error if the path resolves outside `cwd`.
-- `getAbsolutePathWithCwd(filePath: string, cwd: string): string` - Resolves a relative path to absolute using a custom working directory. When `strictPaths` is enabled, throws an error if the path resolves outside the provided `cwd`.
+- `getAbsolutePath(filePath: string): string` - Resolves a relative path to absolute using the configured `cwd`. Returns absolute paths unchanged. When `restrictAccessToCwd` is enabled, throws an error if the path resolves outside `cwd`.
+- `getAbsolutePathWithCwd(filePath: string, cwd: string): string` - Resolves a relative path to absolute using a custom working directory. When `restrictAccessToCwd` is enabled, throws an error if the path resolves outside the provided `cwd`.
 
 # Get File Descriptor
 
@@ -270,12 +271,12 @@ if (fileDescriptor.notFound) {
 
 # Path Security and Traversal Prevention
 
-The `strictPaths` option provides security against path traversal attacks by restricting file access to within the configured `cwd` boundaries. **This is enabled by default (since v11)** to ensure secure defaults when processing untrusted input or when running in security-sensitive environments.
+The `restrictAccessToCwd` option provides security against path traversal attacks by restricting file access to within the configured `cwd` boundaries. **This is enabled by default (since v11)** to ensure secure defaults when processing untrusted input or when running in security-sensitive environments.
 
 ## Basic Usage
 
 ```javascript
-// strictPaths is enabled by default for security
+// restrictAccessToCwd is enabled by default for security
 const cache = new FileEntryCache({
     cwd: '/project/root'
 });
@@ -293,13 +294,13 @@ try {
 // To allow parent directory access (not recommended for untrusted input)
 const unsafeCache = new FileEntryCache({
     cwd: '/project/root',
-    strictPaths: false  // Explicitly disable protection
+    restrictAccessToCwd: false  // Explicitly disable protection
 });
 ```
 
 ## Security Features
 
-When `strictPaths` is enabled:
+When `restrictAccessToCwd` is enabled:
 - **Path Traversal Prevention**: Blocks attempts to access files outside the working directory using `../` sequences
 - **Null Byte Protection**: Automatically removes null bytes from paths to prevent injection attacks
 - **Path Normalization**: Cleans and normalizes paths to prevent bypass attempts
@@ -317,7 +318,7 @@ const cache = fileEntryCache.create(
 );
 
 // Enable strict path checking for security
-cache.strictPaths = true;
+cache.restrictAccessToCwd = true;
 
 // Process user-provided file paths safely
 function processUserFile(userProvidedPath) {
@@ -340,7 +341,7 @@ function processUserFile(userProvidedPath) {
 // Strict security for CI/CD pipelines
 const cache = new FileEntryCache({
     cwd: process.env.GITHUB_WORKSPACE || process.cwd(),
-    strictPaths: true,  // Prevent access outside workspace
+    restrictAccessToCwd: true,  // Prevent access outside workspace
     useCheckSum: true   // Content-based validation
 });
 
@@ -355,20 +356,20 @@ cache.getFileDescriptor('../../../root'); // ✗ Blocked (path traversal)
 const cache = new FileEntryCache({ cwd: '/safe/directory' });
 
 // Start with relaxed mode for trusted operations
-cache.strictPaths = false;
+cache.restrictAccessToCwd = false;
 processInternalFiles();
 
 // Enable strict mode for untrusted input
-cache.strictPaths = true;
+cache.restrictAccessToCwd = true;
 processUserUploadedPaths();
 
 // Return to relaxed mode if needed
-cache.strictPaths = false;
+cache.restrictAccessToCwd = false;
 ```
 
 ## Default Behavior
 
-**As of v11, `strictPaths` is enabled by default** to provide secure defaults. This means:
+**As of v11, `restrictAccessToCwd` is enabled by default** to provide secure defaults. This means:
 - Path traversal attempts using `../` are blocked
 - File access is restricted to within the configured `cwd`
 - Null bytes in paths are automatically sanitized
@@ -380,11 +381,11 @@ If you're upgrading from v10 or earlier and need to maintain the previous behavi
 ```javascript
 const cache = new FileEntryCache({
     cwd: process.cwd(),
-    strictPaths: false  // Restore v10 behavior
+    restrictAccessToCwd: false  // Restore v10 behavior
 });
 ```
 
-However, we strongly recommend keeping `strictPaths: true` and adjusting your code to work within the security boundaries, especially when processing any untrusted input.
+However, we strongly recommend keeping `restrictAccessToCwd: true` and adjusting your code to work within the security boundaries, especially when processing any untrusted input.
 
 # Using Checksums to Determine if a File has Changed (useCheckSum)
 
