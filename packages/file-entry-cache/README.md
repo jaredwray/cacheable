@@ -246,9 +246,12 @@ The cache stores paths exactly as they are provided (relative or absolute). When
 // Default: uses process.cwd()
 const cache1 = fileEntryCache.create('cache1');
 
-// Custom working directory
-const cache2 = fileEntryCache.create('cache2', './cache', false, '/project/root');
-// Or with options object
+// Custom working directory using options object
+const cache2 = fileEntryCache.create('cache2', './cache', {
+  cwd: '/project/root'
+});
+
+// Or using the class constructor directly
 const cache3 = new FileEntryCache({ cwd: '/project/root' });
 
 // The cache key is always the provided path
@@ -263,12 +266,16 @@ Using relative paths with a consistent `cwd` (defaults to `process.cwd()`) makes
 
 ```javascript
 // On machine A (project at /home/user/project)
-const cacheA = fileEntryCache.create('build-cache', './cache', false, '/home/user/project');
+const cacheA = fileEntryCache.create('build-cache', './cache', {
+  cwd: '/home/user/project'
+});
 cacheA.getFileDescriptor('./src/index.js'); // Resolves to /home/user/project/src/index.js
 cacheA.reconcile();
 
 // On machine B (project at /workspace/project)
-const cacheB = fileEntryCache.create('build-cache', './cache', false, '/workspace/project');
+const cacheB = fileEntryCache.create('build-cache', './cache', {
+  cwd: '/workspace/project'
+});
 cacheB.getFileDescriptor('./src/index.js'); // Resolves to /workspace/project/src/index.js
 // Cache hit! File hasn't changed since machine A
 ```
@@ -279,11 +286,9 @@ For maximum cache portability across different environments, use checksums (`use
 
 ```javascript
 // Development machine
-const devCache = fileEntryCache.create(
-    '.buildcache',
-    './cache',                 // cache directory
-    true                      // Use checksums for content-based comparison
-);
+const devCache = fileEntryCache.create('.buildcache', './cache', {
+  useCheckSum: true  // Use checksums for content-based comparison
+});
 
 // Process files using relative paths
 const descriptor = devCache.getFileDescriptor('./src/index.js');
@@ -294,12 +299,10 @@ if (descriptor.changed) {
 devCache.reconcile(); // Save cache
 
 // CI/CD Pipeline or another developer's machine
-const ciCache = fileEntryCache.create(
-    '.buildcache',
-    './node_modules/.cache',
-    true,                      // Same checksum setting
-    process.cwd()              // Different absolute path, same relative structure
-);
+const ciCache = fileEntryCache.create('.buildcache', './node_modules/.cache', {
+  useCheckSum: true,      // Same checksum setting
+  cwd: process.cwd()      // Different absolute path, same relative structure
+});
 
 // Same relative path works across environments
 const descriptor2 = ciCache.getFileDescriptor('./src/index.js');
@@ -315,12 +318,18 @@ Cache remains valid even when projects are moved or renamed:
 
 ```javascript
 // Original location: /projects/my-app
-const cache1 = fileEntryCache.create('.cache', './cache', true, '/projects/my-app');
+const cache1 = fileEntryCache.create('.cache', './cache', {
+  useCheckSum: true,
+  cwd: '/projects/my-app'
+});
 cache1.getFileDescriptor('./src/app.js');
 cache1.reconcile();
 
 // After moving project to: /archived/2024/my-app
-const cache2 = fileEntryCache.create('.cache', './cache', true, '/archived/2024/my-app');
+const cache2 = fileEntryCache.create('.cache', './cache', {
+  useCheckSum: true,
+  cwd: '/archived/2024/my-app'
+});
 cache2.getFileDescriptor('./src/app.js'); // Still finds cached entry!
 // Cache valid as long as relative structure unchanged
 ```
@@ -380,15 +389,11 @@ When `restrictAccessToCwd` is enabled:
 ### Build Tools with Untrusted Input
 ```javascript
 // Secure build tool configuration
-const cache = fileEntryCache.create(
-    '.buildcache',
-    './cache',
-    true,  // useCheckSum
-    process.cwd()
-);
-
-// Enable strict path checking for security
-cache.restrictAccessToCwd = true;
+const cache = fileEntryCache.create('.buildcache', './cache', {
+  useCheckSum: true,
+  cwd: process.cwd(),
+  restrictAccessToCwd: true  // Enable strict path checking for security
+});
 
 // Process user-provided file paths safely
 function processUserFile(userProvidedPath) {
