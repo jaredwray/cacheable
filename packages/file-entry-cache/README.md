@@ -175,6 +175,7 @@ const cache2 = fileEntryCache.createFromFile('/path/to/cache/file', {
 - **Added `cwd` option** - You can now specify a custom current working directory for resolving relative paths
 - **Added `restrictAccessToCwd` option** - Provides protection against path traversal attacks (disabled by default for backwards compatibility)
 - **Added `useAbsolutePathAsKey` option** - When `true`, cache keys use absolute paths instead of the provided paths. Default is `false` for better cache portability with relative paths
+- **Added `logger` option** - Support for Pino-compatible logger instances to enable debugging and monitoring of cache operations. See [Logger Support](#logger-support) section for details
 - **Improved cache portability** - When using relative paths with the same `cwd`, cache files are portable across different environments
 
 # Changes from v9 to v10
