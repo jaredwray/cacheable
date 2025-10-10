@@ -158,6 +158,19 @@ const cache2 = fileEntryCache.createFromFile('/path/to/cache/file', {
   cache.restrictAccessToCwd = false;
   ```
 
+- **Renamed `currentWorkingDirectory` to `cwd`** - For consistency with common conventions and brevity, the property has been renamed to `cwd`.
+
+  **Migration:**
+  ```javascript
+  // Old
+  const cache = new FileEntryCache({ currentWorkingDirectory: '/path/to/project' });
+  cache.currentWorkingDirectory = '/new/path';
+
+  // New
+  const cache = new FileEntryCache({ cwd: '/path/to/project' });
+  cache.cwd = '/new/path';
+  ```
+
 **NEW FEATURES:**
 - **Added `cwd` option** - You can now specify a custom current working directory for resolving relative paths
 - **Added `restrictAccessToCwd` option** - Provides protection against path traversal attacks (disabled by default for backwards compatibility)
