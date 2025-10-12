@@ -402,20 +402,18 @@ describe("getFileDescriptor()", () => {
 		fileEntryCache.reconcile();
 
 		// Add the meta data to the cache
-		const fileEntryCache2 = createFromFile(
-			fileEntryCache.cache.cacheFilePath,
-			true,
-		);
+		const fileEntryCache2 = createFromFile(fileEntryCache.cache.cacheFilePath, {
+			useCheckSum: true,
+		});
 		const fileDescriptor2 = fileEntryCache2.getFileDescriptor(testFile1);
 		const data2 = { testingFooVariable: "22", name: "test1.txt", shared };
 		fileDescriptor2.meta.data = data2;
 		fileEntryCache2.reconcile();
 
 		// Load the meta data from the cache
-		const fileEntryCache3 = createFromFile(
-			fileEntryCache.cache.cacheFilePath,
-			true,
-		);
+		const fileEntryCache3 = createFromFile(fileEntryCache.cache.cacheFilePath, {
+			useCheckSum: true,
+		});
 		const fileDescriptor3 = fileEntryCache3.getFileDescriptor(testFile1);
 		expect(fileDescriptor3).toBeDefined();
 		expect(fileDescriptor3.meta.data).toEqual(data2);
@@ -441,10 +439,9 @@ describe("getFileDescriptor()", () => {
 		fileEntryCache.reconcile();
 
 		// Load from cache and verify custom properties are preserved
-		const fileEntryCache2 = createFromFile(
-			fileEntryCache.cache.cacheFilePath,
-			true,
-		);
+		const fileEntryCache2 = createFromFile(fileEntryCache.cache.cacheFilePath, {
+			useCheckSum: true,
+		});
 		const fileDescriptor2 = fileEntryCache2.getFileDescriptor(testFile1);
 		expect(fileDescriptor2).toBeDefined();
 		expect(fileDescriptor2.meta.results).toEqual({ errors: 0, warnings: 2 });
@@ -458,10 +455,9 @@ describe("getFileDescriptor()", () => {
 		fileEntryCache2.reconcile();
 
 		// Verify updates are preserved
-		const fileEntryCache3 = createFromFile(
-			fileEntryCache.cache.cacheFilePath,
-			true,
-		);
+		const fileEntryCache3 = createFromFile(fileEntryCache.cache.cacheFilePath, {
+			useCheckSum: true,
+		});
 		const fileDescriptor3 = fileEntryCache3.getFileDescriptor(testFile1);
 		expect(fileDescriptor3.meta.results).toEqual({ errors: 1, warnings: 0 });
 		expect(fileDescriptor3.meta.hashOfConfig).toEqual("xyz789ghi012");
