@@ -52,7 +52,7 @@
 		"file-system-cache"
 	],
 	"scripts": {
-		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean --minify",
+		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
 		"prepublish": "pnpm build",
 		"lint": "biome check --write --error-on-warnings",
 		"test": "pnpm lint && vitest run --coverage",
