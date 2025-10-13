@@ -47,6 +47,8 @@ export type FileEntryCacheOptions = {
 export type GetFileDescriptorOptions = {
 	/** Whether to use checksum for this specific file check instead of modified time (mtime) (overrides instance setting) */
 	useCheckSum?: boolean;
+	/** Whether to use file modified time for change detection (default: true) */
+	useModifiedTime?: boolean;
 };
 
 export type FileDescriptor = {
@@ -147,6 +149,7 @@ export class FileEntryCache {
 	private _restrictAccessToCwd = false;
 	private _logger?: ILogger;
 	private _useAbsolutePathAsKey = false;
+	private _useModifiedTime = true;
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -167,6 +170,10 @@ export class FileEntryCache {
 
 		if (options?.cwd) {
 			this._cwd = options.cwd;
+		}
+
+		if (options?.useModifiedTime !== undefined) {
+			this._useModifiedTime = options.useModifiedTime;
 		}
 
 		if (options?.restrictAccessToCwd !== undefined) {
@@ -260,6 +267,22 @@ export class FileEntryCache {
 	 */
 	public set cwd(value: string) {
 		this._cwd = value;
+	}
+
+	/**
+	 * Get whether to use modified time for change detection
+	 * @returns {boolean} Whether modified time (mtime) is used for change detection (default: true)
+	 */
+	public get useModifiedTime(): boolean {
+		return this._useModifiedTime;
+	}
+
+	/**
+	 * Set whether to use modified time for change detection
+	 * @param {boolean} value - The value to set
+	 */
+	public set useModifiedTime(value: boolean) {
+		this._useModifiedTime = value;
 	}
 
 	/**
@@ -435,6 +458,13 @@ export class FileEntryCache {
 			"Using checksum setting",
 		);
 
+		const useModifiedTimeValue =
+			options?.useModifiedTime ?? this.useModifiedTime;
+		this._logger?.debug(
+			{ useModifiedTime: useModifiedTimeValue },
+			"Using modified time (mtime) setting",
+		);
+
 		try {
 			fstat = fs.statSync(absolutePath);
 			// Update the file stats while preserving existing meta properties
@@ -478,7 +508,7 @@ export class FileEntryCache {
 		}
 
 		// If the file is in the cache, check if the file has changed
-		if (useCheckSumValue === false && metaCache?.mtime !== result.meta?.mtime) {
+		if (useModifiedTimeValue && metaCache?.mtime !== result.meta?.mtime) {
 			result.changed = true;
 			this._logger?.debug(
 				{ filePath, oldMtime: metaCache.mtime, newMtime: result.meta.mtime },
