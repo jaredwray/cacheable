@@ -55,6 +55,13 @@ describe("file-entry-cache with options", () => {
 		expect(fileEntryCache.restrictAccessToCwd).toBe(false);
 	});
 
+	test("should be able to get and set useModifiedTime", () => {
+		const fileEntryCache = new FileEntryCache({ useModifiedTime: false });
+		expect(fileEntryCache.useModifiedTime).toBe(false);
+		fileEntryCache.useModifiedTime = true;
+		expect(fileEntryCache.useModifiedTime).toBe(true);
+	});
+
 	test("create should initialize a file-entry-cache", () => {
 		const fileEntryCache = defaultFileEntryCache.create("test1");
 		expect(fileEntryCache).toBeDefined();

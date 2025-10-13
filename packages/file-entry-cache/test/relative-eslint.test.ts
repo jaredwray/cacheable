@@ -18,6 +18,7 @@ describe("eslint tests scenarios", () => {
 		const cache = fileEntryCache.create(".eslintcache-foo43", cacheDirectory, {
 			useCheckSum,
 			cwd: path.resolve("./src"),
+			useModifiedTime: false,
 		});
 
 		if (cache.useAbsolutePathAsKey) {
