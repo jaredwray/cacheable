@@ -46,7 +46,7 @@
 		"@cacheable/memoize": "workspace:^",
 		"@cacheable/memory": "workspace:^",
 		"@cacheable/utils": "workspace:^",
-		"hookified": "^1.12.1",
+		"hookified": "^1.12.2",
 		"keyv": "^5.5.3",
 		"qified": "^0.5.0"
 	},
