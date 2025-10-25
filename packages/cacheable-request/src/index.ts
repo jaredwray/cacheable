@@ -125,18 +125,52 @@ class CacheableRequest {
 				const handler = async (response: any) => {
 					if (revalidate) {
 						response.status = response.statusCode;
-						const revalidatedPolicy = CachePolicy.fromObject(
+						const originalPolicy = CachePolicy.fromObject(
 							revalidate.cachePolicy,
-						).revalidatedPolicy(options_, response);
+						);
+						const revalidatedPolicy = originalPolicy.revalidatedPolicy(
+							options_,
+							response,
+						);
 						if (!revalidatedPolicy.modified) {
 							response.resume();
 							await new Promise((resolve) => {
 								// Skipping 'error' handler cause 'error' event should't be emitted for 304 response
 								response.once("end", resolve);
 							});
+							// Get headers from revalidated policy
 							const headers = convertHeaders(
 								revalidatedPolicy.policy.responseHeaders(),
 							);
+
+							// Preserve headers from the original cached response that may have been
+							// lost during revalidation (e.g., content-encoding, content-type, etc.)
+							// This works around a limitation in http-cache-semantics where some headers
+							// are not preserved when a 304 response has minimal headers
+							const originalHeaders = convertHeaders(
+								originalPolicy.responseHeaders(),
+							);
+
+							// Headers that should be preserved from the cached response
+							// according to RFC 7232 section 4.1
+							const preserveHeaders = [
+								"content-encoding",
+								"content-type",
+								"content-length",
+								"content-language",
+								"content-location",
+								"etag",
+							];
+
+							for (const headerName of preserveHeaders) {
+								if (
+									originalHeaders[headerName] !== undefined &&
+									headers[headerName] === undefined
+								) {
+									headers[headerName] = originalHeaders[headerName];
+								}
+							}
+
 							response = new Response({
 								statusCode: revalidate.statusCode,
 								headers,
@@ -191,18 +225,22 @@ class CacheableRequest {
 								}
 
 								await this.cache.set(key, value, ttl);
+								/* c8 ignore next -- @preserve */
 							} catch (error: any) {
-								/* c8 ignore next 2 */
+								/* c8 ignore next -- @preserve */
 								ee.emit("error", new CacheError(error));
+								/* c8 ignore next -- @preserve */
 							}
 						})();
 					} else if (options_.cache && revalidate) {
 						(async () => {
 							try {
 								await this.cache.delete(key);
+								/* c8 ignore next -- @preserve */
 							} catch (error: any) {
-								/* c8 ignore next 2 */
+								/* c8 ignore next -- @preserve */
 								ee.emit("error", new CacheError(error));
+								/* c8 ignore next -- @preserve */
 							}
 						})();
 					}
