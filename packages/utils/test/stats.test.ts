@@ -155,4 +155,56 @@ describe("cacheable stats", () => {
 		stats.setCount(10);
 		expect(stats.count).toBe(10);
 	});
+
+	test("should handle null values in roughSizeOfObject", () => {
+		const stats = new Stats();
+		const size = stats.roughSizeOfObject(null);
+		expect(size).toBe(4); // null is treated as 4 bytes
+	});
+
+	test("should handle undefined values in roughSizeOfObject", () => {
+		const stats = new Stats();
+		const size = stats.roughSizeOfObject(undefined);
+		expect(size).toBe(4); // undefined is treated as 4 bytes
+	});
+
+	test("should handle objects with null properties", () => {
+		const stats = new Stats();
+		const obj = { foo: "bar", nullValue: null, undefinedValue: undefined };
+		const size = stats.roughSizeOfObject(obj);
+		expect(size).toBeGreaterThan(0);
+	});
+
+	test("should handle circular references without infinite loop", () => {
+		const stats = new Stats();
+		// biome-ignore lint/suspicious/noExplicitAny: needed for circular reference test
+		const obj: any = { foo: "bar" };
+		obj.self = obj; // Create circular reference
+		const size = stats.roughSizeOfObject(obj);
+		expect(size).toBeGreaterThan(0);
+		expect(size).toBeLessThan(Number.POSITIVE_INFINITY);
+	});
+
+	test("should handle nested circular references", () => {
+		const stats = new Stats();
+		// biome-ignore lint/suspicious/noExplicitAny: needed for circular reference test
+		const obj1: any = { name: "obj1" };
+		// biome-ignore lint/suspicious/noExplicitAny: needed for circular reference test
+		const obj2: any = { name: "obj2" };
+		obj1.ref = obj2;
+		obj2.ref = obj1; // Create circular reference between two objects
+		const size = stats.roughSizeOfObject(obj1);
+		expect(size).toBeGreaterThan(0);
+		expect(size).toBeLessThan(Number.POSITIVE_INFINITY);
+	});
+
+	test("should handle arrays with circular references", () => {
+		const stats = new Stats();
+		// biome-ignore lint/suspicious/noExplicitAny: needed for circular reference test
+		const arr: any[] = [1, 2, 3];
+		arr.push(arr); // Create circular reference in array
+		const size = stats.roughSizeOfObject(arr);
+		expect(size).toBeGreaterThan(0);
+		expect(size).toBeLessThan(Number.POSITIVE_INFINITY);
+	});
 });
