@@ -1,22 +1,20 @@
-import {
-	type CacheInstance,
-	type GetOrSetFunctionOptions,
-	type GetOrSetKey,
-	type GetOrSetOptions,
-	getOrSet,
-	type WrapFunctionOptions,
-	wrap,
-} from "@cacheable/memoize";
 import { createKeyv } from "@cacheable/memory";
 import {
 	type CacheableItem,
 	Stats as CacheableStats,
+	type CacheInstance,
 	calculateTtlFromExpiration,
+	type GetOrSetFunctionOptions,
+	type GetOrSetKey,
+	type GetOrSetOptions,
 	getCascadingTtl,
+	getOrSet,
 	HashAlgorithm,
 	hash,
 	isKeyvInstance,
 	shorthandToMilliseconds,
+	type WrapFunctionOptions,
+	wrap,
 } from "@cacheable/utils";
 import { Hookified } from "hookified";
 import {
@@ -1171,16 +1169,6 @@ export class Cacheable extends Hookified {
 }
 
 export {
-	type GetOrSetFunctionOptions,
-	type GetOrSetKey,
-	type GetOrSetOptions,
-	getOrSet,
-	type WrapOptions,
-	type WrapSyncOptions,
-	wrap,
-	wrapSync,
-} from "@cacheable/memoize";
-export {
 	CacheableMemory,
 	type CacheableMemoryOptions,
 	createKeyv,
@@ -1190,12 +1178,20 @@ export {
 export {
 	type CacheableItem,
 	calculateTtlFromExpiration,
+	type GetOrSetFunctionOptions,
+	type GetOrSetKey,
+	type GetOrSetOptions,
 	getCascadingTtl,
+	getOrSet,
 	HashAlgorithm,
 	hash,
 	Stats as CacheableStats,
 	shorthandToMilliseconds,
 	shorthandToTime,
+	type WrapOptions,
+	type WrapSyncOptions,
+	wrap,
+	wrapSync,
 } from "@cacheable/utils";
 export { Keyv, KeyvHooks, type KeyvOptions, type KeyvStoreAdapter } from "keyv";
 export { CacheableEvents, CacheableHooks } from "./enums.js";

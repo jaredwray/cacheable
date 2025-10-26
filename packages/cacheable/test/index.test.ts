@@ -1,4 +1,4 @@
-import type { GetOrSetOptions } from "@cacheable/memoize";
+import type { GetOrSetOptions } from "@cacheable/utils";
 import { sleep } from "@cacheable/utils";
 import { faker } from "@faker-js/faker";
 import KeyvRedis from "@keyv/redis";

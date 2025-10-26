@@ -1,14 +1,12 @@
 import {
-	type CacheSyncInstance,
-	type WrapFunctionOptions,
-	wrapSync,
-} from "@cacheable/memoize";
-import {
 	type CacheableItem,
 	type CacheableStoreItem,
+	type CacheSyncInstance,
 	HashAlgorithm,
 	hashToNumber,
 	shorthandToTime,
+	type WrapFunctionOptions,
+	wrapSync,
 } from "@cacheable/utils";
 import { Hookified } from "hookified";
 import { DoublyLinkedList } from "./memory-lru.js";

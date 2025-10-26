@@ -39,7 +39,6 @@
 		"vitest": "^3.2.4"
 	},
 	"dependencies": {
-		"@cacheable/memoize": "workspace:^",
 		"@cacheable/utils": "workspace:^",
 		"@keyv/bigmap": "^1.0.2",
 		"hookified": "^1.12.1",

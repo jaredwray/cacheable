@@ -1,5 +1,4 @@
-import { createWrapKey } from "@cacheable/memoize";
-import { sleep } from "@cacheable/utils";
+import { createWrapKey, sleep } from "@cacheable/utils";
 import { describe, expect, test } from "vitest";
 import { Cacheable } from "../src/index.js";
 
@@ -82,7 +81,7 @@ describe("cacheable adapter coverage", () => {
 		const cacheable = new Cacheable();
 
 		// We need to directly call the adapter's on method to achieve 100% coverage
-		// Even though @cacheable/memoize doesn't call it, we need to test it works
+		// Even though @cacheable/utils memoize doesn't call it, we need to test it works
 
 		// Access the wrap method's internals
 		const testFn = async () => "result";

@@ -43,7 +43,6 @@
 		"vitest": "^3.2.4"
 	},
 	"dependencies": {
-		"@cacheable/memoize": "workspace:^",
 		"@cacheable/memory": "workspace:^",
 		"@cacheable/utils": "workspace:^",
 		"hookified": "^1.12.2",

@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: mock file
-import type { CacheableStoreItem } from "@cacheable/utils";
-import { shorthandToMilliseconds } from "@cacheable/utils";
-import type { CacheInstance, CacheSyncInstance } from "../src/index.js";
+import type { CacheableStoreItem } from "../src/cacheable-item-types.js";
+import type { CacheInstance, CacheSyncInstance } from "../src/memoize.js";
+import { shorthandToMilliseconds } from "../src/shorthand-time.js";
 
 export class MockCacheable implements CacheInstance {
 	private readonly cache = new Map<string, CacheableStoreItem>();
