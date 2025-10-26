@@ -1,4 +1,5 @@
-import { coalesceAsync, hash } from "@cacheable/utils";
+import { coalesceAsync } from "./coalesce-async.js";
+import { hash } from "./hash.js";
 
 export type CacheInstance = {
 	// biome-ignore lint/suspicious/noExplicitAny: type format

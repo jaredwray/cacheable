@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from "vitest";
-import { type GetOrSetOptions, getOrSet } from "../src/index.js";
+import { type GetOrSetOptions, getOrSet } from "../src/memoize.js";
 import { MockCacheable } from "./mock-cacheable.js";
 
 describe("cacheable get or set", () => {

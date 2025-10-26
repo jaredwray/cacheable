@@ -19,3 +19,7 @@ export {
 	getCascadingTtl,
 	getTtlFromExpires,
 } from "./ttl.js";
+
+export {
+	getOrSet, wrap
+} from "./memoize.js";
