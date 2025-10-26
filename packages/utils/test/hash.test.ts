@@ -227,4 +227,78 @@ describe("hash", () => {
 		expect(result).toBeGreaterThanOrEqual(0);
 		expect(result).toBeLessThanOrEqual(10);
 	});
+
+	test("hashToNumber handles edge case with very large hash numbers", () => {
+		// Test with large range to exercise edge cases
+		const min = 0;
+		const max = Number.MAX_SAFE_INTEGER;
+
+		// Act
+		const result = hashToNumber("test", { min, max });
+
+		// Assert - should still be within range
+		expect(result).toBeGreaterThanOrEqual(min);
+		expect(result).toBeLessThanOrEqual(max);
+	});
+
+	test("hashToNumber with all hash algorithms stays within range", () => {
+		// Test all algorithms to ensure proper range handling
+		const testData = "test data";
+		const min = 0;
+		const max = 100;
+
+		for (const algorithm of Object.values(HashAlgorithm)) {
+			const result = hashToNumber(testData, { min, max, algorithm });
+			expect(result).toBeGreaterThanOrEqual(min);
+			expect(result).toBeLessThanOrEqual(max);
+		}
+	});
+
+	test("hashToNumber handles potential integer overflow scenarios", () => {
+		// Test with different combinations that could stress the math
+		const testCases = [
+			{ min: -1000, max: 1000 },
+			{ min: 1, max: 2 },
+			{ min: 0, max: 1 },
+			{ min: -100, max: -50 },
+			{ min: Number.MIN_SAFE_INTEGER, max: Number.MIN_SAFE_INTEGER + 100 },
+		];
+
+		for (const { min, max } of testCases) {
+			const result = hashToNumber("edge case test", { min, max });
+			expect(result).toBeGreaterThanOrEqual(min);
+			expect(result).toBeLessThanOrEqual(max);
+		}
+	});
+
+	test("hashToNumber with custom serialize function that returns edge case strings", () => {
+		// Test with a custom serializer that could produce edge cases
+		const customSerialize = () => "z".repeat(1000); // Very large string to hash
+		const min = 0;
+		const max = 10;
+
+		const result = hashToNumber("test", {
+			min,
+			max,
+			serialize: customSerialize,
+		});
+
+		expect(result).toBeGreaterThanOrEqual(min);
+		expect(result).toBeLessThanOrEqual(max);
+	});
+
+	test("hashToNumber comprehensively tests range boundaries", () => {
+		// Generate many test cases to ensure all boundary conditions work
+		const testCases = Array.from({ length: 1000 }, () => ({
+			data: faker.string.alphanumeric(faker.number.int({ min: 1, max: 100 })),
+			min: faker.number.int({ min: -1000, max: 0 }),
+			max: faker.number.int({ min: 1, max: 1000 }),
+		}));
+
+		for (const { data, min, max } of testCases) {
+			const result = hashToNumber(data, { min, max });
+			expect(result).toBeGreaterThanOrEqual(min);
+			expect(result).toBeLessThanOrEqual(max);
+		}
+	});
 });

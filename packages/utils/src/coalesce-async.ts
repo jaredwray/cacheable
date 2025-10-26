@@ -25,7 +25,7 @@ function addCallbackToKey<T>(key: string, callback: PromiseCallback<T>): void {
 }
 
 function getCallbacksByKey<T>(key: string): Array<PromiseCallback<T>> {
-	/* c8 ignore next 1 */
+	/* v8 ignore next -- @preserve */
 	return callbacks.get(key) ?? [];
 }
 

@@ -99,7 +99,7 @@ export function hashToNumber(
 		return min;
 	}
 
-	/* c8 ignore next 4 */
+	/* v8 ignore next -- @preserve */
 	if (result > max) {
 		return max;
 	}
