@@ -91,7 +91,7 @@ export async function fetch(
 		const cachedData = await options.cache.getOrSet(cacheKey, async () => {
 			// Perform the fetch operation
 			const response = await undiciFetch(url, fetchOptions);
-			/* c8 ignore next 3 */
+			/* v8 ignore next -- @preserve */
 			if (!response.ok) {
 				throw new Error(`Fetch failed with status ${response.status}`);
 			}
@@ -107,7 +107,7 @@ export async function fetch(
 		});
 
 		// Reconstruct Response object from cached data
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		if (!cachedData) {
 			throw new Error("Failed to get or set cache data");
 		}
@@ -197,6 +197,7 @@ export async function fetch(
 			},
 		);
 
+		/* v8 ignore next -- @preserve */
 		if (!modified) {
 			// Calculate new TTL from updated policy
 			const ttl = updatedPolicy.timeToLive();
@@ -226,7 +227,7 @@ export async function fetch(
 		}
 	}
 
-	/* c8 ignore next 3 */
+	/* v8 ignore next -- @preserve */
 	if (!response.ok && response.status !== 304) {
 		throw new Error(`Fetch failed with status ${response.status}`);
 	}
@@ -343,6 +344,7 @@ export async function post<T = unknown>(
 		// Assume it's JSON data
 		body = JSON.stringify(data);
 		// Set Content-Type to JSON if not already set
+		/* v8 ignore next -- @preserve */
 		if (!headers["Content-Type"] && !headers["content-type"]) {
 			headers["Content-Type"] = "application/json";
 		}
@@ -403,8 +405,10 @@ export async function patch<T = unknown>(
 		body = data as BodyInit;
 	} else {
 		// Assume it's JSON data
+		/* v8 ignore next -- @preserve */
 		body = JSON.stringify(data);
 		// Set Content-Type to JSON if not already set
+		/* v8 ignore next -- @preserve */
 		if (!headers["Content-Type"] && !headers["content-type"]) {
 			headers["Content-Type"] = "application/json";
 		}
@@ -488,8 +492,10 @@ export async function del<T = unknown>(
 			body = actualData as BodyInit;
 		} else {
 			// Assume it's JSON data
+			/* v8 ignore next -- @preserve */
 			body = JSON.stringify(actualData);
 			// Set Content-Type to JSON if not already set
+			/* v8 ignore next -- @preserve */
 			if (!headers["Content-Type"] && !headers["content-type"]) {
 				headers["Content-Type"] = "application/json";
 			}

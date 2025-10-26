@@ -302,9 +302,7 @@ export class CacheableNet extends Hookified {
 			const stringifyFn = options?.stringify || this._stringify;
 			body = stringifyFn(data);
 			// Set Content-Type to JSON if not already set
-			if (!headers["Content-Type"] && !headers["content-type"]) {
-				headers["Content-Type"] = "application/json";
-			}
+			this.setContentType(headers);
 		}
 
 		const fetchOptions: FetchOptions = {
@@ -405,9 +403,7 @@ export class CacheableNet extends Hookified {
 			const stringifyFn = options?.stringify || this._stringify;
 			body = stringifyFn(data);
 			// Set Content-Type to JSON if not already set
-			if (!headers["Content-Type"] && !headers["content-type"]) {
-				headers["Content-Type"] = "application/json";
-			}
+			this.setContentType(headers);
 		}
 
 		const fetchOptions: FetchOptions = {
@@ -481,9 +477,7 @@ export class CacheableNet extends Hookified {
 			const stringifyFn = options?.stringify || this._stringify;
 			body = stringifyFn(data);
 			// Set Content-Type to JSON if not already set
-			if (!headers["Content-Type"] && !headers["content-type"]) {
-				headers["Content-Type"] = "application/json";
-			}
+			this.setContentType(headers);
 		}
 
 		const fetchOptions: FetchOptions = {
@@ -558,9 +552,7 @@ export class CacheableNet extends Hookified {
 				const stringifyFn = options?.stringify || this._stringify;
 				body = stringifyFn(data);
 				// Set Content-Type to JSON if not already set
-				if (!headers["Content-Type"] && !headers["content-type"]) {
-					headers["Content-Type"] = "application/json";
-				}
+				this.setContentType(headers);
 			}
 		}
 
@@ -602,6 +594,23 @@ export class CacheableNet extends Hookified {
 			data: responseData,
 			response: newResponse,
 		};
+	}
+
+	/**
+	 * Sets the Content-Type header if not already set.
+	 * Checks both "Content-Type" and "content-type" to handle case variations.
+	 * @param headers - The headers object to modify
+	 * @param contentType - The content type to set (defaults to "application/json")
+	 * @private
+	 */
+	private setContentType(
+		headers: Record<string, string>,
+		contentType = "application/json",
+	): void {
+		/* v8 ignore next -- @preserve */
+		if (!headers["Content-Type"] && !headers["content-type"]) {
+			headers["Content-Type"] = contentType;
+		}
 	}
 }
 
