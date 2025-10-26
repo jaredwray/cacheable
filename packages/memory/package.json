@@ -40,7 +40,7 @@
 	},
 	"dependencies": {
 		"@cacheable/utils": "workspace:^",
-		"@keyv/bigmap": "^1.0.2",
+		"@keyv/bigmap": "^1.1.0",
 		"hookified": "^1.12.2",
 		"keyv": "^5.5.3"
 	},
