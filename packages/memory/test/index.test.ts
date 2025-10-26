@@ -1,5 +1,4 @@
-import { createWrapKey } from "@cacheable/memoize";
-import { HashAlgorithm, sleep } from "@cacheable/utils";
+import { createWrapKey, HashAlgorithm, sleep } from "@cacheable/utils";
 import { faker } from "@faker-js/faker";
 import { describe, expect, test } from "vitest";
 import { CacheableMemory } from "../src/index.js";

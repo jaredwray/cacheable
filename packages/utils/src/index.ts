@@ -11,6 +11,25 @@ export { HashAlgorithm, hash, hashToNumber } from "./hash.js";
 export { isKeyvInstance } from "./is-keyv-instance.js";
 export { isObject } from "./is-object.js";
 export { lessThan } from "./less-than.js";
+export type {
+	AnyFunction,
+	CacheInstance,
+	CacheSyncInstance,
+	CreateWrapKey,
+	CreateWrapKeyOptions,
+	GetOrSetFunctionOptions,
+	GetOrSetKey,
+	GetOrSetOptions,
+	WrapFunctionOptions,
+	WrapOptions,
+	WrapSyncOptions,
+} from "./memoize.js";
+export {
+	createWrapKey,
+	getOrSet,
+	wrap,
+	wrapSync,
+} from "./memoize.js";
 export { runIfFn } from "./run-if-fn.js";
 export { sleep } from "./sleep.js";
 export { Stats, type StatsOptions } from "./stats.js";
@@ -19,7 +38,3 @@ export {
 	getCascadingTtl,
 	getTtlFromExpires,
 } from "./ttl.js";
-
-export {
-	getOrSet, wrap
-} from "./memoize.js";

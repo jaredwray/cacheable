@@ -544,7 +544,7 @@ To learn more go to [@cacheable/memory](https://cacheable.org/docs/memory/)
 
 # Wrap / Memoization for Sync and Async Functions
 
-`Cacheable` and `CacheableMemory` has a feature called `wrap` that comes from [@cacheable/memoize](https://cacheable.org/docs/memoize/) and allows you to wrap a function in a cache. This is useful for memoization and caching the results of a function. You can wrap a `sync` or `async` function in a cache. Here is an example of how to use the `wrap` function:
+`Cacheable` and `CacheableMemory` has a feature called `wrap` that comes from [@cacheable/utils](https://cacheable.org/docs/utils/) and allows you to wrap a function in a cache. This is useful for memoization and caching the results of a function. You can wrap a `sync` or `async` function in a cache. Here is an example of how to use the `wrap` function:
 
 ```javascript
 import { Cacheable } from 'cacheable';
@@ -637,11 +637,11 @@ If you would like to generate your own key for the wrapped function you can set 
 
 We will pass in the `function` that is being wrapped, the `arguments` passed to the function, and the `options` used to wrap the function. You can then use these to generate a custom key for the cache.
 
-To learn more visit [@cacheable/memoize](https://cacheable.org/docs/memoize/)
+To learn more visit [@cacheable/utils](https://cacheable.org/docs/utils/)
 
 # Get Or Set Memoization Function
 
-The `getOrSet`  method that comes from [@cacheable/memoize](https://cacheable.org/docs/memoize/) provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value from cache, and if not found, calls the provided function to compute the value and store it in cache before returning it. Here are the options:
+The `getOrSet`  method that comes from [@cacheable/utils](https://cacheable.org/docs/utils/) provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value from cache, and if not found, calls the provided function to compute the value and store it in cache before returning it. Here are the options:
 
 ```typescript
 export type GetOrSetFunctionOptions = {
@@ -677,11 +677,11 @@ const function_ = async () => Math.random() * 100;
 const value = await cache.getOrSet(generateKey(), function_, { ttl: '1h' });
 ```
 
-To learn more go to [@cacheable/memoize](https://cacheable.org/docs/memoize/)
+To learn more go to [@cacheable/utils](https://cacheable.org/docs/utils/)
 
 # v1 to v2 Changes
 
-`cacheable` is now using `@cacheable/utils`, `@cacheable/memoize`, and `@cacheable/memory` for its core functionality as we are moving to this modular architecture and plan to eventually have these modules across `cache-manager` and `flat-cache`. In addition there are some breaking changes:
+`cacheable` is now using `@cacheable/utils` and `@cacheable/memory` for its core functionality as we are moving to this modular architecture and plan to eventually have these modules across `cache-manager` and `flat-cache`. In addition there are some breaking changes:
 
 * `get()` and `getMany()` no longer have the `raw` option but instead we have built out `getRaw()` and `getManyRaw()` to use.
 * All `get` related functions now support `nonBlocking` which means if `nonBlocking: true` the primary store will return what it has and then in the background will work to sync from secondary storage for any misses. You can disable this by setting at the `get` function level the option `nonBlocking: false` which will look for any missing keys in the secondary.

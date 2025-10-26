@@ -1,4 +1,6 @@
+import { createKeyv } from "@cacheable/memory";
 import {
+	type CacheableItem,
 	type CacheInstance,
 	type GetOrSetFunctionOptions,
 	type GetOrSetKey,
@@ -6,10 +8,6 @@ import {
 	getOrSet,
 	type WrapFunctionOptions,
 	wrap,
-} from "@cacheable/memoize";
-import { createKeyv } from "@cacheable/memory";
-import {
-	type CacheableItem,
 	Stats as CacheableStats,
 	calculateTtlFromExpiration,
 	getCascadingTtl,
@@ -1171,16 +1169,6 @@ export class Cacheable extends Hookified {
 }
 
 export {
-	type GetOrSetFunctionOptions,
-	type GetOrSetKey,
-	type GetOrSetOptions,
-	getOrSet,
-	type WrapOptions,
-	type WrapSyncOptions,
-	wrap,
-	wrapSync,
-} from "@cacheable/memoize";
-export {
 	CacheableMemory,
 	type CacheableMemoryOptions,
 	createKeyv,
@@ -1189,6 +1177,14 @@ export {
 } from "@cacheable/memory";
 export {
 	type CacheableItem,
+	type GetOrSetFunctionOptions,
+	type GetOrSetKey,
+	type GetOrSetOptions,
+	getOrSet,
+	type WrapOptions,
+	type WrapSyncOptions,
+	wrap,
+	wrapSync,
 	calculateTtlFromExpiration,
 	getCascadingTtl,
 	HashAlgorithm,

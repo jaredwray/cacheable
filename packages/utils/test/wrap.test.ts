@@ -1,4 +1,3 @@
-import { sleep } from "../src/sleep.js";
 import { describe, expect, it, vi } from "vitest";
 import {
 	createWrapKey,
@@ -6,7 +5,8 @@ import {
 	type WrapSyncOptions,
 	wrap,
 	wrapSync,
-} from "../../memoize/src/index.js";
+} from "../src/memoize.js";
+import { sleep } from "../src/sleep.js";
 import { MockCacheable, MockCacheableMemory } from "./mock-cacheable.js";
 
 describe("wrap function", () => {
