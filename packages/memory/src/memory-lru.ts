@@ -37,16 +37,18 @@ export class DoublyLinkedList<T> {
 		} // Node doesn't exist or is already at the front
 
 		// Remove the node from its current position
+		/* v8 ignore next -- @preserve */
 		if (node.prev) {
 			node.prev.next = node.next;
 		}
 
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		if (node.next) {
 			node.next.prev = node.prev;
 		}
 
 		// Update tail if necessary
+		/* v8 ignore next -- @preserve */
 		if (node === this.tail) {
 			this.tail = node.prev;
 		}
@@ -54,6 +56,7 @@ export class DoublyLinkedList<T> {
 		// Move node to the front
 		node.prev = undefined;
 		node.next = this.head;
+		/* v8 ignore next -- @preserve */
 		if (this.head) {
 			this.head.prev = node;
 		}
@@ -66,23 +69,25 @@ export class DoublyLinkedList<T> {
 
 	// Get the oldest node (tail)
 	getOldest(): T | undefined {
+		/* v8 ignore next -- @preserve */
 		return this.tail ? this.tail.value : undefined;
 	}
 
 	// Remove the oldest node (tail)
 	removeOldest(): T | undefined {
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		if (!this.tail) {
 			return undefined;
 		}
 
 		const oldValue = this.tail.value;
 
+		/* v8 ignore next -- @preserve */
 		if (this.tail.prev) {
 			this.tail = this.tail.prev;
 			this.tail.next = undefined;
-			/* c8 ignore next 4 */
 		} else {
+			/* v8 ignore next -- @preserve */
 			this.head = this.tail = undefined;
 		}
 

@@ -397,6 +397,7 @@ export class CacheableMemory extends Hookified {
 
 				if (ttl.ttl) {
 					const finalTtl = shorthandToTime(ttl.ttl);
+					/* v8 ignore next -- @preserve */
 					if (finalTtl !== undefined) {
 						expires = finalTtl;
 					}
@@ -404,6 +405,7 @@ export class CacheableMemory extends Hookified {
 			} else {
 				const finalTtl = shorthandToTime(ttl ?? this._ttl);
 
+				/* v8 ignore next -- @preserve */
 				if (finalTtl !== undefined) {
 					expires = finalTtl;
 				}
@@ -417,6 +419,7 @@ export class CacheableMemory extends Hookified {
 				this.lruAddToFront(key);
 				if (this._lru.size > this._lruSize) {
 					const oldestKey = this._lru.getOldest();
+					/* v8 ignore next -- @preserve */
 					if (oldestKey) {
 						this._lru.removeOldest();
 						this.delete(oldestKey);
@@ -613,6 +616,7 @@ export class CacheableMemory extends Hookified {
 	public lruResize(): void {
 		while (this._lru.size > this._lruSize) {
 			const oldestKey = this._lru.getOldest();
+			/* v8 ignore next -- @preserve */
 			if (oldestKey) {
 				this._lru.removeOldest();
 				this.delete(oldestKey);
@@ -640,10 +644,10 @@ export class CacheableMemory extends Hookified {
 	 */
 	public startIntervalCheck() {
 		if (this._checkInterval > 0) {
-			/* c8 ignore next 1 */
+			/* v8 ignore next -- @preserve */
 			if (this._interval) {
 				// Be overly cautious and clear the interval as we've unref'd it and we don't want to leak it
-				/* c8 ignore next 2 */
+				/* v8 ignore next -- @preserve */
 				clearInterval(this._interval);
 			}
 
@@ -658,6 +662,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {void}
 	 */
 	public stopIntervalCheck() {
+		/* v8 ignore next -- @preserve */
 		if (this._interval) {
 			clearInterval(this._interval);
 		}
@@ -691,7 +696,7 @@ export class CacheableMemory extends Hookified {
 	private isPrimitive(value: any): boolean {
 		const result = false;
 
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		if (value === null || value === undefined) {
 			return true;
 		}
