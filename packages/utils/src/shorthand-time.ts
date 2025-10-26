@@ -17,7 +17,13 @@ export const shorthandToMilliseconds = (
 
 	if (typeof shorthand === "number") {
 		milliseconds = shorthand;
-	} else if (typeof shorthand === "string") {
+	} else {
+		// Verify type safety before converting to string
+		if (typeof shorthand !== "string") {
+			return undefined;
+		}
+
+		// convert it to string
 		shorthand = shorthand.trim();
 
 		// Check if the string is purely numeric
@@ -66,17 +72,15 @@ export const shorthandToMilliseconds = (
 					break;
 				}
 
-				/* c8 ignore next 3 */
+				/* v8 ignore next -- @preserve */
 				default: {
 					milliseconds = Number(shorthand);
 				}
 			}
-			/* c8 ignore next 6 */
+			/* v8 ignore next -- @preserve */
 		} else {
 			milliseconds = Number(shorthand);
 		}
-	} else {
-		throw new TypeError("Time must be a string or a number.");
 	}
 
 	return milliseconds;

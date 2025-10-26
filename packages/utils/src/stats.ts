@@ -230,11 +230,19 @@ export class Stats {
 				bytes += value.length * 2; // Each character is 2 bytes (UTF-16 encoding)
 			} else if (typeof value === "number") {
 				bytes += 8; // Numbers are 8 bytes (IEEE 754 format)
-			} else if (
-				typeof value === "object" &&
-				value !== null &&
-				!objectList.includes(value)
-			) {
+			} else {
+				// Handle null values
+				if (value === null || value === undefined) {
+					bytes += 4;
+					continue;
+				}
+
+				// Check for circular references - if this object was already processed, skip it
+				if (objectList.includes(value)) {
+					continue;
+				}
+
+				// object as default
 				objectList.push(value);
 
 				// Estimate object overhead, and then recursively estimate the size of properties
