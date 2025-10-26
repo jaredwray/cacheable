@@ -24,7 +24,7 @@ export const shorthandToMilliseconds = (
 		}
 
 		// convert it to string
-		shorthand = String(shorthand).trim();
+		shorthand = shorthand.trim();
 
 		// Check if the string is purely numeric
 		if (Number.isNaN(Number(shorthand))) {
