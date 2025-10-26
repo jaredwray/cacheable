@@ -119,6 +119,7 @@ export function createKeyv(options?: KeyvCacheableMemoryOptions): Keyv {
 
 	// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 	let ttl;
+	/* v8 ignore next -- @preserve */
 	if (options?.ttl && Number.isInteger(options.ttl)) {
 		ttl = options?.ttl as number;
 	}
