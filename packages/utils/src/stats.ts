@@ -231,6 +231,17 @@ export class Stats {
 			} else if (typeof value === "number") {
 				bytes += 8; // Numbers are 8 bytes (IEEE 754 format)
 			} else {
+				// Handle null values
+				if (value === null || value === undefined) {
+					bytes += 4;
+					continue;
+				}
+
+				// Check for circular references - if this object was already processed, skip it
+				if (objectList.includes(value)) {
+					continue;
+				}
+
 				// object as default
 				objectList.push(value);
 
