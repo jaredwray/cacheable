@@ -33,12 +33,12 @@
 		"@faker-js/faker": "^10.0.0",
 		"@keyv/redis": "^5.1.2",
 		"@keyv/valkey": "^1.0.8",
-		"@types/node": "^24.5.2",
+		"@types/node": "^24.9.1",
 		"@vitest/coverage-v8": "^4.0.3",
 		"lru-cache": "^11.2.2",
 		"rimraf": "^6.0.1",
 		"tsup": "^8.5.0",
-		"typescript": "^5.9.2",
+		"typescript": "^5.9.3",
 		"vitest": "^4.0.3"
 	},
 	"keywords": [
