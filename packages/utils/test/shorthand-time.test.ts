@@ -43,6 +43,31 @@ describe("time parser", () => {
 	test("send in string with number and decimal", () => {
 		expect(shorthandToMilliseconds("1.5hr")).toBe(5_400_000);
 	});
+
+	test("return undefined for null input", () => {
+		// @ts-expect-error testing invalid type
+		expect(shorthandToMilliseconds(null)).toBeUndefined();
+	});
+
+	test("return undefined for object input", () => {
+		// @ts-expect-error testing invalid type
+		expect(shorthandToMilliseconds({ value: "1s" })).toBeUndefined();
+	});
+
+	test("return undefined for array input", () => {
+		// @ts-expect-error testing invalid type
+		expect(shorthandToMilliseconds(["1s"])).toBeUndefined();
+	});
+
+	test("return undefined for boolean input", () => {
+		// @ts-expect-error testing invalid type
+		expect(shorthandToMilliseconds(true)).toBeUndefined();
+	});
+
+	test("return undefined for function input", () => {
+		// @ts-expect-error testing invalid type
+		expect(shorthandToMilliseconds(() => "1s")).toBeUndefined();
+	});
 });
 
 describe("parse to time", () => {

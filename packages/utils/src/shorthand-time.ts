@@ -18,6 +18,11 @@ export const shorthandToMilliseconds = (
 	if (typeof shorthand === "number") {
 		milliseconds = shorthand;
 	} else {
+		// Verify type safety before converting to string
+		if (typeof shorthand !== "string") {
+			return undefined;
+		}
+
 		// convert it to string
 		shorthand = String(shorthand).trim();
 
