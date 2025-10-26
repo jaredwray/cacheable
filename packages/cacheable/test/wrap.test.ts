@@ -1,5 +1,4 @@
-import { createWrapKey } from "@cacheable/utils";
-import { sleep } from "@cacheable/utils";
+import { createWrapKey, sleep } from "@cacheable/utils";
 import { describe, expect, test } from "vitest";
 import { Cacheable } from "../src/index.js";
 
