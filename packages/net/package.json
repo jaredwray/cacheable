@@ -29,8 +29,8 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.4",
-		"@faker-js/faker": "^10.0.0",
+		"@biomejs/biome": "^2.3.1",
+		"@faker-js/faker": "^10.1.0",
 		"@types/http-cache-semantics": "^4.0.4",
 		"@types/node": "^24.9.1",
 		"@vitest/coverage-v8": "^4.0.3",
