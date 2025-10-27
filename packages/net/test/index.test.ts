@@ -60,16 +60,20 @@ describe("Cacheable Net", () => {
 		expect(net.cache).toBe(newCache);
 	});
 
-	test("should fetch data using fetch method", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/get`;
-		const options: FetchOptions = {
-			method: "GET",
-			cache,
-		};
-		const response = await fetch(url, options);
-		expect(response).toBeDefined();
-	});
+	test(
+		"should fetch data using fetch method",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/get`;
+			const options: FetchOptions = {
+				method: "GET",
+				cache,
+			};
+			const response = await fetch(url, options);
+			expect(response).toBeDefined();
+		},
+		testTimeout,
+	);
 
 	test(
 		"should fetch data using CacheableNet fetch method",
