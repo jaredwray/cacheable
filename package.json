@@ -17,8 +17,8 @@
   "author": "Jared Wray <me@jaredwray.com>",
   "license": "MIT",
   "devDependencies": {
-    "@vitest/coverage-v8": "^3.2.4",
-    "vitest": "^3.2.4",
+    "@vitest/coverage-v8": "^4.0.7",
+    "vitest": "^4.0.7",
     "wrangler": "^4.46.0"
   },
   "pnpm": {
