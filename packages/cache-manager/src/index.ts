@@ -262,9 +262,10 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			await Promise.all(promises);
 			eventEmitter.emit("mset", { list });
 			return list;
-			/* c8 ignore next 4 */
 		} catch (error) {
+			/* v8 ignore next -- @preserve */
 			eventEmitter.emit("mset", { list, error });
+			/* v8 ignore next -- @preserve */
 			return Promise.reject(error);
 		}
 	};
@@ -302,9 +303,10 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			await Promise.all(promises);
 			eventEmitter.emit("mdel", { keys });
 			return true;
-			/* c8 ignore next 4 */
 		} catch (error) {
+			/* v8 ignore next -- @preserve */
 			eventEmitter.emit("mdel", { keys, error });
+			/* v8 ignore next -- @preserve */
 			return Promise.reject(error);
 		}
 	};
@@ -402,8 +404,8 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const on = <E extends keyof Events>(event: E, listener: Events[E]) =>
 		eventEmitter.addListener(event, listener);
 
+	/* v8 ignore next -- @preserve */
 	const off = <E extends keyof Events>(event: E, listener: Events[E]) =>
-		/* c8 ignore next */
 		eventEmitter.removeListener(event, listener);
 
 	const disconnect = async () => {
