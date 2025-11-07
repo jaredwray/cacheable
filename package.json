@@ -25,6 +25,7 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "protobufjs",
+      "rollup",
       "sharp",
       "sqlite3",
       "unrs-resolver",
