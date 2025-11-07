@@ -796,6 +796,8 @@ export class Cacheable extends Hookified {
 			promises.push(this._secondary.disconnect());
 		}
 
+		promises.push(this._sync?.qified.disconnect());
+
 		await (this._nonBlocking ? Promise.race(promises) : Promise.all(promises));
 	}
 
