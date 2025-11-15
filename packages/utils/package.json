@@ -51,7 +51,7 @@
 		"dist",
 		"LICENSE"
 	],
-	"dependencies": {
-		"keyv": "^5.5.3"
+	"peerDependencies": {
+		"keyv": "^5.5.4"
 	}
 }
