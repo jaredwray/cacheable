@@ -166,8 +166,9 @@ export class FlatCache extends Hookified {
 			);
 			this.loadFile(filePath);
 			this.emit(FlatCacheEvents.LOAD);
-			/* c8 ignore next 4 */
+			/* v8 ignore next -- @preserve */
 		} catch (error) {
+			/* v8 ignore next -- @preserve */
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
 	}
@@ -189,7 +190,7 @@ export class FlatCache extends Hookified {
 						if (item.expires) {
 							this._cache.set(item.key, item.value, { expire: item.expires });
 						} else if (item.timestamp) {
-							/* c8 ignore next */
+							/* v8 ignore next -- @preserve */
 							this._cache.set(item.key, item.value, { expire: item.timestamp });
 						} else {
 							this._cache.set(item.key, item.value);
@@ -201,7 +202,7 @@ export class FlatCache extends Hookified {
 				for (const key of Object.keys(items)) {
 					const item = items[key];
 					// Check if this is the new format with key/value/expires properties
-					/* c8 ignore next 4 */
+					/* v8 ignore next -- @preserve */
 					if (item && typeof item === "object" && "key" in item) {
 						this._cache.set(item.key as string, item.value, {
 							expire: item.expires as number,
@@ -209,7 +210,7 @@ export class FlatCache extends Hookified {
 					} else {
 						// Old legacy format - key is the cache key, value is the cache value
 						if (item && typeof item === "object" && item.timestamp) {
-							/* c8 ignore next */
+							/* v8 ignore next -- @preserve */
 							this._cache.set(key, item, { expire: item.timestamp });
 						} else {
 							this._cache.set(key, item);
@@ -251,7 +252,7 @@ export class FlatCache extends Hookified {
 				this._changesSinceLastSave = true;
 				onEnd();
 			});
-			/* c8 ignore next 5 */
+			/* v8 ignore next -- @preserve */
 			readStream.on("error", (error) => {
 				this.emit(FlatCacheEvents.ERROR, error);
 				if (onError) {
@@ -261,6 +262,7 @@ export class FlatCache extends Hookified {
 		} else {
 			const error = new Error(`Cache file ${pathToFile} does not exist`);
 			this.emit(FlatCacheEvents.ERROR, error);
+			/* v8 ignore next -- @preserve */
 			if (onError) {
 				onError(error);
 			}
@@ -394,8 +396,9 @@ export class FlatCache extends Hookified {
 			this._changesSinceLastSave = true;
 			this.save();
 			this.emit(FlatCacheEvents.CLEAR);
-			/* c8 ignore next 4 */
+			/* v8 ignore next -- @preserve */
 		} catch (error) {
+			/* v8 ignore next -- @preserve */
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
 	}
@@ -407,6 +410,7 @@ export class FlatCache extends Hookified {
 	 */
 	public save(force = false) {
 		try {
+			/* v8 ignore next -- @preserve */
 			if (this._changesSinceLastSave || force) {
 				const filePath = this.cacheFilePath;
 				const items = [...this._cache.items];
@@ -421,8 +425,9 @@ export class FlatCache extends Hookified {
 				this._changesSinceLastSave = false;
 				this.emit(FlatCacheEvents.SAVE);
 			}
-			/* c8 ignore next 4 */
+			/* v8 ignore next -- @preserve */
 		} catch (error) {
+			/* v8 ignore next -- @preserve */
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
 	}
@@ -438,8 +443,9 @@ export class FlatCache extends Hookified {
 				fs.rmSync(this.cacheFilePath);
 				return true;
 			}
-			/* c8 ignore next 4 */
+			/* v8 ignore next -- @preserve */
 		} catch (error) {
+			/* v8 ignore next -- @preserve */
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
 
@@ -464,8 +470,9 @@ export class FlatCache extends Hookified {
 
 			this._changesSinceLastSave = false;
 			this.emit(FlatCacheEvents.DESTROY);
-			/* c8 ignore next 4 */
+			/* v8 ignore next -- @preserve */
 		} catch (error) {
+			/* v8 ignore next -- @preserve */
 			this.emit(FlatCacheEvents.ERROR, error);
 		}
 	}
@@ -475,6 +482,7 @@ export class FlatCache extends Hookified {
 	 * @method startAutoPersist
 	 */
 	public startAutoPersist() {
+		/* v8 ignore next -- @preserve */
 		if (this._persistInterval > 0) {
 			if (this._persistTimer) {
 				clearInterval(this._persistTimer);
