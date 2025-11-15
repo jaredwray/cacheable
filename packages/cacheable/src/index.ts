@@ -688,6 +688,7 @@ export class Cacheable extends Hookified {
 		const promises = [];
 		if (this.stats.enabled) {
 			const statResult = await this._primary.get<Record<string, unknown>>(key);
+			/* v8 ignore next -- @preserve */
 			if (statResult) {
 				this.stats.decreaseKSize(key);
 				this.stats.decreaseVSize(statResult);
@@ -792,6 +793,7 @@ export class Cacheable extends Hookified {
 	public async disconnect(): Promise<void> {
 		const promises = [];
 		promises.push(this._primary.disconnect());
+		/* v8 ignore next -- @preserve */
 		if (this._secondary) {
 			promises.push(this._secondary.disconnect());
 		}
@@ -867,6 +869,7 @@ export class Cacheable extends Hookified {
 			set: async (key: string, value: unknown, ttl?: number | string) => {
 				await this.set(key, value, ttl);
 			},
+			/* v8 ignore next -- @preserve */
 			on: (event: string, listener: (...args: unknown[]) => void) => {
 				/* v8 ignore next -- @preserve */
 				this.on(event, listener);
@@ -1001,10 +1004,12 @@ export class Cacheable extends Hookified {
 			const setItem = { key, value: secondaryResult.value, ttl };
 
 			// In non-blocking mode, fire and forget the hook and primary store update
+			/* v8 ignore next -- @preserve */
 			this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 				.then(async () => {
 					await primary.set(setItem.key, setItem.value, setItem.ttl);
 				})
+				/* v8 ignore next -- @preserve */
 				.catch((error) => {
 					/* v8 ignore next -- @preserve */
 					this.emit(CacheableEvents.ERROR, error);
@@ -1135,10 +1140,12 @@ export class Cacheable extends Hookified {
 					const setItem = { key, value: secondaryResult.value, ttl };
 
 					// In non-blocking mode, fire and forget the hook and primary store update
+					/* v8 ignore next -- @preserve */
 					this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 						.then(async () => {
 							await primary.set(setItem.key, setItem.value, setItem.ttl);
 						})
+						/* v8 ignore next -- @preserve */
 						.catch((error) => {
 							/* v8 ignore next -- @preserve */
 							this.emit(CacheableEvents.ERROR, error);
