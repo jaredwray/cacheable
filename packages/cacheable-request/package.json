@@ -46,7 +46,7 @@
 		"@types/http-cache-semantics": "^4.0.4",
 		"get-stream": "^9.0.1",
 		"http-cache-semantics": "^4.2.0",
-		"keyv": "^5.5.3",
+		"keyv": "^5.5.4",
 		"mimic-response": "^4.0.0",
 		"normalize-url": "^8.1.0",
 		"responselike": "^4.0.2"
