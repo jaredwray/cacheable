@@ -32,6 +32,7 @@
 * [Storage Tiering and Caching](#storage-tiering-and-caching)
 * [TTL Propagation and Storage Tiering](#ttl-propagation-and-storage-tiering)
 * [Shorthand for Time to Live (ttl)](#shorthand-for-time-to-live-ttl)
+* [Iteration on Primary and Secondary Stores](#iteration-on-primary-and-secondary-stores)
 * [Non-Blocking Operations](#non-blocking-operations)
 * [Non-Blocking with @keyv/redis](#non-blocking-with-keyvredis)
 * [CacheableSync - Distributed Updates](#cacheablesync---distributed-updates)
@@ -298,6 +299,91 @@ console.log(exists); // [true, true, false]
 ```
 
 The `hasMany` method returns an array of booleans in the same order as the input keys. This is particularly useful when you need to verify the existence of multiple cache entries before performing batch operations.
+
+# Iteration on Primary and Secondary Stores
+
+The `Cacheable` class exposes both `primary` and `secondary` Keyv instances, which support iteration over their stored entries using the `iterator()` method. This allows you to access and process all keys and values in either storage layer.
+
+**Important Notes:**
+- Not all storage adapters support iteration. Always check if `iterator` exists before using it.
+- The iterator automatically filters by namespace, skips expired entries (and deletes them), and deserializes values.
+- **Performance Warning:** Be careful when using `iterator()` as it can cause performance issues with large datasets.
+
+## Basic Iteration Example
+
+```typescript
+import { Cacheable } from 'cacheable';
+import KeyvRedis from '@keyv/redis';
+
+// Create cache with primary (in-memory) and secondary (Redis) stores
+const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
+const cache = new Cacheable({ secondary });
+
+// Add some data
+await cache.set('user:1', { name: 'Alice', role: 'admin' });
+await cache.set('user:2', { name: 'Bob', role: 'user' });
+await cache.set('session:abc', { userId: '1', active: true });
+
+// Iterate over primary store (in-memory)
+console.log('Primary store contents:');
+if (cache.primary.iterator) {
+    for await (const [key, value] of cache.primary.iterator()) {
+        console.log(`  ${key}:`, JSON.stringify(value));
+    }
+}
+
+// Iterate over secondary store (Redis)
+console.log('\nSecondary store contents:');
+if (cache.secondary?.iterator) {
+    for await (const [key, value] of cache.secondary.iterator()) {
+        console.log(`  ${key}:`, JSON.stringify(value));
+    }
+}
+```
+
+## Safe Iteration Helper
+
+Here's a recommended helper function for safe iteration that checks for store availability and iterator support:
+
+```typescript
+import { Cacheable } from 'cacheable';
+import type { Keyv } from 'keyv';
+
+async function iterateStore(store: Keyv | undefined, storeName: string) {
+    if (!store) {
+        console.log(`${storeName} store not configured`);
+        return;
+    }
+
+    if (!store.iterator) {
+        console.log(`${storeName} store does not support iteration`);
+        return;
+    }
+
+    console.log(`${storeName} store entries:`);
+    for await (const [key, value] of store.iterator()) {
+        console.log(`  ${key}:`, value);
+    }
+}
+
+// Usage
+const cache = new Cacheable({ /* options */ });
+await iterateStore(cache.primary, 'Primary');
+await iterateStore(cache.secondary, 'Secondary');
+```
+
+## Storage Adapter Support
+
+The `iterator()` method is available when:
+- The store is a Map instance (has Symbol.iterator)
+- The store implements an `iterator()` method (e.g., Redis, Valkey, etc.)
+- The store is a supported iterable adapter
+
+Common stores that support iteration:
+- In-memory (Map-based stores)
+- @keyv/redis
+- @keyv/valkey
+- Other Keyv adapters that implement the iterator interface
 
 # Non-Blocking Operations
 
