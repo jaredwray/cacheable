@@ -39,12 +39,12 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.5",
 		"@types/node": "^24.10.1",
-		"@vitest/coverage-v8": "^3.2.4",
+		"@vitest/coverage-v8": "^4.0.9",
 		"pino": "^10.1.0",
 		"rimraf": "^6.1.0",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3",
-		"vitest": "^3.2.4"
+		"vitest": "^4.0.9"
 	},
 	"dependencies": {
 		"flat-cache": "workspace:^"
