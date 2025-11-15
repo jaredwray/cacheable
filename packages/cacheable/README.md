@@ -279,6 +279,25 @@ raws.forEach((entry, idx) => {
 });
 ```
 
+## Checking multiple keys with hasMany
+
+The `hasMany` method allows you to efficiently check if multiple keys exist in the cache. It leverages Keyv's native `hasMany` support for optimal performance:
+
+```typescript
+import { Cacheable } from 'cacheable';
+
+const cache = new Cacheable();
+
+// set some values
+await cache.set('user:1', { name: 'Alice' });
+await cache.set('user:2', { name: 'Bob' });
+
+// check if multiple keys exist
+const exists = await cache.hasMany(['user:1', 'user:2', 'user:3']);
+console.log(exists); // [true, true, false]
+```
+
+The `hasMany` method returns an array of booleans in the same order as the input keys. This is particularly useful when you need to verify the existence of multiple cache entries before performing batch operations.
 
 # Non-Blocking Operations
 
@@ -685,7 +704,7 @@ To learn more go to [@cacheable/utils](https://cacheable.org/docs/utils/)
 
 * `get()` and `getMany()` no longer have the `raw` option but instead we have built out `getRaw()` and `getManyRaw()` to use.
 * All `get` related functions now support `nonBlocking` which means if `nonBlocking: true` the primary store will return what it has and then in the background will work to sync from secondary storage for any misses. You can disable this by setting at the `get` function level the option `nonBlocking: false` which will look for any missing keys in the secondary.
-* `Keyv` v5.5+ is now the recommended supported version as we are using its native `getMany*` and `getRaw*`
+* `Keyv` v5.5+ is now the recommended supported version as we are using its native `getMany*`, `getRaw*`, and `hasMany` methods for improved performance
 * `Wrap` and `getOrSet` have been updated with more robust options including the ability to use your own `serialize` function for creating the key in `wrap`.
 * `hash` has now been updated with robust options and also an enum for setting the algorithm.
 
