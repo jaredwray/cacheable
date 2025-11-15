@@ -3,5 +3,3 @@
 - [ ] Tests for the changes have been added (for bug fixes/features) with 100% code coverage.
 
 **What kind of change does this PR introduce?** (Bug fix, feature, docs update, ...)
-
-
