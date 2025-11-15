@@ -122,13 +122,13 @@ export class NodeCache<T> extends Hookified {
 		ttl: number | string = 0,
 	): boolean {
 		// Check on key type
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		if (typeof key !== "string" && typeof key !== "number") {
 			throw this.createError(NodeCacheErrors.EKEYTYPE, key);
 		}
 
 		// Check on ttl type
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		if (ttl && typeof ttl !== "number" && typeof ttl !== "string") {
 			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
 		}
@@ -149,6 +149,7 @@ export class NodeCache<T> extends Hookified {
 		}
 
 		// Check on max key size
+		/* v8 ignore next -- @preserve */
 		if (this.options.maxKeys) {
 			const { maxKeys } = this.options;
 			if (maxKeys > -1 && this.store.size >= maxKeys) {
@@ -179,7 +180,7 @@ export class NodeCache<T> extends Hookified {
 	 */
 	public mset(data: Array<PartialNodeCacheItem<T>>): boolean {
 		// Check on keys type
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		if (!Array.isArray(data)) {
 			throw this.createError(NodeCacheErrors.EKEYSTYPE);
 		}
@@ -242,6 +243,7 @@ export class NodeCache<T> extends Hookified {
 
 		for (const key of keys) {
 			const value = this.get(key);
+			/* v8 ignore next -- @preserve */
 			if (value) {
 				result[this.formatKey(key)] = value as T;
 			}
@@ -477,7 +479,7 @@ export class NodeCache<T> extends Hookified {
 
 	private createError(errorCode: string, key?: string): Error {
 		let error = errorCode;
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		if (key) {
 			error = error.replace("__key", key);
 		}

@@ -50,7 +50,7 @@ export class NodeCacheStore<T> extends Hookified {
 
 		// Hook up the cacheable events
 		this._cache.on("error", (error: Error) => {
-			/* c8 ignore next 1 */
+			/* v8 ignore next -- @preserve */
 			this.emit("error", error);
 		});
 	}
@@ -133,6 +133,7 @@ export class NodeCacheStore<T> extends Hookified {
 	 */
 	public set maxKeys(maxKeys: number) {
 		this._maxKeys = maxKeys;
+		/* v8 ignore next -- @preserve */
 		if (this._maxKeys > 0) {
 			this._cache.stats.enabled = true;
 		}
