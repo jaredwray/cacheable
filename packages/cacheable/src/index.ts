@@ -658,7 +658,7 @@ export class Cacheable extends Hookified {
 	 * @returns {Promise<boolean[]>} Whether the keys exist
 	 */
 	public async hasMany(keys: string[]): Promise<boolean[]> {
-		const result = await this.hasManyKeyv(this._primary, keys);
+		const result = await this._primary.hasMany(keys);
 		const missingKeys = [];
 		for (const [i, key] of keys.entries()) {
 			if (!result[i] && this._secondary) {
@@ -667,7 +667,7 @@ export class Cacheable extends Hookified {
 		}
 
 		if (missingKeys.length > 0 && this._secondary) {
-			const secondary = await this.hasManyKeyv(this._secondary, keys);
+			const secondary = await this._secondary.hasMany(keys);
 			for (const [i, _key] of keys.entries()) {
 				if (!result[i] && secondary[i]) {
 					result[i] = secondary[i];
@@ -919,15 +919,6 @@ export class Cacheable extends Hookified {
 		await keyv.setMany(entries);
 
 		return true;
-	}
-
-	private async hasManyKeyv(keyv: Keyv, keys: string[]): Promise<boolean[]> {
-		const promises = [];
-		for (const key of keys) {
-			promises.push(keyv.has(key));
-		}
-
-		return Promise.all(promises);
 	}
 
 	/**
