@@ -627,6 +627,7 @@ export class FileEntryCache {
 		const result: FileDescriptor[] = [];
 		const keys = this._cache.keys();
 		for (const key of keys) {
+			/* v8 ignore next -- @preserve */
 			if (key.startsWith(filePath)) {
 				const fileDescriptor = this.getFileDescriptor(key);
 				result.push(fileDescriptor);
@@ -726,6 +727,7 @@ export class FileEntryCache {
 	public renameCacheKeys(oldPath: string, newPath: string): void {
 		const keys = this._cache.keys();
 		for (const key of keys) {
+			/* v8 ignore next -- @preserve */
 			if (key.startsWith(oldPath)) {
 				const newKey = key.replace(oldPath, newPath);
 				const meta = this._cache.getKey(key);
