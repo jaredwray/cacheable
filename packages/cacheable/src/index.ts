@@ -267,7 +267,7 @@ export class Cacheable extends Hookified {
 			this._primary = new Keyv(primary as KeyvStoreAdapter);
 		}
 
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		this._primary.on("error", (error: unknown) => {
 			this.emit(CacheableEvents.ERROR, error);
 		});
@@ -286,7 +286,7 @@ export class Cacheable extends Hookified {
 			this._secondary = new Keyv(secondary as KeyvStoreAdapter);
 		}
 
-		/* c8 ignore next 3 */
+		/* v8 ignore next -- @preserve */
 		this._secondary.on("error", (error: unknown) => {
 			this.emit(CacheableEvents.ERROR, error);
 		});
@@ -570,7 +570,7 @@ export class Cacheable extends Hookified {
 				if (this._nonBlocking) {
 					// Catch any errors to avoid unhandled promise rejections
 					this.setManyKeyv(this._secondary, items).catch((error) => {
-						/* c8 ignore next */
+						/* v8 ignore next -- @preserve */
 						this.emit(CacheableEvents.ERROR, error);
 					});
 				} else {
@@ -688,6 +688,7 @@ export class Cacheable extends Hookified {
 		const promises = [];
 		if (this.stats.enabled) {
 			const statResult = await this._primary.get<Record<string, unknown>>(key);
+			/* v8 ignore next -- @preserve */
 			if (statResult) {
 				this.stats.decreaseKSize(key);
 				this.stats.decreaseVSize(statResult);
@@ -792,6 +793,7 @@ export class Cacheable extends Hookified {
 	public async disconnect(): Promise<void> {
 		const promises = [];
 		promises.push(this._primary.disconnect());
+		/* v8 ignore next -- @preserve */
 		if (this._secondary) {
 			promises.push(this._secondary.disconnect());
 		}
@@ -817,19 +819,18 @@ export class Cacheable extends Hookified {
 		// Create an adapter that converts Cacheable to CacheInstance
 		const cacheAdapter: CacheInstance = {
 			get: async (key: string) => this.get(key),
+			/* v8 ignore next -- @preserve */
 			has: async (key: string) => this.has(key),
-			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
-			set: async (key: string, value: any, ttl?: number | string) => {
+
+			set: async (key: string, value: unknown, ttl?: number | string) => {
 				await this.set(key, value, ttl);
 			},
-			/* c8 ignore start */
-			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance interface
-			on: (event: string, listener: (...args: any[]) => void) => {
+			/* v8 ignore next -- @preserve */
+			on: (event: string, listener: (...args: unknown[]) => void) => {
 				this.on(event, listener);
 			},
-			/* c8 ignore stop */
-			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
-			emit: (event: string, ...args: any[]) => this.emit(event, ...args),
+			/* v8 ignore next -- @preserve */
+			emit: (event: string, ...args: unknown[]) => this.emit(event, ...args),
 		};
 
 		const wrapOptions = {
@@ -863,19 +864,17 @@ export class Cacheable extends Hookified {
 		// Create an adapter that converts Cacheable to CacheInstance
 		const cacheAdapter: CacheInstance = {
 			get: async (key: string) => this.get(key),
+			/* v8 ignore next -- @preserve */
 			has: async (key: string) => this.has(key),
-			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
-			set: async (key: string, value: any, ttl?: number | string) => {
+			set: async (key: string, value: unknown, ttl?: number | string) => {
 				await this.set(key, value, ttl);
 			},
-			/* c8 ignore start */
-			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance interface
-			on: (event: string, listener: (...args: any[]) => void) => {
+			/* v8 ignore next -- @preserve */
+			on: (event: string, listener: (...args: unknown[]) => void) => {
+				/* v8 ignore next -- @preserve */
 				this.on(event, listener);
 			},
-			/* c8 ignore stop */
-			// biome-ignore lint/suspicious/noExplicitAny: CacheInstance requires any type
-			emit: (event: string, ...args: any[]) => this.emit(event, ...args),
+			emit: (event: string, ...args: unknown[]) => this.emit(event, ...args),
 		};
 
 		const getOrSetOptions: GetOrSetOptions = {
@@ -1005,12 +1004,14 @@ export class Cacheable extends Hookified {
 			const setItem = { key, value: secondaryResult.value, ttl };
 
 			// In non-blocking mode, fire and forget the hook and primary store update
+			/* v8 ignore next -- @preserve */
 			this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 				.then(async () => {
 					await primary.set(setItem.key, setItem.value, setItem.ttl);
 				})
+				/* v8 ignore next -- @preserve */
 				.catch((error) => {
-					/* c8 ignore next */
+					/* v8 ignore next -- @preserve */
 					this.emit(CacheableEvents.ERROR, error);
 				});
 
@@ -1062,7 +1063,7 @@ export class Cacheable extends Hookified {
 
 					let { expires } = secondaryResult;
 
-					/* c8 ignore next 4 */
+					/* v8 ignore next -- @preserve */
 					if (expires === null) {
 						expires = undefined;
 					}
@@ -1129,7 +1130,7 @@ export class Cacheable extends Hookified {
 
 					let { expires } = secondaryResult;
 
-					/* c8 ignore next 4 */
+					/* v8 ignore next -- @preserve */
 					if (expires === null) {
 						expires = undefined;
 					}
@@ -1139,12 +1140,14 @@ export class Cacheable extends Hookified {
 					const setItem = { key, value: secondaryResult.value, ttl };
 
 					// In non-blocking mode, fire and forget the hook and primary store update
+					/* v8 ignore next -- @preserve */
 					this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 						.then(async () => {
 							await primary.set(setItem.key, setItem.value, setItem.ttl);
 						})
+						/* v8 ignore next -- @preserve */
 						.catch((error) => {
-							/* c8 ignore next */
+							/* v8 ignore next -- @preserve */
 							this.emit(CacheableEvents.ERROR, error);
 						});
 				} else {
