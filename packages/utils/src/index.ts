@@ -7,7 +7,15 @@ export type {
 	CacheableStoreItem,
 } from "./cacheable-item-types.js";
 export { coalesceAsync } from "./coalesce-async.js";
-export { HashAlgorithm, hash, hashToNumber } from "./hash.js";
+export {
+	HashAlgorithm,
+	hash,
+	hashSync,
+	hashToNumber,
+	hashToNumberSync,
+	type HashOptions,
+	type HashToNumberOptions,
+} from "./hash.js";
 export { isKeyvInstance } from "./is-keyv-instance.js";
 export { isObject } from "./is-object.js";
 export { lessThan } from "./less-than.js";

@@ -1,5 +1,5 @@
 import { coalesceAsync } from "./coalesce-async.js";
-import { hash } from "./hash.js";
+import { hashSync } from "./hash.js";
 
 export type CacheInstance = {
 	// biome-ignore lint/suspicious/noExplicitAny: type format
@@ -176,8 +176,8 @@ export function createWrapKey(
 	const { keyPrefix, serialize } = options || {};
 
 	if (!keyPrefix) {
-		return `${function_.name}::${hash(arguments_, { serialize })}`;
+		return `${function_.name}::${hashSync(arguments_, { serialize })}`;
 	}
 
-	return `${keyPrefix}::${function_.name}::${hash(arguments_, { serialize })}`;
+	return `${keyPrefix}::${function_.name}::${hashSync(arguments_, { serialize })}`;
 }

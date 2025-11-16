@@ -130,7 +130,7 @@ console.log(raw.expires); // e.g. 1677628495000 or null
 
 ## CacheableMemory Store Hashing
 
-`CacheableMemory` uses `Map` objects to store the keys and values. To make this scale past the `16,777,216 (2^24) keys` limit of a single `Map` we use a hash to balance the data across multiple `Map` objects. This is done by hashing the key and using the hash to determine which `Map` object to use. The default hashing algorithm is `djb2Hash` but you can change it by setting the `storeHashAlgorithm` property in the options. By default we set the amount of `Map` objects to `16`. 
+`CacheableMemory` uses `Map` objects to store the keys and values. To make this scale past the `16,777,216 (2^24) keys` limit of a single `Map` we use a hash to balance the data across multiple `Map` objects. This is done by hashing the key and using the hash to determine which `Map` object to use. The default hashing algorithm is `djb2` but you can change it by setting the `storeHashAlgorithm` property in the options. Supported algorithms include DJB2, FNV1, MURMER, and CRC32. By default we set the amount of `Map` objects to `16`. 
 
 NOTE: if you are using the LRU cache feature the `lruSize` no matter how many `Map` objects you have it will be limited to the `16,777,216 (2^24) keys` limit of a single `Map` object. This is because we use a double linked list to manage the LRU cache and it is not possible to have more than `16,777,216 (2^24) keys` in a single `Map` object.
 
@@ -145,23 +145,24 @@ cache.set('key', 'value');
 const value = cache.get('key'); // value
 ```
 
-Here is an example of how to use the `storeHashAlgorithm` property:
+Here is an example of how to use the `storeHashAlgorithm` property with supported algorithms:
 
 ```javascript
-import { CacheableMemory } from '@cacheable/memory';
-const cache = new CacheableMemory({ storeHashAlgorithm: 'sha256' });
+import { CacheableMemory, HashAlgorithm } from '@cacheable/memory';
+
+// Using DJB2 (default)
+const cache = new CacheableMemory({ storeHashAlgorithm: HashAlgorithm.DJB2 });
+
+// Or other non-cryptographic algorithms for better performance
+const cache2 = new CacheableMemory({ storeHashAlgorithm: HashAlgorithm.FNV1 });
+const cache3 = new CacheableMemory({ storeHashAlgorithm: HashAlgorithm.MURMER });
+const cache4 = new CacheableMemory({ storeHashAlgorithm: HashAlgorithm.CRC32 });
+
 cache.set('key', 'value');
 const value = cache.get('key'); // value
 ```
 
-If you want to provide your own hashing function you can set the `storeHashAlgorithm` property to a function that takes an object and returns a `number` that is in the range of the amount of `Map` stores you have.
-
-```javascript
-import { CacheableMemory } from '@cacheable/memory';
-const cache = new CacheableMemory({ storeHashAlgorithm: HashAlgorithm.SHA256 });
-cache.set('key', 'value');
-const value = cache.get('key'); // value
-```
+**Available algorithms:** DJB2 (default), FNV1, MURMER, CRC32. Note: Cryptographic algorithms (SHA-256, SHA-384, SHA-512) are not recommended for store hashing due to performance overhead.
 
 If you want to provide your own hashing function you can set the `storeHashAlgorithm` property to a function that takes an object and returns a `number` that is in the range of the amount of `Map` stores you have.
 
@@ -232,7 +233,7 @@ As you can see from the benchmarks `CacheableMemory` is on par with other cachin
 * `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
 * `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
-* `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2Hash`.
+* `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2`. Supported: DJB2, FNV1, MURMER, CRC32.
 
 ## CacheableMemory - API
 
@@ -256,7 +257,7 @@ As you can see from the benchmarks `CacheableMemory` is on par with other cachin
 * `size`: The number of keys in the cache.
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
 * `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
-* `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2Hash`.
+* `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2`. Supported: DJB2, FNV1, MURMER, CRC32.
 * `keys`: Get the keys in the cache. Not able to be set.
 * `items`: Get the items in the cache as `CacheableStoreItem` example `{ key, value, expires? }`.
 * `store`: The hash store for the cache which is an array of `Map` objects.

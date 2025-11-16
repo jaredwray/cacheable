@@ -622,7 +622,8 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `removeHook(hook)`: Removes a hook.
 * `on(event, callback)`: Listens for an event.
 * `removeListener(event, callback)`: Removes a listener.
-* `hash(object: any, algorithm = 'sha256'): string`: Hashes an object with the algorithm. Default is `sha256`.
+* `hash(object: any, algorithm = 'SHA-256'): Promise<string>`: Asynchronously hashes an object with a cryptographic algorithm (SHA-256, SHA-384, SHA-512). Default is `SHA-256`.
+* `hashSync(object: any, algorithm = 'djb2'): string`: Synchronously hashes an object with a non-cryptographic algorithm (djb2, fnv1, murmer, crc32). Default is `djb2`.
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `namespace`: The namespace for the cache. Default is `undefined`. This will set the namespace for the primary and secondary stores.
@@ -792,7 +793,7 @@ To learn more go to [@cacheable/utils](https://cacheable.org/docs/utils/)
 * All `get` related functions now support `nonBlocking` which means if `nonBlocking: true` the primary store will return what it has and then in the background will work to sync from secondary storage for any misses. You can disable this by setting at the `get` function level the option `nonBlocking: false` which will look for any missing keys in the secondary.
 * `Keyv` v5.5+ is now the recommended supported version as we are using its native `getMany*`, `getRaw*`, and `hasMany` methods for improved performance
 * `Wrap` and `getOrSet` have been updated with more robust options including the ability to use your own `serialize` function for creating the key in `wrap`.
-* `hash` has now been updated with robust options and also an enum for setting the algorithm.
+* `hash` has been split into async (`hash()` and `hashToNumber()`) and sync (`hashSync()` and `hashToNumberSync()`) methods. MD5 support has been removed. Now uses Hashery library with support for additional algorithms (SHA-384, FNV1, MURMER, CRC32).
 
 # How to Contribute
 

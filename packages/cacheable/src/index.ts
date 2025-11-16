@@ -11,6 +11,7 @@ import {
 	getOrSet,
 	HashAlgorithm,
 	hash,
+	hashSync,
 	isKeyvInstance,
 	shorthandToMilliseconds,
 	type WrapFunctionOptions,
@@ -888,22 +889,45 @@ export class Cacheable extends Hookified {
 	}
 
 	/**
-	 * Will hash an object using the specified algorithm. The default algorithm is 'sha256'.
+	 * Will hash an object asynchronously using the specified cryptographic algorithm.
+	 * Use this for cryptographic algorithms (SHA-256, SHA-384, SHA-512).
+	 * For non-cryptographic algorithms, use hashSync() for better performance.
 	 * @param {any} object the object to hash
-	 * @param {string} algorithm the hash algorithm to use. The default is 'sha256'
-	 * @returns {string} the hash of the object
+	 * @param {string} algorithm the hash algorithm to use. The default is 'SHA-256'
+	 * @returns {Promise<string>} the hash of the object
 	 */
-	public hash(
+	public async hash(
 		// biome-ignore lint/suspicious/noExplicitAny: type format
 		object: any,
 		algorithm: HashAlgorithm = HashAlgorithm.SHA256,
-	): string {
+	): Promise<string> {
 		// Check if algorithm is a valid HashAlgorithm value, default to SHA256 if not
 		const validAlgorithm = Object.values(HashAlgorithm).includes(algorithm)
 			? algorithm
 			: HashAlgorithm.SHA256;
 
 		return hash(object, { algorithm: validAlgorithm });
+	}
+
+	/**
+	 * Will hash an object synchronously using the specified non-cryptographic algorithm.
+	 * Use this for non-cryptographic algorithms (DJB2, FNV1, MURMER, CRC32).
+	 * For cryptographic algorithms, use hash() instead.
+	 * @param {any} object the object to hash
+	 * @param {string} algorithm the hash algorithm to use. The default is 'djb2'
+	 * @returns {string} the hash of the object
+	 */
+	public hashSync(
+		// biome-ignore lint/suspicious/noExplicitAny: type format
+		object: any,
+		algorithm: HashAlgorithm = HashAlgorithm.DJB2,
+	): string {
+		// Check if algorithm is a valid HashAlgorithm value, default to DJB2 if not
+		const validAlgorithm = Object.values(HashAlgorithm).includes(algorithm)
+			? algorithm
+			: HashAlgorithm.DJB2;
+
+		return hashSync(object, { algorithm: validAlgorithm });
 	}
 
 	private async setManyKeyv(

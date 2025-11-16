@@ -100,24 +100,62 @@ console.log(result); // Data for my-key only executed once
 
 The `@cacheable/utils` package provides hash functions that can be used to generate unique keys for caching operations. These functions are useful for creating consistent and unique identifiers for cached items.
 
-```typescript
-import { hash } from '@cacheable/utils';
+The hashing API provides both **async** (for cryptographic algorithms) and **sync** (for non-cryptographic algorithms) methods.
 
-const key = hash('my-cache-key');
+## Async Hashing (Cryptographic Algorithms)
+
+Use `hash()` and `hashToNumber()` for cryptographic algorithms like SHA-256, SHA-384, and SHA-512:
+
+```typescript
+import { hash, hashToNumber, HashAlgorithm } from '@cacheable/utils';
+
+// Hash using SHA-256 (default)
+const key = await hash('my-cache-key');
 console.log(key); // Unique hash for 'my-cache-key'
-```
 
-If you want to get a number hash you can use the `hashToNumber` function:
+// Hash with specific algorithm
+const sha512Hash = await hash('my-data', { algorithm: HashAlgorithm.SHA512 });
 
-```typescript
-import { hash, hashToNumber } from '@cacheable/utils';
-
+// Convert hash to number within range
 const min = 0;
 const max = 10;
-
-const result = hashToNumber({foo: 'bar'}, min, max, HashAlgorithm.DJB2);
+const result = await hashToNumber({foo: 'bar'}, { min, max, algorithm: HashAlgorithm.SHA256 });
 console.log(result); // A number between 0 and 10 based on the hash value
 ```
+
+## Sync Hashing (Non-Cryptographic Algorithms)
+
+Use `hashSync()` and `hashToNumberSync()` for faster, non-cryptographic algorithms like DJB2, FNV1, MURMER, and CRC32:
+
+```typescript
+import { hashSync, hashToNumberSync, HashAlgorithm } from '@cacheable/utils';
+
+// Hash using DJB2 (default for sync)
+const key = hashSync('my-cache-key');
+console.log(key); // Unique hash for 'my-cache-key'
+
+// Hash with specific algorithm
+const fnv1Hash = hashSync('my-data', { algorithm: HashAlgorithm.FNV1 });
+
+// Convert hash to number within range
+const min = 0;
+const max = 10;
+const result = hashToNumberSync({foo: 'bar'}, { min, max, algorithm: HashAlgorithm.DJB2 });
+console.log(result); // A number between 0 and 10 based on the hash value
+```
+
+## Available Hash Algorithms
+
+**Cryptographic (Async):**
+- `HashAlgorithm.SHA256` - SHA-256 (default for async methods)
+- `HashAlgorithm.SHA384` - SHA-384
+- `HashAlgorithm.SHA512` - SHA-512
+
+**Non-Cryptographic (Sync):**
+- `HashAlgorithm.DJB2` - DJB2 (default for sync methods)
+- `HashAlgorithm.FNV1` - FNV-1
+- `HashAlgorithm.MURMER` - Murmur hash
+- `HashAlgorithm.CRC32` - CRC32
 
 # Shorthand Time Helpers
 
