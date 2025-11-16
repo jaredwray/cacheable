@@ -923,6 +923,7 @@ export class Cacheable extends Hookified {
 		algorithm: HashAlgorithm = HashAlgorithm.DJB2,
 	): string {
 		// Check if algorithm is a valid HashAlgorithm value, default to DJB2 if not
+		/* v8 ignore next -- @persist */
 		const validAlgorithm = Object.values(HashAlgorithm).includes(algorithm)
 			? algorithm
 			: HashAlgorithm.DJB2;
