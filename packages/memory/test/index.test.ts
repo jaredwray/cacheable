@@ -60,8 +60,8 @@ describe("CacheableMemory Options and Properties", () => {
 			storeHashAlgorithm: HashAlgorithm.DJB2,
 		});
 		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.DJB2);
-		cache.storeHashAlgorithm = HashAlgorithm.SHA256;
-		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.SHA256);
+		cache.storeHashAlgorithm = HashAlgorithm.FNV1;
+		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.FNV1);
 
 		const data1 = {
 			key: faker.string.alphanumeric(10),
@@ -80,34 +80,11 @@ describe("CacheableMemory Options and Properties", () => {
 		expect(cache.get(data2.key)).toBe(data2.value);
 	});
 
-	test("should be able to set the storeHashAlgorithm md5", () => {
+	test("should be able to set the storeHashAlgorithm murmer", () => {
 		const cache = new CacheableMemory({
-			storeHashAlgorithm: HashAlgorithm.MD5,
+			storeHashAlgorithm: HashAlgorithm.MURMER,
 		});
-		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.MD5);
-
-		const data1 = {
-			key: faker.string.alphanumeric(10),
-			value: faker.string.alphanumeric(10),
-		};
-
-		const data2 = {
-			key: faker.string.alphanumeric(10),
-			value: faker.string.alphanumeric(10),
-		};
-
-		cache.set(data1.key, data1.value);
-		cache.set(data2.key, data2.value);
-
-		expect(cache.get(data1.key)).toBe(data1.value);
-		expect(cache.get(data2.key)).toBe(data2.value);
-	});
-
-	test("should be able to set the storeHashAlgorithm sha256", () => {
-		const cache = new CacheableMemory({
-			storeHashAlgorithm: HashAlgorithm.SHA256,
-		});
-		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.SHA256);
+		expect(cache.storeHashAlgorithm).toBe(HashAlgorithm.MURMER);
 
 		const data1 = {
 			key: faker.string.alphanumeric(10),

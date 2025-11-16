@@ -3,7 +3,7 @@ import {
 	type CacheableStoreItem,
 	type CacheSyncInstance,
 	HashAlgorithm,
-	hashToNumber,
+	hashToNumberSync,
 	shorthandToTime,
 	type WrapFunctionOptions,
 	wrapSync,
@@ -561,7 +561,7 @@ export class CacheableMemory extends Hookified {
 
 		const storeHashSize = this._storeHashSize - 1;
 
-		const hash = hashToNumber(key, {
+		const hash = hashToNumberSync(key, {
 			min: 0,
 			max: storeHashSize,
 			algorithm: this._storeHashAlgorithm,
