@@ -22,9 +22,6 @@ export type HashToNumberOptions = HashOptions & {
 	hashLength?: number;
 };
 
-// Create a shared Hashery instance
-const hashery = new Hashery();
-
 /**
  * Hashes an object asynchronously using the specified cryptographic algorithm.
  * This method should be used for cryptographic algorithms (SHA-256, SHA-384, SHA-512).
@@ -47,6 +44,7 @@ export async function hash(
 	// Convert the object to a string
 	const objectString = serialize(object);
 
+	const hashery = new Hashery();
 	return hashery.toHash(objectString, { algorithm });
 }
 
@@ -72,6 +70,7 @@ export function hashSync(
 	// Convert the object to a string
 	const objectString = serialize(object);
 
+	const hashery = new Hashery();
 	return hashery.toHashSync(objectString, { algorithm });
 }
 
@@ -108,6 +107,7 @@ export async function hashToNumber(
 	// Convert the object to a string
 	const objectString = serialize(object);
 
+	const hashery = new Hashery();
 	return hashery.toNumber(objectString, {
 		algorithm,
 		min,
@@ -149,6 +149,7 @@ export function hashToNumberSync(
 	// Convert the object to a string
 	const objectString = serialize(object);
 
+	const hashery = new Hashery();
 	return hashery.toNumberSync(objectString, {
 		algorithm,
 		min,
@@ -156,6 +157,3 @@ export function hashToNumberSync(
 		hashLength,
 	});
 }
-
-// Export the Hashery instance for advanced usage
-export { hashery };
