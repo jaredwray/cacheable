@@ -901,12 +901,7 @@ export class Cacheable extends Hookified {
 		object: any,
 		algorithm: HashAlgorithm = HashAlgorithm.SHA256,
 	): Promise<string> {
-		// Check if algorithm is a valid HashAlgorithm value, default to SHA256 if not
-		const validAlgorithm = Object.values(HashAlgorithm).includes(algorithm)
-			? algorithm
-			: HashAlgorithm.SHA256;
-
-		return hash(object, { algorithm: validAlgorithm });
+		return hash(object, { algorithm });
 	}
 
 	/**
@@ -922,13 +917,7 @@ export class Cacheable extends Hookified {
 		object: any,
 		algorithm: HashAlgorithm = HashAlgorithm.DJB2,
 	): string {
-		// Check if algorithm is a valid HashAlgorithm value, default to DJB2 if not
-		/* v8 ignore next -- @persist */
-		const validAlgorithm = Object.values(HashAlgorithm).includes(algorithm)
-			? algorithm
-			: HashAlgorithm.DJB2;
-
-		return hashSync(object, { algorithm: validAlgorithm });
+		return hashSync(object, { algorithm });
 	}
 
 	private async setManyKeyv(
