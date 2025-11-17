@@ -92,6 +92,54 @@ describe("wrap", () => {
 		}
 	});
 
+	it.each([
+		[500, 250],
+		[{ ttl: 500, refreshThreshold: 250 }, undefined],
+	])("should allow dynamic refreshThreshold on wrap function with ttl/options param as %s", async (ttlOrOptions, refreshThreshold) => {
+		// 1st call should be cached
+		expect(
+			await cache.wrap(
+				data.key,
+				async () => 0,
+				ttlOrOptions as never,
+				refreshThreshold,
+			),
+		).toEqual(0);
+		await sleep(260);
+		// Background refresh, but stale value returned
+		expect(
+			await cache.wrap(
+				data.key,
+				async () => 1,
+				ttlOrOptions as never,
+				refreshThreshold,
+			),
+		).toEqual(0);
+		// New value in cache
+		expect(
+			await cache.wrap(
+				data.key,
+				async () => 2,
+				ttlOrOptions as never,
+				refreshThreshold,
+			),
+		).toEqual(1);
+
+		await sleep(260);
+		// No background refresh with the new override params
+		expect(await cache.wrap(data.key, async () => 3, undefined, 125)).toEqual(
+			1,
+		);
+		await sleep(140);
+		// Background refresh, but stale value returned
+		expect(await cache.wrap(data.key, async () => 4, undefined, 125)).toEqual(
+			1,
+		);
+		expect(await cache.wrap(data.key, async () => 5, undefined, 125)).toEqual(
+			4,
+		);
+	});
+
 	it("should allow refreshThreshold function on wrap function", async () => {
 		const config = {
 			ttl: (v: number) => v * 1000,
