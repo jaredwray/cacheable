@@ -5,7 +5,6 @@ import { createCache } from "../src/index.js";
 import { sleep } from "./sleep.js";
 
 describe("wrap", () => {
-	
 	let keyv: Keyv;
 	let cache: ReturnType<typeof createCache>;
 	let ttl = 500;
