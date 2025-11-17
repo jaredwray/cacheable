@@ -97,7 +97,7 @@ describe("wrap", () => {
 		[500, 250],
 		[{ ttl: 500, refreshThreshold: 250 }, undefined],
 	])(
-		"should allow dynamic refreshThreshold on wrap function with ttl/options param as %s",
+		"should allow dynamic refreshThreshold on wrap function with ttl/options",
 		async (ttlOrOptions, refreshThreshold) => {
 			// 1st call should be cached
 			expect(
