@@ -52,9 +52,7 @@
 		"LICENSE"
 	],
 	"dependencies": {
-		"hashery": "^1.2.0"
-	},
-	"peerDependencies": {
+		"hashery": "^1.2.0",
 		"keyv": "^5.5.4"
 	}
 }
