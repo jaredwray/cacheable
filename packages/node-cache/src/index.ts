@@ -430,6 +430,26 @@ export class NodeCache<T> extends Hookified {
 		return this.intervalId;
 	}
 
+	public startInterval(): void {
+		if (this.options.checkperiod && this.options.checkperiod > 0) {
+			const checkPeriodinSeconds = this.options.checkperiod * 1000;
+			this.intervalId = setInterval(() => {
+				this.checkData();
+			}, checkPeriodinSeconds).unref();
+
+			return;
+		}
+
+		this.intervalId = 0;
+	}
+
+	public stopInterval(): void {
+		if (this.intervalId !== 0) {
+			clearInterval(this.intervalId);
+			this.intervalId = 0;
+		}
+	}
+
 	private formatKey(key: string | number): string {
 		return key.toString();
 	}
@@ -445,19 +465,6 @@ export class NodeCache<T> extends Hookified {
 		return expirationTimestamp;
 	}
 
-	private startInterval(): void {
-		if (this.options.checkperiod && this.options.checkperiod > 0) {
-			const checkPeriodinSeconds = this.options.checkperiod * 1000;
-			this.intervalId = setInterval(() => {
-				this.checkData();
-			}, checkPeriodinSeconds).unref();
-
-			return;
-		}
-
-		this.intervalId = 0;
-	}
-
 	private checkData(): void {
 		for (const [key, value] of this.store.entries()) {
 			if (value.ttl > 0 && value.ttl < Date.now()) {
@@ -467,13 +474,6 @@ export class NodeCache<T> extends Hookified {
 
 				this.emit("expired", this.formatKey(key), value.value);
 			}
-		}
-	}
-
-	private stopInterval(): void {
-		if (this.intervalId !== 0) {
-			clearInterval(this.intervalId);
-			this.intervalId = 0;
 		}
 	}
 
