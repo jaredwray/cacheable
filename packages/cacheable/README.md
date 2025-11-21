@@ -547,6 +547,45 @@ const cache = new Cacheable({
 });
 ```
 
+## Namespace Isolation with Sync
+
+When multiple services share the same Redis instance (or other message provider), you can use namespaces to isolate cache synchronization events between services. This prevents one service's cache updates from affecting another service's cache.
+
+```javascript
+import { Cacheable } from 'cacheable';
+import { RedisMessageProvider } from '@qified/redis';
+
+const provider = new RedisMessageProvider({
+  connection: { host: 'localhost', port: 6379 }
+});
+
+// Service 1 with namespace
+const serviceA = new Cacheable({
+  namespace: 'service-a',
+  sync: { qified: provider }
+});
+
+// Service 2 with different namespace
+const serviceB = new Cacheable({
+  namespace: 'service-b',
+  sync: { qified: provider }
+});
+
+// Set value in service A
+await serviceA.set('config', { timeout: 5000 });
+
+// Service B won't receive this update because it has a different namespace
+const value = await serviceB.get('config'); // undefined
+```
+
+**How Namespace Isolation Works:**
+- Without namespaces, sync events use channel names like `cache:set` and `cache:delete`
+- With namespaces, events are prefixed: `service-a::cache:set`, `service-b::cache:set`
+- Services only subscribe to events matching their namespace, ensuring complete isolation
+- Namespaces can be static strings or functions that return strings
+
+**Note:** The namespace is automatically passed from Cacheable to CacheableSync, so you only need to set it once in the Cacheable options.
+
 ## How Sync Works
 
 1. **SET Operations**: When you call `cache.set()` or `cache.setMany()`, the cache:
