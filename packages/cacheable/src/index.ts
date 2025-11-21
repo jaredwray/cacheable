@@ -80,7 +80,10 @@ export class Cacheable extends Hookified {
 			this._sync =
 				options.sync instanceof CacheableSync
 					? options.sync
-					: new CacheableSync(options.sync);
+					: new CacheableSync({
+							...options.sync,
+							namespace: options.namespace,
+						});
 
 			// Subscribe to sync events to update local cache
 			this._sync.subscribe(this._primary, this._cacheId);
@@ -105,6 +108,10 @@ export class Cacheable extends Hookified {
 		this._primary.namespace = this.getNameSpace();
 		if (this._secondary) {
 			this._secondary.namespace = this.getNameSpace();
+		}
+
+		if (this._sync) {
+			this._sync.namespace = namespace;
 		}
 	}
 
