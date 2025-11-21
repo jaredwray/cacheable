@@ -332,6 +332,158 @@ describe("cacheable options and properties", async () => {
 
 		await provider.disconnect();
 	});
+
+	test("should isolate sync events with different namespaces", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const provider = new RedisMessageProvider({
+			id: "test-provider-namespace-isolation",
+			uri: "redis://localhost:6379",
+		});
+
+		const cacheable1 = new Cacheable({
+			cacheId: "cache1",
+			namespace: "service1",
+			sync: { qified: provider },
+		});
+		const cacheable2 = new Cacheable({
+			cacheId: "cache2",
+			namespace: "service2",
+			sync: { qified: provider },
+		});
+
+		// Wait for subscriptions to be ready
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		// Service1 sets a value
+		await cacheable1.set("isolationKey", "service1Value", 5000);
+
+		// Wait for potential sync to propagate
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		// Service2 should NOT receive the value
+		const value2 = await cacheable2.get("isolationKey");
+		expect(value2).toBeUndefined();
+
+		// Service2 sets a value
+		await cacheable2.set("isolationKey", "service2Value", 5000);
+
+		// Wait for potential sync to propagate
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		// Service1 should still have its own value, not affected by service2
+		const value1 = await cacheable1.get("isolationKey");
+		expect(value1).toBe("service1Value");
+
+		await provider.disconnect();
+	});
+
+	test("should sync events with same namespace", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const provider = new RedisMessageProvider({
+			id: "test-provider-namespace-sync",
+			uri: "redis://localhost:6379",
+		});
+
+		const cacheable1 = new Cacheable({
+			cacheId: "cache1",
+			namespace: "shared-service",
+			sync: { qified: provider },
+		});
+		const cacheable2 = new Cacheable({
+			cacheId: "cache2",
+			namespace: "shared-service",
+			sync: { qified: provider },
+		});
+
+		// Wait for subscriptions to be ready
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		await cacheable1.set("sharedKey", "sharedValue", 5000);
+
+		// Wait for sync to propagate
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		// Service2 should receive the value because they share the same namespace
+		const value = await cacheable2.get("sharedKey");
+		expect(value).toBe("sharedValue");
+
+		await provider.disconnect();
+	});
+
+	test("should update sync namespace when Cacheable namespace changes", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const provider = new RedisMessageProvider({
+			id: "test-provider-namespace-change",
+			uri: "redis://localhost:6379",
+		});
+
+		const cacheable1 = new Cacheable({
+			cacheId: "cache1",
+			namespace: "service1",
+			sync: { qified: provider },
+		});
+		const cacheable2 = new Cacheable({
+			cacheId: "cache2",
+			namespace: "service2",
+			sync: { qified: provider },
+		});
+
+		// Wait for subscriptions to be ready
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		// Change cacheable1's namespace to match cacheable2
+		cacheable1.namespace = "service2";
+
+		// Wait for resubscription
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		// Now they should sync
+		await cacheable2.set("dynamicKey", "dynamicValue", 5000);
+
+		// Wait for sync to propagate
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		const value = await cacheable1.get("dynamicKey");
+		expect(value).toBe("dynamicValue");
+
+		await provider.disconnect();
+	});
+
+	test("should work with function namespace", async () => {
+		const { RedisMessageProvider } = await import("@qified/redis");
+		const provider = new RedisMessageProvider({
+			id: "test-provider-function-namespace",
+			uri: "redis://localhost:6379",
+		});
+
+		const currentNamespace = "service-a";
+		const getNamespace = () => currentNamespace;
+
+		const cacheable1 = new Cacheable({
+			cacheId: "cache1",
+			namespace: getNamespace,
+			sync: { qified: provider },
+		});
+		const cacheable2 = new Cacheable({
+			cacheId: "cache2",
+			namespace: "service-a",
+			sync: { qified: provider },
+		});
+
+		// Wait for subscriptions to be ready
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		await cacheable1.set("funcKey", "funcValue", 5000);
+
+		// Wait for sync to propagate
+		await new Promise((resolve) => setTimeout(resolve, 200));
+
+		// Both should sync because function returns "service-a"
+		const value = await cacheable2.get("funcKey");
+		expect(value).toBe("funcValue");
+
+		await provider.disconnect();
+	});
 });
 
 describe("cacheable stats", async () => {

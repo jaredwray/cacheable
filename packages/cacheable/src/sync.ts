@@ -19,6 +19,11 @@ export type CacheableSyncOptions = {
 	 * Qified instance or message provider(s) for synchronization
 	 */
 	qified: Qified | MessageProvider | MessageProvider[];
+	/**
+	 * The namespace for sync events. It can be a string or a function that returns a string.
+	 * When set, event names will be prefixed with the namespace (e.g., "my-namespace::cache:set")
+	 */
+	namespace?: string | (() => string);
 } & HookifiedOptions;
 
 export type CacheableSyncItem = {
@@ -34,6 +39,9 @@ export type CacheableSyncItem = {
  */
 export class CacheableSync extends Hookified {
 	private _qified: Qified = new Qified();
+	private _namespace?: string | (() => string);
+	private _storage?: Keyv;
+	private _cacheId?: string;
 
 	/**
 	 * Creates an instance of CacheableSync
@@ -42,6 +50,7 @@ export class CacheableSync extends Hookified {
 	constructor(options: CacheableSyncOptions) {
 		super(options);
 
+		this._namespace = options.namespace;
 		this._qified = this.createQified(options.qified);
 	}
 
@@ -62,6 +71,36 @@ export class CacheableSync extends Hookified {
 	}
 
 	/**
+	 * Gets the namespace for sync events
+	 * @returns The namespace or undefined if not set
+	 */
+	public get namespace(): string | (() => string) | undefined {
+		return this._namespace;
+	}
+
+	/**
+	 * Sets the namespace for sync events and resubscribes if needed
+	 * @param namespace - The namespace string or function
+	 */
+	public set namespace(namespace: string | (() => string) | undefined) {
+		// If we have an active subscription, unsubscribe from old events first
+		if (this._storage && this._cacheId) {
+			const oldSetEvent = this.getPrefixedEvent(CacheableSyncEvents.SET);
+			const oldDeleteEvent = this.getPrefixedEvent(CacheableSyncEvents.DELETE);
+
+			void this._qified.unsubscribe(oldSetEvent);
+			void this._qified.unsubscribe(oldDeleteEvent);
+		}
+
+		this._namespace = namespace;
+
+		// Resubscribe with new namespace
+		if (this._storage && this._cacheId) {
+			this.subscribe(this._storage, this._cacheId);
+		}
+	}
+
+	/**
 	 * Publishes a cache event to all the cache instances
 	 * @param data - The cache item data containing cacheId, key, value, and optional ttl
 	 */
@@ -69,7 +108,8 @@ export class CacheableSync extends Hookified {
 		event: CacheableSyncEvents,
 		data: CacheableSyncItem,
 	): Promise<void> {
-		await this._qified.publish(event, {
+		const eventName = this.getPrefixedEvent(event);
+		await this._qified.publish(eventName, {
 			id: crypto.randomUUID(),
 			data,
 		});
@@ -81,8 +121,15 @@ export class CacheableSync extends Hookified {
 	 * @param cacheId - The cache ID to identify this instance
 	 */
 	public subscribe(storage: Keyv, cacheId: string): void {
+		// Store subscription state for potential resubscription
+		this._storage = storage;
+		this._cacheId = cacheId;
+
+		const setEvent = this.getPrefixedEvent(CacheableSyncEvents.SET);
+		const deleteEvent = this.getPrefixedEvent(CacheableSyncEvents.DELETE);
+
 		// Subscribe to SET events to update local cache
-		this._qified.subscribe(CacheableSyncEvents.SET, {
+		this._qified.subscribe(setEvent, {
 			handler: async (message) => {
 				const data = message.data as CacheableSyncItem;
 				// Only process messages from other cache instances
@@ -93,7 +140,7 @@ export class CacheableSync extends Hookified {
 		});
 
 		// Subscribe to DELETE events to update local cache
-		this._qified.subscribe(CacheableSyncEvents.DELETE, {
+		this._qified.subscribe(deleteEvent, {
 			handler: async (message) => {
 				const data = message.data as CacheableSyncItem;
 				// Only process messages from other cache instances
@@ -118,5 +165,27 @@ export class CacheableSync extends Hookified {
 
 		const providers = Array.isArray(value) ? value : [value];
 		return new Qified({ messageProviders: providers });
+	}
+
+	/**
+	 * Gets the namespace prefix to use for event names
+	 * @returns The resolved namespace string or undefined
+	 */
+	private getNamespace(): string | undefined {
+		if (typeof this._namespace === "function") {
+			return this._namespace();
+		}
+
+		return this._namespace;
+	}
+
+	/**
+	 * Prefixes an event name with the namespace if one is set
+	 * @param event - The event to prefix
+	 * @returns The prefixed event name or the original event
+	 */
+	private getPrefixedEvent(event: CacheableSyncEvents): string {
+		const ns = this.getNamespace();
+		return ns ? `${ns}::${event}` : event;
 	}
 }

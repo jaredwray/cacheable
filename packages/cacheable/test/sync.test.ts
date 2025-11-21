@@ -201,4 +201,243 @@ describe("CacheableSync", () => {
 			expect(value).toBeUndefined();
 		});
 	});
+
+	describe("namespace", () => {
+		test("should get and set namespace", () => {
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const sync = new CacheableSync({
+				qified: provider,
+				namespace: "test-ns",
+			});
+			expect(sync.namespace).toBe("test-ns");
+
+			sync.namespace = "new-ns";
+			expect(sync.namespace).toBe("new-ns");
+		});
+
+		test("should accept function namespace", () => {
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const namespaceFunc = () => "dynamic-ns";
+			const sync = new CacheableSync({
+				qified: provider,
+				namespace: namespaceFunc,
+			});
+			expect(sync.namespace).toBe(namespaceFunc);
+		});
+
+		test("should publish with string namespace prefix", async () => {
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const sync = new CacheableSync({
+				qified: provider,
+				namespace: "service1",
+			});
+
+			let receivedTopic: string | undefined;
+			let receivedMessage: Message | undefined;
+
+			// Subscribe to the namespaced event
+			await sync.qified.subscribe("service1::cache:set", {
+				handler: async (message) => {
+					receivedTopic = "service1::cache:set";
+					receivedMessage = message;
+				},
+			});
+
+			await sync.publish(CacheableSyncEvents.SET, {
+				cacheId: "cache1",
+				key: "testKey",
+				value: "testValue",
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			expect(receivedTopic).toBe("service1::cache:set");
+			expect(receivedMessage).toBeDefined();
+			expect(receivedMessage?.data.key).toBe("testKey");
+		});
+
+		test("should publish with function namespace prefix", async () => {
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const sync = new CacheableSync({
+				qified: provider,
+				namespace: () => "dynamic-service",
+			});
+
+			let receivedTopic: string | undefined;
+			let receivedMessage: Message | undefined;
+
+			// Subscribe to the namespaced event
+			await sync.qified.subscribe("dynamic-service::cache:set", {
+				handler: async (message) => {
+					receivedTopic = "dynamic-service::cache:set";
+					receivedMessage = message;
+				},
+			});
+
+			await sync.publish(CacheableSyncEvents.SET, {
+				cacheId: "cache1",
+				key: "testKey",
+				value: "testValue",
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			expect(receivedTopic).toBe("dynamic-service::cache:set");
+			expect(receivedMessage).toBeDefined();
+		});
+
+		test("should isolate services with different namespaces", async () => {
+			const { Keyv } = await import("keyv");
+			const provider = new MemoryMessageProvider({ id: "test" });
+
+			const sync1 = new CacheableSync({
+				qified: provider,
+				namespace: "service1",
+			});
+			const storage1 = new Keyv();
+
+			const sync2 = new CacheableSync({
+				qified: provider,
+				namespace: "service2",
+			});
+			const storage2 = new Keyv();
+
+			sync1.subscribe(storage1, "cache1");
+			sync2.subscribe(storage2, "cache2");
+
+			// Wait for subscriptions to be ready
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Service1 publishes a message
+			await sync1.publish(CacheableSyncEvents.SET, {
+				cacheId: "cache1",
+				key: "testKey",
+				value: "service1Value",
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Service2's storage should NOT be updated
+			const value2 = await storage2.get("testKey");
+			expect(value2).toBeUndefined();
+
+			// Service2 publishes a message
+			await sync2.publish(CacheableSyncEvents.SET, {
+				cacheId: "cache2",
+				key: "testKey",
+				value: "service2Value",
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Service1's storage should NOT be updated
+			const value1 = await storage1.get("testKey");
+			expect(value1).toBeUndefined();
+		});
+
+		test("should work without namespace (backward compatibility)", async () => {
+			const { Keyv } = await import("keyv");
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const sync = new CacheableSync({ qified: provider });
+			const storage = new Keyv();
+
+			sync.subscribe(storage, "cache1");
+
+			// Wait for subscription to be ready
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			await sync.publish(CacheableSyncEvents.SET, {
+				cacheId: "cache2",
+				key: "testKey",
+				value: "testValue",
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			const value = await storage.get("testKey");
+			expect(value).toBe("testValue");
+		});
+
+		test("should resubscribe when namespace changes", async () => {
+			const { Keyv } = await import("keyv");
+			const provider = new MemoryMessageProvider({ id: "test" });
+			const sync = new CacheableSync({
+				qified: provider,
+				namespace: "service1",
+			});
+			const storage = new Keyv();
+
+			sync.subscribe(storage, "cache1");
+
+			// Wait for subscription to be ready
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Change namespace
+			sync.namespace = "service2";
+
+			// Wait for resubscription
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Publish with the new namespace
+			await sync.publish(CacheableSyncEvents.SET, {
+				cacheId: "cache2",
+				key: "testKey",
+				value: "testValue",
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			const value = await storage.get("testKey");
+			expect(value).toBe("testValue");
+		});
+
+		test("should not receive messages on old namespace after change", async () => {
+			const { Keyv } = await import("keyv");
+			const provider = new MemoryMessageProvider({ id: "test" });
+
+			// Create two syncs with different namespaces
+			const sync1 = new CacheableSync({
+				qified: provider,
+				namespace: "service1",
+			});
+			const storage1 = new Keyv();
+
+			const sync2 = new CacheableSync({
+				qified: provider,
+				namespace: "service2",
+			});
+			const storage2 = new Keyv();
+
+			sync1.subscribe(storage1, "cache1");
+			sync2.subscribe(storage2, "cache2");
+
+			// Wait for subscriptions to be ready
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Change sync1's namespace to match sync2
+			sync1.namespace = "service2";
+
+			// Wait for resubscription
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Now sync1 should receive messages from sync2's namespace
+			await sync2.publish(CacheableSyncEvents.SET, {
+				cacheId: "cache2",
+				key: "testKey",
+				value: "service2Value",
+			});
+
+			// Wait for message to be processed
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			const value1 = await storage1.get("testKey");
+			expect(value1).toBe("service2Value");
+		});
+	});
 });
