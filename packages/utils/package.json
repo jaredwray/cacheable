@@ -35,12 +35,12 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.3.5",
+		"@biomejs/biome": "^2.3.7",
 		"@faker-js/faker": "^10.1.0",
 		"@types/node": "^24.10.1",
 		"@vitest/coverage-v8": "^4.0.9",
 		"lru-cache": "^11.2.2",
-		"rimraf": "^6.1.0",
+		"rimraf": "^6.1.2",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3",
 		"vitest": "^4.0.9"
