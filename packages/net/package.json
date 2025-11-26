@@ -47,7 +47,7 @@
 	},
 	"dependencies": {
 		"cacheable": "workspace:^",
-		"hookified": "^1.12.2",
+		"hookified": "^1.13.0",
 		"http-cache-semantics": "^4.2.0",
 		"undici": "^7.16.0"
 	},
