@@ -39,11 +39,11 @@
 		"@faker-js/faker": "^10.1.0",
 		"@types/http-cache-semantics": "^4.0.4",
 		"@types/node": "^24.10.1",
-		"@vitest/coverage-v8": "^4.0.4",
+		"@vitest/coverage-v8": "^4.0.14",
 		"rimraf": "^6.1.2",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3",
-		"vitest": "^4.0.4"
+		"vitest": "^4.0.14"
 	},
 	"dependencies": {
 		"cacheable": "workspace:^",
