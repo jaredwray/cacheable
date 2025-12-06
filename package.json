@@ -19,7 +19,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^4.0.7",
     "vitest": "^4.0.7",
-    "wrangler": "^4.52.1"
+    "wrangler": "^4.53.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
