@@ -17,8 +17,9 @@
   "author": "Jared Wray <me@jaredwray.com>",
   "license": "MIT",
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.0.7",
-    "vitest": "^4.0.7",
+    "@biomejs/biome": "^2.3.8",
+    "@vitest/coverage-v8": "^4.0.15",
+    "vitest": "^4.0.15",
     "wrangler": "^4.53.0"
   },
   "pnpm": {
@@ -31,8 +32,5 @@
       "unrs-resolver",
       "workerd"
     ]
-  },
-  "dependencies": {
-    "@biomejs/biome": "^2.3.4"
   }
 }
