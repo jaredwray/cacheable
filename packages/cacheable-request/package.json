@@ -43,29 +43,29 @@
 		"@types/http-cache-semantics": "It needs to be in the dependencies list and not devDependencies because otherwise projects that use this one will be getting `Could not find a declaration file for module 'http-cache-semantics'` error when running `tsc`, see https://github.com/jaredwray/cacheable-request/issues/194 for details"
 	},
 	"dependencies": {
-		"@types/http-cache-semantics": "^4.0.4",
-		"get-stream": "^9.0.1",
-		"http-cache-semantics": "^4.2.0",
-		"keyv": "^5.5.4",
-		"mimic-response": "^4.0.0",
-		"normalize-url": "^8.1.0",
-		"responselike": "^4.0.2"
+		"@types/http-cache-semantics": "4.0.4",
+		"get-stream": "9.0.1",
+		"http-cache-semantics": "4.2.0",
+		"keyv": "5.5.4",
+		"mimic-response": "4.0.0",
+		"normalize-url": "8.1.0",
+		"responselike": "4.0.2"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.3.8",
-		"@keyv/sqlite": "^4.0.6",
-		"@types/express": "^5.0.6",
-		"@types/node": "^24.10.0",
-		"@types/responselike": "^1.0.3",
-		"@vitest/coverage-v8": "^4.0.15",
-		"body-parser": "^2.2.0",
-		"delay": "^7.0.0",
-		"express": "^5.2.1",
-		"pify": "^6.1.0",
-		"rimraf": "^6.1.0",
-		"sqlite3": "^5.1.7",
-		"tsup": "^8.5.0",
-		"typescript": "^5.9.3",
-		"vitest": "^4.0.15"
+		"@biomejs/biome": "2.3.8",
+		"@keyv/sqlite": "4.0.6",
+		"@types/express": "5.0.6",
+		"@types/node": "24.10.0",
+		"@types/responselike": "1.0.3",
+		"@vitest/coverage-v8": "4.0.15",
+		"body-parser": "2.2.0",
+		"delay": "7.0.0",
+		"express": "5.2.1",
+		"pify": "6.1.0",
+		"rimraf": "6.1.0",
+		"sqlite3": "5.1.7",
+		"tsup": "8.5.0",
+		"typescript": "5.9.3",
+		"vitest": "4.0.15"
 	}
 }
