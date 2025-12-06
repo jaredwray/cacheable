@@ -60,7 +60,7 @@
 		"@vitest/coverage-v8": "^4.0.8",
 		"body-parser": "^2.2.0",
 		"delay": "^7.0.0",
-		"express": "^5.1.0",
+		"express": "^5.2.1",
 		"pify": "^6.1.0",
 		"rimraf": "^6.1.0",
 		"sqlite3": "^5.1.7",
