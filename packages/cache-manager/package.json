@@ -65,7 +65,7 @@
   "license": "MIT",
   "dependencies": {
     "@cacheable/utils": "workspace:^",
-    "keyv": "^5.5.4"
+    "keyv": "^5.5.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
