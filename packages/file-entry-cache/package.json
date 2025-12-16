@@ -44,13 +44,13 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.5",
-		"@types/node": "^24.10.1",
-		"@vitest/coverage-v8": "^4.0.9",
+		"@types/node": "^25.0.2",
+		"@vitest/coverage-v8": "^4.0.15",
 		"pino": "^10.1.0",
-		"rimraf": "^6.1.0",
+		"rimraf": "^6.1.2",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3",
-		"vitest": "^4.0.9"
+		"vitest": "^4.0.15"
 	},
 	"dependencies": {
 		"flat-cache": "workspace:^"
