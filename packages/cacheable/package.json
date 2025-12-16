@@ -1,6 +1,6 @@
 {
 	"name": "cacheable",
-	"version": "2.3.0",
+	"version": "2.3.1",
 	"description": "High Performance Layer 1 / Layer 2 Caching with Keyv Storage",
 	"type": "module",
 	"main": "./dist/index.js",
