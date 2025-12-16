@@ -39,10 +39,10 @@
 		"@faker-js/faker": "^10.1.0",
 		"@keyv/redis": "^5.1.4",
 		"@keyv/valkey": "^1.0.11",
-		"@qified/redis": "^0.5.2",
-		"@types/node": "^24.10.1",
+		"@qified/redis": "^0.5.3",
+		"@types/node": "^25.0.2",
 		"@vitest/coverage-v8": "^4.0.15",
-		"lru-cache": "^11.2.2",
+		"lru-cache": "^11.2.4",
 		"rimraf": "^6.1.2",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3",
@@ -53,7 +53,7 @@
 		"@cacheable/utils": "workspace:^",
 		"hookified": "^1.13.0",
 		"keyv": "^5.5.4",
-		"qified": "^0.5.2"
+		"qified": "^0.5.3"
 	},
 	"keywords": [
 		"cacheable",
