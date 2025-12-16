@@ -41,12 +41,12 @@
 		"@keyv/valkey": "^1.0.11",
 		"@qified/redis": "^0.5.2",
 		"@types/node": "^24.10.1",
-		"@vitest/coverage-v8": "^4.0.9",
+		"@vitest/coverage-v8": "^4.0.15",
 		"lru-cache": "^11.2.2",
 		"rimraf": "^6.1.0",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3",
-		"vitest": "^4.0.9"
+		"vitest": "^4.0.15"
 	},
 	"dependencies": {
 		"@cacheable/memory": "workspace:^",
