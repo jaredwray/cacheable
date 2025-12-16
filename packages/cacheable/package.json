@@ -37,7 +37,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.3.8",
 		"@faker-js/faker": "^10.1.0",
-		"@keyv/redis": "^5.1.4",
+		"@keyv/redis": "^5.1.5",
 		"@keyv/valkey": "^1.0.11",
 		"@qified/redis": "^0.5.3",
 		"@types/node": "^25.0.2",
@@ -52,7 +52,7 @@
 		"@cacheable/memory": "workspace:^",
 		"@cacheable/utils": "workspace:^",
 		"hookified": "^1.14.0",
-		"keyv": "^5.5.4",
+		"keyv": "^5.5.5",
 		"qified": "^0.5.3"
 	},
 	"keywords": [
