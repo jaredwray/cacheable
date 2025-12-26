@@ -43,7 +43,7 @@
 		"@faker-js/faker": "^10.1.0",
 		"@types/node": "^25.0.3",
 		"@vitest/coverage-v8": "^4.0.16",
-		"lru-cache": "^11.2.2",
+		"lru-cache": "^11.2.4",
 		"rimraf": "^6.1.2",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3",
