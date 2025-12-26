@@ -35,7 +35,7 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"dependencies": {
-		"hashery": "^1.2.0",
+		"hashery": "^1.3.0",
 		"keyv": "^5.5.5"
 	},
 	"devDependencies": {
