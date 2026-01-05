@@ -205,10 +205,10 @@ export class NodeCacheStore<T> extends Hookified {
 	/**
 	 * Set the TTL of an existing key in the cache.
 	 * @param {string | number} key
-	 * @param {number} [ttl]
+	 * @param {number | string} [ttl]
 	 * @returns {boolean}
 	 */
-	public async setTtl(key: string | number, ttl?: number): Promise<boolean> {
+	public async setTtl(key: string | number, ttl?: number | string): Promise<boolean> {
 		const item = await this._keyv.get(key.toString());
 		if (item) {
 			const finalTtl = this.resolveTtl(ttl);
