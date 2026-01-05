@@ -135,9 +135,8 @@ export class NodeCacheStore<T> extends Hookified {
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
 		for (const item of list) {
-			const finalTtl = this.resolveTtl(item.ttl);
-			await this._keyv.set(item.key.toString(), item.value, finalTtl);
-			this._stats.incrementCount();
+			// Use the set method to respect maxKeys limit
+			await this.set(item.key, item.value, item.ttl);
 		}
 	}
 
@@ -167,7 +166,14 @@ export class NodeCacheStore<T> extends Hookified {
 	): Promise<Record<string, T | undefined>> {
 		const result: Record<string, T | undefined> = {};
 		for (const key of keys) {
-			result[key.toString()] = await this._keyv.get<T>(key.toString());
+			const value = await this._keyv.get<T>(key.toString());
+			result[key.toString()] = value;
+			// Track hits and misses
+			if (value !== undefined) {
+				this._stats.incrementHits();
+			} else {
+				this._stats.incrementMisses();
+			}
 		}
 
 		return result;
