@@ -269,6 +269,10 @@ export class NodeCacheStore<T> extends Hookified {
 			return shorthandToMilliseconds(effectiveTtl);
 		}
 
+		// Treat 0 as "unlimited" TTL; Keyv uses undefined to represent no expiration.
+		if (effectiveTtl === 0) {
+			return undefined;
+		}
 		return effectiveTtl;
 	}
 }
