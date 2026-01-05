@@ -157,7 +157,13 @@ export class NodeCacheStore<T> extends Hookified {
 	): Promise<Record<string, T | undefined>> {
 		const result: Record<string, T | undefined> = {};
 		for (const key of keys) {
-			result[key.toString()] = await this._keyv.get<T>(key.toString());
+			const value = await this._keyv.get<T>(key.toString());
+			if (value !== undefined) {
+				this._stats.incrementHits();
+			} else {
+				this._stats.incrementMisses();
+			}
+			result[key.toString()] = value;
 		}
 
 		return result;
