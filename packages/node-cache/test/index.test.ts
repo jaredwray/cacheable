@@ -294,4 +294,10 @@ describe("NodeCache", () => {
 		expect(expiredValue).toBe(undefined);
 		cache.close();
 	});
+
+	test("should handle null values with cloning", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		cache.set("nullKey", null);
+		expect(cache.get("nullKey")).toBe(null);
+	});
 });

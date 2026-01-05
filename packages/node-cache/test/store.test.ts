@@ -136,4 +136,13 @@ describe("NodeCacheStore", () => {
 		const result2 = await store.get<string>("test");
 		expect(result2).toBeUndefined();
 	});
+	test("should handle shorthand ttl strings", async () => {
+		const store = new NodeCacheStore({ ttl: "1h" });
+		await store.set("test", "value");
+		const result = await store.get("test");
+		expect(result).toBe("value");
+		await store.set("test2", "value2", "100ms");
+		const result2 = await store.get("test2");
+		expect(result2).toBe("value2");
+	});
 });
