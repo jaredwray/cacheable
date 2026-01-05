@@ -240,11 +240,11 @@ export class NodeCacheStore<T> extends Hookified {
 	public async take<T>(key: string | number): Promise<T | undefined> {
 		const result = await this._keyv.get<T>(key.toString());
 		if (result !== undefined) {
-			this._stats.recordHit();
+			this._stats.incrementHits();
 			await this._keyv.delete(key.toString());
 			this._stats.decreaseCount();
 		} else {
-			this._stats.recordMiss();
+			this._stats.incrementMisses();
 		}
 
 		return result;
