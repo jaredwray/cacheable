@@ -132,13 +132,27 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {void}
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
+		// Batch check for existing keys to avoid N+1 queries
+		const keyStrs = list.map((item) => item.key.toString());
+		const existingKeys = new Set<string>();
+
+		if (this._maxKeys > 0) {
+			// Check which keys already exist
+			const results = await this.mget<T>(keyStrs);
+			for (const [key, value] of Object.entries(results)) {
+				if (value !== undefined) {
+					existingKeys.add(key);
+				}
+			}
+		}
+
 		for (const item of list) {
 			const keyStr = item.key.toString();
-			const exists = await this._keyv.get(keyStr);
+			const exists = existingKeys.has(keyStr);
 
 			// Check maxKeys limit before each set operation for new keys
 			if (this._maxKeys > 0) {
-				if (exists === undefined && this._stats.count >= this._maxKeys) {
+				if (!exists && this._stats.count >= this._maxKeys) {
 					// Stop processing if we've reached the limit
 					return;
 				}
@@ -148,7 +162,7 @@ export class NodeCacheStore<T> extends Hookified {
 			await this._keyv.set(keyStr, item.value, finalTtl);
 
 			// Only increment count for new keys
-			if (exists === undefined) {
+			if (!exists) {
 				this._stats.incrementCount();
 			}
 		}
