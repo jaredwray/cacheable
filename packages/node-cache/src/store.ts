@@ -131,9 +131,19 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {void}
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
+		// Check existence of all keys in batch for better performance
+		const keyStrings = list.map((item) => item.key.toString());
+		const existsArray = await this._keyv.hasMany(keyStrings);
+
+		// Create a map of key existence for quick lookup
+		const existsMap = new Map<string, boolean>();
+		for (let i = 0; i < keyStrings.length; i++) {
+			existsMap.set(keyStrings[i], existsArray[i]);
+		}
+
 		for (const item of list) {
 			const keyString = item.key.toString();
-			const exists = await this._keyv.has(keyString);
+			const exists = existsMap.get(keyString) ?? false;
 			const finalTtl = this.resolveTtl(item.ttl);
 			await this._keyv.set(keyString, item.value, finalTtl);
 
