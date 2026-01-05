@@ -300,4 +300,43 @@ describe("NodeCache", () => {
 		cache.set("nullKey", null);
 		expect(cache.get("nullKey")).toBe(null);
 	});
+
+	test("should not overcount stats when updating existing keys with set", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		// Set initial key
+		cache.set("foo", "bar");
+		expect(cache.getStats().keys).toBe(1);
+
+		// Update existing key - should not increment count
+		cache.set("foo", "updated");
+		expect(cache.getStats().keys).toBe(1);
+		expect(cache.get("foo")).toBe("updated");
+
+		// Add new key - should increment count
+		cache.set("baz", "qux");
+		expect(cache.getStats().keys).toBe(2);
+	});
+
+	test("should not overcount stats when updating existing keys with mset", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		// Set initial keys
+		const list1 = [
+			{ key: "foo", value: "bar" },
+			{ key: "baz", value: "qux" },
+		];
+		cache.mset(list1);
+		expect(cache.getStats().keys).toBe(2);
+
+		// Update existing keys and add one new key - should only increment by 1
+		const list2 = [
+			{ key: "foo", value: "updated1" },
+			{ key: "baz", value: "updated2" },
+			{ key: "new", value: "value" },
+		];
+		cache.mset(list2);
+		expect(cache.getStats().keys).toBe(3);
+		expect(cache.get("foo")).toBe("updated1");
+		expect(cache.get("baz")).toBe("updated2");
+		expect(cache.get("new")).toBe("value");
+	});
 });

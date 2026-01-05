@@ -106,15 +106,22 @@ export class NodeCacheStore<T> extends Hookified {
 		value: T,
 		ttl?: number | string,
 	): Promise<boolean> {
+		const keyString = key.toString();
+		const exists = await this._keyv.has(keyString);
+
 		if (this._maxKeys > 0) {
-			if (this._stats.count >= this._maxKeys) {
+			if (!exists && this._stats.count >= this._maxKeys) {
 				return false;
 			}
 		}
 
 		const finalTtl = this.resolveTtl(ttl);
-		await this._keyv.set(key.toString(), value, finalTtl);
-		this._stats.incrementCount();
+		await this._keyv.set(keyString, value, finalTtl);
+
+		// Only increment count for new keys
+		if (!exists) {
+			this._stats.incrementCount();
+		}
 		return true;
 	}
 
@@ -125,9 +132,15 @@ export class NodeCacheStore<T> extends Hookified {
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
 		for (const item of list) {
+			const keyString = item.key.toString();
+			const exists = await this._keyv.has(keyString);
 			const finalTtl = this.resolveTtl(item.ttl);
-			await this._keyv.set(item.key.toString(), item.value, finalTtl);
-			this._stats.incrementCount();
+			await this._keyv.set(keyString, item.value, finalTtl);
+
+			// Only increment count for new keys
+			if (!exists) {
+				this._stats.incrementCount();
+			}
 		}
 	}
 
@@ -236,11 +249,11 @@ export class NodeCacheStore<T> extends Hookified {
 	public async take<T>(key: string | number): Promise<T | undefined> {
 		const result = await this._keyv.get<T>(key.toString());
 		if (result !== undefined) {
-			this._stats.recordHit();
+			this._stats.incrementHits();
 			await this._keyv.delete(key.toString());
 			this._stats.decreaseCount();
 		} else {
-			this._stats.recordMiss();
+			this._stats.incrementMisses();
 		}
 
 		return result;

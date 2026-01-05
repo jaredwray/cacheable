@@ -14,6 +14,7 @@ out
 # Lock Files
 yarn.lock
 pnpm-lock.yaml
+package-lock.json
 
 # AI
 .claude
