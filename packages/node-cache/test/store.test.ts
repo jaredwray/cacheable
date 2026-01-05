@@ -124,6 +124,23 @@ describe("NodeCacheStore", () => {
 		const result1 = await store.setTtl("test");
 		expect(result1).toBe(false);
 	});
+	test("should track stats when setTtl is called", async () => {
+		const store = new NodeCacheStore();
+		await store.set("test", "value", 1000);
+		// Reset hits/misses from previous get/set operations
+		const initialHits = store.stats.hits;
+		const initialMisses = store.stats.misses;
+		// setTtl on existing key should increment hits
+		const result1 = await store.setTtl("test", 2000);
+		expect(result1).toBe(true);
+		expect(store.stats.hits).toBe(initialHits + 1);
+		expect(store.stats.misses).toBe(initialMisses);
+		// setTtl on non-existing key should increment misses
+		const result2 = await store.setTtl("nonexistent", 1000);
+		expect(result2).toBe(false);
+		expect(store.stats.hits).toBe(initialHits + 1);
+		expect(store.stats.misses).toBe(initialMisses + 1);
+	});
 	test("should be able to disconnect", async () => {
 		const store = new NodeCacheStore();
 		await store.disconnect();
