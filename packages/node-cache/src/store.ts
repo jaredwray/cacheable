@@ -128,6 +128,9 @@ export class NodeCacheStore<T> extends Hookified {
 
 	/**
 	 * Set multiple key/value pairs in the cache.
+	 * Note: When maxKeys limit is enabled and reached, this method will stop processing
+	 * remaining items without providing feedback about which items were successfully set.
+	 * Existing keys can be overwritten even when at the maxKeys limit.
 	 * @param {PartialNodeCacheItem[]} list
 	 * @returns {void}
 	 */
