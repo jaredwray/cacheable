@@ -106,22 +106,25 @@ export class NodeCacheStore<T> extends Hookified {
 		value: T,
 		ttl?: number | string,
 	): Promise<boolean> {
-		let keyExists = false;
-
+		// When maxKeys is enabled, check if key exists and enforce the limit
 		if (this._maxKeys > 0) {
-			// Check if key already exists before the set operation
-			keyExists = await this._keyv.has(key.toString());
+			const keyExists = await this._keyv.has(key.toString());
 			// Only reject if we're at the limit and it's a new key
 			if (!keyExists && this._stats.count >= this._maxKeys) {
 				return false;
 			}
-		}
 
-		const finalTtl = this.resolveTtl(ttl);
-		await this._keyv.set(key.toString(), value, finalTtl);
+			const finalTtl = this.resolveTtl(ttl);
+			await this._keyv.set(key.toString(), value, finalTtl);
 
-		// Only increment count if this is a new key
-		if (!keyExists) {
+			// Only increment count if this is a new key
+			if (!keyExists) {
+				this._stats.incrementCount();
+			}
+		} else {
+			// When maxKeys is disabled, use the original behavior (always increment)
+			const finalTtl = this.resolveTtl(ttl);
+			await this._keyv.set(key.toString(), value, finalTtl);
 			this._stats.incrementCount();
 		}
 
