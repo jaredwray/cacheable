@@ -106,15 +106,23 @@ export class NodeCacheStore<T> extends Hookified {
 		value: T,
 		ttl?: number | string,
 	): Promise<boolean> {
+		const keyStr = key.toString();
+		const exists = await this._keyv.get(keyStr);
+
 		if (this._maxKeys > 0) {
-			if (this._stats.count >= this._maxKeys) {
+			if (exists === undefined && this._stats.count >= this._maxKeys) {
 				return false;
 			}
 		}
 
 		const finalTtl = this.resolveTtl(ttl);
-		await this._keyv.set(key.toString(), value, finalTtl);
-		this._stats.incrementCount();
+		await this._keyv.set(keyStr, value, finalTtl);
+
+		// Only increment count for new keys
+		if (exists === undefined) {
+			this._stats.incrementCount();
+		}
+
 		return true;
 	}
 
@@ -125,17 +133,24 @@ export class NodeCacheStore<T> extends Hookified {
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
 		for (const item of list) {
-			// Check maxKeys limit before each set operation
+			const keyStr = item.key.toString();
+			const exists = await this._keyv.get(keyStr);
+
+			// Check maxKeys limit before each set operation for new keys
 			if (this._maxKeys > 0) {
-				if (this._stats.count >= this._maxKeys) {
+				if (exists === undefined && this._stats.count >= this._maxKeys) {
 					// Stop processing if we've reached the limit
 					return;
 				}
 			}
 
 			const finalTtl = this.resolveTtl(item.ttl);
-			await this._keyv.set(item.key.toString(), item.value, finalTtl);
-			this._stats.incrementCount();
+			await this._keyv.set(keyStr, item.value, finalTtl);
+
+			// Only increment count for new keys
+			if (exists === undefined) {
+				this._stats.incrementCount();
+			}
 		}
 	}
 

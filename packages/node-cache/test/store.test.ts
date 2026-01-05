@@ -49,6 +49,19 @@ describe("NodeCacheStore", () => {
 		const result1 = await store.get("test4");
 		expect(result1).toBeUndefined();
 	});
+	test("should allow overwriting keys without exceeding maxKeys limit", async () => {
+		const store = new NodeCacheStore({ maxKeys: 2 });
+		await store.set("test1", "value1");
+		await store.set("test2", "value2");
+		// Overwrite should succeed even though we're at maxKeys
+		const result = await store.set("test1", "newvalue1");
+		expect(result).toBe(true);
+		const result1 = await store.get("test1");
+		expect(result1).toBe("newvalue1");
+		// Adding a new key should fail
+		const result3 = await store.set("test3", "value3");
+		expect(result3).toBe(false);
+	});
 	test("should clear the cache", async () => {
 		const store = new NodeCacheStore();
 		await store.set("test", "value");
@@ -120,6 +133,23 @@ describe("NodeCacheStore", () => {
 		expect(result2).toBe("value2");
 		expect(result3).toBeUndefined();
 		expect(result4).toBeUndefined();
+	});
+	test("should allow overwriting keys in mset without exceeding maxKeys limit", async () => {
+		const store = new NodeCacheStore({ maxKeys: 2 });
+		await store.set("test1", "value1");
+		const data = [
+			{ key: "test1", value: "newvalue1" }, // Overwrite
+			{ key: "test2", value: "value2" }, // New
+			{ key: "test3", value: "value3" }, // Should be rejected
+		];
+		await store.mset(data);
+		const result1 = await store.get("test1");
+		const result2 = await store.get("test2");
+		const result3 = await store.get("test3");
+
+		expect(result1).toBe("newvalue1");
+		expect(result2).toBe("value2");
+		expect(result3).toBeUndefined();
 	});
 	test("should be able to delete multiple keys", async () => {
 		const store = new NodeCacheStore();
