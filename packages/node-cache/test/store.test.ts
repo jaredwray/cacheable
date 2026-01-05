@@ -145,4 +145,22 @@ describe("NodeCacheStore", () => {
 		const result2 = await store.get("test2");
 		expect(result2).toBe("value2");
 	});
+	test("should handle mget with missing keys", async () => {
+		const store = new NodeCacheStore();
+		await store.set("existing", "value");
+		const result = await store.mget(["existing", "missing"]);
+		expect(result.existing).toBe("value");
+		expect(result.missing).toBeUndefined();
+	});
+	test("should handle take on non-existent key", async () => {
+		const store = new NodeCacheStore();
+		const result = await store.take("nonexistent");
+		expect(result).toBeUndefined();
+	});
+	test("should handle ttl of 0 as unlimited", async () => {
+		const store = new NodeCacheStore();
+		await store.set("test", "value", 0);
+		const result = await store.get("test");
+		expect(result).toBe("value");
+	});
 });
