@@ -1,7 +1,7 @@
-import { Cacheable, type CacheableItem } from "cacheable";
+import { Stats, shorthandToMilliseconds } from "@cacheable/utils";
 import { Hookified } from "hookified";
 import type { PartialNodeCacheItem } from "index.js";
-import type { Keyv } from "keyv";
+import Keyv from "keyv";
 
 export type NodeCacheStoreOptions<T> = {
 	/**
@@ -13,15 +13,9 @@ export type NodeCacheStoreOptions<T> = {
 	 */
 	maxKeys?: number;
 	/**
-	 * Primary cache store.
+	 * The Keyv store instance.
 	 */
-	primary?: Keyv<T>;
-	/**
-	 * Secondary cache store. Learn more about the secondary cache store in the cacheable documentation.
-	 * [storage-tiering-and-caching](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable#storage-tiering-and-caching)
-	 */
-	secondary?: Keyv<T>;
-
+	store?: Keyv<T>;
 	/**
 	 * Enable stats tracking. This is a breaking change from the original NodeCache.
 	 */
@@ -30,38 +24,25 @@ export type NodeCacheStoreOptions<T> = {
 
 export class NodeCacheStore<T> extends Hookified {
 	private _maxKeys = 0;
-	private readonly _cache = new Cacheable();
+	private _keyv: Keyv<T>;
+	private readonly _stats: Stats;
+	private _ttl?: number | string;
+
 	constructor(options?: NodeCacheStoreOptions<T>) {
 		super();
-		if (options) {
-			const cacheOptions = {
-				ttl: options.ttl,
-				primary: options.primary,
-				secondary: options.secondary,
-				stats: options.stats ?? true,
-			};
+		this._stats = new Stats({ enabled: options?.stats ?? true });
+		this._ttl = options?.ttl;
+		this._keyv = options?.store ?? new Keyv<T>();
 
-			this._cache = new Cacheable(cacheOptions);
-
-			if (options.maxKeys) {
-				this._maxKeys = options.maxKeys;
-			}
+		if (options?.maxKeys) {
+			this._maxKeys = options.maxKeys;
 		}
 
-		// Hook up the cacheable events
-		this._cache.on("error", (error: Error) => {
+		// Hook up the keyv events
+		this._keyv.on("error", (error: Error) => {
 			/* v8 ignore next -- @preserve */
 			this.emit("error", error);
 		});
-	}
-
-	/**
-	 * Cacheable instance.
-	 * @returns {Cacheable}
-	 * @readonly
-	 */
-	public get cache(): Cacheable {
-		return this._cache;
 	}
 
 	/**
@@ -70,7 +51,7 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @readonly
 	 */
 	public get ttl(): number | string | undefined {
-		return this._cache.ttl;
+		return this._ttl;
 	}
 
 	/**
@@ -78,42 +59,16 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @param {number | string | undefined} ttl
 	 */
 	public set ttl(ttl: number | string | undefined) {
-		this._cache.ttl = ttl;
+		this._ttl = ttl;
 	}
 
 	/**
-	 * Primary cache store.
+	 * The Keyv store instance.
 	 * @returns {Keyv<T>}
 	 * @readonly
 	 */
-	public get primary(): Keyv<T> {
-		return this._cache.primary;
-	}
-
-	/**
-	 * Primary cache store.
-	 * @param {Keyv<T>} primary
-	 */
-	public set primary(primary: Keyv<T>) {
-		this._cache.primary = primary;
-	}
-
-	/**
-	 * Secondary cache store. Learn more about the secondary cache store in the
-	 * [cacheable](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable#storage-tiering-and-caching) documentation.
-	 * @returns {Keyv<T> | undefined}
-	 */
-	public get secondary(): Keyv<T> | undefined {
-		return this._cache.secondary;
-	}
-
-	/**
-	 * Secondary cache store. Learn more about the secondary cache store in the
-	 * [cacheable](https://github.com/jaredwray/cacheable/tree/main/packages/cacheable#storage-tiering-and-caching) documentation.
-	 * @param {Keyv | undefined} secondary
-	 */
-	public set secondary(secondary: Keyv | undefined) {
-		this._cache.secondary = secondary;
+	public get store(): Keyv<T> {
+		return this._keyv;
 	}
 
 	/**
@@ -135,7 +90,7 @@ export class NodeCacheStore<T> extends Hookified {
 		this._maxKeys = maxKeys;
 		/* v8 ignore next -- @preserve */
 		if (this._maxKeys > 0) {
-			this._cache.stats.enabled = true;
+			this._stats.enabled = true;
 		}
 	}
 
@@ -149,15 +104,17 @@ export class NodeCacheStore<T> extends Hookified {
 	public async set(
 		key: string | number,
 		value: T,
-		ttl?: number,
+		ttl?: number | string,
 	): Promise<boolean> {
 		if (this._maxKeys > 0) {
-			if (this._cache.stats.count >= this._maxKeys) {
+			if (this._stats.count >= this._maxKeys) {
 				return false;
 			}
 		}
 
-		await this._cache.set(key.toString(), value, ttl);
+		const finalTtl = this.resolveTtl(ttl);
+		await this._keyv.set(key.toString(), value, finalTtl);
+		this._stats.incrementCount();
 		return true;
 	}
 
@@ -167,16 +124,11 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {void}
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
-		const items: CacheableItem[] = [];
 		for (const item of list) {
-			items.push({
-				key: item.key.toString(),
-				value: item.value,
-				ttl: item.ttl,
-			});
+			const finalTtl = this.resolveTtl(item.ttl);
+			await this._keyv.set(item.key.toString(), item.value, finalTtl);
+			this._stats.incrementCount();
 		}
-
-		await this._cache.setMany(items);
 	}
 
 	/**
@@ -185,7 +137,14 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {any | undefined}
 	 */
 	public async get<T>(key: string | number): Promise<T | undefined> {
-		return this._cache.get<T>(key.toString());
+		const result = await this._keyv.get<T>(key.toString());
+		if (result !== undefined) {
+			this._stats.incrementHits();
+		} else {
+			this._stats.incrementMisses();
+		}
+
+		return result;
 	}
 
 	/**
@@ -198,7 +157,13 @@ export class NodeCacheStore<T> extends Hookified {
 	): Promise<Record<string, T | undefined>> {
 		const result: Record<string, T | undefined> = {};
 		for (const key of keys) {
-			result[key.toString()] = await this._cache.get<T>(key.toString());
+			const value = await this._keyv.get<T>(key.toString());
+			if (value !== undefined) {
+				this._stats.incrementHits();
+			} else {
+				this._stats.incrementMisses();
+			}
+			result[key.toString()] = value;
 		}
 
 		return result;
@@ -210,7 +175,12 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {boolean}
 	 */
 	public async del(key: string | number): Promise<boolean> {
-		return this._cache.delete(key.toString());
+		const deleted = await this._keyv.delete(key.toString());
+		if (deleted) {
+			this._stats.decreaseCount();
+		}
+
+		return deleted;
 	}
 
 	/**
@@ -219,7 +189,14 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {boolean}
 	 */
 	public async mdel(keys: Array<string | number>): Promise<boolean> {
-		return this._cache.deleteMany(keys.map((key) => key.toString()));
+		const deleted = await this._keyv.delete(keys.map((key) => key.toString()));
+		if (deleted) {
+			for (const _ of keys) {
+				this._stats.decreaseCount();
+			}
+		}
+
+		return deleted;
 	}
 
 	/**
@@ -227,18 +204,24 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {void}
 	 */
 	public async clear(): Promise<void> {
-		return this._cache.clear();
+		await this._keyv.clear();
+		this._stats.resetStoreValues();
 	}
 
 	/**
-	 * Check if a key exists in the cache.
+	 * Set the TTL of an existing key in the cache.
 	 * @param {string | number} key
+	 * @param {number | string} [ttl]
 	 * @returns {boolean}
 	 */
-	public async setTtl(key: string | number, ttl?: number): Promise<boolean> {
-		const item = await this._cache.get(key.toString());
+	public async setTtl(
+		key: string | number,
+		ttl?: number | string,
+	): Promise<boolean> {
+		const item = await this._keyv.get(key.toString());
 		if (item) {
-			await this._cache.set(key.toString(), item, ttl);
+			const finalTtl = this.resolveTtl(ttl);
+			await this._keyv.set(key.toString(), item, finalTtl);
 			return true;
 		}
 
@@ -246,12 +229,21 @@ export class NodeCacheStore<T> extends Hookified {
 	}
 
 	/**
-	 * Check if a key exists in the cache. If it does exist it will get the value and delete the item from the cache.
+	 * Get a key from the cache and delete it. If it does exist it will get the value and delete the item from the cache.
 	 * @param {string | number} key
 	 * @returns {T | undefined}
 	 */
 	public async take<T>(key: string | number): Promise<T | undefined> {
-		return this._cache.take<T>(key.toString());
+		const result = await this._keyv.get<T>(key.toString());
+		if (result !== undefined) {
+			this._stats.incrementHits();
+			await this._keyv.delete(key.toString());
+			this._stats.decreaseCount();
+		} else {
+			this._stats.incrementMisses();
+		}
+
+		return result;
 	}
 
 	/**
@@ -259,6 +251,28 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {void}
 	 */
 	public async disconnect(): Promise<void> {
-		await this._cache.disconnect();
+		await this._keyv.disconnect();
+	}
+
+	/**
+	 * Resolve the TTL to milliseconds.
+	 * @param {number | string | undefined} ttl
+	 * @returns {number | undefined}
+	 */
+	private resolveTtl(ttl?: number | string): number | undefined {
+		const effectiveTtl = ttl ?? this._ttl;
+		if (effectiveTtl === undefined) {
+			return undefined;
+		}
+
+		if (typeof effectiveTtl === "string") {
+			return shorthandToMilliseconds(effectiveTtl);
+		}
+
+		// Treat 0 as "unlimited" TTL; Keyv uses undefined to represent no expiration.
+		if (effectiveTtl === 0) {
+			return undefined;
+		}
+		return effectiveTtl;
 	}
 }
