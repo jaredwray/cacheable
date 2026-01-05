@@ -22,13 +22,13 @@ describe("NodeCacheStore", () => {
 		store.ttl = 200;
 		expect(store.ttl).toBe(200);
 	});
-	test("should set a primary keyv store", () => {
+	test("should set a keyv store", () => {
 		const store = new NodeCacheStore();
-		expect(store.primary).toBeDefined();
+		expect(store.store).toBeDefined();
 	});
-	test("should be able to use primary keyv store with ttl", async () => {
+	test("should be able to use keyv store with ttl", async () => {
 		const store = new NodeCacheStore();
-		expect(store.primary).toBeDefined();
+		expect(store.store).toBeDefined();
 		await store.set("test", "value");
 		const result1 = await store.get("test");
 		expect(result1).toBe("value");

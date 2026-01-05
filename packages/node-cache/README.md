@@ -296,7 +296,7 @@ import Keyv from 'keyv';
 import KeyvRedis from '@keyv/redis';
 
 const keyv = new Keyv({store: new KeyvRedis('redis://user:pass@localhost:6379')});
-const cache = new NodeCacheStore({primary: keyv});
+const cache = new NodeCacheStore({store: keyv});
 
 // with storage you have the same functionality as the NodeCache but will be using async/await
 await cache.set('foo', 'bar');
@@ -308,7 +308,7 @@ When initializing the cache you can pass in the options below:
 ```javascript
 export type NodeCacheStoreOptions = {
 	ttl?: number | string; // The standard ttl as number in milliseconds for every generated cache element. 0 = unlimited. Supports shorthand like '1h' for 1 hour.
-	primary?: Keyv; // The storage adapter (defaults to in-memory Keyv)
+	store?: Keyv; // The storage adapter (defaults to in-memory Keyv)
 	maxKeys?: number; // Default is 0 (unlimited). If this is set it will return false when trying to set more keys than the max.
 	stats?: boolean; // Default is true, if this is set to false it will not track stats internally
 };
@@ -335,7 +335,7 @@ await cache.set('longfoo', 'bar', '1d'); // 1 day
 * `setTtl(key: string | number, ttl?: number): Promise<boolean>` - Set the ttl of an existing key
 * `disconnect(): Promise<void>` - Disconnect the storage adapter
 * `ttl`: `number | string | undefined` - The standard ttl for every generated cache element. `undefined` = unlimited
-* `primary`: `Keyv` - The storage adapter (read-only)
+* `store`: `Keyv` - The storage adapter (read-only)
 * `maxKeys`: `number` - If this is set it will return false when trying to set more keys than the max
 
 # How to Contribute

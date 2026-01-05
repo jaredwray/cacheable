@@ -13,9 +13,9 @@ export type NodeCacheStoreOptions<T> = {
 	 */
 	maxKeys?: number;
 	/**
-	 * Primary cache store.
+	 * The Keyv store instance.
 	 */
-	primary?: Keyv<T>;
+	store?: Keyv<T>;
 	/**
 	 * Enable stats tracking. This is a breaking change from the original NodeCache.
 	 */
@@ -32,7 +32,7 @@ export class NodeCacheStore<T> extends Hookified {
 		super();
 		this._stats = new Stats({ enabled: options?.stats ?? true });
 		this._ttl = options?.ttl;
-		this._keyv = options?.primary ?? new Keyv<T>();
+		this._keyv = options?.store ?? new Keyv<T>();
 
 		if (options?.maxKeys) {
 			this._maxKeys = options.maxKeys;
@@ -63,11 +63,11 @@ export class NodeCacheStore<T> extends Hookified {
 	}
 
 	/**
-	 * Primary cache store.
+	 * The Keyv store instance.
 	 * @returns {Keyv<T>}
 	 * @readonly
 	 */
-	public get primary(): Keyv<T> {
+	public get store(): Keyv<T> {
 		return this._keyv;
 	}
 
