@@ -145,4 +145,49 @@ describe("NodeCacheStore", () => {
 		const result2 = await store.get("test2");
 		expect(result2).toBe("value2");
 	});
+	test("should not increment count when updating existing key with set", async () => {
+		const store = new NodeCacheStore();
+		await store.set("test", "value1");
+		const stats1 = await store.store.get("test");
+		expect(stats1).toBe("value1");
+
+		// Update the same key
+		await store.set("test", "value2");
+		const stats2 = await store.store.get("test");
+		expect(stats2).toBe("value2");
+
+		// The count should still be 1, not 2
+		// We can verify this by checking that a maxKeys of 1 still works
+		const storeWithMax = new NodeCacheStore({ maxKeys: 1 });
+		await storeWithMax.set("key1", "val1");
+		const success1 = await storeWithMax.set("key1", "val1_updated");
+		expect(success1).toBe(true);
+		const result = await storeWithMax.get("key1");
+		expect(result).toBe("val1_updated");
+	});
+	test("should not increment count when updating existing keys with mset", async () => {
+		const store = new NodeCacheStore({ maxKeys: 2 });
+
+		// Add 2 keys
+		await store.mset([
+			{ key: "key1", value: "value1" },
+			{ key: "key2", value: "value2" },
+		]);
+
+		// Update the same keys - should not fail even with maxKeys = 2
+		await store.mset([
+			{ key: "key1", value: "updated1" },
+			{ key: "key2", value: "updated2" },
+		]);
+
+		const result1 = await store.get("key1");
+		const result2 = await store.get("key2");
+		expect(result1).toBe("updated1");
+		expect(result2).toBe("updated2");
+
+		// Try to add a third key - should work because count is still 2
+		await store.set("key3", "value3");
+		const result3 = await store.get("key3");
+		expect(result3).toBeUndefined(); // Should fail because we're at maxKeys
+	});
 });
