@@ -106,25 +106,22 @@ export class NodeCacheStore<T> extends Hookified {
 		value: T,
 		ttl?: number | string,
 	): Promise<boolean> {
-		// When maxKeys is enabled, check if key exists and enforce the limit
+		// Check if key exists to track count accurately and enforce maxKeys limit
+		const keyExists = await this._keyv.has(key.toString());
+
+		// When maxKeys is enabled, enforce the limit
 		if (this._maxKeys > 0) {
-			const keyExists = await this._keyv.has(key.toString());
 			// Only reject if we're at the limit and it's a new key
 			if (!keyExists && this._stats.count >= this._maxKeys) {
 				return false;
 			}
+		}
 
-			const finalTtl = this.resolveTtl(ttl);
-			await this._keyv.set(key.toString(), value, finalTtl);
+		const finalTtl = this.resolveTtl(ttl);
+		await this._keyv.set(key.toString(), value, finalTtl);
 
-			// Only increment count if this is a new key
-			if (!keyExists) {
-				this._stats.incrementCount();
-			}
-		} else {
-			// When maxKeys is disabled, use the original behavior (always increment)
-			const finalTtl = this.resolveTtl(ttl);
-			await this._keyv.set(key.toString(), value, finalTtl);
+		// Only increment count if this is a new key
+		if (!keyExists) {
 			this._stats.incrementCount();
 		}
 
@@ -170,7 +167,6 @@ export class NodeCacheStore<T> extends Hookified {
 		const result: Record<string, T | undefined> = {};
 		for (const key of keys) {
 			const value = await this._keyv.get<T>(key.toString());
-			// Track hits and misses
 			if (value !== undefined) {
 				this._stats.incrementHits();
 			} else {
