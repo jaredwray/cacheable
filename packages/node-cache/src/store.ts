@@ -213,12 +213,14 @@ export class NodeCacheStore<T> extends Hookified {
 		ttl?: number | string,
 	): Promise<boolean> {
 		const item = await this._keyv.get(key.toString());
-		if (item) {
+		if (item !== undefined) {
+			this._stats.incrementHits();
 			const finalTtl = this.resolveTtl(ttl);
 			await this._keyv.set(key.toString(), item, finalTtl);
 			return true;
 		}
 
+		this._stats.incrementMisses();
 		return false;
 	}
 
