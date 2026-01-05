@@ -49,6 +49,27 @@ describe("NodeCacheStore", () => {
 		const result1 = await store.get("test4");
 		expect(result1).toBeUndefined();
 	});
+	test("should allow updates when at maxKeys limit", async () => {
+		const store = new NodeCacheStore({ maxKeys: 2 });
+
+		// Add 2 keys to reach the limit
+		await store.set("test1", "value1");
+		await store.set("test2", "value2");
+
+		// Verify we can't add a 3rd key
+		const result3 = await store.set("test3", "value3");
+		expect(result3).toBe(false);
+		expect(await store.get("test3")).toBeUndefined();
+
+		// Verify we CAN update existing keys
+		const update1 = await store.set("test1", "value1-updated");
+		expect(update1).toBe(true);
+		expect(await store.get("test1")).toBe("value1-updated");
+
+		const update2 = await store.set("test2", "value2-updated");
+		expect(update2).toBe(true);
+		expect(await store.get("test2")).toBe("value2-updated");
+	});
 	test("should clear the cache", async () => {
 		const store = new NodeCacheStore();
 		await store.set("test", "value");
@@ -144,5 +165,55 @@ describe("NodeCacheStore", () => {
 		await store.set("test2", "value2", "100ms");
 		const result2 = await store.get("test2");
 		expect(result2).toBe("value2");
+	});
+	test("should only increment count for new keys, not updates", async () => {
+		const store = new NodeCacheStore({ stats: true });
+		// Access internal stats for testing
+		// biome-ignore lint/suspicious/noExplicitAny: accessing private field for testing
+		const stats = (store as any)._stats;
+
+		// Set a new key - count should increment
+		await store.set("test1", "value1");
+		expect(stats.count).toBe(1);
+
+		// Update existing key - count should NOT increment
+		await store.set("test1", "value1-updated");
+		expect(stats.count).toBe(1);
+
+		// Set another new key - count should increment
+		await store.set("test2", "value2");
+		expect(stats.count).toBe(2);
+
+		// Update existing key again - count should NOT increment
+		await store.set("test2", "value2-updated");
+		expect(stats.count).toBe(2);
+	});
+	test("should only increment count for new keys in mset, not updates", async () => {
+		const store = new NodeCacheStore({ stats: true });
+		// Access internal stats for testing
+		// biome-ignore lint/suspicious/noExplicitAny: accessing private field for testing
+		const stats = (store as any)._stats;
+
+		// Set initial keys
+		await store.mset([
+			{ key: "key1", value: "value1" },
+			{ key: "key2", value: "value2" },
+		]);
+		expect(stats.count).toBe(2);
+
+		// Update one existing key and add one new key
+		await store.mset([
+			{ key: "key1", value: "value1-updated" },
+			{ key: "key3", value: "value3" },
+		]);
+		expect(stats.count).toBe(3);
+
+		// Update all existing keys - count should not change
+		await store.mset([
+			{ key: "key1", value: "value1-updated-again" },
+			{ key: "key2", value: "value2-updated" },
+			{ key: "key3", value: "value3-updated" },
+		]);
+		expect(stats.count).toBe(3);
 	});
 });
