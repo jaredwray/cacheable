@@ -153,6 +153,23 @@ describe("NodeCacheStore", () => {
 		const result2 = await store.get<string>("test");
 		expect(result2).toBeUndefined();
 	});
+	test("should track stats when take is called", async () => {
+		const store = new NodeCacheStore();
+		await store.set("test", "value");
+		// Reset hits/misses from previous operations
+		const initialHits = store.stats.hits;
+		const initialMisses = store.stats.misses;
+		// take on existing key should increment hits
+		const result1 = await store.take<string>("test");
+		expect(result1).toBe("value");
+		expect(store.stats.hits).toBe(initialHits + 1);
+		expect(store.stats.misses).toBe(initialMisses);
+		// take on non-existing key should increment misses
+		const result2 = await store.take<string>("nonexistent");
+		expect(result2).toBeUndefined();
+		expect(store.stats.hits).toBe(initialHits + 1);
+		expect(store.stats.misses).toBe(initialMisses + 1);
+	});
 	test("should handle shorthand ttl strings", async () => {
 		const store = new NodeCacheStore({ ttl: "1h" });
 		await store.set("test", "value");
