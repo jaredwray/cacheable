@@ -106,11 +106,11 @@ export class NodeCacheStore<T> extends Hookified {
 		value: T,
 		ttl?: number | string,
 	): Promise<boolean> {
-		// Check if key already exists before the set operation
-		const keyExists =
-			this._maxKeys > 0 ? await this._keyv.has(key.toString()) : false;
+		let keyExists = false;
 
 		if (this._maxKeys > 0) {
+			// Check if key already exists before the set operation
+			keyExists = await this._keyv.has(key.toString());
 			// Only reject if we're at the limit and it's a new key
 			if (!keyExists && this._stats.count >= this._maxKeys) {
 				return false;
@@ -167,13 +167,13 @@ export class NodeCacheStore<T> extends Hookified {
 		const result: Record<string, T | undefined> = {};
 		for (const key of keys) {
 			const value = await this._keyv.get<T>(key.toString());
-			result[key.toString()] = value;
 			// Track hits and misses
 			if (value !== undefined) {
 				this._stats.incrementHits();
 			} else {
 				this._stats.incrementMisses();
 			}
+			result[key.toString()] = value;
 		}
 
 		return result;
