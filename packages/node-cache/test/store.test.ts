@@ -49,6 +49,31 @@ describe("NodeCacheStore", () => {
 		const result1 = await store.get("test4");
 		expect(result1).toBeUndefined();
 	});
+	test("should allow updating existing keys when at maxKeys limit", async () => {
+		const store = new NodeCacheStore({ maxKeys: 3 });
+		// Add 3 keys to reach the limit
+		await store.set("test1", "value1");
+		await store.set("test2", "value2");
+		await store.set("test3", "value3");
+
+		// Try to add a 4th key - should fail
+		const result1 = await store.set("test4", "value4");
+		expect(result1).toBe(false);
+		const test4Value = await store.get("test4");
+		expect(test4Value).toBeUndefined();
+
+		// Update an existing key - should succeed
+		const result2 = await store.set("test1", "updated1");
+		expect(result2).toBe(true);
+		const test1Value = await store.get("test1");
+		expect(test1Value).toBe("updated1");
+
+		// Update another existing key - should succeed
+		const result3 = await store.set("test2", "updated2");
+		expect(result3).toBe(true);
+		const test2Value = await store.get("test2");
+		expect(test2Value).toBe("updated2");
+	});
 	test("should clear the cache", async () => {
 		const store = new NodeCacheStore();
 		await store.set("test", "value");
