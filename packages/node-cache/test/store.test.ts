@@ -185,7 +185,7 @@ describe("NodeCacheStore", () => {
 		expect(result1).toBe("updated1");
 		expect(result2).toBe("updated2");
 
-		// Try to add a third key - should work because count is still 2
+		// Try to add a third key - should fail because count is already at maxKeys (2)
 		await store.set("key3", "value3");
 		const result3 = await store.get("key3");
 		expect(result3).toBeUndefined(); // Should fail because we're at maxKeys
