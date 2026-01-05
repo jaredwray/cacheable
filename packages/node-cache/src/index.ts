@@ -1,4 +1,4 @@
-import { CacheableMemory, CacheableStats, shorthandToTime } from "cacheable";
+import { Stats, shorthandToTime } from "@cacheable/utils";
 import { Hookified } from "hookified";
 
 export type NodeCacheOptions = {
@@ -93,9 +93,7 @@ export class NodeCache<T> extends Hookified {
 
 	public readonly store = new Map<string, NodeCacheItem<T>>();
 
-	private _stats: CacheableStats = new CacheableStats({ enabled: true });
-
-	private readonly _cacheable = new CacheableMemory();
+	private _stats: Stats = new Stats({ enabled: true });
 
 	private intervalId: number | NodeJS.Timeout = 0;
 
@@ -214,7 +212,7 @@ export class NodeCache<T> extends Hookified {
 
 				this._stats.incrementHits();
 				if (this.options.useClones) {
-					return this._cacheable.clone(result.value) as T;
+					return this.clone(result.value) as T;
 				}
 
 				return result.value;
@@ -222,7 +220,7 @@ export class NodeCache<T> extends Hookified {
 
 			this._stats.incrementHits();
 			if (this.options.useClones) {
-				return this._cacheable.clone(result.value) as T;
+				return this.clone(result.value) as T;
 			}
 
 			return result.value;
@@ -264,7 +262,7 @@ export class NodeCache<T> extends Hookified {
 		if (result) {
 			this.del(key);
 			if (this.options.useClones) {
-				return this._cacheable.clone(result) as T;
+				return this.clone(result) as T;
 			}
 
 			return result as T;
@@ -409,7 +407,7 @@ export class NodeCache<T> extends Hookified {
 	 * @returns {void}
 	 */
 	public flushStats(): void {
-		this._stats = new CacheableStats({ enabled: true });
+		this._stats = new Stats({ enabled: true });
 		// Event
 		this.emit("flush_stats");
 	}
@@ -452,6 +450,19 @@ export class NodeCache<T> extends Hookified {
 
 	private formatKey(key: string | number): string {
 		return key.toString();
+	}
+
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	private clone(value: any): any {
+		if (value === null || value === undefined) {
+			return value;
+		}
+
+		if (typeof value !== "object") {
+			return value;
+		}
+
+		return structuredClone(value);
 	}
 
 	private getExpirationTimestamp(ttlInSeconds: number | string): number {

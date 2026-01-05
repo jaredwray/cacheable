@@ -58,7 +58,7 @@
 		"vitest": "^4.0.15"
 	},
 	"dependencies": {
-		"cacheable": "workspace:^",
+		"@cacheable/utils": "workspace:^",
 		"hookified": "^1.14.0",
 		"keyv": "^5.5.5"
 	},

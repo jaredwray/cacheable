@@ -1,5 +1,4 @@
 import { faker } from "@faker-js/faker";
-import { Keyv } from "keyv";
 import { describe, expect, test } from "vitest";
 import { NodeCacheStore } from "../src/store.js";
 
@@ -26,41 +25,23 @@ describe("NodeCacheStore", () => {
 	test("should set a primary keyv store", () => {
 		const store = new NodeCacheStore();
 		expect(store.primary).toBeDefined();
-		const keyv = new Keyv();
-		store.primary = keyv;
-		expect(store.primary).toBe(keyv);
 	});
-	test("should set a secondary keyv store", () => {
-		const store = new NodeCacheStore();
-		expect(store.secondary).toBeUndefined();
-		const keyv = new Keyv();
-		store.secondary = keyv;
-		expect(store.secondary).toBe(keyv);
-	});
-	test("should be able to get and set primary and secondary keyv stores", async () => {
+	test("should be able to use primary keyv store with ttl", async () => {
 		const store = new NodeCacheStore();
 		expect(store.primary).toBeDefined();
-		expect(store.secondary).toBeUndefined();
-		const primary = new Keyv();
-		const secondary = new Keyv();
-		store.primary = primary;
-		store.secondary = secondary;
-		expect(store.primary).toBe(primary);
-		expect(store.secondary).toBe(secondary);
 		await store.set("test", "value");
-		const restult1 = await store.get("test");
-		expect(restult1).toBe("value");
+		const result1 = await store.get("test");
+		expect(result1).toBe("value");
 		await store.set("test", "value", 100);
-		const restult2 = await store.get("test");
-		expect(restult2).toBe("value");
+		const result2 = await store.get("test");
+		expect(result2).toBe("value");
 		await sleep(200);
-		const restult3 = await store.get("test");
-		expect(restult3).toBeUndefined();
+		const result3 = await store.get("test");
+		expect(result3).toBeUndefined();
 	});
 	test("should set a maxKeys limit", async () => {
 		const store = new NodeCacheStore({ maxKeys: 3 });
 		expect(store.maxKeys).toBe(3);
-		expect(store.cache.stats.enabled).toBe(true);
 		await store.set("test1", "value1");
 		await store.set("test2", "value2");
 		await store.set("test3", "value3");
