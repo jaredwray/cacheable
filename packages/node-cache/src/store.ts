@@ -125,6 +125,14 @@ export class NodeCacheStore<T> extends Hookified {
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
 		for (const item of list) {
+			// Check maxKeys limit before each set operation
+			if (this._maxKeys > 0) {
+				if (this._stats.count >= this._maxKeys) {
+					// Stop processing if we've reached the limit
+					return;
+				}
+			}
+
 			const finalTtl = this.resolveTtl(item.ttl);
 			await this._keyv.set(item.key.toString(), item.value, finalTtl);
 			this._stats.incrementCount();

@@ -101,6 +101,26 @@ describe("NodeCacheStore", () => {
 		expect(result1).toBe(data[0].value);
 		expect(result2).toBe(data[1].value);
 	});
+	test("should enforce maxKeys limit in mset", async () => {
+		const store = new NodeCacheStore({ maxKeys: 2 });
+		const data = [
+			{ key: "test1", value: "value1" },
+			{ key: "test2", value: "value2" },
+			{ key: "test3", value: "value3" },
+			{ key: "test4", value: "value4" },
+		];
+		await store.mset(data);
+		const result1 = await store.get("test1");
+		const result2 = await store.get("test2");
+		const result3 = await store.get("test3");
+		const result4 = await store.get("test4");
+
+		// Only the first 2 keys should be set due to maxKeys limit
+		expect(result1).toBe("value1");
+		expect(result2).toBe("value2");
+		expect(result3).toBeUndefined();
+		expect(result4).toBeUndefined();
+	});
 	test("should be able to delete multiple keys", async () => {
 		const store = new NodeCacheStore();
 		await store.set("test1", "value1");
