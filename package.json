@@ -18,8 +18,8 @@
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "^2.3.8",
-    "@vitest/coverage-v8": "^4.0.15",
-    "vitest": "^4.0.15",
+    "@vitest/coverage-v8": "^4.0.16",
+    "vitest": "^4.0.16",
     "wrangler": "^4.53.0"
   },
   "pnpm": {
