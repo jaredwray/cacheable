@@ -20,7 +20,7 @@
     "@biomejs/biome": "^2.3.11",
     "@vitest/coverage-v8": "^4.0.16",
     "vitest": "^4.0.16",
-    "wrangler": "^4.53.0"
+    "wrangler": "^4.57.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
