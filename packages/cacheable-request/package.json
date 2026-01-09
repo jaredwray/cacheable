@@ -58,7 +58,7 @@
 		"@types/node": "^25.0.3",
 		"@types/responselike": "^1.0.3",
 		"@vitest/coverage-v8": "^4.0.16",
-		"body-parser": "^2.2.0",
+		"body-parser": "^2.2.2",
 		"delay": "^7.0.0",
 		"express": "^5.2.1",
 		"pify": "^6.1.0",
