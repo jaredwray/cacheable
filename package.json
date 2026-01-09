@@ -17,7 +17,7 @@
   "author": "Jared Wray <me@jaredwray.com>",
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "^2.3.8",
+    "@biomejs/biome": "^2.3.11",
     "@vitest/coverage-v8": "^4.0.16",
     "vitest": "^4.0.16",
     "wrangler": "^4.53.0"
