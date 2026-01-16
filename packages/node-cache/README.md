@@ -10,18 +10,19 @@
 [![npm](https://img.shields.io/npm/v/@cacheable/node-cache)](https://www.npmjs.com/package/@cacheable/node-cache)
 [![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
 
-`@cacheable/node-cache` is compatible with the [node-cache](https://www.npmjs.com/package/node-cache) package with regular maintenance and additional functionality (async/await and storage adapters). The only thing not implemented is the `enableLegacyCallbacks` option and functions. If you need them we are happy to take a PR to add them.
+`@cacheable/node-cache` is compatible with the [node-cache](https://www.npmjs.com/package/node-cache) package with regular maintenance and additional functionality (async/await and storage adapters) via `{NodeCacheStore}`. The only thing not implemented is the `enableLegacyCallbacks` option and functions. If you need them we are happy to take a PR to add them.
 
 * Fully Compatible with `node-cache` using `{NodeCache}`
 * Faster than the original `node-cache` package 🚀
+* Storage Adapters via [Keyv](https://keyv.org)
 * Async/Await functionality with `{NodeCacheStore}`
-* Storage Adapters via [Keyv](https://keyv.org) with `{NodeCacheStore}`
 * Lightweight - uses `@cacheable/utils` for utilities
 * Maintained and Updated Regularly! 🎉
 
 # Table of Contents
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
+* [Breaking Changes from v1 to v2](#breaking-changes-from-v1-to-v2)
 * [NodeCache Performance](#nodecache-performance)
 * [NodeCache API](#nodecache-api)
 * [NodeCacheStore](#nodecachestore)
@@ -70,6 +71,34 @@ const cache = new NodeCache<string>();
 cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
 ```
+
+# Breaking Changes from v1 to v2
+
+The main `NodeCache` class API has not changed and remains fully compatible. The primary internal change is that it now uses Keyv as the underlying store.
+
+## NodeCacheStore Changes
+
+### Removed `cache` Property
+- **V1**: `nodeCache.cache` returned a `Cacheable` instance
+- **V2**: Use `nodeCache.store` which returns a `Keyv` instance
+
+### Removed Storage Tiering (primary/secondary)
+- **V1**: Supported `primary` and `secondary` store options for multi-tier caching
+- **V2**: Uses single `store` option only
+
+**Migration:**
+```javascript
+// V1
+const cache = new NodeCacheStore({ primary: keyv1, secondary: keyv2 });
+
+// V2 - use single store
+const cache = new NodeCacheStore({ store: keyv });
+```
+
+If you need storage tiering functionality, use the `cacheable` package instead which supports primary and secondary stores.
+
+### Internal Dependency Change
+- V2 uses `@cacheable/utils` instead of the `cacheable` package for a lighter footprint
 
 # NodeCache Performance
 
