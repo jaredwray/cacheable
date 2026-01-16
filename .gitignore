@@ -25,3 +25,4 @@ packages/cacheable-request/test/testdb.sqlite
 packages/flat-cache/.cache
 packages/file-entry-cache/.cache
 packages/file-entry-cache/test/test-logger-file.txt
+packages/flat-cache/.cachefoo456/cache4
