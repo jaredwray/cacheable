@@ -51,7 +51,7 @@
 	"dependencies": {
 		"@cacheable/memory": "workspace:^",
 		"@cacheable/utils": "workspace:^",
-		"hookified": "^1.14.0",
+		"hookified": "^1.15.0",
 		"keyv": "^5.5.5",
 		"qified": "^0.6.0"
 	},
