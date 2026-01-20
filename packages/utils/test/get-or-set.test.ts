@@ -26,7 +26,7 @@ describe("cacheable get or set", () => {
 		expect(function_).toHaveBeenCalledTimes(2);
 	});
 
-	test("should throw on getOrSet error", async () => {
+	test("should throw on getOrSet error (`true` option)", async () => {
 		const cacheable = new MockCacheable();
 		const function_ = vi.fn(async () => {
 			throw new Error("Test error");
@@ -35,6 +35,84 @@ describe("cacheable get or set", () => {
 		await expect(
 			getOrSet("key", function_, { cache: cacheable, throwErrors: true }),
 		).rejects.toThrow("Test error");
+		expect(function_).toHaveBeenCalledTimes(1);
+	});
+
+	test("should throw on getOrSet error (`logical` option)", async () => {
+		const cacheable = new MockCacheable();
+		const function_ = vi.fn(async () => {
+			throw new Error("Test error");
+		});
+
+		await expect(
+			getOrSet("key", function_, { cache: cacheable, throwErrors: "logical" }),
+		).rejects.toThrow("Test error");
+		expect(function_).toHaveBeenCalledTimes(1);
+	});
+
+	test("should not throw on getOrSet cache error (`logical` option)", async () => {
+		const cacheable = new MockCacheable();
+
+		cacheable.set = () => {
+			throw new Error("Cache error");
+		};
+
+		const function_ = vi.fn(async () => 1 + 2);
+
+		expect(
+			await getOrSet("key", function_, {
+				cache: cacheable,
+				throwErrors: "logical",
+			}),
+		).toBe(3);
+		expect(function_).toHaveBeenCalledTimes(1);
+	});
+
+	test("should throw on getOrSet cache error on get (`cache` option)", async () => {
+		const cacheable = new MockCacheable();
+
+		cacheable.get = () => {
+			throw new Error("Cache error");
+		};
+
+		const function_ = vi.fn(async () => 1 + 2);
+
+		await expect(
+			getOrSet("key", function_, { cache: cacheable, throwErrors: "cache" }),
+		).rejects.toThrow("Cache error");
+		expect(function_).toHaveBeenCalledTimes(0);
+	});
+
+	test("should not throw on getOrSet cache error on get (`logical` option)", async () => {
+		const cacheable = new MockCacheable();
+
+		cacheable.get = () => {
+			throw new Error("Cache error");
+		};
+
+		const function_ = vi.fn(async () => 1 + 2);
+
+		expect(
+			await getOrSet("key", function_, {
+				cache: cacheable,
+				throwErrors: "logical",
+			}),
+		).toBe(3);
+		expect(function_).toHaveBeenCalledTimes(1);
+	});
+
+	test("should throw on getOrSet cache error (`cache` option)", async () => {
+		const cacheable = new MockCacheable();
+
+		cacheable.set = () => {
+			throw new Error("Cache error");
+		};
+
+		const function_ = vi.fn(async () => 1 + 2);
+
+		await expect(
+			getOrSet("key", function_, { cache: cacheable, throwErrors: "cache" }),
+		).rejects.toThrow("Cache error");
 		expect(function_).toHaveBeenCalledTimes(1);
 	});
 
