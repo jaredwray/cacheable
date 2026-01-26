@@ -13,7 +13,6 @@ out
 
 # Lock Files
 yarn.lock
-pnpm-lock.yaml
 
 # AI
 .claude
