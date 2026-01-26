@@ -27,16 +27,18 @@ export type CacheSyncInstance = {
 
 export type GetOrSetKey = string | ((options?: GetOrSetOptions) => string);
 
+type GetOrSetThrowErrorsContext = "function" | "store";
+
 export type GetOrSetFunctionOptions = {
 	ttl?: number | string;
 	cacheErrors?: boolean;
 	/** Whether or not to throw errors:
 	 * - `false` (default) - do not throw any errors
 	 * - `true` - throw any error
-	 * - `"logical"` - only throw errors that occur in the provided function / setter
-	 * - `"cache"` - only throw errors that occur when getting/setting the cache
+	 * - `"function"` - only throw errors that occur in the provided function / setter
+	 * - `"store"` - only throw errors that occur when getting/setting the cache
 	 */
-	throwErrors?: boolean | "logical" | "cache";
+	throwErrors?: boolean | GetOrSetThrowErrorsContext;
 };
 
 export type GetOrSetOptions = GetOrSetFunctionOptions & {
@@ -123,7 +125,7 @@ export async function getOrSet<T>(
 		value = await options.cache.get(keyString);
 	} catch (error) {
 		options.cache.emit("error", error);
-		if (options.throwErrors === true || options.throwErrors === "cache") {
+		if (options.throwErrors === true || options.throwErrors === "store") {
 			throw error;
 		}
 	}
@@ -138,13 +140,13 @@ export async function getOrSet<T>(
 				try {
 					result = await function_();
 				} catch (error) {
-					throw new ErrorEnvelope(error, "logical");
+					throw new ErrorEnvelope(error, "function");
 				}
 				// try to write the result to the cache
 				try {
 					await options.cache.set(keyString, result, options.ttl);
 				} catch (error) {
-					throw new ErrorEnvelope(error, "cache");
+					throw new ErrorEnvelope(error, "store");
 				}
 				return result;
 			} catch (caught) {
@@ -216,6 +218,6 @@ export function createWrapKey(
 class ErrorEnvelope {
 	constructor(
 		public error: unknown,
-		public context: "logical" | "cache",
+		public context: GetOrSetThrowErrorsContext,
 	) {}
 }
