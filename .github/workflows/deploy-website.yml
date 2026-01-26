@@ -21,14 +21,14 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    # Test
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-
-    - name: Install PNPM
-      run: npm install -g pnpm
+        cache: 'pnpm'
 
     - name: Install Modules
       run: pnpm install
