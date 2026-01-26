@@ -52,7 +52,7 @@
 		"@cacheable/memory": "workspace:^",
 		"@cacheable/utils": "workspace:^",
 		"hookified": "^1.15.0",
-		"keyv": "^5.5.5",
+		"keyv": "^5.6.0",
 		"qified": "^0.6.0"
 	},
 	"keywords": [
