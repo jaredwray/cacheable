@@ -107,16 +107,22 @@ export class DoublyLinkedList<T> {
 		if (node.prev) {
 			node.prev.next = node.next;
 		} else {
-			// Node is the head
+			// Node is the head, update head and clear new head's prev
 			this.head = node.next;
+			if (this.head) {
+				this.head.prev = undefined;
+			}
 		}
 
 		// Update next node's prev pointer
 		if (node.next) {
 			node.next.prev = node.prev;
 		} else {
-			// Node is the tail
+			// Node is the tail, update tail and clear new tail's next
 			this.tail = node.prev;
+			if (this.tail) {
+				this.tail.next = undefined;
+			}
 		}
 
 		// Remove from the map

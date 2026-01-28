@@ -84,5 +84,43 @@ describe("DoublyLinkedList", () => {
 			expect(list.removeOldest()).toBe("d");
 			expect(list.getOldest()).toBe("b");
 		});
+
+		test("should clear new head prev pointer after removing head", () => {
+			const list = new DoublyLinkedList<string>();
+			list.addToFront("c");
+			list.addToFront("b");
+			list.addToFront("a"); // a is head
+
+			// Remove head
+			list.remove("a");
+
+			// moveToFront should work correctly without stale references
+			list.moveToFront("c");
+			expect(list.size).toBe(2);
+
+			// Verify list still works by removing oldest
+			expect(list.removeOldest()).toBe("b");
+			expect(list.removeOldest()).toBe("c");
+			expect(list.size).toBe(0);
+		});
+
+		test("should clear new tail next pointer after removing tail", () => {
+			const list = new DoublyLinkedList<string>();
+			list.addToFront("c"); // c is tail
+			list.addToFront("b");
+			list.addToFront("a");
+
+			// Remove tail
+			list.remove("c");
+
+			// Add new item and verify list integrity
+			list.addToFront("d");
+			expect(list.size).toBe(3);
+
+			// Verify oldest is now b (the new tail)
+			expect(list.getOldest()).toBe("b");
+			expect(list.removeOldest()).toBe("b");
+			expect(list.getOldest()).toBe("a");
+		});
 	});
 });
