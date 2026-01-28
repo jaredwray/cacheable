@@ -729,3 +729,175 @@ describe("cacheable wrap", async () => {
 		expect(result2).toBeUndefined();
 	});
 });
+
+describe("CacheableMemory LRU and TTL integration", () => {
+	test("should remove from LRU when item expires via get()", async () => {
+		const cache = new CacheableMemory({ lruSize: 5 });
+		cache.set("key1", "value1", 10); // 10ms TTL
+		cache.set("key2", "value2");
+		cache.set("key3", "value3");
+
+		expect(cache.size).toBe(3);
+
+		await sleep(20);
+
+		// Access expired item - should trigger removal from both store and LRU
+		expect(cache.get("key1")).toBeUndefined();
+
+		// Add more items to fill up LRU
+		cache.set("key4", "value4");
+		cache.set("key5", "value5");
+		cache.set("key6", "value6");
+
+		// key2 and key3 should still exist (not evicted by LRU due to orphaned nodes)
+		expect(cache.get("key2")).toBe("value2");
+		expect(cache.get("key3")).toBe("value3");
+	});
+
+	test("should remove from LRU when item expires via checkExpiration()", async () => {
+		const cache = new CacheableMemory({ lruSize: 5, checkInterval: 10 });
+		cache.set("key1", "value1", 5); // 5ms TTL
+		cache.set("key2", "value2");
+
+		await sleep(20);
+
+		// checkExpiration should have run and cleaned up LRU
+		// Now add items to approach the limit
+		cache.set("key3", "value3");
+		cache.set("key4", "value4");
+		cache.set("key5", "value5");
+		cache.set("key6", "value6");
+
+		// All non-expired items should still be accessible
+		expect(cache.get("key2")).toBe("value2");
+		expect(cache.get("key3")).toBe("value3");
+
+		cache.stopIntervalCheck();
+	});
+
+	test("should remove from LRU on explicit delete()", () => {
+		const cache = new CacheableMemory({ lruSize: 5 });
+		cache.set("key1", "value1");
+		cache.set("key2", "value2");
+		cache.set("key3", "value3");
+
+		cache.delete("key2");
+
+		// Add more items
+		cache.set("key4", "value4");
+		cache.set("key5", "value5");
+		cache.set("key6", "value6");
+
+		// Should not have evicted key1 or key3 since key2 was properly removed from LRU
+		expect(cache.get("key1")).toBe("value1");
+		expect(cache.get("key3")).toBe("value3");
+	});
+
+	test("should maintain LRU size consistency after TTL expiration", async () => {
+		const cache = new CacheableMemory({ lruSize: 3 });
+
+		// Set 3 items with short TTL
+		cache.set("a", "1", 10);
+		cache.set("b", "2", 10);
+		cache.set("c", "3", 10);
+
+		await sleep(20);
+
+		// Access all items to trigger expiration cleanup
+		cache.get("a");
+		cache.get("b");
+		cache.get("c");
+
+		// Now set 3 new items - they should all fit since old ones were removed from LRU
+		cache.set("d", "4");
+		cache.set("e", "5");
+		cache.set("f", "6");
+
+		expect(cache.size).toBe(3);
+		expect(cache.get("d")).toBe("4");
+		expect(cache.get("e")).toBe("5");
+		expect(cache.get("f")).toBe("6");
+	});
+
+	test("should handle deleteMany with LRU cleanup", () => {
+		const cache = new CacheableMemory({ lruSize: 10 });
+		cache.set("key1", "value1");
+		cache.set("key2", "value2");
+		cache.set("key3", "value3");
+		cache.set("key4", "value4");
+
+		cache.deleteMany(["key1", "key3"]);
+
+		// Fill up the cache
+		for (let i = 5; i <= 12; i++) {
+			cache.set(`key${i}`, `value${i}`);
+		}
+
+		// key2 and key4 should still exist (not evicted by LRU)
+		expect(cache.get("key2")).toBe("value2");
+		expect(cache.get("key4")).toBe("value4");
+	});
+
+	test("should remove from LRU when expired item accessed via keys getter", async () => {
+		const cache = new CacheableMemory({ lruSize: 5 });
+		cache.set("exp1", "value1", 10);
+		cache.set("exp2", "value2", 10);
+		cache.set("keep", "value3");
+
+		await sleep(20);
+
+		// Access keys getter - should clean up expired items from LRU
+		const keys = [...cache.keys];
+		expect(keys).not.toContain("exp1");
+		expect(keys).not.toContain("exp2");
+		expect(keys).toContain("keep");
+
+		// Add more items
+		cache.set("new1", "v1");
+		cache.set("new2", "v2");
+		cache.set("new3", "v3");
+		cache.set("new4", "v4");
+
+		// Should still have 'keep' since LRU was properly cleaned
+		expect(cache.get("keep")).toBe("value3");
+	});
+
+	test("should remove from LRU when expired item accessed via items getter", async () => {
+		const cache = new CacheableMemory({ lruSize: 5 });
+		cache.set("exp", "value1", 10);
+		cache.set("keep1", "value2");
+		cache.set("keep2", "value3");
+
+		await sleep(20);
+
+		// Access items getter - should clean up expired items from LRU
+		const items = [...cache.items];
+		expect(items.find((i) => i.key === "exp")).toBeUndefined();
+
+		cache.set("new1", "v1");
+		cache.set("new2", "v2");
+		cache.set("new3", "v3");
+
+		// keep1 and keep2 should still exist
+		expect(cache.get("keep1")).toBe("value2");
+		expect(cache.get("keep2")).toBe("value3");
+	});
+
+	test("should remove from LRU when expired item accessed via getRaw()", async () => {
+		const cache = new CacheableMemory({ lruSize: 3 });
+		cache.set("exp", "value1", 10);
+		cache.set("keep", "value2");
+
+		await sleep(20);
+
+		// Access via getRaw - should trigger removal from both store and LRU
+		expect(cache.getRaw("exp")).toBeUndefined();
+
+		// Add more items
+		cache.set("new1", "v1");
+		cache.set("new2", "v2");
+
+		// 'keep' should still exist
+		expect(cache.get("keep")).toBe("value2");
+	});
+});

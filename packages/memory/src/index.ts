@@ -257,6 +257,7 @@ export class CacheableMemory extends Hookified {
 				const item = store.get(key);
 				if (item && this.hasExpired(item)) {
 					store.delete(key);
+					this.lruRemove(key);
 					continue;
 				}
 
@@ -277,6 +278,7 @@ export class CacheableMemory extends Hookified {
 			for (const item of store.values()) {
 				if (this.hasExpired(item)) {
 					store.delete(item.key);
+					this.lruRemove(item.key);
 					continue;
 				}
 
@@ -309,6 +311,7 @@ export class CacheableMemory extends Hookified {
 
 		if (item.expires && Date.now() > item.expires) {
 			store.delete(key);
+			this.lruRemove(key);
 			return undefined;
 		}
 
@@ -349,6 +352,7 @@ export class CacheableMemory extends Hookified {
 
 		if (item.expires && item.expires && Date.now() > item.expires) {
 			store.delete(key);
+			this.lruRemove(key);
 			return undefined;
 		}
 
@@ -506,6 +510,7 @@ export class CacheableMemory extends Hookified {
 	public delete(key: string): void {
 		const store = this.getStore(key);
 		store.delete(key);
+		this.lruRemove(key);
 	}
 
 	/**
@@ -610,6 +615,19 @@ export class CacheableMemory extends Hookified {
 	}
 
 	/**
+	 * Remove a key from the LRU cache. This is for internal use
+	 * @param {string} key - The key to remove
+	 * @returns {void}
+	 */
+	public lruRemove(key: string): void {
+		if (this._lruSize === 0) {
+			return;
+		}
+
+		this._lru.remove(key);
+	}
+
+	/**
 	 * Resize the LRU cache. This is for internal use.
 	 * @returns {void}
 	 */
@@ -633,6 +651,7 @@ export class CacheableMemory extends Hookified {
 			for (const item of store.values()) {
 				if (item.expires && Date.now() > item.expires) {
 					store.delete(item.key);
+					this.lruRemove(item.key);
 				}
 			}
 		}
