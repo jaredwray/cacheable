@@ -96,6 +96,34 @@ export class DoublyLinkedList<T> {
 		return oldValue;
 	}
 
+	// Remove a specific node by value
+	remove(value: T): boolean {
+		const node = this.nodesMap.get(value);
+		if (!node) {
+			return false;
+		}
+
+		// Update previous node's next pointer
+		if (node.prev) {
+			node.prev.next = node.next;
+		} else {
+			// Node is the head
+			this.head = node.next;
+		}
+
+		// Update next node's prev pointer
+		if (node.next) {
+			node.next.prev = node.prev;
+		} else {
+			// Node is the tail
+			this.tail = node.prev;
+		}
+
+		// Remove from the map
+		this.nodesMap.delete(value);
+		return true;
+	}
+
 	get size(): number {
 		return this.nodesMap.size;
 	}
