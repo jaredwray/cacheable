@@ -27,10 +27,18 @@ export type CacheSyncInstance = {
 
 export type GetOrSetKey = string | ((options?: GetOrSetOptions) => string);
 
+type GetOrSetThrowErrorsContext = "function" | "store";
+
 export type GetOrSetFunctionOptions = {
 	ttl?: number | string;
 	cacheErrors?: boolean;
-	throwErrors?: boolean;
+	/** Whether or not to throw errors:
+	 * - `false` (default) - do not throw any errors
+	 * - `true` - throw any error
+	 * - `"function"` - only throw errors that occur in the provided function / setter
+	 * - `"store"` - only throw errors that occur when getting/setting the cache
+	 */
+	throwErrors?: boolean | GetOrSetThrowErrorsContext;
 };
 
 export type GetOrSetOptions = GetOrSetFunctionOptions & {
@@ -111,26 +119,57 @@ export async function getOrSet<T>(
 ): Promise<T | undefined> {
 	const keyString = typeof key === "function" ? key(options) : key;
 
-	let value = (await options.cache.get(keyString)) as T | undefined;
+	let value: T | undefined;
+
+	try {
+		value = await options.cache.get(keyString);
+	} catch (error) {
+		options.cache.emit("error", error);
+		if (options.throwErrors === true || options.throwErrors === "store") {
+			throw error;
+		}
+	}
 
 	if (value === undefined) {
 		const cacheId = options.cacheId ?? "default";
 		const coalesceKey = `${cacheId}::${keyString}`;
 		value = await coalesceAsync(coalesceKey, async () => {
+			let result: T | undefined;
 			try {
-				const result = (await function_()) as T;
-				await options.cache.set(keyString, result, options.ttl);
+				// try to do the logic passed in as the setter
+				try {
+					result = await function_();
+				} catch (error) {
+					throw new ErrorEnvelope<GetOrSetThrowErrorsContext>(
+						error,
+						"function",
+					);
+				}
+				// try to write the result to the cache
+				try {
+					await options.cache.set(keyString, result, options.ttl);
+				} catch (error) {
+					throw new ErrorEnvelope<GetOrSetThrowErrorsContext>(error, "store");
+				}
 				return result;
-			} catch (error) {
+			} catch (caught) {
+				const errorType =
+					caught instanceof ErrorEnvelope
+						? (caught as ErrorEnvelope<GetOrSetThrowErrorsContext>).context
+						: /* c8 ignore next 1 */
+							undefined;
+				const error = caught instanceof ErrorEnvelope ? caught.error : caught;
+
 				options.cache.emit("error", error);
 				if (options.cacheErrors) {
 					await options.cache.set(keyString, error, options.ttl);
 				}
 
-				if (options.throwErrors) {
+				if (options.throwErrors === true || options.throwErrors === errorType) {
 					throw error;
 				}
 			}
+			return result;
 		});
 	}
 
@@ -180,4 +219,11 @@ export function createWrapKey(
 	}
 
 	return `${keyPrefix}::${function_.name}::${hashSync(arguments_, { serialize })}`;
+}
+
+class ErrorEnvelope<T> {
+	constructor(
+		public error: unknown,
+		public context: T,
+	) {}
 }
