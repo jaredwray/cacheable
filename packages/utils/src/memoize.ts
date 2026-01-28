@@ -156,7 +156,8 @@ export async function getOrSet<T>(
 				const errorType =
 					caught instanceof ErrorEnvelope
 						? (caught as ErrorEnvelope<GetOrSetThrowErrorsContext>).context
-						: undefined;
+						: /* c8 ignore next 1 */
+							undefined;
 				const error = caught instanceof ErrorEnvelope ? caught.error : caught;
 
 				options.cache.emit("error", error);
