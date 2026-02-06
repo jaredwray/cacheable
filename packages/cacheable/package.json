@@ -39,7 +39,7 @@
 		"@keyv/redis": "^5.1.5",
 		"@keyv/valkey": "^1.0.11",
 		"@qified/redis": "^0.6.0",
-		"@types/node": "^25.0.8",
+		"@types/node": "^24.10.10",
 		"lru-cache": "^11.2.4",
 		"rimraf": "^6.1.2",
 		"tsup": "^8.5.1",

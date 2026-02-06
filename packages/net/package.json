@@ -37,7 +37,7 @@
 	"devDependencies": {
 		"@faker-js/faker": "^10.2.0",
 		"@types/http-cache-semantics": "^4.0.4",
-		"@types/node": "^25.0.10",
+		"@types/node": "^24.10.10",
 		"rimraf": "^6.1.2",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3"
