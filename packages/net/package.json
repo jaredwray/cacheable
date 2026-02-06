@@ -35,15 +35,12 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.3.12",
 		"@faker-js/faker": "^10.2.0",
 		"@types/http-cache-semantics": "^4.0.4",
 		"@types/node": "^25.0.10",
-		"@vitest/coverage-v8": "^4.0.18",
 		"rimraf": "^6.1.2",
 		"tsup": "^8.5.1",
-		"typescript": "^5.9.3",
-		"vitest": "^4.0.18"
+		"typescript": "^5.9.3"
 	},
 	"dependencies": {
 		"cacheable": "workspace:^",

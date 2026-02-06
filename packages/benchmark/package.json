@@ -62,7 +62,6 @@
 		"license"
 	],
 	"devDependencies": {
-		"@biomejs/biome": "^2.2.0",
 		"@cacheable/node-cache": "^1.5.6",
 		"node-cache": "^5.1.2",
 		"tsx": "^4.19.4"
