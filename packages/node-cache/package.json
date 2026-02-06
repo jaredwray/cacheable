@@ -48,14 +48,11 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.3.11",
 		"@faker-js/faker": "^10.2.0",
 		"@types/node": "^25.0.8",
-		"@vitest/coverage-v8": "^4.0.17",
 		"rimraf": "^6.1.2",
 		"tsup": "^8.5.1",
-		"typescript": "^5.9.3",
-		"vitest": "^4.0.17"
+		"typescript": "^5.9.3"
 	},
 	"dependencies": {
 		"@cacheable/utils": "workspace:^",
