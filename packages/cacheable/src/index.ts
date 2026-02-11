@@ -870,8 +870,12 @@ export class Cacheable extends Hookified {
 		options?: GetOrSetFunctionOptions,
 	): Promise<T | undefined> {
 		// Create an adapter that converts Cacheable to CacheInstance
+		const getOptions =
+			options?.nonBlocking === undefined
+				? undefined
+				: { nonBlocking: options.nonBlocking };
 		const cacheAdapter: CacheInstance = {
-			get: async (key: string) => this.get(key),
+			get: async (key: string) => this.get(key, getOptions),
 			/* v8 ignore next -- @preserve */
 			has: async (key: string) => this.has(key),
 			set: async (key: string, value: unknown, ttl?: number | string) => {
