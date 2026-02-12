@@ -1349,6 +1349,30 @@ describe("cacheable get or set", () => {
 		expect(primaryResult).toBe("nb-true-value");
 	});
 
+	test("should forward nonBlocking to key generator function options", async () => {
+		const cacheable = new Cacheable();
+
+		// Key generator that embeds nonBlocking into the cache key
+		const generateKey = vi.fn(
+			(options?: GetOrSetOptions) => `key_nb_${options?.nonBlocking}`,
+		);
+		const function_ = vi.fn(async () => "value");
+
+		await cacheable.getOrSet(generateKey, function_, { nonBlocking: true });
+
+		// The key generator should have received nonBlocking: true in options
+		expect(generateKey).toHaveBeenCalledWith(
+			expect.objectContaining({ nonBlocking: true }),
+		);
+
+		// Call again with nonBlocking: false - should produce a different key
+		await cacheable.getOrSet(generateKey, function_, { nonBlocking: false });
+
+		expect(generateKey).toHaveBeenCalledWith(
+			expect.objectContaining({ nonBlocking: false }),
+		);
+	});
+
 	test("should use instance nonBlocking setting when getOrSet option is not provided", async () => {
 		const secondary = new Keyv();
 		const cacheable = new Cacheable({ secondary, nonBlocking: true });

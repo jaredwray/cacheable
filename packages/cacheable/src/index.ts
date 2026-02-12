@@ -895,6 +895,7 @@ export class Cacheable extends Hookified {
 			ttl: options?.ttl ?? this._ttl,
 			cacheErrors: options?.cacheErrors,
 			throwErrors: options?.throwErrors,
+			nonBlocking: options?.nonBlocking,
 		};
 		return getOrSet(key, function_, getOrSetOptions);
 	}
