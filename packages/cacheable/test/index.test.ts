@@ -1301,6 +1301,99 @@ describe("cacheable get or set", () => {
 		// The adapter's on and emit methods exist and are used internally
 		// This test covers their creation (lines 880-884)
 	});
+
+	test("should pass nonBlocking option to get in getOrSet", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary, nonBlocking: true });
+
+		// Set a value only in secondary store
+		await secondary.set("nb-getorset-key", "nb-value");
+
+		// Call getOrSet with nonBlocking: false to override instance setting
+		const function_ = vi.fn(async () => "fallback-value");
+		const result = await cacheable.getOrSet("nb-getorset-key", function_, {
+			nonBlocking: false,
+		});
+
+		// Should get value from secondary (blocking mode) without calling the function
+		expect(result).toBe("nb-value");
+		expect(function_).not.toHaveBeenCalled();
+
+		// Since nonBlocking was overridden to false, primary store should be populated immediately
+		const primaryResult = await cacheable.primary.get("nb-getorset-key");
+		expect(primaryResult).toBe("nb-value");
+	});
+
+	test("should use nonBlocking mode in getOrSet when option is true", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary, nonBlocking: false });
+
+		// Set a value only in secondary store
+		await secondary.set("nb-true-key", "nb-true-value");
+
+		// Call getOrSet with nonBlocking: true to override instance setting
+		const function_ = vi.fn(async () => "fallback-value");
+		const result = await cacheable.getOrSet("nb-true-key", function_, {
+			nonBlocking: true,
+		});
+
+		// Should get value from secondary in non-blocking mode
+		expect(result).toBe("nb-true-value");
+		expect(function_).not.toHaveBeenCalled();
+
+		// Wait for background primary store population
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		// Verify the value was populated to primary store in the background
+		const primaryResult = await cacheable.primary.get("nb-true-key");
+		expect(primaryResult).toBe("nb-true-value");
+	});
+
+	test("should forward nonBlocking to key generator function options", async () => {
+		const cacheable = new Cacheable();
+
+		// Key generator that embeds nonBlocking into the cache key
+		const generateKey = vi.fn(
+			(options?: GetOrSetOptions) => `key_nb_${options?.nonBlocking}`,
+		);
+		const function_ = vi.fn(async () => "value");
+
+		await cacheable.getOrSet(generateKey, function_, { nonBlocking: true });
+
+		// The key generator should have received nonBlocking: true in options
+		expect(generateKey).toHaveBeenCalledWith(
+			expect.objectContaining({ nonBlocking: true }),
+		);
+
+		// Call again with nonBlocking: false - should produce a different key
+		await cacheable.getOrSet(generateKey, function_, { nonBlocking: false });
+
+		expect(generateKey).toHaveBeenCalledWith(
+			expect.objectContaining({ nonBlocking: false }),
+		);
+	});
+
+	test("should use instance nonBlocking setting when getOrSet option is not provided", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary, nonBlocking: true });
+
+		// Set a value only in secondary store
+		await secondary.set("nb-default-key", "nb-default-value");
+
+		// Call getOrSet without nonBlocking option - should use instance default (true)
+		const function_ = vi.fn(async () => "fallback-value");
+		const result = await cacheable.getOrSet("nb-default-key", function_);
+
+		// Should get value from secondary
+		expect(result).toBe("nb-default-value");
+		expect(function_).not.toHaveBeenCalled();
+
+		// Wait for background primary store population
+		await new Promise((resolve) => setTimeout(resolve, 50));
+
+		const primaryResult = await cacheable.primary.get("nb-default-key");
+		expect(primaryResult).toBe("nb-default-value");
+	});
 });
 
 describe("cacheable adapter coverage", () => {

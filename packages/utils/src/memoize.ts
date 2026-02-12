@@ -39,6 +39,11 @@ export type GetOrSetFunctionOptions = {
 	 * - `"store"` - only throw errors that occur when getting/setting the cache
 	 */
 	throwErrors?: boolean | GetOrSetThrowErrorsContext;
+	/**
+	 * If set, this will bypass the instances nonBlocking setting for the get call.
+	 * @type {boolean}
+	 */
+	nonBlocking?: boolean;
 };
 
 export type GetOrSetOptions = GetOrSetFunctionOptions & {
