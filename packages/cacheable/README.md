@@ -793,8 +793,11 @@ export type GetOrSetFunctionOptions = {
 	ttl?: number | string;
 	cacheErrors?: boolean;
 	throwErrors?: boolean;
+	nonBlocking?: boolean;
 };
 ```
+
+The `nonBlocking` option allows you to override the instance-level `nonBlocking` setting for the `get` call within `getOrSet`. When set to `false`, the `get` will block and wait for a response from the secondary store before deciding whether to call the provided function. When set to `true`, the primary store returns immediately and syncs from secondary in the background.
 
 Here is an example of how to use the `getOrSet` method:
 
