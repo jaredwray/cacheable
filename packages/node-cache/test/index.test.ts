@@ -48,6 +48,18 @@ describe("NodeCache", () => {
 		expect(cache.get("baz")).toBe("qux");
 	});
 
+	test("should return false from mset when any item has a negative ttl", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		const list = [
+			{ key: "good", value: "ok" },
+			{ key: "bad", value: "nope", ttl: -1 },
+		];
+		const result = cache.mset(list);
+		expect(result).toBe(false);
+		expect(cache.get("good")).toBe("ok");
+		expect(cache.has("bad")).toBe(false);
+	});
+
 	test("should get multiple cache items", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
 		cache.set("foo", "bar");
@@ -127,12 +139,12 @@ describe("NodeCache", () => {
 
 	test("ttl should default to 0 if no ttl is set", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar"); // Set to 10 by stdTTL
+		cache.set("foo", "bar");
 		const ttl = cache.getTtl("foo");
 		expect(ttl).toBe(0);
-		cache.ttl("foo");
+		cache.ttl("foo"); // No args, stdTTL is 0 → stays unlimited
 		const ttl2 = cache.getTtl("foo");
-		expect(ttl2).toBeGreaterThan(ttl!);
+		expect(ttl2).toBe(0);
 	});
 
 	test("should return 0 if there is no key to delete", () => {
@@ -233,6 +245,71 @@ describe("NodeCache", () => {
 		expect(cache.get("baz")).toBe("qux");
 		await sleep(600);
 		expect(cache.get("moo")).toBe(undefined);
+	});
+
+	test("should cache indefinitely when ttl is explicitly 0 even with stdTTL set", async () => {
+		const cache = new NodeCache({ checkperiod: 0, stdTTL: 0.5 });
+		cache.set("withStdTTL", "expires"); // omitted ttl → uses stdTTL
+		cache.set("unlimited", "stays", 0); // explicit 0 → cache indefinitely
+		await sleep(600);
+		expect(cache.get("withStdTTL")).toBe(undefined);
+		expect(cache.get("unlimited")).toBe("stays");
+	});
+
+	test("should return false and not store key when ttl is negative", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		const result = cache.set("foo", "bar", -1);
+		expect(result).toBe(false);
+		expect(cache.has("foo")).toBe(false);
+		expect(cache.get("foo")).toBe(undefined);
+	});
+
+	test("should return false on ttl() method when ttl is negative", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		cache.set("foo", "bar");
+		const result = cache.ttl("foo", -1);
+		expect(result).toBe(false);
+		expect(cache.get("foo")).toBe("bar");
+	});
+
+	test("should reject negative TTL passed as a numeric string in set()", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		const result = cache.set("foo", "bar", "-1");
+		expect(result).toBe(false);
+		expect(cache.has("foo")).toBe(false);
+	});
+
+	test("should reject negative TTL passed as a numeric string in ttl()", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		cache.set("foo", "bar");
+		const result = cache.ttl("foo", "-5");
+		expect(result).toBe(false);
+		expect(cache.get("foo")).toBe("bar");
+	});
+
+	test("should set unlimited expiration on ttl() method when ttl is 0", async () => {
+		const cache = new NodeCache({ checkperiod: 0, stdTTL: 0.5 });
+		cache.set("foo", "bar"); // uses stdTTL (0.5s)
+		cache.ttl("foo", 0); // override to unlimited
+		await sleep(600);
+		expect(cache.get("foo")).toBe("bar");
+		expect(cache.getTtl("foo")).toBe(0);
+	});
+
+	test("should treat zero-duration string stdTTL as unlimited", () => {
+		const cache = new NodeCache({ checkperiod: 0, stdTTL: "0ms" });
+		cache.set("foo", "bar");
+		expect(cache.getTtl("foo")).toBe(0);
+		expect(cache.get("foo")).toBe("bar");
+	});
+
+	test("should use stdTTL when ttl() is called without ttl argument and stdTTL is set", () => {
+		const cache = new NodeCache({ checkperiod: 0, stdTTL: 60 });
+		cache.set("foo", "bar", 0); // explicit 0 = unlimited
+		expect(cache.getTtl("foo")).toBe(0);
+		cache.ttl("foo"); // no ttl arg → fall back to stdTTL (60s)
+		const ttl = cache.getTtl("foo");
+		expect(ttl).toBeGreaterThan(0);
 	});
 
 	test("should get the internal id and stop the interval", () => {

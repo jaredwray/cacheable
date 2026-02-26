@@ -114,11 +114,7 @@ export class NodeCache<T> extends Hookified {
 	 * @param {number | string} [ttl] - this is in seconds and undefined will use the default ttl
 	 * @returns {boolean}
 	 */
-	public set(
-		key: string | number,
-		value: T,
-		ttl: number | string = 0,
-	): boolean {
+	public set(key: string | number, value: T, ttl?: number | string): boolean {
 		// Check on key type
 		/* v8 ignore next -- @preserve */
 		if (typeof key !== "string" && typeof key !== "number") {
@@ -127,24 +123,34 @@ export class NodeCache<T> extends Hookified {
 
 		// Check on ttl type
 		/* v8 ignore next -- @preserve */
-		if (ttl && typeof ttl !== "number" && typeof ttl !== "string") {
+		if (
+			ttl !== undefined &&
+			typeof ttl !== "number" &&
+			typeof ttl !== "string"
+		) {
 			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
 		}
 
+		// Reject negative TTL values (numeric or numeric string)
+		if (this.isNegativeTtl(ttl)) {
+			return false;
+		}
+
 		const keyValue = this.formatKey(key);
-		let ttlValue = 0;
-		if (this.options.stdTTL) {
-			ttlValue = this.getExpirationTimestamp(this.options.stdTTL);
-		}
+		let expirationTimestamp = 0; // 0 = never delete
 
-		if (ttl) {
-			ttlValue = this.getExpirationTimestamp(ttl);
+		if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
+			// Explicit positive TTL or string shorthand overrides stdTTL
+			expirationTimestamp = this.resolveExpiration(ttl);
+		} else if (
+			ttl === undefined &&
+			this.options.stdTTL !== undefined &&
+			this.options.stdTTL !== 0
+		) {
+			// ttl omitted, fall back to stdTTL if set and non-zero
+			expirationTimestamp = this.resolveExpiration(this.options.stdTTL);
 		}
-
-		let expirationTimestamp = 0; // Never delete
-		if (ttlValue && ttlValue > 0) {
-			expirationTimestamp = ttlValue;
-		}
+		// ttl === 0 means cache indefinitely (expirationTimestamp stays 0)
 
 		// Check on max key size
 		/* v8 ignore next -- @preserve */
@@ -162,7 +168,7 @@ export class NodeCache<T> extends Hookified {
 		});
 
 		// Event
-		this.emit("set", keyValue, value, ttlValue);
+		this.emit("set", keyValue, value, expirationTimestamp);
 
 		// Add the bytes to the stats
 		this._stats.incrementKSize(keyValue);
@@ -183,11 +189,14 @@ export class NodeCache<T> extends Hookified {
 			throw this.createError(NodeCacheErrors.EKEYSTYPE);
 		}
 
+		let success = true;
 		for (const item of data) {
-			this.set(item.key, item.value, item.ttl);
+			if (!this.set(item.key, item.value, item.ttl)) {
+				success = false;
+			}
 		}
 
-		return true;
+		return success;
 	}
 
 	/**
@@ -321,11 +330,30 @@ export class NodeCache<T> extends Hookified {
 	 * @returns {boolean} true if the key has been found and changed. Otherwise returns false.
 	 */
 	public ttl(key: string | number, ttl?: number | string): boolean {
+		// Reject negative TTL values (numeric or numeric string)
+		if (this.isNegativeTtl(ttl)) {
+			return false;
+		}
+
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
-			// biome-ignore lint/style/noNonNullAssertion: need to fix
-			const ttlValue = ttl ?? this.options.stdTTL!;
-			result.ttl = this.getExpirationTimestamp(ttlValue);
+			if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
+				// Explicit positive TTL or string shorthand
+				result.ttl = this.resolveExpiration(ttl);
+			} else if (ttl === 0) {
+				// Explicit 0 = unlimited
+				result.ttl = 0;
+			} else if (
+				this.options.stdTTL !== undefined &&
+				this.options.stdTTL !== 0
+			) {
+				// ttl omitted, fall back to stdTTL if set and non-zero
+				result.ttl = this.resolveExpiration(this.options.stdTTL);
+			} else {
+				// No ttl, no stdTTL = unlimited
+				result.ttl = 0;
+			}
+
 			this.store.set(this.formatKey(key), result);
 			return true;
 		}
@@ -474,6 +502,38 @@ export class NodeCache<T> extends Hookified {
 		const ttlInMilliseconds = ttlInSeconds * 1000; // Convert TTL to milliseconds
 		const expirationTimestamp = currentTimestamp + ttlInMilliseconds;
 		return expirationTimestamp;
+	}
+
+	/**
+	 * Resolves a TTL value to an expiration timestamp, returning 0 (unlimited) if the
+	 * resolved timestamp is not in the future (e.g. "0s" or a zero-duration string).
+	 */
+	private resolveExpiration(ttl: number | string): number {
+		const timestamp = this.getExpirationTimestamp(ttl);
+		if (timestamp <= Date.now()) {
+			return 0;
+		}
+
+		return timestamp;
+	}
+
+	/**
+	 * Checks whether a TTL value is negative. Handles both numbers and
+	 * purely numeric strings (e.g. "-1").
+	 */
+	private isNegativeTtl(ttl?: number | string): boolean {
+		if (typeof ttl === "number") {
+			return ttl < 0;
+		}
+
+		if (typeof ttl === "string") {
+			const num = Number(ttl);
+			if (!Number.isNaN(num) && num < 0) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private checkData(): void {
