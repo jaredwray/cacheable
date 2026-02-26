@@ -260,6 +260,21 @@ describe("NodeCache", () => {
 		expect(cache.get("foo")).toBe("bar");
 	});
 
+	test("should reject negative TTL passed as a numeric string in set()", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		const result = cache.set("foo", "bar", "-1");
+		expect(result).toBe(false);
+		expect(cache.has("foo")).toBe(false);
+	});
+
+	test("should reject negative TTL passed as a numeric string in ttl()", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		cache.set("foo", "bar");
+		const result = cache.ttl("foo", "-5");
+		expect(result).toBe(false);
+		expect(cache.get("foo")).toBe("bar");
+	});
+
 	test("should set unlimited expiration on ttl() method when ttl is 0", async () => {
 		const cache = new NodeCache({ checkperiod: 0, stdTTL: 0.5 });
 		cache.set("foo", "bar"); // uses stdTTL (0.5s)

@@ -131,8 +131,8 @@ export class NodeCache<T> extends Hookified {
 			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
 		}
 
-		// Reject negative TTL values
-		if (typeof ttl === "number" && ttl < 0) {
+		// Reject negative TTL values (numeric or numeric string)
+		if (this.isNegativeTtl(ttl)) {
 			return false;
 		}
 
@@ -327,8 +327,8 @@ export class NodeCache<T> extends Hookified {
 	 * @returns {boolean} true if the key has been found and changed. Otherwise returns false.
 	 */
 	public ttl(key: string | number, ttl?: number | string): boolean {
-		// Reject negative TTL values
-		if (typeof ttl === "number" && ttl < 0) {
+		// Reject negative TTL values (numeric or numeric string)
+		if (this.isNegativeTtl(ttl)) {
 			return false;
 		}
 
@@ -512,6 +512,25 @@ export class NodeCache<T> extends Hookified {
 		}
 
 		return timestamp;
+	}
+
+	/**
+	 * Checks whether a TTL value is negative. Handles both numbers and
+	 * purely numeric strings (e.g. "-1").
+	 */
+	private isNegativeTtl(ttl?: number | string): boolean {
+		if (typeof ttl === "number") {
+			return ttl < 0;
+		}
+
+		if (typeof ttl === "string") {
+			const num = Number(ttl);
+			if (!Number.isNaN(num) && num < 0) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	private checkData(): void {
