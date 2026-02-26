@@ -189,11 +189,14 @@ export class NodeCache<T> extends Hookified {
 			throw this.createError(NodeCacheErrors.EKEYSTYPE);
 		}
 
+		let success = true;
 		for (const item of data) {
-			this.set(item.key, item.value, item.ttl);
+			if (!this.set(item.key, item.value, item.ttl)) {
+				success = false;
+			}
 		}
 
-		return true;
+		return success;
 	}
 
 	/**

@@ -48,6 +48,18 @@ describe("NodeCache", () => {
 		expect(cache.get("baz")).toBe("qux");
 	});
 
+	test("should return false from mset when any item has a negative ttl", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		const list = [
+			{ key: "good", value: "ok" },
+			{ key: "bad", value: "nope", ttl: -1 },
+		];
+		const result = cache.mset(list);
+		expect(result).toBe(false);
+		expect(cache.get("good")).toBe("ok");
+		expect(cache.has("bad")).toBe(false);
+	});
+
 	test("should get multiple cache items", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
 		cache.set("foo", "bar");
