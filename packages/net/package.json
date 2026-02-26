@@ -30,8 +30,8 @@
 		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
 		"prepublish": "pnpm build",
 		"lint": "biome check --write --error-on-warnings",
-		"test": "pnpm lint && vitest run --coverage",
-		"test:ci": "biome check --error-on-warnings && vitest run --coverage",
+		"test": "pnpm lint && TEST_URL=http://localhost:3000 vitest run --coverage",
+		"test:ci": "biome check --error-on-warnings && TEST_URL=http://localhost:3000 vitest run --coverage",
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {

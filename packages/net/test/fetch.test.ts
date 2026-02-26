@@ -320,100 +320,124 @@ describe("Fetch", () => {
 		testTimeout,
 	);
 
-	test("should handle FormData in post helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/post`;
-		const formData = new FormData();
-		formData.append("test", "data");
+	test(
+		"should handle FormData in post helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/post`;
+			const formData = new FormData();
+			formData.append("test", "data");
 
-		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
-		// The actual FormData handling is covered in the branch coverage
-		try {
-			const result = await post(url, formData, { cache });
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept FormData, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+			// The actual FormData handling is covered in the branch coverage
+			try {
+				const result = await post(url, formData, { cache });
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept FormData, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle URLSearchParams in post helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/post`;
-		const params = new URLSearchParams();
-		params.append("key", "value");
+	test(
+		"should handle URLSearchParams in post helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/post`;
+			const params = new URLSearchParams();
+			params.append("key", "value");
 
-		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
-		try {
-			const result = await post(url, params, { cache });
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+			try {
+				const result = await post(url, params, { cache });
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle Blob in post helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/post`;
-		const blob = new Blob(["test data"], { type: "text/plain" });
+	test(
+		"should handle Blob in post helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/post`;
+			const blob = new Blob(["test data"], { type: "text/plain" });
 
-		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
-		try {
-			const result = await post(url, blob, { cache });
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept Blob, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+			try {
+				const result = await post(url, blob, { cache });
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept Blob, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle FormData in patch helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/patch`;
-		const formData = new FormData();
-		formData.append("test", "data");
+	test(
+		"should handle FormData in patch helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/patch`;
+			const formData = new FormData();
+			formData.append("test", "data");
 
-		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
-		try {
-			const result = await patch(url, formData, { cache });
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept FormData, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+			try {
+				const result = await patch(url, formData, { cache });
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept FormData, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle URLSearchParams in patch helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/patch`;
-		const params = new URLSearchParams();
-		params.append("key", "value");
+	test(
+		"should handle URLSearchParams in patch helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/patch`;
+			const params = new URLSearchParams();
+			params.append("key", "value");
 
-		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
-		try {
-			const result = await patch(url, params, { cache });
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+			try {
+				const result = await patch(url, params, { cache });
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle Blob in patch helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/patch`;
-		const blob = new Blob(["test data"], { type: "text/plain" });
+	test(
+		"should handle Blob in patch helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/patch`;
+			const blob = new Blob(["test data"], { type: "text/plain" });
 
-		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
-		try {
-			const result = await patch(url, blob, { cache });
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept Blob, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+			try {
+				const result = await patch(url, blob, { cache });
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept Blob, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
 	test(
 		"should fetch data using delete helper",
@@ -515,69 +539,85 @@ describe("Fetch", () => {
 		testTimeout,
 	);
 
-	test("should handle string data in delete helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/delete`;
-		const data = JSON.stringify({ id: "123" });
-		const options = {
-			cache,
-			headers: {
-				"Content-Type": "application/json",
-			},
-		};
-		const result = await del(url, data, options);
-		expect(result).toBeDefined();
-		expect(result.data).toBeDefined();
-		expect(result.response).toBeDefined();
-		expect(result.response.status).toBe(200);
-	});
-
-	test("should handle FormData in delete helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/delete`;
-		const formData = new FormData();
-		formData.append("id", "123");
-
-		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
-		try {
-			const result = await del(url, formData, { cache });
+	test(
+		"should handle string data in delete helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/delete`;
+			const data = JSON.stringify({ id: "123" });
+			const options = {
+				cache,
+				headers: {
+					"Content-Type": "application/json",
+				},
+			};
+			const result = await del(url, data, options);
 			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept FormData, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
 
-	test("should handle URLSearchParams in delete helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/delete`;
-		const params = new URLSearchParams();
-		params.append("id", "123");
+	test(
+		"should handle FormData in delete helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/delete`;
+			const formData = new FormData();
+			formData.append("id", "123");
 
-		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
-		try {
-			const result = await del(url, params, { cache });
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+			try {
+				const result = await del(url, formData, { cache });
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept FormData, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle Blob in delete helper", async () => {
-		const cache = new Cacheable();
-		const url = `${testUrl}/delete`;
-		const blob = new Blob(["test data"], { type: "text/plain" });
+	test(
+		"should handle URLSearchParams in delete helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/delete`;
+			const params = new URLSearchParams();
+			params.append("id", "123");
 
-		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
-		try {
-			const result = await del(url, blob, { cache });
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept Blob, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+			try {
+				const result = await del(url, params, { cache });
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle Blob in delete helper",
+		async () => {
+			const cache = new Cacheable();
+			const url = `${testUrl}/delete`;
+			const blob = new Blob(["test data"], { type: "text/plain" });
+
+			// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+			try {
+				const result = await del(url, blob, { cache });
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept Blob, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
 	describe("HTTP Cache Headers", () => {
 		test(
