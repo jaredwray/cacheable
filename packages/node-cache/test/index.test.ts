@@ -269,6 +269,13 @@ describe("NodeCache", () => {
 		expect(cache.getTtl("foo")).toBe(0);
 	});
 
+	test("should treat zero-duration string stdTTL as unlimited", () => {
+		const cache = new NodeCache({ checkperiod: 0, stdTTL: "0ms" });
+		cache.set("foo", "bar");
+		expect(cache.getTtl("foo")).toBe(0);
+		expect(cache.get("foo")).toBe("bar");
+	});
+
 	test("should use stdTTL when ttl() is called without ttl argument and stdTTL is set", () => {
 		const cache = new NodeCache({ checkperiod: 0, stdTTL: 60 });
 		cache.set("foo", "bar", 0); // explicit 0 = unlimited

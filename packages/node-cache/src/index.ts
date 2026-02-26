@@ -141,14 +141,14 @@ export class NodeCache<T> extends Hookified {
 
 		if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
 			// Explicit positive TTL or string shorthand overrides stdTTL
-			expirationTimestamp = this.getExpirationTimestamp(ttl);
+			expirationTimestamp = this.resolveExpiration(ttl);
 		} else if (
 			ttl === undefined &&
-			this.options.stdTTL &&
-			(typeof this.options.stdTTL === "string" || this.options.stdTTL > 0)
+			this.options.stdTTL !== undefined &&
+			this.options.stdTTL !== 0
 		) {
-			// ttl omitted, fall back to stdTTL if set
-			expirationTimestamp = this.getExpirationTimestamp(this.options.stdTTL);
+			// ttl omitted, fall back to stdTTL if set and non-zero
+			expirationTimestamp = this.resolveExpiration(this.options.stdTTL);
 		}
 		// ttl === 0 means cache indefinitely (expirationTimestamp stays 0)
 
@@ -336,16 +336,16 @@ export class NodeCache<T> extends Hookified {
 		if (result) {
 			if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
 				// Explicit positive TTL or string shorthand
-				result.ttl = this.getExpirationTimestamp(ttl);
+				result.ttl = this.resolveExpiration(ttl);
 			} else if (ttl === 0) {
 				// Explicit 0 = unlimited
 				result.ttl = 0;
 			} else if (
-				this.options.stdTTL &&
-				(typeof this.options.stdTTL === "string" || this.options.stdTTL > 0)
+				this.options.stdTTL !== undefined &&
+				this.options.stdTTL !== 0
 			) {
-				// ttl omitted, fall back to stdTTL
-				result.ttl = this.getExpirationTimestamp(this.options.stdTTL);
+				// ttl omitted, fall back to stdTTL if set and non-zero
+				result.ttl = this.resolveExpiration(this.options.stdTTL);
 			} else {
 				// No ttl, no stdTTL = unlimited
 				result.ttl = 0;
@@ -499,6 +499,19 @@ export class NodeCache<T> extends Hookified {
 		const ttlInMilliseconds = ttlInSeconds * 1000; // Convert TTL to milliseconds
 		const expirationTimestamp = currentTimestamp + ttlInMilliseconds;
 		return expirationTimestamp;
+	}
+
+	/**
+	 * Resolves a TTL value to an expiration timestamp, returning 0 (unlimited) if the
+	 * resolved timestamp is not in the future (e.g. "0s" or a zero-duration string).
+	 */
+	private resolveExpiration(ttl: number | string): number {
+		const timestamp = this.getExpirationTimestamp(ttl);
+		if (timestamp <= Date.now()) {
+			return 0;
+		}
+
+		return timestamp;
 	}
 
 	private checkData(): void {
