@@ -298,15 +298,15 @@ importers:
         specifier: ^4.2.0
         version: 4.2.0
       undici:
-        specifier: ^7.19.1
-        version: 7.19.1
+        specifier: ^7.22.0
+        version: 7.22.0
     devDependencies:
       '@faker-js/faker':
         specifier: ^10.3.0
         version: 10.3.0
       '@types/http-cache-semantics':
-        specifier: ^4.0.4
-        version: 4.0.4
+        specifier: ^4.2.0
+        version: 4.2.0
       '@types/node':
         specifier: ^25.3.0
         version: 25.3.0
@@ -1703,9 +1703,6 @@ packages:
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
-
-  '@types/http-cache-semantics@4.0.4':
-    resolution: {integrity: sha512-1m0bIFVc7eJWyve9S0RnuRgcQqF/Xd5QsUZAZeQFr1Q3/p9JWoQQEqmVy+DPTNpGXwhgIetAoYF8JSc33q29QA==}
 
   '@types/http-cache-semantics@4.2.0':
     resolution: {integrity: sha512-L3LgimLHXtGkWikKnsPg0/VFx9OGZaC+eN1u4r+OB1XRqH3meBIAVC2zr1WdMH+RHmnRkqliQAOHNJ/E0j/e0Q==}
@@ -4116,12 +4113,8 @@ packages:
     resolution: {integrity: sha512-y+8YjDFzWdQlSE9N5nzKMT3g4a5UBX1HKowfdXh0uvAnTaqqwqB92Jt4UXBAeKekDs5IaDKyJFR4X1gYVCgXcw==}
     engines: {node: '>=20.18.1'}
 
-  undici@7.19.1:
-    resolution: {integrity: sha512-Gpq0iNm5M6cQWlyHQv9MV+uOj1jWk7LpkoE5vSp/7zjb4zMdAcUD+VL5y0nH4p9EbUklq00eVIIX/XcDHzu5xg==}
-    engines: {node: '>=20.18.1'}
-
-  undici@7.20.0:
-    resolution: {integrity: sha512-MJZrkjyd7DeC+uPZh+5/YaMDxFiiEEaDgbUSVMXayofAkDWF1088CDo+2RPg7B1BuS1qf1vgNE7xqwPxE0DuSQ==}
+  undici@7.22.0:
+    resolution: {integrity: sha512-RqslV2Us5BrllB+JeiZnK4peryVTndy9Dnqq62S3yYRRTj0tFQCwEniUy2167skdGOy3vqRzEvl1Dm4sV2ReDg==}
     engines: {node: '>=20.18.1'}
 
   unenv@2.0.0-rc.24:
@@ -4451,7 +4444,7 @@ snapshots:
       cacheable: 2.3.2
       hookified: 1.15.1
       http-cache-semantics: 4.2.0
-      undici: 7.20.0
+      undici: 7.22.0
 
   '@cacheable/node-cache@1.5.6':
     dependencies:
@@ -5261,8 +5254,6 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
 
-  '@types/http-cache-semantics@4.0.4': {}
-
   '@types/http-cache-semantics@4.2.0': {}
 
   '@types/http-errors@2.0.5': {}
@@ -5693,7 +5684,7 @@ snapshots:
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 7.20.0
+      undici: 7.22.0
       whatwg-mimetype: 4.0.0
 
   chokidar@3.6.0:
@@ -8365,9 +8356,7 @@ snapshots:
 
   undici@7.18.2: {}
 
-  undici@7.19.1: {}
-
-  undici@7.20.0: {}
+  undici@7.22.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:
