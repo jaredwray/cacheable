@@ -411,52 +411,64 @@ describe("Cacheable Net", () => {
 		testTimeout,
 	);
 
-	test("should handle FormData in CacheableNet put method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/put`;
-		const formData = new FormData();
-		formData.append("field", "value");
+	test(
+		"should handle FormData in CacheableNet put method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/put`;
+			const formData = new FormData();
+			formData.append("field", "value");
 
-		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.put(url, formData);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept FormData, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.put(url, formData);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept FormData, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle URLSearchParams in CacheableNet put method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/put`;
-		const params = new URLSearchParams();
-		params.append("test", "value");
+	test(
+		"should handle URLSearchParams in CacheableNet put method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/put`;
+			const params = new URLSearchParams();
+			params.append("test", "value");
 
-		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.put(url, params);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.put(url, params);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle Blob in CacheableNet put method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/put`;
-		const blob = new Blob(["data"], { type: "text/plain" });
+	test(
+		"should handle Blob in CacheableNet put method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/put`;
+			const blob = new Blob(["data"], { type: "text/plain" });
 
-		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.put(url, blob);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept Blob, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.put(url, blob);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept Blob, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
 	test(
 		"should use cache when caching is set to true in put method",
@@ -635,52 +647,64 @@ describe("Cacheable Net", () => {
 		testTimeout,
 	);
 
-	test("should handle FormData in CacheableNet post method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/post`;
-		const formData = new FormData();
-		formData.append("field", "value");
+	test(
+		"should handle FormData in CacheableNet post method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const formData = new FormData();
+			formData.append("field", "value");
 
-		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.post(url, formData);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept FormData, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.post(url, formData);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept FormData, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle URLSearchParams in CacheableNet post method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/post`;
-		const params = new URLSearchParams();
-		params.append("test", "value");
+	test(
+		"should handle URLSearchParams in CacheableNet post method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const params = new URLSearchParams();
+			params.append("test", "value");
 
-		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.post(url, params);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.post(url, params);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle Blob in CacheableNet post method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/post`;
-		const blob = new Blob(["data"], { type: "text/plain" });
+	test(
+		"should handle Blob in CacheableNet post method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/post`;
+			const blob = new Blob(["data"], { type: "text/plain" });
 
-		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.post(url, blob);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept Blob, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.post(url, blob);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept Blob, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
 	test(
 		"should use cache when caching is set to true in post method",
@@ -748,52 +772,64 @@ describe("Cacheable Net", () => {
 		testTimeout,
 	);
 
-	test("should handle FormData in CacheableNet patch method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/patch`;
-		const formData = new FormData();
-		formData.append("field", "value");
+	test(
+		"should handle FormData in CacheableNet patch method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const formData = new FormData();
+			formData.append("field", "value");
 
-		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.patch(url, formData);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept FormData, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.patch(url, formData);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept FormData, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle URLSearchParams in CacheableNet patch method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/patch`;
-		const params = new URLSearchParams();
-		params.append("test", "value");
+	test(
+		"should handle URLSearchParams in CacheableNet patch method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const params = new URLSearchParams();
+			params.append("test", "value");
 
-		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.patch(url, params);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.patch(url, params);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle Blob in CacheableNet patch method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/patch`;
-		const blob = new Blob(["data"], { type: "text/plain" });
+	test(
+		"should handle Blob in CacheableNet patch method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/patch`;
+			const blob = new Blob(["data"], { type: "text/plain" });
 
-		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.patch(url, blob);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept Blob, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.patch(url, blob);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept Blob, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
 	test(
 		"should use cache when caching is set to true in patch method",
@@ -1043,67 +1079,83 @@ describe("Cacheable Net", () => {
 		testTimeout,
 	);
 
-	test("should handle string data in CacheableNet delete method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/delete`;
-		const data = JSON.stringify({ id: "123" });
-		const result = await net.delete(url, data, {
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
-		expect(result).toBeDefined();
-		expect(result.data).toBeDefined();
-		expect(result.response).toBeDefined();
-		expect(result.response.status).toBe(200);
-	});
-
-	test("should handle FormData in CacheableNet delete method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/delete`;
-		const formData = new FormData();
-		formData.append("id", "123");
-
-		// Since the server might not handle FormData properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.delete(url, formData);
+	test(
+		"should handle string data in CacheableNet delete method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const data = JSON.stringify({ id: "123" });
+			const result = await net.delete(url, data, {
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
 			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept FormData, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			expect(result.data).toBeDefined();
+			expect(result.response).toBeDefined();
+			expect(result.response.status).toBe(200);
+		},
+		testTimeout,
+	);
 
-	test("should handle URLSearchParams in CacheableNet delete method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/delete`;
-		const params = new URLSearchParams();
-		params.append("id", "123");
+	test(
+		"should handle FormData in CacheableNet delete method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const formData = new FormData();
+			formData.append("id", "123");
 
-		// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.delete(url, params);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle FormData properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.delete(url, formData);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept FormData, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
-	test("should handle Blob in CacheableNet delete method", async () => {
-		const net = new Net();
-		const url = `${testUrl}/delete`;
-		const blob = new Blob(["data"], { type: "text/plain" });
+	test(
+		"should handle URLSearchParams in CacheableNet delete method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const params = new URLSearchParams();
+			params.append("id", "123");
 
-		// Since the server might not handle Blob properly, we'll just verify it doesn't crash
-		try {
-			const result = await net.delete(url, blob);
-			expect(result).toBeDefined();
-		} catch (error) {
-			// If server doesn't accept Blob, that's okay - we're testing the client code
-			expect(error).toBeDefined();
-		}
-	});
+			// Since the server might not handle URLSearchParams properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.delete(url, params);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept URLSearchParams, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
+
+	test(
+		"should handle Blob in CacheableNet delete method",
+		async () => {
+			const net = new Net();
+			const url = `${testUrl}/delete`;
+			const blob = new Blob(["data"], { type: "text/plain" });
+
+			// Since the server might not handle Blob properly, we'll just verify it doesn't crash
+			try {
+				const result = await net.delete(url, blob);
+				expect(result).toBeDefined();
+			} catch (error) {
+				// If server doesn't accept Blob, that's okay - we're testing the client code
+				expect(error).toBeDefined();
+			}
+		},
+		testTimeout,
+	);
 
 	test("should handle httpCachePolicy option in constructor", () => {
 		// Test with httpCachePolicy set to false
