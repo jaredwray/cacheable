@@ -334,9 +334,23 @@ export class NodeCache<T> extends Hookified {
 
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
-			// biome-ignore lint/style/noNonNullAssertion: need to fix
-			const ttlValue = ttl ?? this.options.stdTTL!;
-			result.ttl = this.getExpirationTimestamp(ttlValue);
+			if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
+				// Explicit positive TTL or string shorthand
+				result.ttl = this.getExpirationTimestamp(ttl);
+			} else if (ttl === 0) {
+				// Explicit 0 = unlimited
+				result.ttl = 0;
+			} else if (
+				this.options.stdTTL &&
+				(typeof this.options.stdTTL === "string" || this.options.stdTTL > 0)
+			) {
+				// ttl omitted, fall back to stdTTL
+				result.ttl = this.getExpirationTimestamp(this.options.stdTTL);
+			} else {
+				// No ttl, no stdTTL = unlimited
+				result.ttl = 0;
+			}
+
 			this.store.set(this.formatKey(key), result);
 			return true;
 		}
