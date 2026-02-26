@@ -351,8 +351,8 @@ importers:
   packages/utils:
     dependencies:
       hashery:
-        specifier: ^1.3.0
-        version: 1.4.0
+        specifier: ^1.5.0
+        version: 1.5.0
       keyv:
         specifier: ^5.6.0
         version: 5.6.0
@@ -363,9 +363,6 @@ importers:
       '@types/node':
         specifier: ^25.3.0
         version: 25.3.0
-      lru-cache:
-        specifier: ^11.2.4
-        version: 11.2.4
       rimraf:
         specifier: ^6.1.3
         version: 6.1.3
@@ -2589,8 +2586,8 @@ packages:
   has-unicode@2.0.1:
     resolution: {integrity: sha512-8Rf9Y83NBReMnx0gFzA8JImQACstCYWUplepDa9xprwwtmgEZUF0h/i5xSA625zB/I37EtrswSST6OXxwaaIJQ==}
 
-  hashery@1.4.0:
-    resolution: {integrity: sha512-Wn2i1In6XFxl8Az55kkgnFRiAlIAushzh26PTjL2AKtQcEfXrcLa7Hn5QOWGZEf3LU057P9TwwZjFyxfS1VuvQ==}
+  hashery@1.5.0:
+    resolution: {integrity: sha512-nhQ6ExaOIqti2FDWoEMWARUqIKyjr2VcZzXShrI+A3zpeiuPWzx6iPftt44LhP74E5sW36B75N6VHbvRtpvO6Q==}
     engines: {node: '>=20'}
 
   hasown@2.0.2:
@@ -2942,8 +2939,8 @@ packages:
     resolution: {integrity: sha512-B5Y16Jr9LB9dHVkh6ZevG+vAbOsNOYCX+sXvFWFu7B3Iz5mijW3zdbMyhsh8ANd2mSWBYdJgnqi+mL7/LrOPYg==}
     engines: {node: 20 || >=22}
 
-  lru-cache@11.2.5:
-    resolution: {integrity: sha512-vFrFJkWtJvJnD5hg+hJvVE8Lh/TcMzKnTgCWmtBipwI5yLX/iX+5UB2tfuyODF5E7k9xEzMdYgGqaSb1c0c5Yw==}
+  lru-cache@11.2.6:
+    resolution: {integrity: sha512-ESL2CrkS/2wTPfuend7Zhkzo2u0daGJ/A2VucJOgQ/C48S/zB8MMeMHSGKYpXhIjbPxfuezITkaBH1wqv00DDQ==}
     engines: {node: 20 || >=22}
 
   lru-cache@6.0.0:
@@ -4456,7 +4453,7 @@ snapshots:
 
   '@cacheable/utils@2.3.3':
     dependencies:
-      hashery: 1.4.0
+      hashery: 1.5.0
       keyv: 5.6.0
 
   '@cloudflare/kv-asset-handler@0.4.2': {}
@@ -4881,7 +4878,7 @@ snapshots:
 
   '@keyv/bigmap@1.3.1(keyv@5.6.0)':
     dependencies:
-      hashery: 1.4.0
+      hashery: 1.5.0
       hookified: 1.15.0
       keyv: 5.6.0
 
@@ -5488,7 +5485,7 @@ snapshots:
       '@julr/utils': 1.9.0
       '@poppinss/exception': 1.2.1
       async-mutex: 0.5.0
-      lru-cache: 11.2.4
+      lru-cache: 11.2.6
       p-timeout: 6.1.4
 
   binary-extensions@2.3.0:
@@ -6279,9 +6276,9 @@ snapshots:
   has-unicode@2.0.1:
     optional: true
 
-  hashery@1.4.0:
+  hashery@1.5.0:
     dependencies:
-      hookified: 1.15.0
+      hookified: 1.15.1
 
   hasown@2.0.2:
     dependencies:
@@ -6665,7 +6662,7 @@ snapshots:
 
   lru-cache@11.2.4: {}
 
-  lru-cache@11.2.5: {}
+  lru-cache@11.2.6: {}
 
   lru-cache@6.0.0:
     dependencies:
@@ -7437,12 +7434,12 @@ snapshots:
 
   path-scurry@2.0.1:
     dependencies:
-      lru-cache: 11.2.5
+      lru-cache: 11.2.6
       minipass: 7.1.2
 
   path-scurry@2.0.2:
     dependencies:
-      lru-cache: 11.2.4
+      lru-cache: 11.2.6
       minipass: 7.1.3
 
   path-to-regexp@3.3.0: {}
@@ -8323,7 +8320,7 @@ snapshots:
 
   tsx@4.21.0:
     dependencies:
-      esbuild: 0.27.0
+      esbuild: 0.27.2
       get-tsconfig: 4.10.1
     optionalDependencies:
       fsevents: 2.3.3
@@ -8584,7 +8581,7 @@ snapshots:
   writr@5.0.3:
     dependencies:
       cacheable: 2.3.2
-      hashery: 1.4.0
+      hashery: 1.5.0
       hookified: 1.15.1
       html-react-parser: 5.2.16(react@19.2.4)
       js-yaml: 4.1.1
