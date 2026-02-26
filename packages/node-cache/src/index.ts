@@ -114,11 +114,7 @@ export class NodeCache<T> extends Hookified {
 	 * @param {number | string} [ttl] - this is in seconds and undefined will use the default ttl
 	 * @returns {boolean}
 	 */
-	public set(
-		key: string | number,
-		value: T,
-		ttl: number | string = 0,
-	): boolean {
+	public set(key: string | number, value: T, ttl?: number | string): boolean {
 		// Check on key type
 		/* v8 ignore next -- @preserve */
 		if (typeof key !== "string" && typeof key !== "number") {
@@ -127,24 +123,34 @@ export class NodeCache<T> extends Hookified {
 
 		// Check on ttl type
 		/* v8 ignore next -- @preserve */
-		if (ttl && typeof ttl !== "number" && typeof ttl !== "string") {
+		if (
+			ttl !== undefined &&
+			typeof ttl !== "number" &&
+			typeof ttl !== "string"
+		) {
 			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
 		}
 
+		// Reject negative TTL values
+		if (typeof ttl === "number" && ttl < 0) {
+			return false;
+		}
+
 		const keyValue = this.formatKey(key);
-		let ttlValue = 0;
-		if (this.options.stdTTL) {
-			ttlValue = this.getExpirationTimestamp(this.options.stdTTL);
-		}
+		let expirationTimestamp = 0; // 0 = never delete
 
-		if (ttl) {
-			ttlValue = this.getExpirationTimestamp(ttl);
+		if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
+			// Explicit positive TTL or string shorthand overrides stdTTL
+			expirationTimestamp = this.getExpirationTimestamp(ttl);
+		} else if (
+			ttl === undefined &&
+			this.options.stdTTL &&
+			(typeof this.options.stdTTL === "string" || this.options.stdTTL > 0)
+		) {
+			// ttl omitted, fall back to stdTTL if set
+			expirationTimestamp = this.getExpirationTimestamp(this.options.stdTTL);
 		}
-
-		let expirationTimestamp = 0; // Never delete
-		if (ttlValue && ttlValue > 0) {
-			expirationTimestamp = ttlValue;
-		}
+		// ttl === 0 means cache indefinitely (expirationTimestamp stays 0)
 
 		// Check on max key size
 		/* v8 ignore next -- @preserve */
@@ -162,7 +168,7 @@ export class NodeCache<T> extends Hookified {
 		});
 
 		// Event
-		this.emit("set", keyValue, value, ttlValue);
+		this.emit("set", keyValue, value, expirationTimestamp);
 
 		// Add the bytes to the stats
 		this._stats.incrementKSize(keyValue);
@@ -321,6 +327,11 @@ export class NodeCache<T> extends Hookified {
 	 * @returns {boolean} true if the key has been found and changed. Otherwise returns false.
 	 */
 	public ttl(key: string | number, ttl?: number | string): boolean {
+		// Reject negative TTL values
+		if (typeof ttl === "number" && ttl < 0) {
+			return false;
+		}
+
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
 			// biome-ignore lint/style/noNonNullAssertion: need to fix

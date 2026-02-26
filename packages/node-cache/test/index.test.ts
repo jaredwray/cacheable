@@ -235,6 +235,31 @@ describe("NodeCache", () => {
 		expect(cache.get("moo")).toBe(undefined);
 	});
 
+	test("should cache indefinitely when ttl is explicitly 0 even with stdTTL set", async () => {
+		const cache = new NodeCache({ checkperiod: 0, stdTTL: 0.5 });
+		cache.set("withStdTTL", "expires"); // omitted ttl → uses stdTTL
+		cache.set("unlimited", "stays", 0); // explicit 0 → cache indefinitely
+		await sleep(600);
+		expect(cache.get("withStdTTL")).toBe(undefined);
+		expect(cache.get("unlimited")).toBe("stays");
+	});
+
+	test("should return false and not store key when ttl is negative", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		const result = cache.set("foo", "bar", -1);
+		expect(result).toBe(false);
+		expect(cache.has("foo")).toBe(false);
+		expect(cache.get("foo")).toBe(undefined);
+	});
+
+	test("should return false on ttl() method when ttl is negative", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		cache.set("foo", "bar");
+		const result = cache.ttl("foo", -1);
+		expect(result).toBe(false);
+		expect(cache.get("foo")).toBe("bar");
+	});
+
 	test("should get the internal id and stop the interval", () => {
 		const cache = new NodeCache();
 		expect(cache.getIntervalId()).toBeDefined();
