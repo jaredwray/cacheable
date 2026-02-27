@@ -109,10 +109,18 @@ export class NodeCache<T> extends Hookified {
 
 	/**
 	 * Sets a key value pair. It is possible to define a ttl (in seconds). Returns true on success.
+	 *
+	 * TTL behavior:
+	 * - `ttl > 0`: cache expires after the given number of seconds
+	 * - `ttl === 0`: cache indefinitely (overrides stdTTL)
+	 * - `ttl < 0`: store the value but it expires immediately on next access (matches original node-cache behavior)
+	 * - `ttl` omitted/undefined: use `stdTTL` from options (0 = unlimited if stdTTL is 0 or not set)
+	 * - `ttl` as string: shorthand format like '1h', '30s', '5m', '2d'
+	 *
 	 * @param {string | number} key - it will convert the key to a string
 	 * @param {T} value
-	 * @param {number | string} [ttl] - this is in seconds and undefined will use the default ttl
-	 * @returns {boolean}
+	 * @param {number | string} [ttl] - TTL in seconds. 0 = unlimited, negative = expires immediately, string = shorthand format
+	 * @returns {boolean} true on success
 	 */
 	public set(key: string | number, value: T, ttl?: number | string): boolean {
 		// Check on key type
@@ -131,15 +139,15 @@ export class NodeCache<T> extends Hookified {
 			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
 		}
 
-		// Reject negative TTL values (numeric or numeric string)
-		if (this.isNegativeTtl(ttl)) {
-			return false;
-		}
-
 		const keyValue = this.formatKey(key);
 		let expirationTimestamp = 0; // 0 = never delete
 
-		if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
+		if (this.isNegativeTtl(ttl)) {
+			// Negative TTL: store with a past timestamp so it expires immediately on next access
+			expirationTimestamp = this.getExpirationTimestamp(
+				typeof ttl === "string" ? Number(ttl) : (ttl as number),
+			);
+		} else if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
 			// Explicit positive TTL or string shorthand overrides stdTTL
 			expirationTimestamp = this.resolveExpiration(ttl);
 		} else if (
@@ -179,8 +187,15 @@ export class NodeCache<T> extends Hookified {
 
 	/**
 	 * Sets multiple key val pairs. It is possible to define a ttl (seconds). Returns true on success.
+	 *
+	 * Each item follows the same TTL behavior as `set()`:
+	 * - Positive TTL: expires after the given seconds
+	 * - `0`: cache indefinitely
+	 * - Negative TTL: stored but expires immediately on next access
+	 * - Omitted: uses `stdTTL` from options
+	 *
 	 * @param {PartialNodeCacheItem<T>[]} data an array of key value pairs with optional ttl
-	 * @returns {boolean}
+	 * @returns {boolean} true on success
 	 */
 	public mset(data: Array<PartialNodeCacheItem<T>>): boolean {
 		// Check on keys type
@@ -189,14 +204,11 @@ export class NodeCache<T> extends Hookified {
 			throw this.createError(NodeCacheErrors.EKEYSTYPE);
 		}
 
-		let success = true;
 		for (const item of data) {
-			if (!this.set(item.key, item.value, item.ttl)) {
-				success = false;
-			}
+			this.set(item.key, item.value, item.ttl);
 		}
 
-		return success;
+		return true;
 	}
 
 	/**
@@ -325,19 +337,27 @@ export class NodeCache<T> extends Hookified {
 	/**
 	 * Redefine the ttl of a key. Returns true if the key has been found and changed.
 	 * Otherwise returns false. If the ttl-argument isn't passed the default-TTL will be used.
+	 *
+	 * TTL behavior:
+	 * - `ttl > 0`: key expires after the given number of seconds
+	 * - `ttl === 0`: key lives indefinitely (overrides stdTTL)
+	 * - `ttl < 0`: key expires immediately on next access (matches original node-cache behavior)
+	 * - `ttl` omitted/undefined: use `stdTTL` from options (0 = unlimited if stdTTL is 0 or not set)
+	 * - `ttl` as string: shorthand format like '1h', '30s', '5m', '2d'
+	 *
 	 * @param {string | number} key if the key is a number it will convert it to a string
-	 * @param {number | string} [ttl] the ttl in seconds if number, or a shorthand string like '1h' for 1 hour
+	 * @param {number | string} [ttl] TTL in seconds. 0 = unlimited, negative = expires immediately, string = shorthand format
 	 * @returns {boolean} true if the key has been found and changed. Otherwise returns false.
 	 */
 	public ttl(key: string | number, ttl?: number | string): boolean {
-		// Reject negative TTL values (numeric or numeric string)
-		if (this.isNegativeTtl(ttl)) {
-			return false;
-		}
-
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
-			if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
+			if (this.isNegativeTtl(ttl)) {
+				// Negative TTL: set past timestamp so it expires immediately on next access
+				result.ttl = this.getExpirationTimestamp(
+					typeof ttl === "string" ? Number(ttl) : (ttl as number),
+				);
+			} else if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
 				// Explicit positive TTL or string shorthand
 				result.ttl = this.resolveExpiration(ttl);
 			} else if (ttl === 0) {
