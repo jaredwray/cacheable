@@ -48,15 +48,19 @@ describe("NodeCache", () => {
 		expect(cache.get("baz")).toBe("qux");
 	});
 
-	test("should return false from mset when any item has a negative ttl", () => {
+	test("should store items with negative ttl in mset but they expire immediately on access", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
 		const list = [
 			{ key: "good", value: "ok" },
 			{ key: "bad", value: "nope", ttl: -1 },
 		];
 		const result = cache.mset(list);
-		expect(result).toBe(false);
+		expect(result).toBe(true);
 		expect(cache.get("good")).toBe("ok");
+		// Negative TTL item is stored but expires immediately on get
+		expect(cache.has("bad")).toBe(true);
+		expect(cache.get("bad")).toBe(undefined);
+		// After get triggers expiration + deleteOnExpire, key is removed
 		expect(cache.has("bad")).toBe(false);
 	});
 
@@ -256,35 +260,46 @@ describe("NodeCache", () => {
 		expect(cache.get("unlimited")).toBe("stays");
 	});
 
-	test("should return false and not store key when ttl is negative", () => {
+	test("should store key with negative ttl but it expires immediately on access", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
 		const result = cache.set("foo", "bar", -1);
-		expect(result).toBe(false);
-		expect(cache.has("foo")).toBe(false);
+		expect(result).toBe(true);
+		// Key is stored with a past expiration timestamp
+		expect(cache.has("foo")).toBe(true);
+		// get() sees it's expired and returns undefined
 		expect(cache.get("foo")).toBe(undefined);
+		// After get triggers expiration + deleteOnExpire, key is removed
+		expect(cache.has("foo")).toBe(false);
 	});
 
-	test("should return false on ttl() method when ttl is negative", () => {
+	test("should expire key immediately when ttl() is called with negative ttl", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
 		cache.set("foo", "bar");
 		const result = cache.ttl("foo", -1);
-		expect(result).toBe(false);
-		expect(cache.get("foo")).toBe("bar");
-	});
-
-	test("should reject negative TTL passed as a numeric string in set()", () => {
-		const cache = new NodeCache({ checkperiod: 0 });
-		const result = cache.set("foo", "bar", "-1");
-		expect(result).toBe(false);
+		expect(result).toBe(true);
+		// Key exists but will expire on next access
+		expect(cache.has("foo")).toBe(true);
+		expect(cache.get("foo")).toBe(undefined);
 		expect(cache.has("foo")).toBe(false);
 	});
 
-	test("should reject negative TTL passed as a numeric string in ttl()", () => {
+	test("should store but expire immediately when negative TTL is passed as a numeric string in set()", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		const result = cache.set("foo", "bar", "-1");
+		expect(result).toBe(true);
+		expect(cache.has("foo")).toBe(true);
+		expect(cache.get("foo")).toBe(undefined);
+		expect(cache.has("foo")).toBe(false);
+	});
+
+	test("should expire immediately when negative TTL is passed as a numeric string in ttl()", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
 		cache.set("foo", "bar");
 		const result = cache.ttl("foo", "-5");
-		expect(result).toBe(false);
-		expect(cache.get("foo")).toBe("bar");
+		expect(result).toBe(true);
+		expect(cache.has("foo")).toBe(true);
+		expect(cache.get("foo")).toBe(undefined);
+		expect(cache.has("foo")).toBe(false);
 	});
 
 	test("should set unlimited expiration on ttl() method when ttl is 0", async () => {
