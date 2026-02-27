@@ -121,6 +121,7 @@ export class NodeCache<T> extends Hookified {
 	 * @param {T} value
 	 * @param {number | string} [ttl] - TTL in seconds. 0 = unlimited, negative = expires immediately, string = shorthand format
 	 * @returns {boolean} true on success
+	 * @throws {Error} If the `key` or `ttl` is of an invalid type.
 	 */
 	public set(key: string | number, value: T, ttl?: number | string): boolean {
 		// Check on key type
@@ -143,9 +144,14 @@ export class NodeCache<T> extends Hookified {
 		let expirationTimestamp = 0; // 0 = never delete
 
 		if (this.isNegativeTtl(ttl)) {
-			// Negative TTL: store with a past timestamp so it expires immediately on next access
-			expirationTimestamp = this.getExpirationTimestamp(
-				typeof ttl === "string" ? Number(ttl) : (ttl as number),
+			// Negative TTL: store with a past timestamp so it expires immediately on next access.
+			// Math.max(1, ...) ensures the timestamp is always > 0, since the expiration
+			// check only triggers for ttl > 0 (0 means "unlimited").
+			expirationTimestamp = Math.max(
+				1,
+				this.getExpirationTimestamp(
+					typeof ttl === "string" ? Number(ttl) : (ttl as number),
+				),
 			);
 		} else if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
 			// Explicit positive TTL or string shorthand overrides stdTTL
@@ -196,6 +202,7 @@ export class NodeCache<T> extends Hookified {
 	 *
 	 * @param {PartialNodeCacheItem<T>[]} data an array of key value pairs with optional ttl
 	 * @returns {boolean} true on success
+	 * @throws {Error} If `data` is not an array, or if any item has an invalid key or ttl type.
 	 */
 	public mset(data: Array<PartialNodeCacheItem<T>>): boolean {
 		// Check on keys type
@@ -348,14 +355,30 @@ export class NodeCache<T> extends Hookified {
 	 * @param {string | number} key if the key is a number it will convert it to a string
 	 * @param {number | string} [ttl] TTL in seconds. 0 = unlimited, negative = expires immediately, string = shorthand format
 	 * @returns {boolean} true if the key has been found and changed. Otherwise returns false.
+	 * @throws {Error} If the `ttl` is of an invalid type (must be a number or string).
 	 */
 	public ttl(key: string | number, ttl?: number | string): boolean {
+		// Check on ttl type
+		/* v8 ignore next -- @preserve */
+		if (
+			ttl !== undefined &&
+			typeof ttl !== "number" &&
+			typeof ttl !== "string"
+		) {
+			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
+		}
+
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
 			if (this.isNegativeTtl(ttl)) {
-				// Negative TTL: set past timestamp so it expires immediately on next access
-				result.ttl = this.getExpirationTimestamp(
-					typeof ttl === "string" ? Number(ttl) : (ttl as number),
+				// Negative TTL: set past timestamp so it expires immediately on next access.
+				// Math.max(1, ...) ensures the timestamp is always > 0, since the expiration
+				// check only triggers for ttl > 0 (0 means "unlimited").
+				result.ttl = Math.max(
+					1,
+					this.getExpirationTimestamp(
+						typeof ttl === "string" ? Number(ttl) : (ttl as number),
+					),
 				);
 			} else if (ttl !== undefined && (typeof ttl === "string" || ttl > 0)) {
 				// Explicit positive TTL or string shorthand
