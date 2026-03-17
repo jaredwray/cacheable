@@ -13,9 +13,7 @@
     "clean": "rimraf ./dist"
   },
   "devDependencies": {
-    "@types/node": "25.2.0",
     "docula": "0.40.0",
-    "rimraf": "6.1.2",
     "tsx": "4.21.0"
   }
 }
