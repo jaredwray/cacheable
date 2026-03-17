@@ -41,7 +41,7 @@
 	],
 	"scripts": {
 		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
-		"prepublish": "pnpm build",
+		"prepublishOnly": "pnpm build",
 		"lint": "biome check --write --error-on-warnings",
 		"test": "pnpm lint && vitest run --coverage",
 		"test:ci": "biome check --error-on-warnings && vitest run --coverage",
