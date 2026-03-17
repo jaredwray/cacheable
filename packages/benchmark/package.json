@@ -37,7 +37,7 @@
 	],
 	"scripts": {
 		"build": "echo 'no build needed'",
-		"prepublish": "pnpm build",
+		"prepublishOnly": "pnpm build",
 		"lint": "biome check --write --error-on-warnings",
 		"test": "pnpm lint && echo 'no tests needed'",
 		"test:ci": "biome check --error-on-warnings && echo 'no tests needed'",

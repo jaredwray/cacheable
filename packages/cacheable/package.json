@@ -1,6 +1,6 @@
 {
 	"name": "cacheable",
-	"version": "2.3.3",
+	"version": "2.3.4",
 	"description": "High Performance Layer 1 / Layer 2 Caching with Keyv Storage",
 	"type": "module",
 	"main": "./dist/index.js",
@@ -28,7 +28,7 @@
 	"private": false,
 	"scripts": {
 		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
-		"prepublish": "pnpm build",
+		"prepublishOnly": "pnpm build",
 		"lint": "biome check --write --error-on-warnings",
 		"test": "pnpm lint && vitest run --coverage",
 		"test:ci": "biome check --error-on-warnings && vitest run --coverage",
