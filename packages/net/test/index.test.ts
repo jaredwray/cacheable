@@ -15,7 +15,7 @@ import {
 	post,
 } from "../src/index.js";
 
-const testUrl = process.env.TEST_URL ?? "https://mockhttp.org";
+const testUrl = process.env.TEST_URL ?? "http://localhost:3737";
 const testTimeout = 10_000; // 10 seconds
 
 describe("Cacheable Net", () => {
