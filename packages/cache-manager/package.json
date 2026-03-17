@@ -28,7 +28,7 @@
     "test": "pnpm lint && vitest run --coverage",
     "test:ci": "biome check --error-on-warnings && vitest run --coverage",
     "build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
-    "prepublishOnly": "pnpm run build"
+    "prepublishOnly": "pnpm build"
   },
   "repository": {
     "type": "git",
