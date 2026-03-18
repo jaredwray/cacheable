@@ -2,11 +2,10 @@
 import EventEmitter from "node:events";
 import { request } from "node:http";
 import stream from "node:stream";
-import url from "node:url";
 import { KeyvSqlite } from "@keyv/sqlite";
 import getStream from "get-stream";
 import { afterAll, beforeAll, expect, test } from "vitest";
-import CacheableRequest from "../src/index.js";
+import CacheableRequest, { parseWithWhatwg } from "../src/index.js";
 import { CacheError, RequestError } from "../src/types.js";
 import createTestServer from "./create-test-server/index.mjs";
 
@@ -30,7 +29,7 @@ test("cacheableRequest is a class", () => {
 });
 test("cacheableRequest returns an event emitter", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
-	const returnValue = cacheableRequest(url.parse(s.url), () => true).on(
+	const returnValue = cacheableRequest(parseWithWhatwg(s.url), () => true).on(
 		"request",
 		(request_: any) => request_.end(),
 	);
@@ -39,7 +38,7 @@ test("cacheableRequest returns an event emitter", () => {
 
 test("cacheableRequest passes requests through if no cache option is set", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
-	cacheableRequest(url.parse(s.url), async (response: any) => {
+	cacheableRequest(parseWithWhatwg(s.url), async (response: any) => {
 		const body = await getStream(response);
 		expect(body).toBe("hi");
 	}).on("request", (request_: any) => request_.end());
@@ -53,14 +52,14 @@ test("cacheableRequest accepts url as string", () => {
 });
 test("cacheableRequest accepts url as URL", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
-	cacheableRequest(new url.URL(s.url), async (response: any) => {
+	cacheableRequest(new URL(s.url), async (response: any) => {
 		const body = await getStream(response);
 		expect(body).toBe("hi");
 	}).on("request", (request_: any) => request_.end());
 });
 test("cacheableRequest handles no callback parameter", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
-	cacheableRequest(url.parse(s.url)).on("request", (request_: any) => {
+	cacheableRequest(parseWithWhatwg(s.url)).on("request", (request_: any) => {
 		request_.end();
 		request_.on("response", (response: any) => {
 			expect(response.statusCode).toBe(200);
@@ -69,7 +68,7 @@ test("cacheableRequest handles no callback parameter", () => {
 });
 test("cacheableRequest emits response event for network responses", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
-	cacheableRequest(url.parse(s.url))
+	cacheableRequest(parseWithWhatwg(s.url))
 		.on("request", (request_: any) => request_.end())
 		.on("response", (response: any) => {
 			expect(response.fromCache).toBeFalsy();
@@ -96,7 +95,7 @@ test("cacheableRequest emits CacheError if cache adapter connection errors", () 
 		request,
 		new KeyvSqlite("sqlite://non/existent/database.sqlite"),
 	).request();
-	cacheableRequest(url.parse(s.url))
+	cacheableRequest(parseWithWhatwg(s.url))
 		.on("error", (error: any) => {
 			expect(error instanceof CacheError).toBeTruthy();
 			if (error.code === "SQLITE_CANTOPEN") {
@@ -117,7 +116,7 @@ test("cacheableRequest emits CacheError if cache.get errors", async () => {
 		clear: store.clear.bind(store),
 	};
 	const cacheableRequest = new CacheableRequest(request, cache).request();
-	cacheableRequest(url.parse(s.url))
+	cacheableRequest(parseWithWhatwg(s.url))
 		.on("error", (error: any) => {
 			expect(error instanceof CacheError).toBeTruthy();
 			expect(error.message).toBe(errorMessage);
@@ -136,7 +135,7 @@ test("cacheableRequest emits CacheError if cache.set errors", () => {
 		clear: store.clear.bind(store),
 	};
 	const cacheableRequest = new CacheableRequest(request, cache).request();
-	cacheableRequest(url.parse(s.url))
+	cacheableRequest(parseWithWhatwg(s.url))
 		.on("error", (error: any) => {
 			expect(error instanceof CacheError).toBeTruthy();
 			expect(error.message).toBe(errorMessage);
@@ -181,7 +180,7 @@ test("cacheableRequest emits CacheError if cache.delete errors", () => {
 });
 test("cacheableRequest emits Error if request function throws", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
-	const options: any = url.parse(s.url);
+	const options: any = parseWithWhatwg(s.url);
 	options.headers = { invalid: "💣" };
 	cacheableRequest(options)
 		.on("error", (error: any) => {
@@ -200,7 +199,7 @@ test("cacheableRequest does not cache response if request is aborted before rece
 		const cacheableRequest = new CacheableRequest(request).request();
 
 		// biome-ignore lint/style/noNonNullAssertion: legacy
-		const options = url.parse(s.url!);
+		const options = parseWithWhatwg(s.url!);
 		options.path = "/delay-start";
 		cacheableRequest(options).on("request", (request_: any) => {
 			request_.end();
@@ -231,7 +230,7 @@ test("cacheableRequest does not cache response if request is aborted after recei
 		const cacheableRequest = new CacheableRequest(request).request();
 
 		// biome-ignore lint/style/noNonNullAssertion: legacy
-		const options = url.parse(s.url!);
+		const options = parseWithWhatwg(s.url!);
 		options.path = "/delay-partial";
 		cacheableRequest(options).on("request", (request_: any) => {
 			setTimeout(() => {
@@ -253,7 +252,7 @@ test("cacheableRequest makes request even if initial DB connection fails (when o
 		request,
 		new KeyvSqlite("sqlite://non/existent/database.sqlite"),
 	).request();
-	const options: any = url.parse(s.url);
+	const options: any = parseWithWhatwg(s.url);
 	options.automaticFailover = true;
 	cacheableRequest(options, (response_: any) => {
 		expect(response_.statusCode).toBe(200);
@@ -279,7 +278,7 @@ test("cacheableRequest makes request even if current DB connection fails (when o
 		},
 	};
 	const cacheableRequest = new CacheableRequest(request, cache).request();
-	const options: any = url.parse(s.url);
+	const options: any = parseWithWhatwg(s.url);
 	options.automaticFailover = true;
 	cacheableRequest(options, (response_: any) => {
 		expect(response_.statusCode).toBe(200);
@@ -305,7 +304,7 @@ test("cacheableRequest hashes request body as cache key", async () => {
 		},
 	};
 	const cacheableRequest = new CacheableRequest(request, cache).request();
-	const options: any = url.parse(s.url);
+	const options: any = parseWithWhatwg(s.url);
 	options.body = "hello";
 	options.method = "POST";
 	cacheableRequest(options, (response_: any) => {
@@ -332,7 +331,7 @@ test("cacheableRequest skips cache for streamed body", () => {
 		},
 	};
 	const cacheableRequest = new CacheableRequest(request, cache).request();
-	const options: any = url.parse(s.url);
+	const options: any = parseWithWhatwg(s.url);
 	options.body = new stream.PassThrough();
 	options.method = "POST";
 	cacheableRequest(options, (response_: any) => {
@@ -347,7 +346,7 @@ test("cacheableRequest skips cache for streamed body", () => {
 
 test("cacheableRequest makes request and cancelled)", async () => {
 	const cacheableRequest = new CacheableRequest(request, new Map()).request();
-	const options: any = url.parse(s.url);
+	const options: any = parseWithWhatwg(s.url);
 	cacheableRequest(options, (response_: any) => {
 		expect(response_.statusCode).toBe(400);
 	})
@@ -359,7 +358,7 @@ test("cacheableRequest makes request and cancelled)", async () => {
 
 test("cacheableRequest emits CacheError if request cancels", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
-	const options: any = url.parse(s.url);
+	const options: any = parseWithWhatwg(s.url);
 	options.headers = { invalid: "💣" };
 	cacheableRequest(options)
 		.on("error", (error: any) => {
