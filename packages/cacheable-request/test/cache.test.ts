@@ -1,14 +1,17 @@
 // biome-ignore-all lint/suspicious/noImplicitAnyLet: legacy format
 // biome-ignore-all lint/suspicious/noExplicitAny: legacy format
 import { Agent, request } from "node:http";
-import url from "node:url";
 import util, { promisify as pm } from "node:util";
 import { gunzip, gzip } from "node:zlib";
 import delay from "delay";
 import getStream from "get-stream";
 import { Keyv } from "keyv";
 import { afterAll, beforeAll, expect, test } from "vitest";
-import CacheableRequest, { type CacheValue, onResponse } from "../src/index.js";
+import CacheableRequest, {
+	type CacheValue,
+	onResponse,
+	parseWithWhatwg,
+} from "../src/index.js";
 import createTestServer from "./create-test-server/index.mjs";
 
 const testTimeout = 10_000;
@@ -403,8 +406,8 @@ test("request options path query is passed through", async () => {
 	const cacheableRequest = new CacheableRequest(request);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const argumentString = `${s.url}/echo?foo=bar`;
-	const argumentUrl = new url.URL(argumentString);
-	const urlObject = url.parse(argumentString);
+	const argumentUrl = new URL(argumentString);
+	const urlObject = parseWithWhatwg(argumentString);
 	const argumentOptions = {
 		hostname: urlObject.hostname,
 		port: urlObject.port,
@@ -429,7 +432,7 @@ test("Setting opts.cache to false bypasses cache for a single request", async ()
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const options = url.parse(s.url + endpoint);
+	const options = parseWithWhatwg(s.url + endpoint);
 	const optionsNoCache = { cache: false, ...options };
 	const firstResponse: any = await cacheableRequestHelper(options);
 	const secondResponse: any = await cacheableRequestHelper(options);
@@ -456,7 +459,7 @@ test("TTL is passed to cache", async () => {
 	};
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const options = { strictTtl: true, ...url.parse(s.url + endpoint) };
+	const options = { strictTtl: true, ...parseWithWhatwg(s.url + endpoint) };
 	await cacheableRequestHelper(options);
 });
 test("TTL is not passed to cache if strictTtl is false", async () => {
@@ -474,7 +477,7 @@ test("TTL is not passed to cache if strictTtl is false", async () => {
 	};
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const options = { strictTtl: false, ...url.parse(s.url + endpoint) };
+	const options = { strictTtl: false, ...parseWithWhatwg(s.url + endpoint) };
 	await cacheableRequestHelper(options);
 });
 test("Setting opts.maxTtl will limit the TTL", async () => {
@@ -493,7 +496,7 @@ test("Setting opts.maxTtl will limit the TTL", async () => {
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const options = {
-		...url.parse(s.url + endpoint),
+		...parseWithWhatwg(s.url + endpoint),
 		maxTtl: 1000,
 	};
 	await cacheableRequestHelper(options);
@@ -514,7 +517,7 @@ test("Setting opts.maxTtl when opts.strictTtl is true will use opts.maxTtl if it
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const options = {
-		...url.parse(s.url + endpoint),
+		...parseWithWhatwg(s.url + endpoint),
 		strictTtl: true,
 		maxTtl: 1000,
 	};
@@ -536,7 +539,7 @@ test("Setting opts.maxTtl when opts.strictTtl is true will use remote TTL if it'
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
 	const options = {
-		...url.parse(s.url + endpoint),
+		...parseWithWhatwg(s.url + endpoint),
 		strictTtl: true,
 		maxTtl: 100_000,
 	};
@@ -649,7 +652,7 @@ test("ability to force refresh", async () => {
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const options = url.parse(s.url + endpoint);
+	const options = parseWithWhatwg(s.url + endpoint);
 	const firstResponse: any = await cacheableRequestHelper(options);
 	const secondResponse: any = await cacheableRequestHelper({
 		...options,
@@ -664,7 +667,7 @@ test("checks status codes when comparing cache & response", async () => {
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const options = url.parse(s.url + endpoint);
+	const options = parseWithWhatwg(s.url + endpoint);
 	const firstResponse: any = await cacheableRequestHelper(options);
 	const secondResponse: any = await cacheableRequestHelper(options);
 	expect(firstResponse.body).toBe("received 502");
@@ -676,7 +679,7 @@ test("304 responses with forceRefresh do not clobber cache", async () => {
 	const cache = new Map();
 	const cacheableRequest = new CacheableRequest(request, cache);
 	const cacheableRequestHelper = promisify(cacheableRequest.request());
-	const options = url.parse(s.url + endpoint);
+	const options = parseWithWhatwg(s.url + endpoint);
 
 	const firstResponse: any = await cacheableRequestHelper(options);
 	const secondResponse: any = await cacheableRequestHelper({
@@ -743,7 +746,7 @@ test("socket within keepAlive Agent has been free'd after cache revalidation", a
 	const agent = new Agent({
 		keepAlive: true,
 	});
-	const options = { agent, ...url.parse(s.url + endpoint) };
+	const options = { agent, ...parseWithWhatwg(s.url + endpoint) };
 	try {
 		expect(Object.keys(agent.freeSockets)).toHaveLength(0);
 		// biome-ignore lint/correctness/noUnusedVariables: legacy
