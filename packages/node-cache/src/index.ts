@@ -264,14 +264,16 @@ export class NodeCache<T> extends Hookified {
 	 * @param {Array<string | number} keys an array of keys
 	 * @returns {Record<string, T | undefined>} an object with the key as a property and the value as the value
 	 */
-	public mget<T>(keys: Array<string | number>): Record<string, T | undefined> {
-		const result: Record<string, T | undefined> = {};
+	public mget<V = T>(
+		keys: Array<string | number>,
+	): Record<string, V | undefined> {
+		const result: Record<string, V | undefined> = {};
 
 		for (const key of keys) {
 			const value = this.get(key);
 			/* v8 ignore next -- @preserve */
 			if (value) {
-				result[this.formatKey(key)] = value as T;
+				result[this.formatKey(key)] = value as V;
 			}
 		}
 
@@ -284,16 +286,16 @@ export class NodeCache<T> extends Hookified {
 	 * @param {string | number} key
 	 * @returns {T | undefined} the value or undefined
 	 */
-	public take<T>(key: string | number): T | undefined {
+	public take<V = T>(key: string | number): V | undefined {
 		const result = this.get(key);
 
 		if (result) {
 			this.del(key);
 			if (this.options.useClones) {
-				return this.clone(result) as T;
+				return this.clone(result) as V;
 			}
 
-			return result as T;
+			return result as V;
 		}
 
 		return undefined;
