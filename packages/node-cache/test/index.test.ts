@@ -392,4 +392,27 @@ describe("NodeCache", () => {
 		cache.set("nullKey", null);
 		expect(cache.get("nullKey")).toBe(null);
 	});
+
+	test("should propagate class-level generic type through mget and take", () => {
+		type MyType = { name: string; age: number };
+		const cache = new NodeCache<MyType>({ checkperiod: 0 });
+		cache.set("user1", { name: "Alice", age: 30 });
+		cache.set("user2", { name: "Bob", age: 25 });
+
+		const mgetResult = cache.mget(["user1", "user2"]);
+		// Verify the type is correctly inferred as Record<string, MyType | undefined>
+		const user1 = mgetResult.user1;
+		expect(user1).toBeDefined();
+		expect(user1!.name).toBe("Alice");
+		expect(user1!.age).toBe(30);
+
+		const taken = cache.take("user2");
+		// Verify the type is correctly inferred as MyType | undefined
+		expect(taken).toBeDefined();
+		expect(taken!.name).toBe("Bob");
+		expect(taken!.age).toBe(25);
+
+		// Verify take removed the key
+		expect(cache.get("user2")).toBeUndefined();
+	});
 });

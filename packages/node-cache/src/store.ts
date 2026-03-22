@@ -136,8 +136,8 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @param {string | number} key
 	 * @returns {any | undefined}
 	 */
-	public async get<T>(key: string | number): Promise<T | undefined> {
-		const result = await this._keyv.get<T>(key.toString());
+	public async get<V = T>(key: string | number): Promise<V | undefined> {
+		const result = await this._keyv.get<V>(key.toString());
 		if (result !== undefined) {
 			this._stats.incrementHits();
 		} else {
@@ -152,12 +152,12 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @param {Array<string | number>} keys
 	 * @returns {Record<string, any | undefined>}
 	 */
-	public async mget<T>(
+	public async mget<V = T>(
 		keys: Array<string | number>,
-	): Promise<Record<string, T | undefined>> {
-		const result: Record<string, T | undefined> = {};
+	): Promise<Record<string, V | undefined>> {
+		const result: Record<string, V | undefined> = {};
 		for (const key of keys) {
-			const value = await this._keyv.get<T>(key.toString());
+			const value = await this._keyv.get<V>(key.toString());
 			if (value !== undefined) {
 				this._stats.incrementHits();
 			} else {
@@ -233,8 +233,8 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @param {string | number} key
 	 * @returns {T | undefined}
 	 */
-	public async take<T>(key: string | number): Promise<T | undefined> {
-		const result = await this._keyv.get<T>(key.toString());
+	public async take<V = T>(key: string | number): Promise<V | undefined> {
+		const result = await this._keyv.get<V>(key.toString());
 		if (result !== undefined) {
 			this._stats.incrementHits();
 			await this._keyv.delete(key.toString());

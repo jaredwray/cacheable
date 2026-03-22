@@ -163,4 +163,31 @@ describe("NodeCacheStore", () => {
 		const result = await store.get("test");
 		expect(result).toBe("value");
 	});
+
+	test("should propagate class-level generic type through get, mget, and take", async () => {
+		type MyType = { name: string; age: number };
+		const store = new NodeCacheStore<MyType>();
+		await store.set("user1", { name: "Alice", age: 30 });
+		await store.set("user2", { name: "Bob", age: 25 });
+
+		const getResult = await store.get("user1");
+		expect(getResult).toBeDefined();
+		expect(getResult?.name).toBe("Alice");
+		expect(getResult?.age).toBe(30);
+
+		const mgetResult = await store.mget(["user1", "user2"]);
+		const user1 = mgetResult.user1;
+		expect(user1).toBeDefined();
+		expect(user1?.name).toBe("Alice");
+		expect(user1?.age).toBe(30);
+
+		const taken = await store.take("user2");
+		expect(taken).toBeDefined();
+		expect(taken?.name).toBe("Bob");
+		expect(taken?.age).toBe(25);
+
+		// Verify take removed the key
+		const afterTake = await store.get("user2");
+		expect(afterTake).toBeUndefined();
+	});
 });
