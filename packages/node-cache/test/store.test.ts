@@ -171,24 +171,20 @@ describe("NodeCacheStore", () => {
 		await store.set("user2", { name: "Bob", age: 25 });
 
 		const getResult = await store.get("user1");
-		expect(getResult).toEqual({ name: "Alice", age: 30 });
-		if (getResult) {
-			expect(getResult.name).toBe("Alice");
-		}
+		expect(getResult).toBeDefined();
+		expect(getResult?.name).toBe("Alice");
+		expect(getResult?.age).toBe(30);
 
 		const mgetResult = await store.mget(["user1", "user2"]);
 		const user1 = mgetResult.user1;
-		expect(user1).toEqual({ name: "Alice", age: 30 });
-		if (user1) {
-			expect(user1.name).toBe("Alice");
-			expect(user1.age).toBe(30);
-		}
+		expect(user1).toBeDefined();
+		expect(user1?.name).toBe("Alice");
+		expect(user1?.age).toBe(30);
 
 		const taken = await store.take("user2");
-		expect(taken).toEqual({ name: "Bob", age: 25 });
-		if (taken) {
-			expect(taken.name).toBe("Bob");
-		}
+		expect(taken).toBeDefined();
+		expect(taken?.name).toBe("Bob");
+		expect(taken?.age).toBe(25);
 
 		// Verify take removed the key
 		const afterTake = await store.get("user2");

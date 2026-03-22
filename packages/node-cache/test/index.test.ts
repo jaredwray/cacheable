@@ -402,18 +402,15 @@ describe("NodeCache", () => {
 		const mgetResult = cache.mget(["user1", "user2"]);
 		// Verify the type is correctly inferred as Record<string, MyType | undefined>
 		const user1 = mgetResult.user1;
-		expect(user1).toEqual({ name: "Alice", age: 30 });
-		if (user1) {
-			expect(user1.name).toBe("Alice");
-			expect(user1.age).toBe(30);
-		}
+		expect(user1).toBeDefined();
+		expect(user1!.name).toBe("Alice");
+		expect(user1!.age).toBe(30);
 
 		const taken = cache.take("user2");
 		// Verify the type is correctly inferred as MyType | undefined
-		expect(taken).toEqual({ name: "Bob", age: 25 });
-		if (taken) {
-			expect(taken.name).toBe("Bob");
-		}
+		expect(taken).toBeDefined();
+		expect(taken!.name).toBe("Bob");
+		expect(taken!.age).toBe(25);
 
 		// Verify take removed the key
 		expect(cache.get("user2")).toBeUndefined();
