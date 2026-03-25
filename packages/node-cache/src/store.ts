@@ -9,10 +9,6 @@ export type NodeCacheStoreOptions<T> = {
 	 */
 	ttl?: number | string;
 	/**
-	 * Maximum number of keys to store in the cache. If this is set to a value greater than 0, the cache will keep track of the number of keys and will not store more than the specified number of keys.
-	 */
-	maxKeys?: number;
-	/**
 	 * The Keyv store instance.
 	 */
 	store?: Keyv<T>;
@@ -23,7 +19,6 @@ export type NodeCacheStoreOptions<T> = {
 };
 
 export class NodeCacheStore<T> extends Hookified {
-	private _maxKeys = 0;
 	private _keyv: Keyv<T>;
 	private readonly _stats: Stats;
 	private _ttl?: number | string;
@@ -33,10 +28,6 @@ export class NodeCacheStore<T> extends Hookified {
 		this._stats = new Stats({ enabled: options?.stats ?? true });
 		this._ttl = options?.ttl;
 		this._keyv = options?.store ?? new Keyv<T>();
-
-		if (options?.maxKeys) {
-			this._maxKeys = options.maxKeys;
-		}
 
 		// Hook up the keyv events
 		this._keyv.on("error", (error: Error) => {
@@ -72,29 +63,6 @@ export class NodeCacheStore<T> extends Hookified {
 	}
 
 	/**
-	 * Maximum number of keys to store in the cache. if this is set to a value greater than 0,
-	 * the cache will keep track of the number of keys and will not store more than the specified number of keys.
-	 * @returns {number}
-	 * @readonly
-	 */
-	public get maxKeys(): number {
-		return this._maxKeys;
-	}
-
-	/**
-	 * Maximum number of keys to store in the cache. if this is set to a value greater than 0,
-	 * the cache will keep track of the number of keys and will not store more than the specified number of keys.
-	 * @param {number} maxKeys
-	 */
-	public set maxKeys(maxKeys: number) {
-		this._maxKeys = maxKeys;
-		/* v8 ignore next -- @preserve */
-		if (this._maxKeys > 0) {
-			this._stats.enabled = true;
-		}
-	}
-
-	/**
 	 * Set a key/value pair in the cache.
 	 * @param {string | number} key
 	 * @param {T} value
@@ -106,12 +74,6 @@ export class NodeCacheStore<T> extends Hookified {
 		value: T,
 		ttl?: number | string,
 	): Promise<boolean> {
-		if (this._maxKeys > 0) {
-			if (this._stats.count >= this._maxKeys) {
-				return false;
-			}
-		}
-
 		const finalTtl = this.resolveTtl(ttl);
 		await this._keyv.set(key.toString(), value, finalTtl);
 		this._stats.incrementCount();
