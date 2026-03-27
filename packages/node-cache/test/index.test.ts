@@ -93,6 +93,14 @@ describe("NodeCache", () => {
 		expect(list[key2]).toBe(value2);
 	});
 
+	test("should not pollute Object.prototype via mget with __proto__ key", () => {
+		cache.set("__proto__", { polluted: true });
+		const result = cache.mget(["__proto__"]);
+		// biome-ignore lint/suspicious/noExplicitAny: testing prototype pollution
+		expect((Object.prototype as any).polluted).toBeUndefined();
+		expect(result.__proto__).toEqual({ polluted: true });
+	});
+
 	test("should take a key", () => {
 		const key = faker.string.uuid();
 		const val = faker.lorem.word();
