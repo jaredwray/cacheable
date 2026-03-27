@@ -267,7 +267,10 @@ export class NodeCache<T> extends Hookified {
 	public mget<V = T>(
 		keys: Array<string | number>,
 	): Record<string, V | undefined> {
-		const result: Record<string, V | undefined> = {};
+		const result: Record<string, V | undefined> = Object.create(null) as Record<
+			string,
+			V | undefined
+		>;
 
 		for (const key of keys) {
 			const value = this.get(key);
