@@ -4,13 +4,15 @@
   "private": true,
   "description": "Cacheable Mono Repo",
   "scripts": {
-    "test": "pnpm -r --workspace-concurrency 1 test",
-    "test:ci": "pnpm -r --workspace-concurrency 1 test:ci",
+    "test": "pnpm -r test",
+    "test:list": "pnpm -r --workspace-concurrency 1 test",
+    "test:ci": "pnpm -r test:ci",
     "test:services:start": "docker compose up -d",
     "test:services:stop": "docker compose down",
     "website:build": "pnpm recursive --filter @cacheable/website run website:build",
     "website:serve": "pnpm recursive --filter @cacheable/website run website:serve",
-    "build": "pnpm recursive run build",
+    "build": "pnpm -r build",
+    "build:list": "pnpm recursive run build",
     "clean": "pnpm recursive run clean"
   },
   "keywords": [],
