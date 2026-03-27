@@ -98,7 +98,7 @@ export class NodeCache<T> extends Hookified {
 	private intervalId: number | NodeJS.Timeout = 0;
 
 	constructor(options?: NodeCacheOptions) {
-		super();
+		super({ throwOnHookError: false });
 
 		if (options) {
 			this.options = { ...this.options, ...options };

@@ -413,6 +413,18 @@ If you need key limits with an external store, configure the limit at the storag
 
 The `stats` option and internal stats tracking have been removed from `NodeCacheStore`. The stats were collected internally but never exposed via a public API, making them effectively unused.
 
+## Upgraded `hookified` to v2
+
+The underlying `hookified` dependency has been upgraded from v1 to v2. Both `NodeCache` and `NodeCacheStore` extend `Hookified`. Key changes in hookified v2:
+
+- `logger` property renamed to `eventLogger`
+- `Hook` type renamed to `HookFn`
+- `onHook` signature changed to handle `IHook` interface
+- Removed `throwHookErrors` configuration option
+- `throwOnEmptyListeners` default changed to `true`
+
+If you use hooks or advanced event features from the `Hookified` base class directly, review the [hookified v2 changelog](https://github.com/jaredwray/hookified) for details.
+
 # How to Contribute
 
 You can contribute by forking the repo and submitting a pull request. Please make sure to add tests and update the documentation. To learn more about how to contribute go to our main README [https://github.com/jaredwray/cacheable](https://github.com/jaredwray/cacheable). This will talk about how to `Open a Pull Request`, `Ask a Question`, or `Post an Issue`.

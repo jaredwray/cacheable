@@ -278,8 +278,8 @@ importers:
         specifier: workspace:^
         version: link:../utils
       hookified:
-        specifier: ^1.15.0
-        version: 1.15.0
+        specifier: ^2.1.0
+        version: 2.1.0
       keyv:
         specifier: ^5.6.0
         version: 5.6.0
