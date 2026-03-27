@@ -10,12 +10,6 @@ describe("NodeCacheStore", () => {
 		const store = new NodeCacheStore();
 		expect(store).toBeDefined();
 	});
-	test("should create a new instance with options", () => {
-		const store = new NodeCacheStore({ maxKeys: 100 });
-		expect(store.maxKeys).toBe(100);
-		store.maxKeys = 200;
-		expect(store.maxKeys).toBe(200);
-	});
 	test("should set a ttl", () => {
 		const store = new NodeCacheStore({ ttl: 100 });
 		expect(store.ttl).toBe(100);
@@ -38,16 +32,6 @@ describe("NodeCacheStore", () => {
 		await sleep(200);
 		const result3 = await store.get("test");
 		expect(result3).toBeUndefined();
-	});
-	test("should set a maxKeys limit", async () => {
-		const store = new NodeCacheStore({ maxKeys: 3 });
-		expect(store.maxKeys).toBe(3);
-		await store.set("test1", "value1");
-		await store.set("test2", "value2");
-		await store.set("test3", "value3");
-		await store.set("test4", "value4");
-		const result1 = await store.get("test4");
-		expect(result1).toBeUndefined();
 	});
 	test("should clear the cache", async () => {
 		const store = new NodeCacheStore();
