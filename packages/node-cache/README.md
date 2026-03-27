@@ -22,12 +22,12 @@
 # Table of Contents
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
-* [Breaking Changes from v1 to v2](#breaking-changes-from-v1-to-v2)
-* [Breaking Changes from v2 to v3](#breaking-changes-from-v2-to-v3)
 * [NodeCache Performance](#nodecache-performance)
 * [NodeCache API](#nodecache-api)
 * [NodeCacheStore](#nodecachestore)
 * [NodeCacheStore API](#nodecachestore-api)
+* [Migrating to v2](#migrating-to-v2)
+* [Migrating to v3](#migrating-to-v3)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -72,57 +72,6 @@ const cache = new NodeCache<string>();
 cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
 ```
-
-# Breaking Changes from v1 to v2
-
-The main `NodeCache` class API has not changed and remains fully compatible. The primary internal change is that it now uses Keyv as the underlying store.
-
-## NodeCacheStore Changes
-
-### Removed `cache` Property
-- **V1**: `nodeCache.cache` returned a `Cacheable` instance
-- **V2**: Use `nodeCache.store` which returns a `Keyv` instance
-
-### Removed Storage Tiering (primary/secondary)
-- **V1**: Supported `primary` and `secondary` store options for multi-tier caching
-- **V2**: Uses single `store` option only
-
-**Migration:**
-```javascript
-// V1
-const cache = new NodeCacheStore({ primary: keyv1, secondary: keyv2 });
-
-// V2 - use single store
-const cache = new NodeCacheStore({ store: keyv });
-```
-
-If you need storage tiering functionality, use the `cacheable` package instead which supports primary and secondary stores.
-
-### Internal Dependency Change
-- V2 uses `@cacheable/utils` instead of the `cacheable` package for a lighter footprint
-
-# Breaking Changes from v2 to v3
-
-## Removed `maxKeys` from NodeCacheStore
-
-The `maxKeys` option has been removed from `NodeCacheStore`. It does not make sense for a store backed by external services (Redis, MongoDB, etc.) where the backend manages its own capacity.
-
-The `maxKeys` option remains available on the in-memory `NodeCache` class.
-
-**Migration:**
-```javascript
-// V2 - maxKeys was accepted but not meaningful for external stores
-const cache = new NodeCacheStore({ maxKeys: 100 });
-
-// V3 - remove maxKeys from NodeCacheStore options
-const cache = new NodeCacheStore();
-```
-
-If you need key limits with an external store, configure the limit at the storage layer instead.
-
-## Removed `stats` from NodeCacheStore
-
-The `stats` option and internal stats tracking have been removed from `NodeCacheStore`. The stats were collected internally but never exposed via a public API, making them effectively unused.
 
 # NodeCache Performance
 
@@ -412,6 +361,57 @@ await cache.set('longfoo', 'bar', '1d'); // 1 day
 * `ttl`: `number | string | undefined` - The standard ttl for every generated cache element. `undefined` = unlimited
 * `store`: `Keyv` - The storage adapter (read-only)
 
+
+# Migrating to v2
+
+The main `NodeCache` class API has not changed and remains fully compatible. The primary internal change is that it now uses Keyv as the underlying store.
+
+## NodeCacheStore Changes
+
+### Removed `cache` Property
+- **V1**: `nodeCache.cache` returned a `Cacheable` instance
+- **V2**: Use `nodeCache.store` which returns a `Keyv` instance
+
+### Removed Storage Tiering (primary/secondary)
+- **V1**: Supported `primary` and `secondary` store options for multi-tier caching
+- **V2**: Uses single `store` option only
+
+**Migration:**
+```javascript
+// V1
+const cache = new NodeCacheStore({ primary: keyv1, secondary: keyv2 });
+
+// V2 - use single store
+const cache = new NodeCacheStore({ store: keyv });
+```
+
+If you need storage tiering functionality, use the `cacheable` package instead which supports primary and secondary stores.
+
+### Internal Dependency Change
+- V2 uses `@cacheable/utils` instead of the `cacheable` package for a lighter footprint
+
+# Migrating to v3
+
+## Removed `maxKeys` from NodeCacheStore
+
+The `maxKeys` option has been removed from `NodeCacheStore`. It does not make sense for a store backed by external services (Redis, MongoDB, etc.) where the backend manages its own capacity.
+
+The `maxKeys` option remains available on the in-memory `NodeCache` class.
+
+**Migration:**
+```javascript
+// V2 - maxKeys was accepted but not meaningful for external stores
+const cache = new NodeCacheStore({ maxKeys: 100 });
+
+// V3 - remove maxKeys from NodeCacheStore options
+const cache = new NodeCacheStore();
+```
+
+If you need key limits with an external store, configure the limit at the storage layer instead.
+
+## Removed `stats` from NodeCacheStore
+
+The `stats` option and internal stats tracking have been removed from `NodeCacheStore`. The stats were collected internally but never exposed via a public API, making them effectively unused.
 
 # How to Contribute
 
