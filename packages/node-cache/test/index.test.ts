@@ -1,4 +1,5 @@
 // biome-ignore-all lint/style/noNonNullAssertion: test file
+import { faker } from "@faker-js/faker";
 import { describe, expect, test } from "vitest";
 import NodeCache from "../src/index.js";
 
@@ -20,194 +21,231 @@ describe("NodeCache", () => {
 	});
 
 	test("should set and get a key", () => {
-		cache.on("set", (key, value) => {
-			expect(key).toBe("foo");
-			expect(value).toBe("bar");
+		const localCache = new NodeCache<string>({ checkperiod: 0 });
+		const key = faker.string.uuid();
+		const value = faker.lorem.word();
+		localCache.on("set", (k, v) => {
+			expect(k).toBe(key);
+			expect(v).toBe(value);
 		});
-		cache.set("foo", "bar");
-		expect(cache.get("foo")).toBe("bar");
+		localCache.set(key, value);
+		expect(localCache.get(key)).toBe(value);
 	});
 
 	test("should set and get a key with ttl", async () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar", 0.5);
-		cache.set("baz", "qux");
+		const key1 = faker.string.uuid();
+		const value1 = faker.lorem.word();
+		const key2 = faker.string.uuid();
+		const value2 = faker.lorem.word();
+		cache.set(key1, value1, 0.5);
+		cache.set(key2, value2);
 		await sleep(600);
-		expect(cache.get("foo")).toBe(undefined);
-		expect(cache.get("baz")).toBe("qux");
+		expect(cache.get(key1)).toBe(undefined);
+		expect(cache.get(key2)).toBe(value2);
 	});
 
 	test("should set multiple cache items", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
+		const key1 = faker.string.uuid();
+		const value1 = faker.lorem.word();
+		const key2 = faker.string.uuid();
+		const value2 = faker.lorem.word();
 		const list = [
-			{ key: "foo", value: "bar" },
-			{ key: "baz", value: "qux" },
+			{ key: key1, value: value1 },
+			{ key: key2, value: value2 },
 		];
 		cache.mset(list);
-		expect(cache.get("foo")).toBe("bar");
-		expect(cache.get("baz")).toBe("qux");
+		expect(cache.get(key1)).toBe(value1);
+		expect(cache.get(key2)).toBe(value2);
 	});
 
 	test("should store items with negative ttl in mset but they expire immediately on access", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
+		const goodKey = faker.string.uuid();
+		const goodValue = faker.lorem.word();
+		const badKey = faker.string.uuid();
+		const badValue = faker.lorem.word();
 		const list = [
-			{ key: "good", value: "ok" },
-			{ key: "bad", value: "nope", ttl: -1 },
+			{ key: goodKey, value: goodValue },
+			{ key: badKey, value: badValue, ttl: -1 },
 		];
 		const result = cache.mset(list);
 		expect(result).toBe(true);
-		expect(cache.get("good")).toBe("ok");
+		expect(cache.get(goodKey)).toBe(goodValue);
 		// Negative TTL item is stored but expires immediately on get
-		expect(cache.has("bad")).toBe(true);
-		expect(cache.get("bad")).toBe(undefined);
+		expect(cache.has(badKey)).toBe(true);
+		expect(cache.get(badKey)).toBe(undefined);
 		// After get triggers expiration + deleteOnExpire, key is removed
-		expect(cache.has("bad")).toBe(false);
+		expect(cache.has(badKey)).toBe(false);
 	});
 
 	test("should get multiple cache items", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar");
-		cache.set("baz", "qux");
-		const list = cache.mget(["foo", "baz"]);
-		expect(list.foo).toBe("bar");
-		expect(list.baz).toBe("qux");
+		const key1 = faker.string.uuid();
+		const value1 = faker.lorem.word();
+		const key2 = faker.string.uuid();
+		const value2 = faker.lorem.word();
+		cache.set(key1, value1);
+		cache.set(key2, value2);
+		const list = cache.mget([key1, key2]);
+		expect(list[key1]).toBe(value1);
+		expect(list[key2]).toBe(value2);
 	});
 
 	test("should take a key", () => {
-		cache.set("foo", "bar");
-		const value = cache.take("foo")!;
-		expect(value).toBe("bar");
-		expect(cache.get("foo")).toBe(undefined);
+		const key = faker.string.uuid();
+		const val = faker.lorem.word();
+		cache.set(key, val);
+		const value = cache.take(key)!;
+		expect(value).toBe(val);
+		expect(cache.get(key)).toBe(undefined);
 	});
 
 	test("should take a key with useClones set to false", () => {
 		const cache = new NodeCache({ checkperiod: 0, useClones: false });
-		cache.set("foo", "bar");
-		const value = cache.take("foo")!;
-		expect(value).toBe("bar");
-		expect(cache.get("foo")).toBe(undefined);
+		const key = faker.string.uuid();
+		const val = faker.lorem.word();
+		cache.set(key, val);
+		const value = cache.take(key)!;
+		expect(value).toBe(val);
+		expect(cache.get(key)).toBe(undefined);
 	});
 
 	test("should take a key and be undefined", () => {
-		expect(cache.take("foo")).toBe(undefined);
+		expect(cache.take(faker.string.uuid())).toBe(undefined);
 	});
 
 	test("should delete a key", () => {
-		cache.set("foo", "bar");
-		cache.del("foo");
-		expect(cache.get("foo")).toBe(undefined);
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word());
+		cache.del(key);
+		expect(cache.get(key)).toBe(undefined);
 	});
 
 	test("should use del() to delete multiple keys", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
+		const key1 = faker.string.uuid();
+		const value1 = faker.lorem.word();
+		const key2 = faker.string.uuid();
+		const key3 = faker.string.uuid();
 		const list = [
-			{ key: "foo", value: "bar" },
-			{ key: "baz", value: "qux" },
+			{ key: key1, value: value1 },
+			{ key: key2, value: faker.lorem.word() },
 		];
 		cache.mset(list);
-		cache.set("foo2", "bar1");
-		const resultCount = cache.del(["foo2", "baz"]);
+		cache.set(key3, faker.lorem.word());
+		const resultCount = cache.del([key3, key2]);
 		expect(resultCount).toBe(2);
-		expect(cache.get("foo")).toBe("bar");
+		expect(cache.get(key1)).toBe(value1);
 	});
 
 	test("should delete multiple keys", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		const list = [
-			{ key: "foo", value: "bar" },
-			{ key: "baz", value: "qux" },
-		];
-		cache.mset(list);
-		cache.set("foo", "bar");
-		cache.set("baz", "qux");
-		cache.mdel(["foo", "baz"]);
-		expect(cache.get("foo")).toBe(undefined);
-		expect(cache.get("baz")).toBe(undefined);
+		const key1 = faker.string.uuid();
+		const key2 = faker.string.uuid();
+		cache.set(key1, faker.lorem.word());
+		cache.set(key2, faker.lorem.word());
+		cache.mdel([key1, key2]);
+		expect(cache.get(key1)).toBe(undefined);
+		expect(cache.get(key2)).toBe(undefined);
 	});
 
 	test("should get the ttl / expiration of a key", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar", 10);
-		const firstTtl = cache.getTtl("foo")!;
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word(), 10);
+		const firstTtl = cache.getTtl(key)!;
 		expect(firstTtl).toBeDefined();
-		cache.ttl("foo", 15);
-		const secondTtl = cache.getTtl("foo");
+		cache.ttl(key, 15);
+		const secondTtl = cache.getTtl(key);
 		expect(firstTtl).toBeLessThan(secondTtl!);
 	});
 
 	test("should get undefined when on getTtl()", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		const ttl = cache.getTtl("foo");
+		const ttl = cache.getTtl(faker.string.uuid());
 		expect(ttl).toBe(undefined);
 	});
 
 	test("ttl should default to 0 if no ttl is set", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar");
-		const ttl = cache.getTtl("foo");
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word());
+		const ttl = cache.getTtl(key);
 		expect(ttl).toBe(0);
-		cache.ttl("foo"); // No args, stdTTL is 0 → stays unlimited
-		const ttl2 = cache.getTtl("foo");
+		cache.ttl(key); // No args, stdTTL is 0 → stays unlimited
+		const ttl2 = cache.getTtl(key);
 		expect(ttl2).toBe(0);
 	});
 
 	test("should return 0 if there is no key to delete", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		const count = cache.del("foo");
+		const count = cache.del(faker.string.uuid());
 		expect(count).toBe(0);
 	});
 
 	test("should return the correct count on mdel()", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
+		const key1 = faker.string.uuid();
+		const key2 = faker.string.uuid();
+		const missingKey = faker.string.uuid();
 		const list = [
-			{ key: "foo", value: "bar" },
-			{ key: "baz", value: "qux" },
+			{ key: key1, value: faker.lorem.word() },
+			{ key: key2, value: faker.lorem.word() },
 		];
 		cache.mset(list);
-		const count = cache.mdel(["foo", "baz", "qux"]);
+		const count = cache.mdel([key1, key2, missingKey]);
 		expect(count).toBe(2);
 	});
 
 	test("it should return a 0 if there is no ttl set", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar");
-		const ttl = cache.getTtl("foo");
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word());
+		const ttl = cache.getTtl(key);
 		expect(ttl).toBe(0);
 	});
 
 	test("should return false if there is no key on ttl()", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		const ttl = cache.ttl("foo", 10);
+		const ttl = cache.ttl(faker.string.uuid(), 10);
 		expect(ttl).toBe(false);
 	});
 
 	test("should return an array of keys", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar");
-		cache.set("baz", "qux");
+		const key1 = faker.string.uuid();
+		const key2 = faker.string.uuid();
+		cache.set(key1, faker.lorem.word());
+		cache.set(key2, faker.lorem.word());
 		const keys = cache.keys();
-		expect(keys).toEqual(["foo", "baz"]);
+		expect(keys).toEqual([key1, key2]);
 	});
 
 	test("should return true or false on has depending on if the key exists", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		expect(cache.has("foo")).toBe(false);
-		cache.set("foo", "bar");
-		const has = cache.has("foo");
+		const key = faker.string.uuid();
+		expect(cache.has(key)).toBe(false);
+		cache.set(key, faker.lorem.word());
+		const has = cache.has(key);
 		expect(has).toBe(true);
 	});
 
 	test("should return the stats of the cache", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar");
+		const key1 = faker.string.uuid();
+		const key2 = faker.string.uuid();
+		const missingKey = faker.string.uuid();
+		cache.set(key1, faker.lorem.word());
 		const stats = cache.getStats();
 		expect(stats.keys).toBe(1);
 		expect(stats.hits).toBe(0);
 		expect(stats.misses).toBe(0);
-		cache.set("new", "value");
-		cache.get("new");
-		cache.get("foo");
-		cache.get("foo2");
+		cache.set(key2, faker.lorem.word());
+		cache.get(key2);
+		cache.get(key1);
+		cache.get(missingKey);
 		const newStats = cache.getStats();
 		expect(newStats.keys).toBe(2);
 		expect(newStats.hits).toBe(2);
@@ -220,13 +258,17 @@ describe("NodeCache", () => {
 
 	test("should flush all the keys", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar");
-		cache.set("baz", true);
-		cache.set("n", 1);
-		cache.set(220, "value");
-		expect(cache.get("baz")).toBe(true);
-		expect(cache.get(220)).toBe("value");
-		expect(cache.get("n")).toBe(1);
+		const key1 = faker.string.uuid();
+		const key2 = faker.string.uuid();
+		const key3 = faker.string.uuid();
+		const numKey = faker.number.int({ min: 1, max: 9999 });
+		cache.set(key1, faker.lorem.word());
+		cache.set(key2, true);
+		cache.set(key3, 1);
+		cache.set(numKey, faker.lorem.word());
+		expect(cache.get(key2)).toBe(true);
+		expect(cache.get(numKey)).toBeDefined();
+		expect(cache.get(key3)).toBe(1);
 		cache.flushAll();
 		expect(cache.keys()).toEqual([]);
 		expect(cache.getStats().keys).toBe(0);
@@ -234,96 +276,113 @@ describe("NodeCache", () => {
 
 	test("should throw an error on maxKeys", () => {
 		const cache = new NodeCache({ checkperiod: 0, maxKeys: 1 });
-		cache.set("foo", "bar");
-		expect(() => cache.set("baz", "qux")).toThrowError(
-			"Cache max keys amount exceeded",
-		);
+		cache.set(faker.string.uuid(), faker.lorem.word());
+		expect(() =>
+			cache.set(faker.string.uuid(), faker.lorem.word()),
+		).toThrowError("Cache max keys amount exceeded");
 	});
 
 	test("should be able to get when an ttl is 0", async () => {
 		const cache = new NodeCache({ checkperiod: 0, useClones: false });
-		cache.set("foo", "bar", 100);
-		cache.set("baz", "qux", 0);
-		cache.set("moo", "moo", 0.5);
-		expect(cache.get("foo")).toBe("bar");
-		expect(cache.get("baz")).toBe("qux");
+		const key1 = faker.string.uuid();
+		const value1 = faker.lorem.word();
+		const key2 = faker.string.uuid();
+		const value2 = faker.lorem.word();
+		const key3 = faker.string.uuid();
+		cache.set(key1, value1, 100);
+		cache.set(key2, value2, 0);
+		cache.set(key3, faker.lorem.word(), 0.5);
+		expect(cache.get(key1)).toBe(value1);
+		expect(cache.get(key2)).toBe(value2);
 		await sleep(600);
-		expect(cache.get("moo")).toBe(undefined);
+		expect(cache.get(key3)).toBe(undefined);
 	});
 
 	test("should cache indefinitely when ttl is explicitly 0 even with stdTTL set", async () => {
 		const cache = new NodeCache({ checkperiod: 0, stdTTL: 0.5 });
-		cache.set("withStdTTL", "expires"); // omitted ttl → uses stdTTL
-		cache.set("unlimited", "stays", 0); // explicit 0 → cache indefinitely
+		const expiringKey = faker.string.uuid();
+		const unlimitedKey = faker.string.uuid();
+		const unlimitedValue = faker.lorem.word();
+		cache.set(expiringKey, faker.lorem.word()); // omitted ttl → uses stdTTL
+		cache.set(unlimitedKey, unlimitedValue, 0); // explicit 0 → cache indefinitely
 		await sleep(600);
-		expect(cache.get("withStdTTL")).toBe(undefined);
-		expect(cache.get("unlimited")).toBe("stays");
+		expect(cache.get(expiringKey)).toBe(undefined);
+		expect(cache.get(unlimitedKey)).toBe(unlimitedValue);
 	});
 
 	test("should store key with negative ttl but it expires immediately on access", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		const result = cache.set("foo", "bar", -1);
+		const key = faker.string.uuid();
+		const result = cache.set(key, faker.lorem.word(), -1);
 		expect(result).toBe(true);
 		// Key is stored with a past expiration timestamp
-		expect(cache.has("foo")).toBe(true);
+		expect(cache.has(key)).toBe(true);
 		// get() sees it's expired and returns undefined
-		expect(cache.get("foo")).toBe(undefined);
+		expect(cache.get(key)).toBe(undefined);
 		// After get triggers expiration + deleteOnExpire, key is removed
-		expect(cache.has("foo")).toBe(false);
+		expect(cache.has(key)).toBe(false);
 	});
 
 	test("should expire key immediately when ttl() is called with negative ttl", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar");
-		const result = cache.ttl("foo", -1);
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word());
+		const result = cache.ttl(key, -1);
 		expect(result).toBe(true);
 		// Key exists but will expire on next access
-		expect(cache.has("foo")).toBe(true);
-		expect(cache.get("foo")).toBe(undefined);
-		expect(cache.has("foo")).toBe(false);
+		expect(cache.has(key)).toBe(true);
+		expect(cache.get(key)).toBe(undefined);
+		expect(cache.has(key)).toBe(false);
 	});
 
 	test("should store but expire immediately when negative TTL is passed as a numeric string in set()", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		const result = cache.set("foo", "bar", "-1");
+		const key = faker.string.uuid();
+		const result = cache.set(key, faker.lorem.word(), "-1");
 		expect(result).toBe(true);
-		expect(cache.has("foo")).toBe(true);
-		expect(cache.get("foo")).toBe(undefined);
-		expect(cache.has("foo")).toBe(false);
+		expect(cache.has(key)).toBe(true);
+		expect(cache.get(key)).toBe(undefined);
+		expect(cache.has(key)).toBe(false);
 	});
 
 	test("should expire immediately when negative TTL is passed as a numeric string in ttl()", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar");
-		const result = cache.ttl("foo", "-5");
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word());
+		const result = cache.ttl(key, "-5");
 		expect(result).toBe(true);
-		expect(cache.has("foo")).toBe(true);
-		expect(cache.get("foo")).toBe(undefined);
-		expect(cache.has("foo")).toBe(false);
+		expect(cache.has(key)).toBe(true);
+		expect(cache.get(key)).toBe(undefined);
+		expect(cache.has(key)).toBe(false);
 	});
 
 	test("should set unlimited expiration on ttl() method when ttl is 0", async () => {
 		const cache = new NodeCache({ checkperiod: 0, stdTTL: 0.5 });
-		cache.set("foo", "bar"); // uses stdTTL (0.5s)
-		cache.ttl("foo", 0); // override to unlimited
+		const key = faker.string.uuid();
+		const value = faker.lorem.word();
+		cache.set(key, value); // uses stdTTL (0.5s)
+		cache.ttl(key, 0); // override to unlimited
 		await sleep(600);
-		expect(cache.get("foo")).toBe("bar");
-		expect(cache.getTtl("foo")).toBe(0);
+		expect(cache.get(key)).toBe(value);
+		expect(cache.getTtl(key)).toBe(0);
 	});
 
 	test("should treat zero-duration string stdTTL as unlimited", () => {
 		const cache = new NodeCache({ checkperiod: 0, stdTTL: "0ms" });
-		cache.set("foo", "bar");
-		expect(cache.getTtl("foo")).toBe(0);
-		expect(cache.get("foo")).toBe("bar");
+		const key = faker.string.uuid();
+		const value = faker.lorem.word();
+		cache.set(key, value);
+		expect(cache.getTtl(key)).toBe(0);
+		expect(cache.get(key)).toBe(value);
 	});
 
 	test("should use stdTTL when ttl() is called without ttl argument and stdTTL is set", () => {
 		const cache = new NodeCache({ checkperiod: 0, stdTTL: 60 });
-		cache.set("foo", "bar", 0); // explicit 0 = unlimited
-		expect(cache.getTtl("foo")).toBe(0);
-		cache.ttl("foo"); // no ttl arg → fall back to stdTTL (60s)
-		const ttl = cache.getTtl("foo");
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word(), 0); // explicit 0 = unlimited
+		expect(cache.getTtl(key)).toBe(0);
+		cache.ttl(key); // no ttl arg → fall back to stdTTL (60s)
+		const ttl = cache.getTtl(key);
 		expect(ttl).toBeGreaterThan(0);
 	});
 
@@ -336,34 +395,41 @@ describe("NodeCache", () => {
 
 	test("set object as a value in cache", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		const object = { foo: "bar" };
-		cache.set("foo", object);
-		expect(cache.get("foo")).toEqual(object);
+		const key = faker.string.uuid();
+		const object = { [faker.string.uuid()]: faker.lorem.word() };
+		cache.set(key, object);
+		expect(cache.get(key)).toEqual(object);
 	});
 
 	test("should check if the cache is expired", async () => {
 		const cache = new NodeCache({ checkperiod: 1 });
-		cache.set("foo", "bar", 0.25);
-		expect(cache.get("foo")).toBe("bar");
+		const key = faker.string.uuid();
+		const value = faker.lorem.word();
+		cache.set(key, value, 0.25);
+		expect(cache.get(key)).toBe(value);
 		await sleep(1000);
-		expect(cache.get("foo")).toBe(undefined);
+		expect(cache.get(key)).toBe(undefined);
 		cache.close();
 	});
 
 	test("should handle short hand ttl", async () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("foo", "bar", "0.25s");
-		expect(cache.get("foo")).toBe("bar");
+		const key = faker.string.uuid();
+		const value = faker.lorem.word();
+		cache.set(key, value, "0.25s");
+		expect(cache.get(key)).toBe(value);
 		await sleep(300);
-		expect(cache.get("foo")).toBe(undefined);
+		expect(cache.get(key)).toBe(undefined);
 	});
 
 	test("should handle short hand via stdTTL", async () => {
 		const cache = new NodeCache({ checkperiod: 0, stdTTL: "0.25s" });
-		cache.set("foo", "bar");
-		expect(cache.get("foo")).toBe("bar");
+		const key = faker.string.uuid();
+		const value = faker.lorem.word();
+		cache.set(key, value);
+		expect(cache.get(key)).toBe(value);
 		await sleep(300);
-		expect(cache.get("foo")).toBe(undefined);
+		expect(cache.get(key)).toBe(undefined);
 		cache.close();
 	});
 
@@ -373,46 +439,55 @@ describe("NodeCache", () => {
 			deleteOnExpire: false,
 		});
 		let expiredKey = "";
+		const key1 = faker.string.uuid();
+		const key2 = faker.string.uuid();
 		cache.on("expired", (key) => {
 			expiredKey = key as string;
 		});
-		cache.set("foo-expired", "bar", 0.25);
-		cache.set("baz-expired", "qux", 2);
+		cache.set(key1, faker.lorem.word(), 0.25);
+		cache.set(key2, faker.lorem.word(), 2);
 		expect(cache.getStats().keys).toBe(2);
 		await sleep(1000);
 		expect(cache.getStats().keys).toBe(2);
-		expect(expiredKey).toBe("foo-expired");
-		const expiredValue = cache.get("foo-expired");
+		expect(expiredKey).toBe(key1);
+		const expiredValue = cache.get(key1);
 		expect(expiredValue).toBe(undefined);
 		cache.close();
 	});
 
 	test("should handle null values with cloning", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
-		cache.set("nullKey", null);
-		expect(cache.get("nullKey")).toBe(null);
+		const key = faker.string.uuid();
+		cache.set(key, null);
+		expect(cache.get(key)).toBe(null);
 	});
 
 	test("should propagate class-level generic type through mget and take", () => {
 		type MyType = { name: string; age: number };
 		const cache = new NodeCache<MyType>({ checkperiod: 0 });
-		cache.set("user1", { name: "Alice", age: 30 });
-		cache.set("user2", { name: "Bob", age: 25 });
+		const key1 = faker.string.uuid();
+		const key2 = faker.string.uuid();
+		const name1 = faker.person.firstName();
+		const age1 = faker.number.int({ min: 1, max: 100 });
+		const name2 = faker.person.firstName();
+		const age2 = faker.number.int({ min: 1, max: 100 });
+		cache.set(key1, { name: name1, age: age1 });
+		cache.set(key2, { name: name2, age: age2 });
 
-		const mgetResult = cache.mget(["user1", "user2"]);
+		const mgetResult = cache.mget([key1, key2]);
 		// Verify the type is correctly inferred as Record<string, MyType | undefined>
-		const user1 = mgetResult.user1;
+		const user1 = mgetResult[key1];
 		expect(user1).toBeDefined();
-		expect(user1!.name).toBe("Alice");
-		expect(user1!.age).toBe(30);
+		expect(user1!.name).toBe(name1);
+		expect(user1!.age).toBe(age1);
 
-		const taken = cache.take("user2");
+		const taken = cache.take(key2);
 		// Verify the type is correctly inferred as MyType | undefined
 		expect(taken).toBeDefined();
-		expect(taken!.name).toBe("Bob");
-		expect(taken!.age).toBe(25);
+		expect(taken!.name).toBe(name2);
+		expect(taken!.age).toBe(age2);
 
 		// Verify take removed the key
-		expect(cache.get("user2")).toBeUndefined();
+		expect(cache.get(key2)).toBeUndefined();
 	});
 });
