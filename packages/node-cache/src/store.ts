@@ -1,6 +1,6 @@
-import { shorthandToMilliseconds } from "@cacheable/utils";
+import { Stats, shorthandToMilliseconds } from "@cacheable/utils";
 import { Hookified } from "hookified";
-import type { PartialNodeCacheItem } from "index.js";
+import type { NodeCacheStats, PartialNodeCacheItem } from "index.js";
 import Keyv from "keyv";
 
 export type NodeCacheStoreOptions<T> = {
@@ -17,6 +17,7 @@ export type NodeCacheStoreOptions<T> = {
 export class NodeCacheStore<T> extends Hookified {
 	private _keyv: Keyv<T>;
 	private _ttl?: number | string;
+	private _stats: Stats = new Stats({ enabled: true });
 
 	constructor(options?: NodeCacheStoreOptions<T>) {
 		super();
@@ -68,8 +69,12 @@ export class NodeCacheStore<T> extends Hookified {
 		value: T,
 		ttl?: number | string,
 	): Promise<boolean> {
+		const keyValue = key.toString();
 		const finalTtl = this.resolveTtl(ttl);
-		await this._keyv.set(key.toString(), value, finalTtl);
+		await this._keyv.set(keyValue, value, finalTtl);
+		this._stats.incrementKSize(keyValue);
+		this._stats.incrementVSize(value);
+		this._stats.incrementCount();
 		return true;
 	}
 
@@ -80,8 +85,12 @@ export class NodeCacheStore<T> extends Hookified {
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
 		for (const item of list) {
+			const keyValue = item.key.toString();
 			const finalTtl = this.resolveTtl(item.ttl);
-			await this._keyv.set(item.key.toString(), item.value, finalTtl);
+			await this._keyv.set(keyValue, item.value, finalTtl);
+			this._stats.incrementKSize(keyValue);
+			this._stats.incrementVSize(item.value);
+			this._stats.incrementCount();
 		}
 	}
 
@@ -91,7 +100,14 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {any | undefined}
 	 */
 	public async get<V = T>(key: string | number): Promise<V | undefined> {
-		return this._keyv.get<V>(key.toString());
+		const result = await this._keyv.get<V>(key.toString());
+		if (result === undefined) {
+			this._stats.incrementMisses();
+		} else {
+			this._stats.incrementHits();
+		}
+
+		return result;
 	}
 
 	/**
@@ -104,7 +120,14 @@ export class NodeCacheStore<T> extends Hookified {
 	): Promise<Record<string, V | undefined>> {
 		const result: Record<string, V | undefined> = {};
 		for (const key of keys) {
-			result[key.toString()] = await this._keyv.get<V>(key.toString());
+			const value = await this._keyv.get<V>(key.toString());
+			if (value === undefined) {
+				this._stats.incrementMisses();
+			} else {
+				this._stats.incrementHits();
+			}
+
+			result[key.toString()] = value;
 		}
 
 		return result;
@@ -116,7 +139,19 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {boolean}
 	 */
 	public async del(key: string | number): Promise<boolean> {
-		return this._keyv.delete(key.toString());
+		const keyValue = key.toString();
+		const value = await this._keyv.get(keyValue);
+		const result = await this._keyv.delete(keyValue);
+		if (result) {
+			this._stats.decreaseKSize(keyValue);
+			if (value !== undefined) {
+				this._stats.decreaseVSize(value);
+			}
+
+			this._stats.decreaseCount();
+		}
+
+		return result;
 	}
 
 	/**
@@ -125,6 +160,17 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {boolean}
 	 */
 	public async mdel(keys: Array<string | number>): Promise<boolean> {
+		for (const key of keys) {
+			const keyValue = key.toString();
+			const value = await this._keyv.get(keyValue);
+			this._stats.decreaseKSize(keyValue);
+			if (value !== undefined) {
+				this._stats.decreaseVSize(value);
+			}
+
+			this._stats.decreaseCount();
+		}
+
 		return this._keyv.delete(keys.map((key) => key.toString()));
 	}
 
@@ -134,6 +180,7 @@ export class NodeCacheStore<T> extends Hookified {
 	 */
 	public async clear(): Promise<void> {
 		await this._keyv.clear();
+		this._stats.resetStoreValues();
 	}
 
 	/**
@@ -162,12 +209,42 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {T | undefined}
 	 */
 	public async take<V = T>(key: string | number): Promise<V | undefined> {
-		const result = await this._keyv.get<V>(key.toString());
+		const keyValue = key.toString();
+		const result = await this._keyv.get<V>(keyValue);
 		if (result !== undefined) {
-			await this._keyv.delete(key.toString());
+			await this._keyv.delete(keyValue);
+			this._stats.incrementHits();
+			this._stats.decreaseKSize(keyValue);
+			this._stats.decreaseVSize(result);
+			this._stats.decreaseCount();
+		} else {
+			this._stats.incrementMisses();
 		}
 
 		return result;
+	}
+
+	/**
+	 * Gets the stats of the cache
+	 * @returns {NodeCacheStats} the stats of the cache
+	 */
+	public getStats(): NodeCacheStats {
+		return {
+			keys: this._stats.count,
+			hits: this._stats.hits,
+			misses: this._stats.misses,
+			ksize: this._stats.ksize,
+			vsize: this._stats.vsize,
+		};
+	}
+
+	/**
+	 * Flush the stats.
+	 * @returns {void}
+	 */
+	public flushStats(): void {
+		this._stats = new Stats({ enabled: true });
+		this.emit("flush_stats");
 	}
 
 	/**

@@ -148,6 +148,110 @@ describe("NodeCacheStore", () => {
 		expect(result).toBe("value");
 	});
 
+	test("should return initial stats with all zeros", () => {
+		const store = new NodeCacheStore();
+		const stats = store.getStats();
+		expect(stats).toEqual({ keys: 0, hits: 0, misses: 0, ksize: 0, vsize: 0 });
+	});
+	test("should track hits and misses on get", async () => {
+		const store = new NodeCacheStore();
+		await store.set("test", "value");
+		await store.get("test");
+		await store.get("missing");
+		const stats = store.getStats();
+		expect(stats.hits).toBe(1);
+		expect(stats.misses).toBe(1);
+	});
+	test("should track hits and misses on mget", async () => {
+		const store = new NodeCacheStore();
+		await store.set("key1", "value1");
+		await store.mget(["key1", "missing1", "missing2"]);
+		const stats = store.getStats();
+		expect(stats.hits).toBe(1);
+		expect(stats.misses).toBe(2);
+	});
+	test("should track ksize, vsize, and keys on set", async () => {
+		const store = new NodeCacheStore();
+		await store.set("foo", "bar");
+		const stats = store.getStats();
+		expect(stats.keys).toBe(1);
+		expect(stats.ksize).toBeGreaterThan(0);
+		expect(stats.vsize).toBeGreaterThan(0);
+	});
+	test("should track ksize, vsize, and keys on mset", async () => {
+		const store = new NodeCacheStore();
+		await store.mset([
+			{ key: "a", value: "1" },
+			{ key: "b", value: "2" },
+		]);
+		const stats = store.getStats();
+		expect(stats.keys).toBe(2);
+		expect(stats.ksize).toBeGreaterThan(0);
+		expect(stats.vsize).toBeGreaterThan(0);
+	});
+	test("should decrease stats on del", async () => {
+		const store = new NodeCacheStore();
+		await store.set("foo", "bar");
+		const before = store.getStats();
+		expect(before.keys).toBe(1);
+		await store.del("foo");
+		const after = store.getStats();
+		expect(after.keys).toBe(0);
+		expect(after.ksize).toBe(0);
+		expect(after.vsize).toBe(0);
+	});
+	test("should decrease stats on mdel", async () => {
+		const store = new NodeCacheStore();
+		await store.set("a", "1");
+		await store.set("b", "2");
+		expect(store.getStats().keys).toBe(2);
+		await store.mdel(["a", "b"]);
+		const stats = store.getStats();
+		expect(stats.keys).toBe(0);
+		expect(stats.ksize).toBe(0);
+		expect(stats.vsize).toBe(0);
+	});
+	test("should track stats on take", async () => {
+		const store = new NodeCacheStore();
+		await store.set("foo", "bar");
+		await store.take("foo");
+		await store.take("missing");
+		const stats = store.getStats();
+		expect(stats.hits).toBe(1);
+		expect(stats.misses).toBe(1);
+		expect(stats.keys).toBe(0);
+	});
+	test("should reset store values on clear but preserve hits/misses", async () => {
+		const store = new NodeCacheStore();
+		await store.set("foo", "bar");
+		await store.get("foo");
+		await store.get("missing");
+		await store.clear();
+		const stats = store.getStats();
+		expect(stats.keys).toBe(0);
+		expect(stats.ksize).toBe(0);
+		expect(stats.vsize).toBe(0);
+		expect(stats.hits).toBe(1);
+		expect(stats.misses).toBe(1);
+	});
+	test("should flush all stats", async () => {
+		const store = new NodeCacheStore();
+		await store.set("foo", "bar");
+		await store.get("foo");
+		store.flushStats();
+		const stats = store.getStats();
+		expect(stats).toEqual({ keys: 0, hits: 0, misses: 0, ksize: 0, vsize: 0 });
+	});
+	test("should emit flush_stats event on flushStats", async () => {
+		const store = new NodeCacheStore();
+		let emitted = false;
+		store.on("flush_stats", () => {
+			emitted = true;
+		});
+		store.flushStats();
+		expect(emitted).toBe(true);
+	});
+
 	test("should propagate class-level generic type through get, mget, and take", async () => {
 		type MyType = { name: string; age: number };
 		const store = new NodeCacheStore<MyType>();
