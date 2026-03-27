@@ -1,4 +1,4 @@
-import { Stats, shorthandToMilliseconds } from "@cacheable/utils";
+import { shorthandToMilliseconds } from "@cacheable/utils";
 import { Hookified } from "hookified";
 import type { PartialNodeCacheItem } from "index.js";
 import Keyv from "keyv";
@@ -9,34 +9,19 @@ export type NodeCacheStoreOptions<T> = {
 	 */
 	ttl?: number | string;
 	/**
-	 * Maximum number of keys to store in the cache. If this is set to a value greater than 0, the cache will keep track of the number of keys and will not store more than the specified number of keys.
-	 */
-	maxKeys?: number;
-	/**
 	 * The Keyv store instance.
 	 */
 	store?: Keyv<T>;
-	/**
-	 * Enable stats tracking. This is a breaking change from the original NodeCache.
-	 */
-	stats?: boolean;
 };
 
 export class NodeCacheStore<T> extends Hookified {
-	private _maxKeys = 0;
 	private _keyv: Keyv<T>;
-	private readonly _stats: Stats;
 	private _ttl?: number | string;
 
 	constructor(options?: NodeCacheStoreOptions<T>) {
 		super();
-		this._stats = new Stats({ enabled: options?.stats ?? true });
 		this._ttl = options?.ttl;
 		this._keyv = options?.store ?? new Keyv<T>();
-
-		if (options?.maxKeys) {
-			this._maxKeys = options.maxKeys;
-		}
 
 		// Hook up the keyv events
 		this._keyv.on("error", (error: Error) => {
@@ -72,29 +57,6 @@ export class NodeCacheStore<T> extends Hookified {
 	}
 
 	/**
-	 * Maximum number of keys to store in the cache. if this is set to a value greater than 0,
-	 * the cache will keep track of the number of keys and will not store more than the specified number of keys.
-	 * @returns {number}
-	 * @readonly
-	 */
-	public get maxKeys(): number {
-		return this._maxKeys;
-	}
-
-	/**
-	 * Maximum number of keys to store in the cache. if this is set to a value greater than 0,
-	 * the cache will keep track of the number of keys and will not store more than the specified number of keys.
-	 * @param {number} maxKeys
-	 */
-	public set maxKeys(maxKeys: number) {
-		this._maxKeys = maxKeys;
-		/* v8 ignore next -- @preserve */
-		if (this._maxKeys > 0) {
-			this._stats.enabled = true;
-		}
-	}
-
-	/**
 	 * Set a key/value pair in the cache.
 	 * @param {string | number} key
 	 * @param {T} value
@@ -106,15 +68,8 @@ export class NodeCacheStore<T> extends Hookified {
 		value: T,
 		ttl?: number | string,
 	): Promise<boolean> {
-		if (this._maxKeys > 0) {
-			if (this._stats.count >= this._maxKeys) {
-				return false;
-			}
-		}
-
 		const finalTtl = this.resolveTtl(ttl);
 		await this._keyv.set(key.toString(), value, finalTtl);
-		this._stats.incrementCount();
 		return true;
 	}
 
@@ -127,7 +82,6 @@ export class NodeCacheStore<T> extends Hookified {
 		for (const item of list) {
 			const finalTtl = this.resolveTtl(item.ttl);
 			await this._keyv.set(item.key.toString(), item.value, finalTtl);
-			this._stats.incrementCount();
 		}
 	}
 
@@ -137,14 +91,7 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {any | undefined}
 	 */
 	public async get<V = T>(key: string | number): Promise<V | undefined> {
-		const result = await this._keyv.get<V>(key.toString());
-		if (result !== undefined) {
-			this._stats.incrementHits();
-		} else {
-			this._stats.incrementMisses();
-		}
-
-		return result;
+		return this._keyv.get<V>(key.toString());
 	}
 
 	/**
@@ -157,13 +104,7 @@ export class NodeCacheStore<T> extends Hookified {
 	): Promise<Record<string, V | undefined>> {
 		const result: Record<string, V | undefined> = {};
 		for (const key of keys) {
-			const value = await this._keyv.get<V>(key.toString());
-			if (value !== undefined) {
-				this._stats.incrementHits();
-			} else {
-				this._stats.incrementMisses();
-			}
-			result[key.toString()] = value;
+			result[key.toString()] = await this._keyv.get<V>(key.toString());
 		}
 
 		return result;
@@ -175,12 +116,7 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {boolean}
 	 */
 	public async del(key: string | number): Promise<boolean> {
-		const deleted = await this._keyv.delete(key.toString());
-		if (deleted) {
-			this._stats.decreaseCount();
-		}
-
-		return deleted;
+		return this._keyv.delete(key.toString());
 	}
 
 	/**
@@ -189,14 +125,7 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {boolean}
 	 */
 	public async mdel(keys: Array<string | number>): Promise<boolean> {
-		const deleted = await this._keyv.delete(keys.map((key) => key.toString()));
-		if (deleted) {
-			for (const _ of keys) {
-				this._stats.decreaseCount();
-			}
-		}
-
-		return deleted;
+		return this._keyv.delete(keys.map((key) => key.toString()));
 	}
 
 	/**
@@ -205,7 +134,6 @@ export class NodeCacheStore<T> extends Hookified {
 	 */
 	public async clear(): Promise<void> {
 		await this._keyv.clear();
-		this._stats.resetStoreValues();
 	}
 
 	/**
@@ -236,11 +164,7 @@ export class NodeCacheStore<T> extends Hookified {
 	public async take<V = T>(key: string | number): Promise<V | undefined> {
 		const result = await this._keyv.get<V>(key.toString());
 		if (result !== undefined) {
-			this._stats.incrementHits();
 			await this._keyv.delete(key.toString());
-			this._stats.decreaseCount();
-		} else {
-			this._stats.incrementMisses();
 		}
 
 		return result;

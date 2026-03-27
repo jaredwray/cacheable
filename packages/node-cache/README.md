@@ -22,11 +22,12 @@
 # Table of Contents
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
-* [Breaking Changes from v1 to v2](#breaking-changes-from-v1-to-v2)
 * [NodeCache Performance](#nodecache-performance)
 * [NodeCache API](#nodecache-api)
 * [NodeCacheStore](#nodecachestore)
 * [NodeCacheStore API](#nodecachestore-api)
+* [Migrating to v2](#migrating-to-v2)
+* [Migrating to v3](#migrating-to-v3)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -47,7 +48,7 @@ cache.get('foo'); // 'bar'
 
 cache.set('foo', 'bar', 10); // 10 seconds
 
-cache.del('foo'); // true
+cache.del('foo'); // 1
 
 cache.set('bar', 'baz', '35m'); // 35 minutes using shorthand
 ```
@@ -72,34 +73,6 @@ cache.set('foo', 'bar');
 cache.get('foo'); // 'bar'
 ```
 
-# Breaking Changes from v1 to v2
-
-The main `NodeCache` class API has not changed and remains fully compatible. The primary internal change is that it now uses Keyv as the underlying store.
-
-## NodeCacheStore Changes
-
-### Removed `cache` Property
-- **V1**: `nodeCache.cache` returned a `Cacheable` instance
-- **V2**: Use `nodeCache.store` which returns a `Keyv` instance
-
-### Removed Storage Tiering (primary/secondary)
-- **V1**: Supported `primary` and `secondary` store options for multi-tier caching
-- **V2**: Uses single `store` option only
-
-**Migration:**
-```javascript
-// V1
-const cache = new NodeCacheStore({ primary: keyv1, secondary: keyv2 });
-
-// V2 - use single store
-const cache = new NodeCacheStore({ store: keyv });
-```
-
-If you need storage tiering functionality, use the `cacheable` package instead which supports primary and secondary stores.
-
-### Internal Dependency Change
-- V2 uses `@cacheable/utils` instead of the `cacheable` package for a lighter footprint
-
 # NodeCache Performance
 
 The performance is comparable if not faster to the original `node-cache` package, but with additional features and improvements.
@@ -117,7 +90,7 @@ Create a new cache instance. You can pass in options to set the configuration:
 
 ```javascript
 export type NodeCacheOptions = {
-	stdTTL?: number; 
+	stdTTL?: number | string;
 	checkperiod?: number;
 	useClones?: boolean;
 	deleteOnExpire?: boolean;
@@ -150,7 +123,7 @@ cache.on('expired', (key, value) => {
 });
 ```
 
-## `set(key: string | number, value: any, ttl?: number): boolean`
+## `set(key: string | number, value: any, ttl?: number | string): boolean`
 
 Set a key value pair with an optional ttl (in seconds). Will return true on success. If the ttl is not set it will default to 0 (no ttl).
 
@@ -158,7 +131,7 @@ Set a key value pair with an optional ttl (in seconds). Will return true on succ
 cache.set('foo', 'bar', 10); // true
 ```
 
-## `mset(data: Array<NodeCacheItem>): boolean`
+## `mset(data: Array<PartialNodeCacheItem>): boolean`
 
 Set multiple key value pairs at once. This will take an array of objects with the key, value, and optional ttl.
 
@@ -166,11 +139,11 @@ Set multiple key value pairs at once. This will take an array of objects with th
 cache.mset([{key: 'foo', value: 'bar', ttl: 10}, {key: 'bar', value: 'baz'}]); // true
 ```
 
-the `NodeCacheItem` is defined as:
+the `PartialNodeCacheItem` is defined as:
 
 ```javascript
-export type NodeCacheItem = {
-	key: string;
+export type PartialNodeCacheItem = {
+	key: string | number;
 	value: any;
 	ttl?: number;
 };
@@ -211,13 +184,13 @@ cache.get('foo'); // undefined
 Delete a key from the cache. Will return the number of deleted entries and never fail. You can also pass in an array of keys to delete multiple keys. All examples assume that you have initialized the cache like `const cache = new NodeCache();`.
 
 ```javascript
-cache.del('foo'); // true
+cache.del('foo'); // 1
 ```
 
 passing in an array of keys:
 
 ```javascript
-cache.del(['foo', 'bar']); // true
+cache.del(['foo', 'bar']); // 2
 ```
 
 ## `mdel(keys: Array<string | number>): number`
@@ -225,10 +198,10 @@ cache.del(['foo', 'bar']); // true
 Delete multiple keys from the cache. Will return the number of deleted entries and never fail.
 
 ```javascript
-cache.mdel(['foo', 'bar']); // true
+cache.mdel(['foo', 'bar']); // 2
 ```
 
-## `ttl(key: string | number, ttl?: number): boolean`
+## `ttl(key: string | number, ttl?: number | string): boolean`
 
 Redefine the ttl of a key. Returns true if the key has been found and changed. Otherwise returns false. If the ttl-argument isn't passed the default-TTL will be used.
 
@@ -258,7 +231,7 @@ cache.has('foo'); // true
 Get all keys from the cache.
 
 ```javascript
-await cache.keys(); // ['foo', 'bar']
+cache.keys(); // ['foo', 'bar']
 ```
 
 ## `getStats(): NodeCacheStats`
@@ -275,7 +248,7 @@ Flush the cache. Will remove all keys and reset the stats.
 
 ```javascript
 cache.flushAll();
-await cache.keys(); // []
+cache.keys(); // []
 cache.getStats(); // {hits: 0, misses: 0, keys: 0, ksize: 0, vsize: 0}
 ```
 
@@ -284,10 +257,10 @@ cache.getStats(); // {hits: 0, misses: 0, keys: 0, ksize: 0, vsize: 0}
 Flush the stats. Will reset the stats but keep the keys.
 
 ```javascript
-await cache.set('foo', 'bar');
+cache.set('foo', 'bar');
 cache.flushStats();
 cache.getStats(); // {hits: 0, misses: 0, keys: 0, ksize: 0, vsize: 0}
-await cache.keys(); // ['foo']
+cache.keys(); // ['foo']
 ```
 
 ## `on(event: string, callback: Function): void`
@@ -304,6 +277,30 @@ cache.on('set', (key, value) => {
 	console.log(`Key ${key} has been set with value ${value}`);
 });
 ```
+
+## `close(): void`
+
+Close the cache. This will stop the interval timeout which is set on the `checkperiod` option.
+
+```javascript
+cache.close();
+```
+
+## `store: Map<string, NodeCacheItem<T>>`
+
+The internal store is a public readonly `Map` that holds all cached items. Each item includes the key, value, and TTL expiration timestamp.
+
+## `getIntervalId(): number | NodeJS.Timeout`
+
+Get the interval ID for the expiration checker.
+
+## `startInterval(): void`
+
+Start the interval for checking expired keys based on the `checkperiod` option.
+
+## `stopInterval(): void`
+
+Stop the interval for checking expired keys.
 
 # NodeCacheStore
 
@@ -338,8 +335,6 @@ When initializing the cache you can pass in the options below:
 export type NodeCacheStoreOptions = {
 	ttl?: number | string; // The standard ttl as number in milliseconds for every generated cache element. 0 = unlimited. Supports shorthand like '1h' for 1 hour.
 	store?: Keyv; // The storage adapter (defaults to in-memory Keyv)
-	maxKeys?: number; // Default is 0 (unlimited). If this is set it will return false when trying to set more keys than the max.
-	stats?: boolean; // Default is true, if this is set to false it will not track stats internally
 };
 ```
 
@@ -353,19 +348,70 @@ await cache.set('longfoo', 'bar', '1d'); // 1 day
 
 ## NodeCacheStore API
 
-* `set(key: string | number, value: any, ttl?: number | string): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds or shorthand string). Will return true on success, false if maxKeys limit is reached. If the ttl is not set it will default to the instance ttl or no expiration.
-* `mset(data: Array<NodeCacheItem>): Promise<void>` - Set multiple key value pairs at once
+* `set(key: string | number, value: any, ttl?: number | string): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds or shorthand string). Will return true on success. If the ttl is not set it will default to the instance ttl or no expiration.
+* `mset(data: Array<PartialNodeCacheItem>): Promise<void>` - Set multiple key value pairs at once
 * `get<T>(key: string | number): Promise<T | undefined>` - Get a value from the cache by key
 * `mget<T>(keys: Array<string | number>): Promise<Record<string, T | undefined>>` - Get multiple values from the cache by keys
 * `take<T>(key: string | number): Promise<T | undefined>` - Get a value from the cache by key and delete it
 * `del(key: string | number): Promise<boolean>` - Delete a key
 * `mdel(keys: Array<string | number>): Promise<boolean>` - Delete multiple keys
 * `clear(): Promise<void>` - Clear the cache
-* `setTtl(key: string | number, ttl?: number): Promise<boolean>` - Set the ttl of an existing key
+* `setTtl(key: string | number, ttl?: number | string): Promise<boolean>` - Set the ttl of an existing key
 * `disconnect(): Promise<void>` - Disconnect the storage adapter
 * `ttl`: `number | string | undefined` - The standard ttl for every generated cache element. `undefined` = unlimited
 * `store`: `Keyv` - The storage adapter (read-only)
-* `maxKeys`: `number` - If this is set it will return false when trying to set more keys than the max
+
+
+# Migrating to v2
+
+The main `NodeCache` class API has not changed and remains fully compatible. The primary internal change is that it now uses Keyv as the underlying store.
+
+## NodeCacheStore Changes
+
+### Removed `cache` Property
+- **V1**: `nodeCache.cache` returned a `Cacheable` instance
+- **V2**: Use `nodeCache.store` which returns a `Keyv` instance
+
+### Removed Storage Tiering (primary/secondary)
+- **V1**: Supported `primary` and `secondary` store options for multi-tier caching
+- **V2**: Uses single `store` option only
+
+**Migration:**
+```javascript
+// V1
+const cache = new NodeCacheStore({ primary: keyv1, secondary: keyv2 });
+
+// V2 - use single store
+const cache = new NodeCacheStore({ store: keyv });
+```
+
+If you need storage tiering functionality, use the `cacheable` package instead which supports primary and secondary stores.
+
+### Internal Dependency Change
+- V2 uses `@cacheable/utils` instead of the `cacheable` package for a lighter footprint
+
+# Migrating to v3
+
+## Removed `maxKeys` from NodeCacheStore
+
+The `maxKeys` option has been removed from `NodeCacheStore`. It does not make sense for a store backed by external services (Redis, MongoDB, etc.) where the backend manages its own capacity.
+
+The `maxKeys` option remains available on the in-memory `NodeCache` class.
+
+**Migration:**
+```javascript
+// V2 - maxKeys was accepted but not meaningful for external stores
+const cache = new NodeCacheStore({ maxKeys: 100 });
+
+// V3 - remove maxKeys from NodeCacheStore options
+const cache = new NodeCacheStore();
+```
+
+If you need key limits with an external store, configure the limit at the storage layer instead.
+
+## Removed `stats` from NodeCacheStore
+
+The `stats` option and internal stats tracking have been removed from `NodeCacheStore`. The stats were collected internally but never exposed via a public API, making them effectively unused.
 
 # How to Contribute
 
