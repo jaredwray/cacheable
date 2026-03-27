@@ -23,6 +23,7 @@
 * [Getting Started](#getting-started)
 * [Basic Usage](#basic-usage)
 * [Breaking Changes from v1 to v2](#breaking-changes-from-v1-to-v2)
+* [Breaking Changes from v2 to v3](#breaking-changes-from-v2-to-v3)
 * [NodeCache Performance](#nodecache-performance)
 * [NodeCache API](#nodecache-api)
 * [NodeCacheStore](#nodecachestore)
@@ -99,6 +100,29 @@ If you need storage tiering functionality, use the `cacheable` package instead w
 
 ### Internal Dependency Change
 - V2 uses `@cacheable/utils` instead of the `cacheable` package for a lighter footprint
+
+# Breaking Changes from v2 to v3
+
+## Removed `maxKeys` from NodeCacheStore
+
+The `maxKeys` option has been removed from `NodeCacheStore`. It does not make sense for a store backed by external services (Redis, MongoDB, etc.) where the backend manages its own capacity.
+
+The `maxKeys` option remains available on the in-memory `NodeCache` class.
+
+**Migration:**
+```javascript
+// V2 - maxKeys was accepted but not meaningful for external stores
+const cache = new NodeCacheStore({ maxKeys: 100 });
+
+// V3 - remove maxKeys from NodeCacheStore options
+const cache = new NodeCacheStore();
+```
+
+If you need key limits with an external store, configure the limit at the storage layer instead.
+
+## Removed `stats` from NodeCacheStore
+
+The `stats` option and internal stats tracking have been removed from `NodeCacheStore`. The stats were collected internally but never exposed via a public API, making them effectively unused.
 
 # NodeCache Performance
 
@@ -362,7 +386,6 @@ When initializing the cache you can pass in the options below:
 export type NodeCacheStoreOptions = {
 	ttl?: number | string; // The standard ttl as number in milliseconds for every generated cache element. 0 = unlimited. Supports shorthand like '1h' for 1 hour.
 	store?: Keyv; // The storage adapter (defaults to in-memory Keyv)
-	stats?: boolean; // Default is true, if this is set to false it will not track stats internally
 };
 ```
 
