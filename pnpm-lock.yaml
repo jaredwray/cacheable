@@ -294,8 +294,8 @@ importers:
   packages/utils:
     dependencies:
       hashery:
-        specifier: ^1.5.0
-        version: 1.5.0
+        specifier: ^1.5.1
+        version: 1.5.1
       keyv:
         specifier: ^5.6.0
         version: 5.6.0
@@ -2492,8 +2492,8 @@ packages:
   has-unicode@2.0.1:
     resolution: {integrity: sha512-8Rf9Y83NBReMnx0gFzA8JImQACstCYWUplepDa9xprwwtmgEZUF0h/i5xSA625zB/I37EtrswSST6OXxwaaIJQ==}
 
-  hashery@1.5.0:
-    resolution: {integrity: sha512-nhQ6ExaOIqti2FDWoEMWARUqIKyjr2VcZzXShrI+A3zpeiuPWzx6iPftt44LhP74E5sW36B75N6VHbvRtpvO6Q==}
+  hashery@1.5.1:
+    resolution: {integrity: sha512-iZyKG96/JwPz1N55vj2Ie2vXbhu440zfUfJvSwEqEbeLluk7NnapfGqa7LH0mOsnDxTF85Mx8/dyR6HfqcbmbQ==}
     engines: {node: '>=20'}
 
   hasown@2.0.2:
@@ -4350,7 +4350,7 @@ snapshots:
 
   '@cacheable/utils@2.3.3':
     dependencies:
-      hashery: 1.5.0
+      hashery: 1.5.1
       keyv: 5.6.0
 
   '@cloudflare/kv-asset-handler@0.4.2': {}
@@ -4767,7 +4767,7 @@ snapshots:
 
   '@keyv/bigmap@1.3.1(keyv@5.6.0)':
     dependencies:
-      hashery: 1.5.0
+      hashery: 1.5.1
       hookified: 1.15.1
       keyv: 5.6.0
 
@@ -6149,7 +6149,7 @@ snapshots:
   has-unicode@2.0.1:
     optional: true
 
-  hashery@1.5.0:
+  hashery@1.5.1:
     dependencies:
       hookified: 1.15.1
 
@@ -8450,7 +8450,7 @@ snapshots:
   writr@5.0.3:
     dependencies:
       cacheable: 2.3.2
-      hashery: 1.5.0
+      hashery: 1.5.1
       hookified: 1.15.1
       html-react-parser: 5.2.16(react@19.2.4)
       js-yaml: 4.1.1
