@@ -78,7 +78,8 @@ describe("NodeCacheStore", () => {
 		const result = await store.mget(["__proto__"]);
 		// biome-ignore lint/suspicious/noExplicitAny: testing prototype pollution
 		expect((Object.prototype as any).polluted).toBeUndefined();
-		expect(result.__proto__).toEqual({ polluted: true });
+		expect(Object.getPrototypeOf(result)).toBeNull();
+		expect(Object.hasOwn(result, "__proto__")).toBe(true);
 	});
 	test("should be able to set multiple keys", async () => {
 		const store = new NodeCacheStore();
