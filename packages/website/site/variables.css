@@ -1,30 +1,48 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
+
+body {
+	font-family: 'Open Sans', sans-serif;
+}
+
+/* Dark theme (default in Modern) — brand orange for links on dark backgrounds */
 :root {
-    --font-family: 'Open Sans', sans-serif;
-  
-    --color-primary:  #fa3c32;
-    --color-secondary: #ff7800;
-    --color-secondary-dark: #322d28;
-    --color-text: #322d28;
-  
-    --background: #ffffff;
-    --home-background: #ffffff;
-    --header-background: #ffffff;
-  
-    --sidebar-background: #ffffff;
-    --sidebar-text: #322d28;
-    --sidebar-text-active: #ff7800;
-  
-    --border: rgba(238,238,245,1);
-  
-    --background-search-highlight: var(--color-secondary-dark);
-    --color-search-highlight: #ffffff;
-    --search-input-background: var(--header-background);
-  
-    --code: rgba(238,238,245,1);
-  
-    --pagefind-ui-text: var(--color-text) !important;
-    --pagefind-ui-font: var(--font-family) !important;
-    --pagefind-ui-background: var(--background) !important;
-    --pagefind-ui-border: var(--border) !important;
-    --pagefind-ui-scale: .9 !important;
-  }
+	--bg: #322d28;
+	--fg: #ffffff;
+	--border: rgba(255, 255, 255, 0.1);
+	--border-strong: rgba(255, 255, 255, 0.2);
+	--border-hover: rgba(255, 120, 0, 0.5);
+	--surface: #3d3832;
+	--surface-hover: rgba(255, 255, 255, 0.08);
+	--muted: #c5cdd3;
+	--muted-fg: rgba(255, 255, 255, 0.65);
+	--code-bg: rgba(255, 255, 255, 0.08);
+	--pre-bg: rgba(255, 255, 255, 0.05);
+	--link: #ff7800;
+	--scrollbar: rgba(255, 255, 255, 0.2);
+}
+
+/* Light theme — brand red for links, cream-white background, dark-brown text */
+[data-theme="light"] {
+	--bg: #ffffff;
+	--fg: #322d28;
+	--border: rgba(238, 238, 245, 1);
+	--border-strong: rgba(50, 45, 40, 0.15);
+	--border-hover: rgba(250, 60, 50, 0.4);
+	--surface: #f7f7fa;
+	--surface-hover: rgba(50, 45, 40, 0.05);
+	--muted: #6b6560;
+	--muted-fg: rgba(50, 45, 40, 0.5);
+	--code-bg: rgba(238, 238, 245, 1);
+	--pre-bg: rgba(238, 238, 245, 0.6);
+	--link: #fa3c32;
+	--scrollbar: rgba(50, 45, 40, 0.2);
+}
+
+/* Pagefind search UI — library-owned variables, kept from v0.40.0 config */
+:root {
+	--pagefind-ui-text: var(--fg) !important;
+	--pagefind-ui-font: 'Open Sans', sans-serif !important;
+	--pagefind-ui-background: var(--bg) !important;
+	--pagefind-ui-border: var(--border) !important;
+	--pagefind-ui-scale: 0.9 !important;
+}

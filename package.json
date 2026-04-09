@@ -11,6 +11,7 @@
     "test:services:stop": "docker compose down",
     "website:build": "pnpm recursive --filter @cacheable/website run website:build",
     "website:serve": "pnpm recursive --filter @cacheable/website run website:serve",
+    "website:dev": "pnpm recursive --filter @cacheable/website run website:dev",
     "build": "pnpm -r build",
     "build:list": "pnpm recursive run build",
     "clean": "pnpm recursive run clean"
