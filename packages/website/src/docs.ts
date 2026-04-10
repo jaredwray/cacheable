@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { readdir, readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
+import { readdir, readFile, writeFile, mkdir } from "node:fs/promises";
 
 async function main() {
 
@@ -7,7 +7,6 @@ async function main() {
 
     await copyPackages();
     await copyGettingStarted();
-    await copyCacheableSymbol();
 };
 
 async function copyPackages() {
@@ -21,14 +20,6 @@ async function copyPackages() {
             await createDoc(packageName, `${packagesPath}`, `${packagesPath}/website/site/docs`);
         }
     };
-}
-
-async function copyCacheableSymbol() {
-    const rootPath = getRelativeRootPath();
-    const packagesPath = getRelativePackagePath();
-    const outputPath = `${packagesPath}/website/dist`;
-    await mkdir(`${outputPath}`, { recursive: true });
-    await copyFile(`${packagesPath}/website/site/symbol.svg`, `${outputPath}/symbol.svg`);
 }
 
 async function copyGettingStarted() {

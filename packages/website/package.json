@@ -7,13 +7,14 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "generate-docs": "npx tsx ./src/docs.ts",
+    "generate-docs": "tsx ./src/docs.ts",
     "website:build": "rimraf ./site/docs && pnpm generate-docs && docula build",
     "website:serve": "rimraf ./site/docs && pnpm generate-docs && docula serve",
+    "website:dev": "rimraf ./site/docs && pnpm generate-docs && docula dev",
     "clean": "rimraf ./dist"
   },
   "devDependencies": {
-    "docula": "0.40.0",
+    "docula": "^1.12.0",
     "tsx": "4.21.0"
   }
 }
