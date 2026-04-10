@@ -5,7 +5,5 @@ export const options: Partial<DoculaOptions> = {
 	siteTitle: "Cacheable",
 	siteDescription: "Caching for Node.js",
 	siteUrl: "https://cacheable.org",
-	template: "modern",
-	output: "./dist",
-	sections: [],
+	themeMode: "light",
 };

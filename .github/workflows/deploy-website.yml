@@ -36,4 +36,4 @@ jobs:
       uses: cloudflare/wrangler-action@v3
       with:
         apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        command: pages deploy packages/website/dist --project-name=cacheableorg --branch=main
+        command: pages deploy packages/website/site/dist --project-name=cacheableorg --branch=main
