@@ -228,13 +228,8 @@ export class NodeCache<T> extends Hookified {
 		if (result) {
 			if (result.ttl > 0) {
 				if (result.ttl < Date.now()) {
-					if (this.options.deleteOnExpire) {
-						this.del(key);
-					}
-
 					this._stats.incrementMisses();
-					// Event
-					this.emit("expired", this.formatKey(key), result.value);
+					this.handleExpired(key, result);
 					return undefined;
 				}
 
@@ -443,12 +438,24 @@ export class NodeCache<T> extends Hookified {
 	}
 
 	/**
-	 * Returns boolean indicating if the key is cached.
+	 * Returns boolean indicating if the key is cached. If the key has expired, it
+	 * will return false and the key will be removed from the cache when
+	 * `deleteOnExpire` is enabled (matches the original node-cache behavior).
 	 * @param {string | number} key if the key is a number it will convert it to a string
-	 * @returns {boolean} true if the key is cached
+	 * @returns {boolean} true if the key is cached and not expired
 	 */
 	public has(key: string | number): boolean {
-		return this.store.has(this.formatKey(key));
+		const result = this.store.get(this.formatKey(key));
+		if (!result) {
+			return false;
+		}
+
+		if (result.ttl > 0 && result.ttl < Date.now()) {
+			this.handleExpired(key, result);
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
@@ -587,13 +594,23 @@ export class NodeCache<T> extends Hookified {
 	private checkData(): void {
 		for (const [key, value] of this.store.entries()) {
 			if (value.ttl > 0 && value.ttl < Date.now()) {
-				if (this.options.deleteOnExpire) {
-					this.del(key);
-				}
-
-				this.emit("expired", this.formatKey(key), value.value);
+				this.handleExpired(key, value);
 			}
 		}
+	}
+
+	/**
+	 * Handles expiration for a cache entry. Deletes the entry when
+	 * `deleteOnExpire` is enabled and emits the "expired" event.
+	 */
+	private handleExpired(key: string | number, entry: NodeCacheItem<T>): void {
+		const keyValue = this.formatKey(key);
+
+		if (this.options.deleteOnExpire) {
+			this.del(key);
+		}
+
+		this.emit("expired", keyValue, entry.value);
 	}
 
 	private createError(errorCode: string, key?: string): Error {
