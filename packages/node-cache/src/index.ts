@@ -50,12 +50,6 @@ export type NodeCacheItem<T> = PartialNodeCacheItem<T> & {
 	 * The ttl of the item in milliseconds. 0 = unlimited
 	 */
 	ttl: number;
-	/**
-	 * Internal flag indicating whether an "expired" event has already been
-	 * emitted for this entry. Used when `deleteOnExpire` is false to avoid
-	 * emitting the event repeatedly for every subsequent access.
-	 */
-	expiredEmitted?: boolean;
 };
 
 export enum NodeCacheErrors {
@@ -403,9 +397,6 @@ export class NodeCache<T> extends Hookified {
 				result.ttl = 0;
 			}
 
-			// Re-scheduling the expiration resets the "already emitted" flag so a
-			// future expiration of this key will fire the event again.
-			result.expiredEmitted = false;
 			this.store.set(this.formatKey(key), result);
 			return true;
 		}
@@ -610,23 +601,16 @@ export class NodeCache<T> extends Hookified {
 
 	/**
 	 * Handles expiration for a cache entry. Deletes the entry when
-	 * `deleteOnExpire` is enabled, and emits the "expired" event at most once
-	 * per entry so repeated accesses to an expired key don't flood listeners
-	 * when `deleteOnExpire` is false.
+	 * `deleteOnExpire` is enabled and emits the "expired" event.
 	 */
 	private handleExpired(key: string | number, entry: NodeCacheItem<T>): void {
 		const keyValue = this.formatKey(key);
-		const alreadyEmitted = entry.expiredEmitted === true;
 
 		if (this.options.deleteOnExpire) {
 			this.del(key);
-		} else {
-			entry.expiredEmitted = true;
 		}
 
-		if (!alreadyEmitted) {
-			this.emit("expired", keyValue, entry.value);
-		}
+		this.emit("expired", keyValue, entry.value);
 	}
 
 	private createError(errorCode: string, key?: string): Error {
