@@ -284,6 +284,49 @@ describe("NodeCache", () => {
 		expect(cache.keys()).toContain(key);
 	});
 
+	test("expired event fires only once per key across has/get/checkData when deleteOnExpire is false", async () => {
+		const cache = new NodeCache<string>({
+			checkperiod: 0,
+			deleteOnExpire: false,
+		});
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word(), 0.05);
+		let count = 0;
+		cache.on("expired", () => {
+			count++;
+		});
+		await sleep(100);
+		cache.has(key);
+		cache.has(key);
+		cache.get(key);
+		cache.get(key);
+		// Exercise the interval sweep path explicitly
+		// biome-ignore lint/complexity/useLiteralKeys: accessing private method for testing
+		(cache as unknown as { checkData: () => void })["checkData"]();
+		expect(count).toBe(1);
+	});
+
+	test("re-scheduling ttl() resets expired-emit de-duplication", async () => {
+		const cache = new NodeCache<string>({
+			checkperiod: 0,
+			deleteOnExpire: false,
+		});
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word(), 0.05);
+		let count = 0;
+		cache.on("expired", () => {
+			count++;
+		});
+		await sleep(100);
+		cache.has(key); // first expiration: fires
+		expect(count).toBe(1);
+		// Re-schedule with a new short TTL, which should reset the flag
+		cache.ttl(key, 0.05);
+		await sleep(100);
+		cache.has(key); // second expiration: fires again
+		expect(count).toBe(2);
+	});
+
 	test("should return the stats of the cache", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
 		const key1 = faker.string.uuid();

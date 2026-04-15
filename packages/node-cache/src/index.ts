@@ -50,6 +50,12 @@ export type NodeCacheItem<T> = PartialNodeCacheItem<T> & {
 	 * The ttl of the item in milliseconds. 0 = unlimited
 	 */
 	ttl: number;
+	/**
+	 * Internal flag indicating whether an "expired" event has already been
+	 * emitted for this entry. Used when `deleteOnExpire` is false to avoid
+	 * emitting the event repeatedly for every subsequent access.
+	 */
+	expiredEmitted?: boolean;
 };
 
 export enum NodeCacheErrors {
@@ -228,13 +234,8 @@ export class NodeCache<T> extends Hookified {
 		if (result) {
 			if (result.ttl > 0) {
 				if (result.ttl < Date.now()) {
-					if (this.options.deleteOnExpire) {
-						this.del(key);
-					}
-
 					this._stats.incrementMisses();
-					// Event
-					this.emit("expired", this.formatKey(key), result.value);
+					this.handleExpired(key, result);
 					return undefined;
 				}
 
@@ -402,6 +403,9 @@ export class NodeCache<T> extends Hookified {
 				result.ttl = 0;
 			}
 
+			// Re-scheduling the expiration resets the "already emitted" flag so a
+			// future expiration of this key will fire the event again.
+			result.expiredEmitted = false;
 			this.store.set(this.formatKey(key), result);
 			return true;
 		}
@@ -450,18 +454,13 @@ export class NodeCache<T> extends Hookified {
 	 * @returns {boolean} true if the key is cached and not expired
 	 */
 	public has(key: string | number): boolean {
-		const keyValue = this.formatKey(key);
-		const result = this.store.get(keyValue);
+		const result = this.store.get(this.formatKey(key));
 		if (!result) {
 			return false;
 		}
 
 		if (result.ttl > 0 && result.ttl < Date.now()) {
-			if (this.options.deleteOnExpire) {
-				this.del(key);
-			}
-
-			this.emit("expired", keyValue, result.value);
+			this.handleExpired(key, result);
 			return false;
 		}
 
@@ -604,12 +603,29 @@ export class NodeCache<T> extends Hookified {
 	private checkData(): void {
 		for (const [key, value] of this.store.entries()) {
 			if (value.ttl > 0 && value.ttl < Date.now()) {
-				if (this.options.deleteOnExpire) {
-					this.del(key);
-				}
-
-				this.emit("expired", this.formatKey(key), value.value);
+				this.handleExpired(key, value);
 			}
+		}
+	}
+
+	/**
+	 * Handles expiration for a cache entry. Deletes the entry when
+	 * `deleteOnExpire` is enabled, and emits the "expired" event at most once
+	 * per entry so repeated accesses to an expired key don't flood listeners
+	 * when `deleteOnExpire` is false.
+	 */
+	private handleExpired(key: string | number, entry: NodeCacheItem<T>): void {
+		const keyValue = this.formatKey(key);
+		const alreadyEmitted = entry.expiredEmitted === true;
+
+		if (this.options.deleteOnExpire) {
+			this.del(key);
+		} else {
+			entry.expiredEmitted = true;
+		}
+
+		if (!alreadyEmitted) {
+			this.emit("expired", keyValue, entry.value);
 		}
 	}
 
