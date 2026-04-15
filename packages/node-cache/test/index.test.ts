@@ -73,10 +73,9 @@ describe("NodeCache", () => {
 		const result = cache.mset(list);
 		expect(result).toBe(true);
 		expect(cache.get(goodKey)).toBe(goodValue);
-		// Negative TTL item is stored but expires immediately on get
-		expect(cache.has(badKey)).toBe(true);
+		// Negative TTL item is stored but has() already sees it as expired
+		expect(cache.has(badKey)).toBe(false);
 		expect(cache.get(badKey)).toBe(undefined);
-		// After get triggers expiration + deleteOnExpire, key is removed
 		expect(cache.has(badKey)).toBe(false);
 	});
 
@@ -241,6 +240,50 @@ describe("NodeCache", () => {
 		expect(has).toBe(true);
 	});
 
+	test("has() should return false for expired keys (issue #1617)", async () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word(), 0.05);
+		expect(cache.has(key)).toBe(true);
+		await sleep(100);
+		expect(cache.has(key)).toBe(false);
+	});
+
+	test("has() should emit expired and delete when deleteOnExpire is true", async () => {
+		const cache = new NodeCache<string>({
+			checkperiod: 0,
+			deleteOnExpire: true,
+		});
+		const key = faker.string.uuid();
+		const value = faker.lorem.word();
+		cache.set(key, value, 0.05);
+		let expiredKey: string | undefined;
+		let expiredValue: string | undefined;
+		cache.on("expired", (k, v) => {
+			expiredKey = k;
+			expiredValue = v;
+		});
+		await sleep(100);
+		expect(cache.has(key)).toBe(false);
+		expect(expiredKey).toBe(key);
+		expect(expiredValue).toBe(value);
+		expect(cache.keys()).not.toContain(key);
+	});
+
+	test("has() should not delete expired keys when deleteOnExpire is false", async () => {
+		const cache = new NodeCache<string>({
+			checkperiod: 0,
+			deleteOnExpire: false,
+		});
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word(), 0.05);
+		await sleep(100);
+		// has() still reports false because the key is expired
+		expect(cache.has(key)).toBe(false);
+		// But the underlying entry is still in the store
+		expect(cache.keys()).toContain(key);
+	});
+
 	test("should return the stats of the cache", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
 		const key1 = faker.string.uuid();
@@ -324,11 +367,10 @@ describe("NodeCache", () => {
 		const key = faker.string.uuid();
 		const result = cache.set(key, faker.lorem.word(), -1);
 		expect(result).toBe(true);
-		// Key is stored with a past expiration timestamp
-		expect(cache.has(key)).toBe(true);
-		// get() sees it's expired and returns undefined
+		// has() treats the expired key as absent (matches node-cache behavior)
+		expect(cache.has(key)).toBe(false);
+		// get() also sees it's expired and returns undefined
 		expect(cache.get(key)).toBe(undefined);
-		// After get triggers expiration + deleteOnExpire, key is removed
 		expect(cache.has(key)).toBe(false);
 	});
 
@@ -338,8 +380,8 @@ describe("NodeCache", () => {
 		cache.set(key, faker.lorem.word());
 		const result = cache.ttl(key, -1);
 		expect(result).toBe(true);
-		// Key exists but will expire on next access
-		expect(cache.has(key)).toBe(true);
+		// has() treats the expired key as absent
+		expect(cache.has(key)).toBe(false);
 		expect(cache.get(key)).toBe(undefined);
 		expect(cache.has(key)).toBe(false);
 	});
@@ -349,7 +391,7 @@ describe("NodeCache", () => {
 		const key = faker.string.uuid();
 		const result = cache.set(key, faker.lorem.word(), "-1");
 		expect(result).toBe(true);
-		expect(cache.has(key)).toBe(true);
+		expect(cache.has(key)).toBe(false);
 		expect(cache.get(key)).toBe(undefined);
 		expect(cache.has(key)).toBe(false);
 	});
@@ -360,7 +402,7 @@ describe("NodeCache", () => {
 		cache.set(key, faker.lorem.word());
 		const result = cache.ttl(key, "-5");
 		expect(result).toBe(true);
-		expect(cache.has(key)).toBe(true);
+		expect(cache.has(key)).toBe(false);
 		expect(cache.get(key)).toBe(undefined);
 		expect(cache.has(key)).toBe(false);
 	});

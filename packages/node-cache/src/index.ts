@@ -443,12 +443,29 @@ export class NodeCache<T> extends Hookified {
 	}
 
 	/**
-	 * Returns boolean indicating if the key is cached.
+	 * Returns boolean indicating if the key is cached. If the key has expired, it
+	 * will return false and the key will be removed from the cache when
+	 * `deleteOnExpire` is enabled (matches the original node-cache behavior).
 	 * @param {string | number} key if the key is a number it will convert it to a string
-	 * @returns {boolean} true if the key is cached
+	 * @returns {boolean} true if the key is cached and not expired
 	 */
 	public has(key: string | number): boolean {
-		return this.store.has(this.formatKey(key));
+		const keyValue = this.formatKey(key);
+		const result = this.store.get(keyValue);
+		if (!result) {
+			return false;
+		}
+
+		if (result.ttl > 0 && result.ttl < Date.now()) {
+			if (this.options.deleteOnExpire) {
+				this.del(key);
+			}
+
+			this.emit("expired", keyValue, result.value);
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
