@@ -171,8 +171,9 @@ When `Getting Data` if the value does not exist in the primary store it will try
 
 ```javascript
 import { Cacheable } from 'cacheable';
+import {Keyv} from 'keyv';
 import KeyvRedis from '@keyv/redis';
-const secondary = new KeyvRedis('redis://user:pass@localhost:6379', { ttl: 1000 });
+const secondary = new Keyv({ store: new KeyvRedis('redis://user:pass@localhost:6379'), ttl: 1000 });
 const cache = new Cacheable({secondary, ttl: 100});
 
 await cache.set('key', 'value'); // sets the value in the primary store with a ttl of 100 ms and secondary store with a ttl of 1000 ms
@@ -189,10 +190,10 @@ import { Cacheable } from 'cacheable';
 import {Keyv} from 'keyv';
 import KeyvRedis from '@keyv/redis';
 const primary = new Keyv({ ttl: 200 });
-const secondary = new KeyvRedis('redis://user:pass@localhost:6379', { ttl: 1000 });
+const secondary = new Keyv({ store: new KeyvRedis('redis://user:pass@localhost:6379'), ttl: 1000 });
 const cache = new Cacheable({primary, secondary});
 
-await cache.set('key', 'value'); // sets the value in the primary store with a ttl of 100 ms and secondary store with a ttl of 1000 ms
+await cache.set('key', 'value'); // sets the value in the primary store with a ttl of 200 ms and secondary store with a ttl of 1000 ms
 
 await sleep(200); // wait for .2 seconds
 

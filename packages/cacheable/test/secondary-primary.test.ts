@@ -121,3 +121,92 @@ test("should use the secondary ttl on secondary -> primary", async () => {
 	expect(ttlFromExpires).toBeGreaterThan(45);
 	expect(ttlFromExpires).toBeLessThan(55);
 });
+
+test("should respect per-store ttl on set when secondary has its own ttl", async () => {
+	const data = {
+		key: faker.string.uuid(),
+		value: faker.string.uuid(),
+	};
+
+	const secondary = new Keyv({ ttl: 500 });
+	const primary = new Keyv();
+	const cacheable = new Cacheable({ secondary, primary, ttl: 100 });
+
+	// Set the value via cacheable.set (no explicit ttl)
+	await cacheable.set(data.key, data.value);
+
+	// Primary should use cacheable ttl (100ms) since it has no own ttl
+	const primaryResult = await cacheable.primary.get(data.key, { raw: true });
+	expect(primaryResult?.value).toEqual(data.value);
+	const primaryTtl = getTtlFromExpires(primaryResult?.expires);
+	expect(primaryTtl).toBeGreaterThan(90);
+	expect(primaryTtl).toBeLessThan(110);
+
+	// Secondary should use its own ttl (500ms) instead of cacheable ttl (100ms)
+	const secondaryResult = await cacheable.secondary?.get(data.key, {
+		raw: true,
+	});
+	expect(secondaryResult?.value).toEqual(data.value);
+	const secondaryTtl = getTtlFromExpires(secondaryResult?.expires);
+	expect(secondaryTtl).toBeGreaterThan(450);
+	expect(secondaryTtl).toBeLessThan(510);
+});
+
+test("should respect per-store ttl on set when primary has its own ttl", async () => {
+	const data = {
+		key: faker.string.uuid(),
+		value: faker.string.uuid(),
+	};
+
+	const secondary = new Keyv();
+	const primary = new Keyv({ ttl: 200 });
+	const cacheable = new Cacheable({ secondary, primary, ttl: 500 });
+
+	// Set the value via cacheable.set (no explicit ttl)
+	await cacheable.set(data.key, data.value);
+
+	// Primary should use its own ttl (200ms) instead of cacheable ttl (500ms)
+	const primaryResult = await cacheable.primary.get(data.key, { raw: true });
+	expect(primaryResult?.value).toEqual(data.value);
+	const primaryTtl = getTtlFromExpires(primaryResult?.expires);
+	expect(primaryTtl).toBeGreaterThan(190);
+	expect(primaryTtl).toBeLessThan(210);
+
+	// Secondary should use cacheable ttl (500ms) since it has no own ttl
+	const secondaryResult = await cacheable.secondary?.get(data.key, {
+		raw: true,
+	});
+	expect(secondaryResult?.value).toEqual(data.value);
+	const secondaryTtl = getTtlFromExpires(secondaryResult?.expires);
+	expect(secondaryTtl).toBeGreaterThan(490);
+	expect(secondaryTtl).toBeLessThan(510);
+});
+
+test("should use explicit ttl over store and cacheable ttl", async () => {
+	const data = {
+		key: faker.string.uuid(),
+		value: faker.string.uuid(),
+	};
+
+	const secondary = new Keyv({ ttl: 500 });
+	const primary = new Keyv({ ttl: 200 });
+	const cacheable = new Cacheable({ secondary, primary, ttl: 100 });
+
+	// Set the value with an explicit ttl of 50ms
+	await cacheable.set(data.key, data.value, 50);
+
+	// Both stores should use the explicit ttl (50ms)
+	const primaryResult = await cacheable.primary.get(data.key, { raw: true });
+	expect(primaryResult?.value).toEqual(data.value);
+	const primaryTtl = getTtlFromExpires(primaryResult?.expires);
+	expect(primaryTtl).toBeGreaterThan(40);
+	expect(primaryTtl).toBeLessThan(55);
+
+	const secondaryResult = await cacheable.secondary?.get(data.key, {
+		raw: true,
+	});
+	expect(secondaryResult?.value).toEqual(data.value);
+	const secondaryTtl = getTtlFromExpires(secondaryResult?.expires);
+	expect(secondaryTtl).toBeGreaterThan(40);
+	expect(secondaryTtl).toBeLessThan(55);
+});
