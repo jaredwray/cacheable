@@ -517,15 +517,13 @@ export class Cacheable extends Hookified {
 	): Promise<boolean> {
 		let result = false;
 		const explicitTtl = shorthandToMilliseconds(ttl);
-		const cacheableTtl = shorthandToMilliseconds(this._ttl);
-		const primaryTtl = explicitTtl ?? this._primary.ttl ?? cacheableTtl;
 		try {
-			const item = { key, value, ttl: primaryTtl };
+			const item = { key, value, ttl: getCascadingTtl(this._ttl, this._primary.ttl, explicitTtl) };
 			await this.hook(CacheableHooks.BEFORE_SET, item);
 			const promises = [];
 			promises.push(this._primary.set(item.key, item.value, item.ttl));
 			if (this._secondary) {
-				const secondaryTtl = explicitTtl ?? this._secondary.ttl ?? cacheableTtl;
+				const secondaryTtl = getCascadingTtl(this._ttl, this._secondary.ttl, explicitTtl);
 				promises.push(this._secondary.set(item.key, item.value, secondaryTtl));
 			}
 
@@ -941,10 +939,7 @@ export class Cacheable extends Hookified {
 	): Promise<boolean> {
 		const entries: KeyvEntry[] = [];
 		for (const item of items) {
-			const finalTtl =
-				shorthandToMilliseconds(item.ttl) ??
-				keyv.ttl ??
-				shorthandToMilliseconds(this._ttl);
+			const finalTtl = getCascadingTtl(this._ttl, keyv.ttl, shorthandToMilliseconds(item.ttl));
 			entries.push({ key: item.key, value: item.value, ttl: finalTtl });
 		}
 
