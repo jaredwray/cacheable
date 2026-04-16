@@ -210,3 +210,36 @@ test("should use explicit ttl over store and cacheable ttl", async () => {
 	expect(secondaryTtl).toBeGreaterThan(40);
 	expect(secondaryTtl).toBeLessThan(55);
 });
+
+test("should apply BEFORE_SET hook ttl override to both stores", async () => {
+	const data = {
+		key: faker.string.uuid(),
+		value: faker.string.uuid(),
+	};
+
+	const secondary = new Keyv({ ttl: 500 });
+	const primary = new Keyv({ ttl: 200 });
+	const cacheable = new Cacheable({ secondary, primary, ttl: 100 });
+
+	// Hook overrides TTL to 30ms for all stores
+	cacheable.onHook(CacheableHooks.BEFORE_SET, async (item) => {
+		item.ttl = 30;
+	});
+
+	await cacheable.set(data.key, data.value);
+
+	// Both stores should use the hook-overridden ttl (30ms)
+	const primaryResult = await cacheable.primary.get(data.key, { raw: true });
+	expect(primaryResult?.value).toEqual(data.value);
+	const primaryTtl = getTtlFromExpires(primaryResult?.expires);
+	expect(primaryTtl).toBeGreaterThan(20);
+	expect(primaryTtl).toBeLessThan(35);
+
+	const secondaryResult = await cacheable.secondary?.get(data.key, {
+		raw: true,
+	});
+	expect(secondaryResult?.value).toEqual(data.value);
+	const secondaryTtl = getTtlFromExpires(secondaryResult?.expires);
+	expect(secondaryTtl).toBeGreaterThan(20);
+	expect(secondaryTtl).toBeLessThan(35);
+});
