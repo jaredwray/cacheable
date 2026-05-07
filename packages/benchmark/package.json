@@ -47,23 +47,23 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"dependencies": {
-		"@cacheable/memory": "workspace:^",
 		"@faker-js/faker": "^10.4.0",
-		"@monstermann/tinybench-pretty-printer": "^0.1.0",
-		"bentocache": "^1.6.1",
-		"cache-manager": "workspace:^",
-		"cacheable": "workspace:^",
-		"lru.min": "^1.1.4",
-		"quick-lru": "^7.3.0",
-		"tinybench": "^4.0.1"
+		"@monstermann/tinybench-pretty-printer": "^0.3.0",
+		"tinybench": "^6.0.1"
 	},
 	"files": [
 		"dist",
 		"license"
 	],
 	"devDependencies": {
+		"@cacheable/memory": "workspace:^",
 		"@cacheable/node-cache": "workspace:^",
+		"bentocache": "^1.6.1",
+		"cache-manager": "workspace:^",
+		"cacheable": "workspace:^",
+		"lru.min": "^1.1.4",
 		"node-cache": "^5.1.2",
+		"quick-lru": "^7.3.0",
 		"tsx": "^4.21.0"
 	}
 }
