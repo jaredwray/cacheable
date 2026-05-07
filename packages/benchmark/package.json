@@ -62,7 +62,7 @@
 		"license"
 	],
 	"devDependencies": {
-		"@cacheable/node-cache": "^1.5.6",
+		"@cacheable/node-cache": "workspace:^",
 		"node-cache": "^5.1.2",
 		"tsx": "^4.21.0"
 	}

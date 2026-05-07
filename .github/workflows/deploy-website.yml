@@ -24,7 +24,7 @@ jobs:
         node-version: 24
 
     - name: Install PNPM
-      run: npm install -g pnpm
+      run: npm install -g pnpm@10
 
     - name: Install Modules
       run: pnpm install
