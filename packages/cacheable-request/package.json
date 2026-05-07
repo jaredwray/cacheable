@@ -52,7 +52,7 @@
 		"responselike": "^4.0.2"
 	},
 	"devDependencies": {
-		"@keyv/sqlite": "^4.0.6",
+		"@keyv/sqlite": "^4.0.8",
 		"@types/express": "^5.0.6",
 		"@types/responselike": "^1.0.3",
 		"body-parser": "^2.2.2",
