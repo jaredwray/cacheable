@@ -4,6 +4,7 @@ import { request } from "node:http";
 import stream from "node:stream";
 import { KeyvSqlite } from "@keyv/sqlite";
 import getStream from "get-stream";
+import { Keyv } from "keyv";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import CacheableRequest, { parseWithWhatwg } from "../src/index.js";
 import { CacheError, RequestError } from "../src/types.js";
@@ -365,4 +366,27 @@ test("cacheableRequest emits CacheError if request cancels", () => {
 			expect(error instanceof CacheError).toBeTruthy();
 		})
 		.on("request", (request_: any) => request_.abort());
+});
+
+test("cacheableRequest emits CacheError when underlying Keyv emits error event", async () => {
+	const keyv = new Keyv();
+	keyv.get = () => new Promise(() => {});
+	const errorMessage = "synthetic keyv error";
+	const cacheableRequest = new CacheableRequest(request, keyv).request();
+
+	await new Promise<void>((resolve, reject) => {
+		cacheableRequest(parseWithWhatwg(s.url)).on("error", (error: any) => {
+			try {
+				expect(error instanceof CacheError).toBeTruthy();
+				expect(error.message).toBe(errorMessage);
+				resolve();
+			} catch (assertionError) {
+				reject(assertionError);
+			}
+		});
+
+		setImmediate(() => {
+			keyv.emit("error", new Error(errorMessage));
+		});
+	});
 });
