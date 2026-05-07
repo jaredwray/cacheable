@@ -20,7 +20,7 @@
   "author": "Jared Wray <me@jaredwray.com>",
   "license": "MIT",
   "devDependencies": {
-    "@biomejs/biome": "^2.4.10",
+    "@biomejs/biome": "^2.4.14",
     "@faker-js/faker": "^10.4.0",
     "@types/node": "^25.5.2",
     "@vitest/coverage-v8": "^4.1.5",
