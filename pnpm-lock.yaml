@@ -160,8 +160,8 @@ importers:
         version: 4.0.2
     devDependencies:
       '@keyv/sqlite':
-        specifier: ^4.0.6
-        version: 4.0.6(keyv@5.6.0)
+        specifier: ^4.0.8
+        version: 4.0.8(keyv@5.6.0)
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
@@ -1326,11 +1326,11 @@ packages:
   '@keyv/serialize@1.1.1':
     resolution: {integrity: sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA==}
 
-  '@keyv/sqlite@4.0.6':
-    resolution: {integrity: sha512-xfUYps2HtxuQFsZlXv3qTs9p9mJMOSlNmCnd9R4UYxFlQJ1qLnKT+P0vjhQX9HBwnhKuhsinkmwTbooYFeFr4A==}
+  '@keyv/sqlite@4.0.8':
+    resolution: {integrity: sha512-i4kkdJEAG/UcM6l8ZEztDfUcnFYN+5mr7YoIjQr7Acg9C7i5C+IyNBT8BQP0nRiI3edvvje5c1DcLIMSTsRP7A==}
     engines: {node: '>= 18'}
     peerDependencies:
-      keyv: ^5.5.3
+      keyv: ^5.6.0
 
   '@keyv/valkey@1.0.11':
     resolution: {integrity: sha512-uXf4TftClagJxquhlo1QFKd7JIcmxVm9vlWkDZGlkLQAIesocKaap2ojJocMDvon6h56L2SczoWkkL5OZs4AfQ==}
@@ -5075,7 +5075,7 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@keyv/sqlite@4.0.6(keyv@5.6.0)':
+  '@keyv/sqlite@4.0.8(keyv@5.6.0)':
     dependencies:
       keyv: 5.6.0
       sqlite3: 5.1.7
