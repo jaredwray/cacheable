@@ -88,8 +88,8 @@ export class CacheableSync extends Hookified {
 			const oldSetEvent = this.getPrefixedEvent(CacheableSyncEvents.SET);
 			const oldDeleteEvent = this.getPrefixedEvent(CacheableSyncEvents.DELETE);
 
-			void this._qified.unsubscribe(oldSetEvent);
-			void this._qified.unsubscribe(oldDeleteEvent);
+			void this._qified.unsubscribeMessage(oldSetEvent);
+			void this._qified.unsubscribeMessage(oldDeleteEvent);
 		}
 
 		this._namespace = namespace;
