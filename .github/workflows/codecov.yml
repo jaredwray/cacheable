@@ -26,7 +26,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
       
       - name: Install pnpm
-        run: npm install -g pnpm
+        run: npm install -g pnpm@10
 
       - name: Start Test Services
         run: pnpm test:services:start
