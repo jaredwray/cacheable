@@ -48,7 +48,7 @@
 	},
 	"dependencies": {
 		"@cacheable/memory": "workspace:^",
-		"@faker-js/faker": "^9.8.0",
+		"@faker-js/faker": "^10.4.0",
 		"@monstermann/tinybench-pretty-printer": "^0.1.0",
 		"bentocache": "^1.4.0",
 		"cache-manager": "workspace:^",
