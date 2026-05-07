@@ -43,7 +43,7 @@
 		"cacheable": "workspace:^",
 		"hookified": "^1.15.1",
 		"http-cache-semantics": "^4.2.0",
-		"undici": "^7.24.5"
+		"undici": "^8.2.0"
 	},
 	"keywords": [
 		"cacheable",
