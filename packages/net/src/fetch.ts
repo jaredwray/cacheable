@@ -7,7 +7,7 @@ import type { RequestInit, Response as UndiciResponse } from "undici";
 // fetch from a standalone undici version causes its instanceof checks to
 // reject globals from Node's bundled undici, leading to FormData being
 // silently coerced to "[object FormData]" with Content-Type: text/plain.
-const runtimeFetch = globalThis.fetch as unknown as (
+const runtimeFetch = globalThis.fetch.bind(globalThis) as unknown as (
 	input: string,
 	init?: RequestInit,
 ) => Promise<UndiciResponse>;
