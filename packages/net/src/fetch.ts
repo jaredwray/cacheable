@@ -1,10 +1,16 @@
 import type { Cacheable } from "cacheable";
 import CachePolicy from "http-cache-semantics";
-import {
-	type RequestInit,
-	type Response as UndiciResponse,
-	fetch as undiciFetch,
-} from "undici";
+import type { RequestInit, Response as UndiciResponse } from "undici";
+
+// Use the runtime's own fetch so body classes (FormData, Blob, File,
+// URLSearchParams, ReadableStream) come from the same realm. Importing
+// fetch from a standalone undici version causes its instanceof checks to
+// reject globals from Node's bundled undici, leading to FormData being
+// silently coerced to "[object FormData]" with Content-Type: text/plain.
+const runtimeFetch = globalThis.fetch as unknown as (
+	input: string,
+	init?: RequestInit,
+) => Promise<UndiciResponse>;
 
 export type FetchOptions = Omit<RequestInit, "cache"> & {
 	cache?: Cacheable;
@@ -57,7 +63,7 @@ export async function fetch(
 
 	// If no cache provided, skip all caching logic
 	if (!options.cache) {
-		const response = await undiciFetch(url, fetchOptions);
+		const response = await runtimeFetch(url, fetchOptions);
 		/* c8 ignore next 3 */
 		if (!response.ok) {
 			throw new Error(`Fetch failed with status ${response.status}`);
@@ -72,7 +78,7 @@ export async function fetch(
 		options.method === "DELETE" ||
 		options.method === "HEAD"
 	) {
-		const response = await undiciFetch(url, fetchOptions);
+		const response = await runtimeFetch(url, fetchOptions);
 		/* c8 ignore next 3 */
 		if (!response.ok) {
 			throw new Error(`Fetch failed with status ${response.status}`);
@@ -90,7 +96,7 @@ export async function fetch(
 		// Simple caching without HTTP cache semantics
 		const cachedData = await options.cache.getOrSet(cacheKey, async () => {
 			// Perform the fetch operation
-			const response = await undiciFetch(url, fetchOptions);
+			const response = await runtimeFetch(url, fetchOptions);
 			/* v8 ignore next -- @preserve */
 			if (!response.ok) {
 				throw new Error(`Fetch failed with status ${response.status}`);
@@ -178,7 +184,7 @@ export async function fetch(
 	}
 
 	// Make the fetch request
-	const response = await undiciFetch(url, {
+	const response = await runtimeFetch(url, {
 		...fetchOptions,
 		headers: {
 			...fetchOptions.headers,
