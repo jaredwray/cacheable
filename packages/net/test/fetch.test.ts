@@ -1,6 +1,8 @@
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 import process from "node:process";
 import { Cacheable } from "cacheable";
-import { describe, expect, test } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import {
 	del,
 	type FetchOptions,
@@ -1007,5 +1009,145 @@ describe("Fetch", () => {
 			},
 			testTimeout,
 		);
+	});
+
+	// Regression: @cacheable/net@2.0.7 imported fetch from a standalone
+	// undici version whose FormData class did not match the global
+	// FormData created by the user. Its instanceof check failed, the body
+	// fell through to a string coercion, and the request went out as
+	// "[object FormData]" with Content-Type: text/plain. These tests use a
+	// local HTTP server to assert that the wire-level body and content-type
+	// are correct for every BodyInit shape.
+	describe("Body coercion (local server)", () => {
+		type CapturedRequest = {
+			contentType: string | undefined;
+			body: Buffer;
+		};
+		const captured: CapturedRequest[] = [];
+		let baseUrl = "";
+		let server: http.Server;
+
+		beforeAll(async () => {
+			server = http.createServer((req, res) => {
+				const chunks: Buffer[] = [];
+				req.on("data", (chunk: Buffer) => chunks.push(chunk));
+				req.on("end", () => {
+					captured.push({
+						contentType: req.headers["content-type"],
+						body: Buffer.concat(chunks),
+					});
+					res.writeHead(200, { "content-type": "application/json" });
+					res.end('{"ok":true}');
+				});
+			});
+			await new Promise<void>((resolve) => server.listen(0, resolve));
+			const { port } = server.address() as AddressInfo;
+			baseUrl = `http://127.0.0.1:${port}`;
+		});
+
+		afterAll(async () => {
+			await new Promise<void>((resolve, reject) => {
+				server.close((error) => (error ? reject(error) : resolve()));
+			});
+		});
+
+		test("post sends FormData as multipart, not [object FormData]", async () => {
+			captured.length = 0;
+			const formData = new FormData();
+			formData.append("foo", "bar");
+			formData.append("baz", "qux");
+
+			await post(baseUrl, formData, { cache: new Cacheable() });
+
+			expect(captured).toHaveLength(1);
+			const [{ contentType, body }] = captured;
+			expect(contentType).toMatch(/^multipart\/form-data; boundary=/);
+			const bodyText = body.toString("utf8");
+			expect(bodyText).not.toContain("[object FormData]");
+			expect(bodyText).toContain('name="foo"');
+			expect(bodyText).toContain("bar");
+			expect(bodyText).toContain('name="baz"');
+			expect(bodyText).toContain("qux");
+		});
+
+		test("post sends FormData with File as multipart with filename", async () => {
+			captured.length = 0;
+			const formData = new FormData();
+			formData.append(
+				"upload",
+				new File(["hello world"], "greet.txt", { type: "text/plain" }),
+			);
+
+			await post(baseUrl, formData, { cache: new Cacheable() });
+
+			expect(captured).toHaveLength(1);
+			const [{ contentType, body }] = captured;
+			expect(contentType).toMatch(/^multipart\/form-data; boundary=/);
+			const bodyText = body.toString("utf8");
+			expect(bodyText).toContain('filename="greet.txt"');
+			expect(bodyText).toContain("hello world");
+		});
+
+		test("post sends URLSearchParams as form-urlencoded", async () => {
+			captured.length = 0;
+			const params = new URLSearchParams();
+			params.append("foo", "bar");
+			params.append("baz", "qux");
+
+			await post(baseUrl, params, { cache: new Cacheable() });
+
+			expect(captured).toHaveLength(1);
+			const [{ contentType, body }] = captured;
+			expect(contentType).toMatch(/^application\/x-www-form-urlencoded/);
+			expect(body.toString("utf8")).toBe("foo=bar&baz=qux");
+		});
+
+		test("post sends Blob with its declared type", async () => {
+			captured.length = 0;
+			const blob = new Blob(["hello"], { type: "text/plain" });
+
+			await post(baseUrl, blob, { cache: new Cacheable() });
+
+			expect(captured).toHaveLength(1);
+			const [{ contentType, body }] = captured;
+			expect(contentType).toBe("text/plain");
+			expect(body.toString("utf8")).toBe("hello");
+		});
+
+		test("post sends a JSON object as application/json", async () => {
+			captured.length = 0;
+			await post(baseUrl, { hello: "world" }, { cache: new Cacheable() });
+
+			expect(captured).toHaveLength(1);
+			const [{ contentType, body }] = captured;
+			expect(contentType).toBe("application/json");
+			expect(JSON.parse(body.toString("utf8"))).toEqual({ hello: "world" });
+		});
+
+		test("patch sends FormData as multipart", async () => {
+			captured.length = 0;
+			const formData = new FormData();
+			formData.append("k", "v");
+
+			await patch(baseUrl, formData, { cache: new Cacheable() });
+
+			expect(captured).toHaveLength(1);
+			const [{ contentType, body }] = captured;
+			expect(contentType).toMatch(/^multipart\/form-data; boundary=/);
+			expect(body.toString("utf8")).toContain('name="k"');
+		});
+
+		test("del sends FormData as multipart", async () => {
+			captured.length = 0;
+			const formData = new FormData();
+			formData.append("id", "123");
+
+			await del(baseUrl, formData, { cache: new Cacheable() });
+
+			expect(captured).toHaveLength(1);
+			const [{ contentType, body }] = captured;
+			expect(contentType).toMatch(/^multipart\/form-data; boundary=/);
+			expect(body.toString("utf8")).toContain('name="id"');
+		});
 	});
 });
