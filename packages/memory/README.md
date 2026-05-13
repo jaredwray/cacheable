@@ -8,7 +8,7 @@
 [![npm](https://img.shields.io/npm/v/@cacheable/memory.svg)](https://www.npmjs.com/package/@cacheable/memory)
 [![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
 
-You can use `CacheableMemory` as a standalone cache or as a primary store for `cacheable`. You can also set the `useClones` property to `false` if you want to use the same reference for the values. This is useful if you are using large objects and want to save memory. The `lruSize` property is the size of the LRU cache and is set to `0` by default, which disables the LRU cache (no LRU eviction is performed and the cache size is bounded only by the underlying `Map` stores). When setting the `lruSize` property to a value greater than `0` it will limit the number of keys in the cache and evict the least recently used entries when full.
+You can use `CacheableMemory` as a standalone cache or as a primary store for `cacheable`. You can also set the `useClones` property to `false` if you want to use the same reference for the values. This is useful if you are using large objects and want to save memory. The `lruSize` property is the size of the LRU cache and is set to `0` by default, which disables the LRU cache (no LRU eviction is performed and the cache size is bounded only by the underlying `Map` stores). When the `lruSize` property is set to a value greater than `0`, it limits the number of keys in the cache and evicts the least recently used entries when full.
 
 This simple in-memory cache uses multiple Map objects and a with `expiration` and `lru` policies if set to manage the in memory cache at scale.
 
@@ -188,7 +188,7 @@ const value = cache.get('key'); // value
 
 You can enable the LRU (Least Recently Used) feature in `CacheableMemory` by setting the `lruSize` property in the options. This will limit the number of keys in the cache to the size you set. When the cache reaches the limit it will remove the least recently used keys from the cache. This is useful if you want to limit the memory usage of the cache.
 
-When you set the `lruSize` we use a double linked list to track the LRU order across the underlying `Map` stores. The `lruSize` itself is capped at `16,777,216 (2^24) keys` — values above this limit are rejected and an `error` event is emitted. Setting `lruSize` does not change `storeHashSize`; the underlying stores keep whatever `storeHashSize` you configured (default `16`).
+When you set the `lruSize`, we use a doubly linked list to track the LRU order across the underlying `Map` stores. The `lruSize` itself is capped at `16,777,216 (2^24) keys` — values above this limit are rejected and an `error` event is emitted. Setting `lruSize` does not change `storeHashSize`; the underlying stores keep whatever `storeHashSize` you configured (default `16`).
 
 ```javascript
 import { CacheableMemory } from 'cacheable';
