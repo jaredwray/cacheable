@@ -8,7 +8,7 @@
 [![npm](https://img.shields.io/npm/v/@cacheable/memory.svg)](https://www.npmjs.com/package/@cacheable/memory)
 [![license](https://img.shields.io/github/license/jaredwray/cacheable)](https://github.com/jaredwray/cacheable/blob/main/LICENSE)
 
-You can use `CacheableMemory` as a standalone cache or as a primary store for `cacheable`. You can also set the `useClones` property to `false` if you want to use the same reference for the values. This is useful if you are using large objects and want to save memory. The `lruSize` property is the size of the LRU cache and is set to `0` by default which is unlimited. When setting the `lruSize` property it will limit the number of keys in the cache.
+You can use `CacheableMemory` as a standalone cache or as a primary store for `cacheable`. You can also set the `useClones` property to `false` if you want to use the same reference for the values. This is useful if you are using large objects and want to save memory. The `lruSize` property is the size of the LRU cache and is set to `0` by default, which disables the LRU cache (no LRU eviction is performed and the cache size is bounded only by the underlying `Map` stores). When the `lruSize` property is set to a value greater than `0`, it limits the number of keys in the cache and evicts the least recently used entries when full.
 
 This simple in-memory cache uses multiple Map objects and a with `expiration` and `lru` policies if set to manage the in memory cache at scale.
 
@@ -188,11 +188,11 @@ const value = cache.get('key'); // value
 
 You can enable the LRU (Least Recently Used) feature in `CacheableMemory` by setting the `lruSize` property in the options. This will limit the number of keys in the cache to the size you set. When the cache reaches the limit it will remove the least recently used keys from the cache. This is useful if you want to limit the memory usage of the cache.
 
-When you set the `lruSize` we use a double linked list to manage the LRU cache and also set the `hashStoreSize` to `1` which means we will only use a single `Map` object for the LRU cache. This is because the LRU cache is managed by the double linked list and it is not possible to have more than `16,777,216 (2^24) keys` in a single `Map` object.
+When you set the `lruSize`, we use a doubly linked list to track the LRU order across the underlying `Map` stores. The `lruSize` itself is capped at `16,777,216 (2^24) keys` — values above this limit are rejected and an `error` event is emitted. Setting `lruSize` does not change `storeHashSize`; the underlying stores keep whatever `storeHashSize` you configured (default `16`).
 
 ```javascript
 import { CacheableMemory } from 'cacheable';
-const cache = new CacheableMemory({ lruSize: 1 }); // sets the LRU cache size to 1000 keys and hashStoreSize to 1
+const cache = new CacheableMemory({ lruSize: 1 }); // sets the LRU cache size to 1 key
 cache.set('key1', 'value1');
 cache.set('key2', 'value2');
 const value1 = cache.get('key1');
@@ -230,7 +230,7 @@ As you can see from the benchmarks `CacheableMemory` is on par with other cachin
 
 * `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.
 * `useClones`: If the cache should use clones for the values. Default is `true`.
-* `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
+* `lruSize`: The size of the LRU cache. Default is `0`, which disables the LRU cache (no LRU eviction is performed). Maximum is `16,777,216 (2^24)`.
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
 * `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
 * `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2`. Supported: DJB2, FNV1, MURMER, CRC32.
@@ -253,7 +253,7 @@ As you can see from the benchmarks `CacheableMemory` is on par with other cachin
 * `clear()`: Clears the cache.
 * `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
 * `useClones`: If the cache should use clones for the values. Default is `true`.
-* `lruSize`: The size of the LRU cache. Default is `0` which is unlimited.
+* `lruSize`: The size of the LRU cache. Default is `0`, which disables the LRU cache (no LRU eviction is performed). Maximum is `16,777,216 (2^24)`.
 * `size`: The number of keys in the cache.
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
 * `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
