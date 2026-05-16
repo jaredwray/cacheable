@@ -19,6 +19,7 @@
   "keywords": [],
   "author": "Jared Wray <me@jaredwray.com>",
   "license": "MIT",
+  "packageManager": "pnpm@10.33.0",
   "devDependencies": {
     "@biomejs/biome": "^2.4.14",
     "@faker-js/faker": "^10.4.0",

@@ -30,10 +30,11 @@ test("cacheableRequest is a class", () => {
 });
 test("cacheableRequest returns an event emitter", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
-	const returnValue = cacheableRequest(parseWithWhatwg(s.url), () => true).on(
-		"request",
-		(request_: any) => request_.end(),
-	);
+	const returnValue = cacheableRequest(parseWithWhatwg(s.url), () => true)
+		.on("error", () => {
+			/* request-lifecycle noise — test asserts the return value, not response */
+		})
+		.on("request", (request_: any) => request_.end());
 	expect(returnValue instanceof EventEmitter).toBeTruthy();
 });
 
@@ -42,34 +43,53 @@ test("cacheableRequest passes requests through if no cache option is set", () =>
 	cacheableRequest(parseWithWhatwg(s.url), async (response: any) => {
 		const body = await getStream(response);
 		expect(body).toBe("hi");
-	}).on("request", (request_: any) => request_.end());
+	})
+		.on("error", () => {
+			/* request-lifecycle noise */
+		})
+		.on("request", (request_: any) => request_.end());
 });
 test("cacheableRequest accepts url as string", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
 	cacheableRequest(s.url, async (response: any) => {
 		const body = await getStream(response);
 		expect(body).toBe("hi");
-	}).on("request", (request_: any) => request_.end());
+	})
+		.on("error", () => {
+			/* request-lifecycle noise */
+		})
+		.on("request", (request_: any) => request_.end());
 });
 test("cacheableRequest accepts url as URL", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
 	cacheableRequest(new URL(s.url), async (response: any) => {
 		const body = await getStream(response);
 		expect(body).toBe("hi");
-	}).on("request", (request_: any) => request_.end());
+	})
+		.on("error", () => {
+			/* request-lifecycle noise */
+		})
+		.on("request", (request_: any) => request_.end());
 });
 test("cacheableRequest handles no callback parameter", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
-	cacheableRequest(parseWithWhatwg(s.url)).on("request", (request_: any) => {
-		request_.end();
-		request_.on("response", (response: any) => {
-			expect(response.statusCode).toBe(200);
+	cacheableRequest(parseWithWhatwg(s.url))
+		.on("error", () => {
+			/* request-lifecycle noise */
+		})
+		.on("request", (request_: any) => {
+			request_.end();
+			request_.on("response", (response: any) => {
+				expect(response.statusCode).toBe(200);
+			});
 		});
-	});
 });
 test("cacheableRequest emits response event for network responses", () => {
 	const cacheableRequest = new CacheableRequest(request).request();
 	cacheableRequest(parseWithWhatwg(s.url))
+		.on("error", () => {
+			/* request-lifecycle noise */
+		})
 		.on("request", (request_: any) => request_.end())
 		.on("response", (response: any) => {
 			expect(response.fromCache).toBeFalsy();
@@ -84,12 +104,19 @@ test("cacheableRequest emits response event for cached responses", () => {
 		// This needs to happen in next tick so cache entry has time to be stored
 		setImmediate(() => {
 			cacheableRequest(options)
+				.on("error", () => {
+					/* request-lifecycle noise */
+				})
 				.on("request", (request_: any) => request_.end())
 				.on("response", (response: any) => {
 					expect(response.fromCache).toBeTruthy();
 				});
 		});
-	}).on("request", (request_: any) => request_.end());
+	})
+		.on("error", () => {
+			/* request-lifecycle noise */
+		})
+		.on("request", (request_: any) => request_.end());
 });
 test("cacheableRequest emits CacheError if cache adapter connection errors", () => {
 	const cacheableRequest = new CacheableRequest(
@@ -176,7 +203,11 @@ test("cacheableRequest emits CacheError if cache.delete errors", () => {
 					})
 					.on("request", (request_: any) => request_.end());
 			});
-		}).on("request", (request_: any) => request_.end());
+		})
+			.on("error", () => {
+				/* request-lifecycle noise */
+			})
+			.on("request", (request_: any) => request_.end());
 	})();
 });
 test("cacheableRequest emits Error if request function throws", () => {
@@ -202,21 +233,29 @@ test("cacheableRequest does not cache response if request is aborted before rece
 		// biome-ignore lint/style/noNonNullAssertion: legacy
 		const options = parseWithWhatwg(s.url!);
 		options.path = "/delay-start";
-		cacheableRequest(options).on("request", (request_: any) => {
-			request_.end();
-			setTimeout(() => {
-				/* do nothing */
-			}, 20);
-			setTimeout(() => {
-				cacheableRequest(options, async (response: any) => {
-					request_.abort();
-					expect(response.fromCache).toBe(false);
-					const body = await getStream(response);
-					expect(body).toBe("hi");
-					await s.close();
-				}).on("request", (request_: any) => request_.end());
-			}, 100);
-		});
+		cacheableRequest(options)
+			.on("error", () => {
+				/* swallow abort-induced ECONNRESET on Node 24 */
+			})
+			.on("request", (request_: any) => {
+				request_.end();
+				setTimeout(() => {
+					/* do nothing */
+				}, 20);
+				setTimeout(() => {
+					cacheableRequest(options, async (response: any) => {
+						request_.abort();
+						expect(response.fromCache).toBe(false);
+						const body = await getStream(response);
+						expect(body).toBe("hi");
+						await s.close();
+					})
+						.on("error", () => {
+							/* request-lifecycle noise */
+						})
+						.on("request", (request_: any) => request_.end());
+				}, 100);
+			});
 	});
 });
 test("cacheableRequest does not cache response if request is aborted after receiving part of the response", () => {
@@ -233,19 +272,27 @@ test("cacheableRequest does not cache response if request is aborted after recei
 		// biome-ignore lint/style/noNonNullAssertion: legacy
 		const options = parseWithWhatwg(s.url!);
 		options.path = "/delay-partial";
-		cacheableRequest(options).on("request", (request_: any) => {
-			setTimeout(() => {
-				request_.abort();
-			}, 20);
-			setTimeout(() => {
-				cacheableRequest(options, async (response: any) => {
-					expect(response.fromCache).toBeFalsy();
-					const body = await getStream(response);
-					expect(body).toBe("hi");
-					await s.close();
-				}).on("request", (request_: any) => request_.end());
-			}, 100);
-		});
+		cacheableRequest(options)
+			.on("error", () => {
+				/* swallow abort-induced ECONNRESET on Node 24 */
+			})
+			.on("request", (request_: any) => {
+				setTimeout(() => {
+					request_.abort();
+				}, 20);
+				setTimeout(() => {
+					cacheableRequest(options, async (response: any) => {
+						expect(response.fromCache).toBeFalsy();
+						const body = await getStream(response);
+						expect(body).toBe("hi");
+						await s.close();
+					})
+						.on("error", () => {
+							/* request-lifecycle noise */
+						})
+						.on("request", (request_: any) => request_.end());
+				}, 100);
+			});
 	});
 });
 test("cacheableRequest makes request even if initial DB connection fails (when opts.automaticFailover is enabled)", async () => {
