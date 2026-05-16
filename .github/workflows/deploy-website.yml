@@ -17,14 +17,14 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    # Test
+    - name: Enable corepack
+      run: corepack enable
+
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 24
-
-    - name: Install PNPM
-      run: npm install -g pnpm@10
+        cache: pnpm
 
     - name: Install Modules
       run: pnpm install
