@@ -5,7 +5,6 @@ export default defineConfig({
 		fileParallelism: false,
 		maxConcurrency: 1,
 		maxWorkers: 1,
-		dangerouslyIgnoreUnhandledErrors: true,
 		coverage: {
 			provider: 'v8',
 			reporter: ['json', 'text', 'lcov'],

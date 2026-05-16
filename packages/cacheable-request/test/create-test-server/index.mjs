@@ -47,7 +47,10 @@ const createTestServer = (opts = {}) => {
 		]);
 
 		server.close = () => Promise.all([
-			pify(server.http.close.bind(server.http))().then(() => {
+			(() => {
+				server.http.closeAllConnections();
+				return pify(server.http.close.bind(server.http))();
+			})().then(() => {
 				server.port = undefined;
 				server.url = undefined;
 			})
