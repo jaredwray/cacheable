@@ -202,21 +202,25 @@ test("cacheableRequest does not cache response if request is aborted before rece
 		// biome-ignore lint/style/noNonNullAssertion: legacy
 		const options = parseWithWhatwg(s.url!);
 		options.path = "/delay-start";
-		cacheableRequest(options).on("request", (request_: any) => {
-			request_.end();
-			setTimeout(() => {
-				/* do nothing */
-			}, 20);
-			setTimeout(() => {
-				cacheableRequest(options, async (response: any) => {
-					request_.abort();
-					expect(response.fromCache).toBe(false);
-					const body = await getStream(response);
-					expect(body).toBe("hi");
-					await s.close();
-				}).on("request", (request_: any) => request_.end());
-			}, 100);
-		});
+		cacheableRequest(options)
+			.on("error", () => {
+				/* swallow abort-induced ECONNRESET on Node 24 */
+			})
+			.on("request", (request_: any) => {
+				request_.end();
+				setTimeout(() => {
+					/* do nothing */
+				}, 20);
+				setTimeout(() => {
+					cacheableRequest(options, async (response: any) => {
+						request_.abort();
+						expect(response.fromCache).toBe(false);
+						const body = await getStream(response);
+						expect(body).toBe("hi");
+						await s.close();
+					}).on("request", (request_: any) => request_.end());
+				}, 100);
+			});
 	});
 });
 test("cacheableRequest does not cache response if request is aborted after receiving part of the response", () => {
@@ -233,19 +237,23 @@ test("cacheableRequest does not cache response if request is aborted after recei
 		// biome-ignore lint/style/noNonNullAssertion: legacy
 		const options = parseWithWhatwg(s.url!);
 		options.path = "/delay-partial";
-		cacheableRequest(options).on("request", (request_: any) => {
-			setTimeout(() => {
-				request_.abort();
-			}, 20);
-			setTimeout(() => {
-				cacheableRequest(options, async (response: any) => {
-					expect(response.fromCache).toBeFalsy();
-					const body = await getStream(response);
-					expect(body).toBe("hi");
-					await s.close();
-				}).on("request", (request_: any) => request_.end());
-			}, 100);
-		});
+		cacheableRequest(options)
+			.on("error", () => {
+				/* swallow abort-induced ECONNRESET on Node 24 */
+			})
+			.on("request", (request_: any) => {
+				setTimeout(() => {
+					request_.abort();
+				}, 20);
+				setTimeout(() => {
+					cacheableRequest(options, async (response: any) => {
+						expect(response.fromCache).toBeFalsy();
+						const body = await getStream(response);
+						expect(body).toBe("hi");
+						await s.close();
+					}).on("request", (request_: any) => request_.end());
+				}, 100);
+			});
 	});
 });
 test("cacheableRequest makes request even if initial DB connection fails (when opts.automaticFailover is enabled)", async () => {
