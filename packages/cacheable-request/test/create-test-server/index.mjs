@@ -42,7 +42,7 @@ const createTestServer = (opts = {}) => {
 		server.listen = () => Promise.all([
 			pify(server.http.listen.bind(server.http))(opts.port, '127.0.0.1').then(() => {
 				server.port = server.http.address().port;
-				server.url = `http://localhost:${server.port}`;
+				server.url = `http://127.0.0.1:${server.port}`;
 			})
 		]);
 
