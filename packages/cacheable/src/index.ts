@@ -567,6 +567,7 @@ export class Cacheable extends Hookified {
 			const item = { key, value, ttl: primaryTtl };
 			await this.hook(CacheableHooks.BEFORE_SET, item);
 			const hookOverridden = item.ttl !== primaryTtl;
+			item.ttl = this.capTtl(item.ttl, maxTtlMs);
 			const promises = [];
 			promises.push(this._primary.set(item.key, item.value, item.ttl));
 			if (this._secondary) {

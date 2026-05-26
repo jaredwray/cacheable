@@ -1979,4 +1979,17 @@ describe("cacheable maxTtl", () => {
 		const now = Date.now();
 		expect(raw.expires).toBeGreaterThan(now + 4000);
 	});
+
+	test("should re-cap ttl after BEFORE_SET hook overrides it", async () => {
+		const cacheable = new Cacheable({ maxTtl: 200 });
+		cacheable.onHook(CacheableHooks.BEFORE_SET, (item) => {
+			item.ttl = 60_000;
+		});
+		await cacheable.set("key1", "value1", 100);
+		const raw = await cacheable.primary.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeLessThanOrEqual(now + 210);
+	});
 });
