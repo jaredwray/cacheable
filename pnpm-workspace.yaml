@@ -1,5 +1,6 @@
 packages:
   - 'packages/*'
+minimumReleaseAge: 2880
 allowBuilds:
   esbuild: true
   protobufjs: true
