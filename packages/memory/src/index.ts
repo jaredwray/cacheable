@@ -38,6 +38,9 @@ export type StoreHashAlgorithmFunction = (
  * @property {number|string} [ttl] - Time to Live - If you set a number it is miliseconds, if you set a string it is a human-readable
  * format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means that it will use the default time-to-live. If both are
  * undefined then it will not have a time-to-live.
+ * @property {number|string} [maxTtl] - Maximum Time to Live - The upper bound for any TTL set on a cache entry. If a TTL (whether from the
+ * default or per-entry) exceeds this value, the entry's TTL is capped to maxTtl. Can be a number in milliseconds or a human-readable
+ * format such as `1s`, `1m`, `1h`, `1d`. Default is `undefined` (no maximum).
  * @property {boolean} [useClone] - If true, it will clone the value before returning it. If false, it will return the value directly. Default is true.
  * @property {number} [lruSize] - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0. If you are using LRU then the limit is based on Map() size 17mm.
  * @property {number} [checkInterval] - The interval to check for expired items. If set to 0, it will not check for expired items. Default is 0.
@@ -45,6 +48,7 @@ export type StoreHashAlgorithmFunction = (
  */
 export type CacheableMemoryOptions = {
 	ttl?: number | string;
+	maxTtl?: number | string;
 	useClone?: boolean;
 	lruSize?: number;
 	checkInterval?: number;
@@ -73,6 +77,7 @@ export class CacheableMemory extends Hookified {
 		() => new Map<string, CacheableStoreItem>(),
 	);
 	private _ttl: number | string | undefined; // Turned off by default
+	private _maxTtl: number | string | undefined; // Turned off by default
 	private _useClone = true; // Turned on by default
 	private _lruSize = 0; // Turned off by default
 	private _checkInterval = 0; // Turned off by default
@@ -87,6 +92,10 @@ export class CacheableMemory extends Hookified {
 
 		if (options?.ttl) {
 			this.setTtl(options.ttl);
+		}
+
+		if (options?.maxTtl !== undefined) {
+			this.setMaxTtl(options.maxTtl);
 		}
 
 		if (options?.useClone !== undefined) {
@@ -140,6 +149,24 @@ export class CacheableMemory extends Hookified {
 	 */
 	public set ttl(value: number | string | undefined) {
 		this.setTtl(value);
+	}
+
+	/**
+	 * Gets the maximum time-to-live. When set, any TTL that exceeds this value is capped to maxTtl.
+	 * Entries with no TTL will also be capped to maxTtl. Default is `undefined` (no maximum).
+	 * @returns {number|string|undefined} - The maximum TTL in milliseconds, human-readable format, or undefined.
+	 */
+	public get maxTtl(): number | string | undefined {
+		return this._maxTtl;
+	}
+
+	/**
+	 * Sets the maximum time-to-live. When set, any TTL that exceeds this value is capped to maxTtl.
+	 * Entries with no TTL will also be capped to maxTtl.
+	 * @param {number|string|undefined} value - The maximum TTL in milliseconds or human-readable format (e.g. '1s', '1h'). If undefined, no maximum is enforced.
+	 */
+	public set maxTtl(value: number | string | undefined) {
+		this.setMaxTtl(value);
 	}
 
 	/**
@@ -445,6 +472,15 @@ export class CacheableMemory extends Hookified {
 				if (finalTtl !== undefined) {
 					expires = finalTtl;
 				}
+			}
+		}
+
+		if (this._maxTtl !== undefined) {
+			const maxExpires = shorthandToTime(this._maxTtl);
+			if (expires === undefined) {
+				expires = maxExpires;
+			} else if (expires > maxExpires) {
+				expires = maxExpires;
 			}
 		}
 
@@ -782,6 +818,16 @@ export class CacheableMemory extends Hookified {
 			this._ttl = ttl;
 		} else {
 			this._ttl = undefined;
+		}
+	}
+
+	private setMaxTtl(maxTtl: number | string | undefined): void {
+		if (typeof maxTtl === "string" || maxTtl === undefined) {
+			this._maxTtl = maxTtl;
+		} else if (maxTtl > 0) {
+			this._maxTtl = maxTtl;
+		} else {
+			this._maxTtl = undefined;
 		}
 	}
 

@@ -1080,3 +1080,164 @@ describe("CacheableMemory Hooks", () => {
 		expect(afterGetResult).toBeUndefined();
 	});
 });
+
+describe("CacheableMemory maxTtl", () => {
+	test("should have default maxTtl as undefined", () => {
+		const cache = new CacheableMemory();
+		expect(cache.maxTtl).toBe(undefined);
+	});
+
+	test("should set maxTtl via constructor", () => {
+		const cache = new CacheableMemory({ maxTtl: 5000 });
+		expect(cache.maxTtl).toBe(5000);
+	});
+
+	test("should set maxTtl via constructor with string", () => {
+		const cache = new CacheableMemory({ maxTtl: "1h" });
+		expect(cache.maxTtl).toBe("1h");
+	});
+
+	test("should set maxTtl via setter", () => {
+		const cache = new CacheableMemory();
+		cache.maxTtl = 10_000;
+		expect(cache.maxTtl).toBe(10_000);
+	});
+
+	test("should set maxTtl via setter with string", () => {
+		const cache = new CacheableMemory();
+		cache.maxTtl = "30m";
+		expect(cache.maxTtl).toBe("30m");
+	});
+
+	test("should disable maxTtl by setting to undefined", () => {
+		const cache = new CacheableMemory({ maxTtl: 5000 });
+		expect(cache.maxTtl).toBe(5000);
+		cache.maxTtl = undefined;
+		expect(cache.maxTtl).toBe(undefined);
+	});
+
+	test("should disable maxTtl by setting to 0 or negative", () => {
+		const cache = new CacheableMemory({ maxTtl: 5000 });
+		cache.maxTtl = 0;
+		expect(cache.maxTtl).toBe(undefined);
+		cache.maxTtl = 5000;
+		cache.maxTtl = -1;
+		expect(cache.maxTtl).toBe(undefined);
+	});
+
+	test("should handle negative maxTtl in constructor", () => {
+		const cache = new CacheableMemory({ maxTtl: -1 });
+		expect(cache.maxTtl).toBe(undefined);
+	});
+
+	test("should cap ttl when it exceeds maxTtl", async () => {
+		const cache = new CacheableMemory({ maxTtl: 50 });
+		cache.set("key1", "value1", 200);
+		const raw = cache.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw?.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw?.expires as number).toBeLessThanOrEqual(now + 55);
+		expect(raw?.expires as number).toBeGreaterThan(now);
+	});
+
+	test("should not cap ttl when it is within maxTtl", async () => {
+		const cache = new CacheableMemory({ maxTtl: 5000 });
+		cache.set("key1", "value1", 100);
+		const raw = cache.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw?.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw?.expires as number).toBeLessThanOrEqual(now + 105);
+		expect(raw?.expires as number).toBeGreaterThan(now);
+	});
+
+	test("should enforce maxTtl when no ttl is set on entry or default", async () => {
+		const cache = new CacheableMemory({ maxTtl: 100 });
+		cache.set("key1", "value1");
+		const raw = cache.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw?.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw?.expires as number).toBeLessThanOrEqual(now + 105);
+		expect(raw?.expires as number).toBeGreaterThan(now);
+	});
+
+	test("should enforce maxTtl when default ttl exceeds maxTtl", async () => {
+		const cache = new CacheableMemory({ ttl: 5000, maxTtl: 100 });
+		cache.set("key1", "value1");
+		const raw = cache.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw?.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw?.expires as number).toBeLessThanOrEqual(now + 105);
+		expect(raw?.expires as number).toBeGreaterThan(now);
+	});
+
+	test("should work with maxTtl as shorthand string", async () => {
+		const cache = new CacheableMemory({ maxTtl: "1s" });
+		cache.set("key1", "value1", "1h");
+		const raw = cache.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw?.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw?.expires as number).toBeLessThanOrEqual(now + 1005);
+		expect(raw?.expires as number).toBeGreaterThan(now);
+	});
+
+	test("should expire items at maxTtl boundary", async () => {
+		const cache = new CacheableMemory({ maxTtl: 30 });
+		cache.set("key1", "value1", 5000);
+		expect(cache.get("key1")).toBe("value1");
+		await sleep(40);
+		expect(cache.get("key1")).toBeUndefined();
+	});
+
+	test("should enforce maxTtl on setMany", async () => {
+		const cache = new CacheableMemory({ maxTtl: 100 });
+		cache.setMany([
+			{ key: "k1", value: "v1", ttl: 5000 },
+			{ key: "k2", value: "v2" },
+		]);
+		const raw1 = cache.getRaw("k1");
+		const raw2 = cache.getRaw("k2");
+		const now = Date.now();
+		expect(raw1).toBeDefined();
+		expect(raw1?.expires).toBeDefined();
+		expect(raw1?.expires as number).toBeLessThanOrEqual(now + 105);
+		expect(raw2).toBeDefined();
+		expect(raw2?.expires).toBeDefined();
+		expect(raw2?.expires as number).toBeLessThanOrEqual(now + 105);
+	});
+
+	test("should enforce maxTtl when SetOptions object with ttl is used", () => {
+		const cache = new CacheableMemory({ maxTtl: 100 });
+		cache.set("key1", "value1", { ttl: 5000 });
+		const raw = cache.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw?.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw?.expires as number).toBeLessThanOrEqual(now + 105);
+	});
+
+	test("should enforce maxTtl when SetOptions object with expire is used", () => {
+		const cache = new CacheableMemory({ maxTtl: 100 });
+		const farFutureExpire = Date.now() + 60_000;
+		cache.set("key1", "value1", { expire: farFutureExpire });
+		const raw = cache.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw?.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw?.expires as number).toBeLessThanOrEqual(now + 105);
+	});
+
+	test("should not interfere when maxTtl is undefined", () => {
+		const cache = new CacheableMemory({ ttl: 5000 });
+		cache.set("key1", "value1");
+		const raw = cache.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw?.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw?.expires as number).toBeGreaterThan(now + 4000);
+	});
+});
