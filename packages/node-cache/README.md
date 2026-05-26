@@ -333,10 +333,21 @@ When initializing the cache you can pass in the options below:
 
 ```javascript
 export type NodeCacheStoreOptions = {
-	ttl?: number | string; // The standard ttl as number in milliseconds for every generated cache element. 0 = unlimited. Supports shorthand like '1h' for 1 hour.
+	ttl?: number | string; // The standard ttl as number in milliseconds. 0 = unlimited. Supports shorthand like '1h'.
 	store?: Keyv; // The storage adapter (defaults to in-memory Keyv)
+	useClones?: boolean; // Clone values on get/set via structuredClone. Default: false
+	checkperiod?: number; // Interval in seconds to check for expired items. 0 = disabled. Default: 0
+	deleteOnExpire?: boolean; // Delete expired items when detected. Default: true
 };
 ```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `ttl` | `undefined` | The standard TTL in milliseconds for every cache element. `undefined` or `0` = unlimited. Supports shorthand strings like `'1h'`, `'30m'`, `'5s'`. |
+| `store` | `new Keyv()` | The Keyv storage adapter. Pass any Keyv-compatible store (Redis, MongoDB, etc.). |
+| `useClones` | `false` | If `true`, values are deep-cloned via `structuredClone` on both `set()` and `get()`. This prevents mutations to the returned object from affecting the cached copy and vice versa. |
+| `checkperiod` | `0` | The interval in seconds to check for expired items. `0` = disabled (expiration is checked lazily on access). |
+| `deleteOnExpire` | `true` | If `true`, expired keys are automatically deleted. If `false`, expired keys remain in the store but `get()` returns `undefined` and `has()` returns `false`. You can handle them via the `expired` event. |
 
 Note: the `ttl` is now in milliseconds and not seconds like `stdTTL` in `NodeCache`. You can also use shorthand notation for TTL values. Here is an example:
 
@@ -348,18 +359,189 @@ await cache.set('longfoo', 'bar', '1d'); // 1 day
 
 ## NodeCacheStore API
 
-* `set(key: string | number, value: any, ttl?: number | string): Promise<boolean>` - Set a key value pair with an optional ttl (in milliseconds or shorthand string). Will return true on success. If the ttl is not set it will default to the instance ttl or no expiration.
-* `mset(data: Array<PartialNodeCacheItem>): Promise<void>` - Set multiple key value pairs at once
-* `get<T>(key: string | number): Promise<T | undefined>` - Get a value from the cache by key
-* `mget<T>(keys: Array<string | number>): Promise<Record<string, T | undefined>>` - Get multiple values from the cache by keys
-* `take<T>(key: string | number): Promise<T | undefined>` - Get a value from the cache by key and delete it
-* `del(key: string | number): Promise<boolean>` - Delete a key
-* `mdel(keys: Array<string | number>): Promise<boolean>` - Delete multiple keys
-* `clear(): Promise<void>` - Clear the cache
-* `setTtl(key: string | number, ttl?: number | string): Promise<boolean>` - Set the ttl of an existing key
-* `disconnect(): Promise<void>` - Disconnect the storage adapter
+### `set(key, value, ttl?): Promise<boolean>`
+
+Set a key value pair with an optional ttl (in milliseconds or shorthand string). Returns `true` on success.
+
+```javascript
+await cache.set('foo', 'bar');
+await cache.set('foo', 'bar', 5000); // 5 seconds in milliseconds
+await cache.set('foo', 'bar', '1h'); // 1 hour using shorthand
+```
+
+### `mset(data): Promise<void>`
+
+Set multiple key value pairs at once.
+
+```javascript
+await cache.mset([{key: 'foo', value: 'bar'}, {key: 'baz', value: 'qux', ttl: 5000}]);
+```
+
+### `get<T>(key): Promise<T | undefined>`
+
+Get a value from the cache by key. Returns `undefined` if the key does not exist or has expired.
+
+```javascript
+await cache.get('foo'); // 'bar'
+```
+
+### `mget<T>(keys): Promise<Record<string, T | undefined>>`
+
+Get multiple values from the cache by keys.
+
+```javascript
+await cache.mget(['foo', 'bar']); // { foo: 'value1', bar: 'value2' }
+```
+
+### `take<T>(key): Promise<T | undefined>`
+
+Get a value from the cache by key and delete it. Useful for single-use values like OTPs.
+
+```javascript
+await cache.take('foo'); // 'bar'
+await cache.get('foo'); // undefined
+```
+
+### `del(key): Promise<boolean>`
+
+Delete a key from the cache. Returns `true` if the key was deleted.
+
+```javascript
+await cache.del('foo'); // true
+```
+
+### `mdel(keys): Promise<boolean>`
+
+Delete multiple keys from the cache.
+
+```javascript
+await cache.mdel(['foo', 'bar']); // true
+```
+
+### `has(key): Promise<boolean>`
+
+Check if a key exists in the cache and is not expired.
+
+```javascript
+await cache.set('foo', 'bar');
+await cache.has('foo'); // true
+await cache.has('missing'); // false
+```
+
+### `keys(): Promise<string[]>`
+
+Get all keys from the cache.
+
+```javascript
+await cache.keys(); // ['foo', 'bar']
+```
+
+### `getTtl(key): Promise<number | undefined>`
+
+Get the TTL expiration timestamp of a key. Returns `0` if the key has no TTL (unlimited), `undefined` if the key does not exist, or a timestamp in milliseconds of when the key will expire.
+
+```javascript
+await cache.set('foo', 'bar', 5000);
+await cache.getTtl('foo'); // 1725993344859 (timestamp)
+await cache.set('bar', 'baz');
+await cache.getTtl('bar'); // 0 (unlimited)
+await cache.getTtl('missing'); // undefined
+```
+
+### `setTtl(key, ttl?): Promise<boolean>`
+
+Set the TTL of an existing key. Returns `true` if the key was found and updated.
+
+```javascript
+await cache.setTtl('foo', 10000); // true
+```
+
+### `clear(): Promise<void>`
+
+Clear the cache. Removes all keys and resets store-related stats (keys, ksize, vsize) but preserves hit/miss counts.
+
+```javascript
+await cache.clear();
+```
+
+### `flushAll(): Promise<void>`
+
+Flush the entire cache. Removes all keys and resets all stats. Emits a `flush` event.
+
+```javascript
+await cache.flushAll();
+await cache.keys(); // []
+cache.getStats(); // {hits: 0, misses: 0, keys: 0, ksize: 0, vsize: 0}
+```
+
+### `getStats(): NodeCacheStats`
+
+Get the stats of the cache.
+
+```javascript
+cache.getStats(); // {hits: 1, misses: 0, keys: 2, ksize: 12, vsize: 24}
+```
+
+### `flushStats(): void`
+
+Flush the stats. Resets all stats but keeps the cached data.
+
+### `close(): void`
+
+Stop the check interval timer. Use this to clean up when you're done with the cache.
+
+```javascript
+cache.close();
+```
+
+### `disconnect(): Promise<void>`
+
+Disconnect the storage adapter and stop the check interval.
+
+```javascript
+await cache.disconnect();
+```
+
+### Events
+
+Listen to events using `on()`:
+
+```javascript
+cache.on('set', (key, value) => {
+	console.log(`Key ${key} has been set with value ${value}`);
+});
+
+cache.on('del', (key, value) => {
+	console.log(`Key ${key} has been deleted`);
+});
+
+cache.on('expired', (key, value) => {
+	console.log(`Key ${key} has expired`);
+});
+
+cache.on('flush', () => {
+	console.log('Cache has been flushed');
+});
+
+cache.on('flush_stats', () => {
+	console.log('Stats have been flushed');
+});
+```
+
+| Event | Arguments | Description |
+|-------|-----------|-------------|
+| `set` | `key, value` | Emitted when a key is set |
+| `del` | `key, value` | Emitted when a key is deleted (including via `take()` and `mdel()`) |
+| `expired` | `key, value` | Emitted when an expired key is detected |
+| `flush` | — | Emitted when `flushAll()` is called |
+| `flush_stats` | — | Emitted when `flushStats()` is called |
+
+### Properties
+
 * `ttl`: `number | string | undefined` - The standard ttl for every generated cache element. `undefined` = unlimited
 * `store`: `Keyv` - The storage adapter (read-only)
+* `useClones`: `boolean` - Whether values are cloned on get/set
+* `deleteOnExpire`: `boolean` - Whether expired items are automatically deleted
 
 
 # Migrating to v2
