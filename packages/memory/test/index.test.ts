@@ -1,7 +1,7 @@
 import { createWrapKey, HashAlgorithm, sleep } from "@cacheable/utils";
 import { faker } from "@faker-js/faker";
 import { describe, expect, test } from "vitest";
-import { CacheableMemory } from "../src/index.js";
+import { CacheableMemory, CacheableMemoryHooks } from "../src/index.js";
 
 const cacheItemList = [
 	{ key: "key", value: "value" },
@@ -899,5 +899,184 @@ describe("CacheableMemory LRU and TTL integration", () => {
 
 		// 'keep' should still exist
 		expect(cache.get("keep")).toBe("value2");
+	});
+});
+
+describe("CacheableMemory Hooks", () => {
+	test("should handle BEFORE_SET and AFTER_SET hooks", () => {
+		const cache = new CacheableMemory();
+		let beforeSet = false;
+		let afterSet = false;
+		cache.onHook(CacheableMemoryHooks.BEFORE_SET, (item) => {
+			beforeSet = true;
+			item.value = "new value";
+		});
+		cache.onHook(CacheableMemoryHooks.AFTER_SET, (item) => {
+			afterSet = true;
+			expect(item.value).toEqual("new value");
+		});
+		cache.set("key", "value");
+		expect(beforeSet).toBe(true);
+		expect(afterSet).toBe(true);
+		expect(cache.get("key")).toEqual("new value");
+	});
+
+	test("should allow BEFORE_SET hook to modify ttl", () => {
+		const cache = new CacheableMemory();
+		cache.onHook(CacheableMemoryHooks.BEFORE_SET, (item) => {
+			item.ttl = "1h";
+		});
+		cache.set("key", "value");
+		const raw = cache.getRaw("key");
+		expect(raw).toBeDefined();
+		expect(raw?.expires).toBeGreaterThan(Date.now());
+	});
+
+	test("should handle BEFORE_SET_MANY and AFTER_SET_MANY hooks", () => {
+		const cache = new CacheableMemory();
+		let beforeSetMany = false;
+		let afterSetMany = false;
+		cache.onHook(CacheableMemoryHooks.BEFORE_SET_MANY, (items) => {
+			beforeSetMany = true;
+			expect(items).toHaveLength(2);
+		});
+		cache.onHook(CacheableMemoryHooks.AFTER_SET_MANY, (items) => {
+			afterSetMany = true;
+			expect(items).toHaveLength(2);
+		});
+		cache.setMany([
+			{ key: "key1", value: "value1" },
+			{ key: "key2", value: "value2" },
+		]);
+		expect(beforeSetMany).toBe(true);
+		expect(afterSetMany).toBe(true);
+	});
+
+	test("should handle BEFORE_GET and AFTER_GET hooks", () => {
+		const cache = new CacheableMemory();
+		let beforeGet = false;
+		let afterGet = false;
+		cache.onHook(CacheableMemoryHooks.BEFORE_GET, (key) => {
+			beforeGet = true;
+			expect(key).toEqual("key");
+		});
+		cache.onHook(CacheableMemoryHooks.AFTER_GET, (item) => {
+			afterGet = true;
+			expect(item.key).toEqual("key");
+			expect(item.result).toEqual("value");
+		});
+		cache.set("key", "value");
+		cache.get("key");
+		expect(beforeGet).toBe(true);
+		expect(afterGet).toBe(true);
+	});
+
+	test("should handle AFTER_GET hook with undefined result on cache miss", () => {
+		const cache = new CacheableMemory();
+		let afterGet = false;
+		cache.onHook(CacheableMemoryHooks.AFTER_GET, (item) => {
+			afterGet = true;
+			expect(item.key).toEqual("missing");
+			expect(item.result).toBeUndefined();
+		});
+		cache.get("missing");
+		expect(afterGet).toBe(true);
+	});
+
+	test("should handle BEFORE_GET_MANY and AFTER_GET_MANY hooks", () => {
+		const cache = new CacheableMemory();
+		let beforeGetMany = false;
+		let afterGetMany = false;
+		cache.onHook(CacheableMemoryHooks.BEFORE_GET_MANY, (keys) => {
+			beforeGetMany = true;
+			expect(keys).toEqual(["key1", "key2"]);
+		});
+		cache.onHook(CacheableMemoryHooks.AFTER_GET_MANY, (data) => {
+			afterGetMany = true;
+			expect(data.keys).toEqual(["key1", "key2"]);
+			expect(data.result).toEqual(["value1", "value2"]);
+		});
+		cache.set("key1", "value1");
+		cache.set("key2", "value2");
+		cache.getMany(["key1", "key2"]);
+		expect(beforeGetMany).toBe(true);
+		expect(afterGetMany).toBe(true);
+	});
+
+	test("should handle BEFORE_DELETE and AFTER_DELETE hooks", () => {
+		const cache = new CacheableMemory();
+		let beforeDelete = false;
+		let afterDelete = false;
+		cache.onHook(CacheableMemoryHooks.BEFORE_DELETE, (key) => {
+			beforeDelete = true;
+			expect(key).toEqual("key");
+		});
+		cache.onHook(CacheableMemoryHooks.AFTER_DELETE, (key) => {
+			afterDelete = true;
+			expect(key).toEqual("key");
+		});
+		cache.set("key", "value");
+		cache.delete("key");
+		expect(beforeDelete).toBe(true);
+		expect(afterDelete).toBe(true);
+		expect(cache.get("key")).toBeUndefined();
+	});
+
+	test("should handle BEFORE_DELETE_MANY and AFTER_DELETE_MANY hooks", () => {
+		const cache = new CacheableMemory();
+		let beforeDeleteMany = false;
+		let afterDeleteMany = false;
+		cache.onHook(CacheableMemoryHooks.BEFORE_DELETE_MANY, (keys) => {
+			beforeDeleteMany = true;
+			expect(keys).toEqual(["key1", "key2"]);
+		});
+		cache.onHook(CacheableMemoryHooks.AFTER_DELETE_MANY, (keys) => {
+			afterDeleteMany = true;
+			expect(keys).toEqual(["key1", "key2"]);
+		});
+		cache.set("key1", "value1");
+		cache.set("key2", "value2");
+		cache.deleteMany(["key1", "key2"]);
+		expect(beforeDeleteMany).toBe(true);
+		expect(afterDeleteMany).toBe(true);
+	});
+
+	test("should handle BEFORE_CLEAR and AFTER_CLEAR hooks", () => {
+		const cache = new CacheableMemory();
+		let beforeClear = false;
+		let afterClear = false;
+		cache.onHook(CacheableMemoryHooks.BEFORE_CLEAR, () => {
+			beforeClear = true;
+		});
+		cache.onHook(CacheableMemoryHooks.AFTER_CLEAR, () => {
+			afterClear = true;
+		});
+		cache.set("key", "value");
+		cache.clear();
+		expect(beforeClear).toBe(true);
+		expect(afterClear).toBe(true);
+		expect(cache.size).toBe(0);
+	});
+
+	test("should handle BEFORE_SET hook modifying the key", () => {
+		const cache = new CacheableMemory();
+		cache.onHook(CacheableMemoryHooks.BEFORE_SET, (item) => {
+			item.key = `prefix:${item.key}`;
+		});
+		cache.set("key", "value");
+		expect(cache.get("key")).toBeUndefined();
+		expect(cache.get("prefix:key")).toEqual("value");
+	});
+
+	test("should handle AFTER_GET with expired item", async () => {
+		const cache = new CacheableMemory();
+		let afterGetResult: unknown;
+		cache.onHook(CacheableMemoryHooks.AFTER_GET, (item) => {
+			afterGetResult = item.result;
+		});
+		cache.set("key", "value", 5);
+		await sleep(20);
+		cache.get("key");
+		expect(afterGetResult).toBeUndefined();
 	});
 });
