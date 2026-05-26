@@ -84,8 +84,7 @@ describe("NodeCacheStore", () => {
 		await store.set(key1, value1);
 		await store.set(key2, value2);
 		const result1 = await store.mget([key1, key2]);
-		expect(result1[key1]).toBe(value1);
-		expect(result1[key2]).toBe(value2);
+		expect(result1).toEqual({ [key1]: value1, [key2]: value2 });
 	});
 	test("should not pollute Object.prototype via mget with __proto__ key", async () => {
 		const store = new NodeCacheStore();
@@ -170,8 +169,7 @@ describe("NodeCacheStore", () => {
 		const missingKey = faker.string.uuid();
 		await store.set(key, value);
 		const result = await store.mget([key, missingKey]);
-		expect(result[key]).toBe(value);
-		expect(result[missingKey]).toBeUndefined();
+		expect(result).toEqual({ [key]: value, [missingKey]: undefined });
 	});
 	test("should handle take on non-existent key", async () => {
 		const store = new NodeCacheStore();
@@ -317,10 +315,10 @@ describe("NodeCacheStore", () => {
 		expect(getResult?.age).toBe(age1);
 
 		const mgetResult = await store.mget([key1, key2]);
-		const user1 = mgetResult[key1];
-		expect(user1).toBeDefined();
-		expect(user1?.name).toBe(name1);
-		expect(user1?.age).toBe(age1);
+		expect(mgetResult).toEqual({
+			[key1]: { name: name1, age: age1 },
+			[key2]: { name: name2, age: age2 },
+		});
 
 		const taken = await store.take(key2);
 		expect(taken).toBeDefined();
