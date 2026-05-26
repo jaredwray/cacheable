@@ -6,7 +6,7 @@ on:
     types: [released]
 
 permissions:
-  contents: read    
+  contents: read
 
 jobs:
   setup-build-deploy:
@@ -23,12 +23,15 @@ jobs:
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 24
+        node-version: 26
         cache: pnpm
+
+    - name: Enable Corepack
+      run: corepack enable
 
     - name: Install Modules
       run: pnpm install
-      
+
     - name: Build Website
       run: pnpm website:build
 

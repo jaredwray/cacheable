@@ -8,7 +8,7 @@ on:
     branches: [ main ]
 
 permissions:
-  contents: read   
+  contents: read
 
 jobs:
   test:
@@ -16,7 +16,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: ['20', '22', '24']
+        node-version: ['22', '24', '26']
 
     steps:
       - uses: actions/checkout@v4
@@ -28,6 +28,9 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Start Test Services
         run: pnpm test:services:start

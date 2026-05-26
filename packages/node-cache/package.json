@@ -3,14 +3,14 @@
 	"version": "3.0.1",
 	"description": "Simple and Maintained fast NodeJS internal caching",
 	"type": "module",
-	"main": "./dist/index.js",
-	"module": "./dist/index.js",
-	"types": "./dist/index.d.ts",
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.mts",
 	"exports": {
 		".": {
 			"import": {
-				"types": "./dist/index.d.ts",
-				"default": "./dist/index.js"
+				"types": "./dist/index.d.mts",
+				"default": "./dist/index.mjs"
 			},
 			"require": {
 				"types": "./dist/index.d.cts",
@@ -19,7 +19,7 @@
 		}
 	},
 	"engines": {
-		"node": ">=18"
+		"node": ">=22"
 	},
 	"repository": {
 		"type": "git",
@@ -40,7 +40,7 @@
 		"cacheable-node"
 	],
 	"scripts": {
-		"build": "rimraf ./dist && tsup src/index.ts --format cjs,esm --dts --clean",
+		"build": "rimraf ./dist && tsdown src/index.ts --format cjs,esm --dts --clean",
 		"prepublishOnly": "pnpm build",
 		"lint": "biome check --write --error-on-warnings",
 		"test": "pnpm lint && vitest run --coverage",
@@ -48,7 +48,7 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"devDependencies": {
-		"tsup": "^8.5.1",
+		"tsdown": "^0.22.0",
 		"typescript": "^5.9.3"
 	},
 	"dependencies": {
