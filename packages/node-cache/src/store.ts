@@ -160,9 +160,9 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {void}
 	 */
 	public async mset(list: Array<PartialNodeCacheItem<T>>): Promise<void> {
-		for (const item of list) {
-			await this.set(item.key, item.value, item.ttl);
-		}
+		await Promise.all(
+			list.map((item) => this.set(item.key, item.value, item.ttl)),
+		);
 	}
 
 	/**
@@ -204,10 +204,12 @@ export class NodeCacheStore<T> extends Hookified {
 			string,
 			V | undefined
 		>;
-		for (const key of keys) {
-			const value = await this.get<V>(key);
-			result[key.toString()] = value;
-		}
+		await Promise.all(
+			keys.map(async (key) => {
+				const value = await this.get<V>(key);
+				result[key.toString()] = value;
+			}),
+		);
 
 		return result;
 	}
@@ -243,10 +245,7 @@ export class NodeCacheStore<T> extends Hookified {
 	 * @returns {boolean}
 	 */
 	public async mdel(keys: Array<string | number>): Promise<boolean> {
-		for (const key of keys) {
-			await this.del(key);
-		}
-
+		await Promise.all(keys.map((key) => this.del(key)));
 		return true;
 	}
 
