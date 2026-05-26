@@ -11,6 +11,23 @@ import {
 import { Hookified } from "hookified";
 import { DoublyLinkedList } from "./memory-lru.js";
 
+export enum CacheableMemoryHooks {
+	BEFORE_SET = "BEFORE_SET",
+	AFTER_SET = "AFTER_SET",
+	BEFORE_SET_MANY = "BEFORE_SET_MANY",
+	AFTER_SET_MANY = "AFTER_SET_MANY",
+	BEFORE_GET = "BEFORE_GET",
+	AFTER_GET = "AFTER_GET",
+	BEFORE_GET_MANY = "BEFORE_GET_MANY",
+	AFTER_GET_MANY = "AFTER_GET_MANY",
+	BEFORE_DELETE = "BEFORE_DELETE",
+	AFTER_DELETE = "AFTER_DELETE",
+	BEFORE_DELETE_MANY = "BEFORE_DELETE_MANY",
+	AFTER_DELETE_MANY = "AFTER_DELETE_MANY",
+	BEFORE_CLEAR = "BEFORE_CLEAR",
+	AFTER_CLEAR = "AFTER_CLEAR",
+}
+
 export type StoreHashAlgorithmFunction = (
 	key: string,
 	storeHashSize: number,
@@ -303,25 +320,32 @@ export class CacheableMemory extends Hookified {
 	 * @returns {T | undefined} - The value of the key
 	 */
 	public get<T>(key: string): T | undefined {
+		this.hookSync(CacheableMemoryHooks.BEFORE_GET, key);
 		const store = this.getStore(key);
 		const item = store.get(key);
 		if (!item) {
+			this.hookSync(CacheableMemoryHooks.AFTER_GET, { key, result: undefined });
 			return undefined;
 		}
 
 		if (item.expires && Date.now() > item.expires) {
 			store.delete(key);
 			this.lruRemove(key);
+			this.hookSync(CacheableMemoryHooks.AFTER_GET, { key, result: undefined });
 			return undefined;
 		}
 
 		this.lruMoveToFront(key);
 
+		let result: T;
 		if (!this._useClone) {
-			return item.value as T;
+			result = item.value as T;
+		} else {
+			result = this.clone(item.value) as T;
 		}
 
-		return this.clone(item.value) as T;
+		this.hookSync(CacheableMemoryHooks.AFTER_GET, { key, result });
+		return result;
 	}
 
 	/**
@@ -330,11 +354,13 @@ export class CacheableMemory extends Hookified {
 	 * @returns {T[]} - The values of the keys
 	 */
 	public getMany<T>(keys: string[]): T[] {
+		this.hookSync(CacheableMemoryHooks.BEFORE_GET_MANY, keys);
 		const result: T[] = [];
 		for (const key of keys) {
 			result.push(this.get(key) as T);
 		}
 
+		this.hookSync(CacheableMemoryHooks.AFTER_GET_MANY, { keys, result });
 		return result;
 	}
 
@@ -389,25 +415,31 @@ export class CacheableMemory extends Hookified {
 		value: any,
 		ttl?: number | string | SetOptions,
 	): void {
-		const store = this.getStore(key);
+		const hookItem = { key, value, ttl };
+		this.hookSync(CacheableMemoryHooks.BEFORE_SET, hookItem);
+
+		const store = this.getStore(hookItem.key);
 		// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 		let expires;
-		if (ttl !== undefined || this._ttl !== undefined) {
-			if (typeof ttl === "object") {
-				if (ttl.expire) {
+		const effectiveTtl = hookItem.ttl;
+		if (effectiveTtl !== undefined || this._ttl !== undefined) {
+			if (typeof effectiveTtl === "object") {
+				if (effectiveTtl.expire) {
 					expires =
-						typeof ttl.expire === "number" ? ttl.expire : ttl.expire.getTime();
+						typeof effectiveTtl.expire === "number"
+							? effectiveTtl.expire
+							: effectiveTtl.expire.getTime();
 				}
 
-				if (ttl.ttl) {
-					const finalTtl = shorthandToTime(ttl.ttl);
+				if (effectiveTtl.ttl) {
+					const finalTtl = shorthandToTime(effectiveTtl.ttl);
 					/* v8 ignore next -- @preserve */
 					if (finalTtl !== undefined) {
 						expires = finalTtl;
 					}
 				}
 			} else {
-				const finalTtl = shorthandToTime(ttl ?? this._ttl);
+				const finalTtl = shorthandToTime(effectiveTtl ?? this._ttl);
 
 				/* v8 ignore next -- @preserve */
 				if (finalTtl !== undefined) {
@@ -417,10 +449,10 @@ export class CacheableMemory extends Hookified {
 		}
 
 		if (this._lruSize > 0) {
-			if (store.has(key)) {
-				this.lruMoveToFront(key);
+			if (store.has(hookItem.key)) {
+				this.lruMoveToFront(hookItem.key);
 			} else {
-				this.lruAddToFront(key);
+				this.lruAddToFront(hookItem.key);
 				if (this._lru.size > this._lruSize) {
 					const oldestKey = this._lru.getOldest();
 					/* v8 ignore next -- @preserve */
@@ -432,8 +464,10 @@ export class CacheableMemory extends Hookified {
 			}
 		}
 
-		const item = { key, value, expires };
-		store.set(key, item);
+		const item = { key: hookItem.key, value: hookItem.value, expires };
+		store.set(hookItem.key, item);
+
+		this.hookSync(CacheableMemoryHooks.AFTER_SET, hookItem);
 	}
 
 	/**
@@ -442,9 +476,12 @@ export class CacheableMemory extends Hookified {
 	 * @returns {void}
 	 */
 	public setMany(items: CacheableItem[]): void {
+		this.hookSync(CacheableMemoryHooks.BEFORE_SET_MANY, items);
 		for (const item of items) {
 			this.set(item.key, item.value, item.ttl);
 		}
+
+		this.hookSync(CacheableMemoryHooks.AFTER_SET_MANY, items);
 	}
 
 	/**
@@ -508,9 +545,11 @@ export class CacheableMemory extends Hookified {
 	 * @returns {void}
 	 */
 	public delete(key: string): void {
+		this.hookSync(CacheableMemoryHooks.BEFORE_DELETE, key);
 		const store = this.getStore(key);
 		store.delete(key);
 		this.lruRemove(key);
+		this.hookSync(CacheableMemoryHooks.AFTER_DELETE, key);
 	}
 
 	/**
@@ -519,9 +558,12 @@ export class CacheableMemory extends Hookified {
 	 * @returns {void}
 	 */
 	public deleteMany(keys: string[]): void {
+		this.hookSync(CacheableMemoryHooks.BEFORE_DELETE_MANY, keys);
 		for (const key of keys) {
 			this.delete(key);
 		}
+
+		this.hookSync(CacheableMemoryHooks.AFTER_DELETE_MANY, keys);
 	}
 
 	/**
@@ -529,11 +571,13 @@ export class CacheableMemory extends Hookified {
 	 * @returns {void}
 	 */
 	public clear(): void {
+		this.hookSync(CacheableMemoryHooks.BEFORE_CLEAR);
 		this._store = Array.from(
 			{ length: this._storeHashSize },
 			() => new Map<string, CacheableStoreItem>(),
 		);
 		this._lru = new DoublyLinkedList<string>();
+		this.hookSync(CacheableMemoryHooks.AFTER_CLEAR);
 	}
 
 	/**
