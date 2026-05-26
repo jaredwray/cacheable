@@ -16,12 +16,13 @@ jobs:
 
     strategy:
       matrix:
-        node-version: ['24']
+        node-version: ['26']
 
     steps:
       - uses: actions/checkout@v4
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4

@@ -1236,4 +1236,4 @@ export {
 	type CacheableSyncItem,
 	type CacheableSyncOptions,
 } from "./sync.js";
-export { CacheableOptions } from "./types.js";
+export type { CacheableOptions } from "./types.js";

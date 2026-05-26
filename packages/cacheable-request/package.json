@@ -10,17 +10,17 @@
 	},
 	"author": "Jared Wray <me@jaredwray.com> (http://jaredwray.com)",
 	"type": "module",
-	"exports": "./dist/index.js",
-	"types": "./dist/index.d.ts",
+	"exports": "./dist/index.mjs",
+	"types": "./dist/index.d.mts",
 	"engines": {
-		"node": ">=18"
+		"node": ">=22"
 	},
 	"scripts": {
 		"lint": "biome check --write --error-on-warnings",
 		"test": "pnpm lint && vitest run --coverage",
 		"test:ci": "biome check --error-on-warnings && vitest run --coverage",
 		"prepublishOnly": "pnpm build",
-		"build": "rimraf ./dist && tsc --project tsconfig.build.json",
+		"build": "rimraf ./dist && tsdown src/index.ts --format esm --dts --clean",
 		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"
 	},
 	"files": [
@@ -60,7 +60,7 @@
 		"express": "^5.2.1",
 		"pify": "^6.1.0",
 		"sqlite3": "^6.0.1",
-		"tsup": "^8.5.1",
+		"tsdown": "^0.22.0",
 		"typescript": "^5.9.3"
 	}
 }
