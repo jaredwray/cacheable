@@ -1,6 +1,8 @@
 packages:
   - 'packages/*'
 minimumReleaseAge: 2880
+minimumReleaseAgeExclude:
+  - '@babel/*'
 allowBuilds:
   esbuild: true
   protobufjs: true

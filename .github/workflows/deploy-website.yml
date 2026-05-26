@@ -17,14 +17,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Enable Corepack
-      run: corepack enable
+    - name: Install pnpm
+      uses: pnpm/action-setup@v6
 
     - name: Use Node.js
       uses: actions/setup-node@v4
       with:
         node-version: 26
         cache: pnpm
+
+    - name: Enable Corepack
+      run: corepack enable
 
     - name: Install Modules
       run: pnpm install
