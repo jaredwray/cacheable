@@ -34,4 +34,4 @@ Cacheable is a caching monorepo providing a comprehensive suite of caching packa
 - TypeScript strict mode
 - Biome: tabs, double quotes
 - ES modules (ESM)
-- Build with tsup (CJS + ESM output)
+- Build with tsdown (CJS + ESM output)
