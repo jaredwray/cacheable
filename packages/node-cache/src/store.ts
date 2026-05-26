@@ -129,6 +129,7 @@ export class NodeCacheStore<T> extends Hookified {
 		const valueToStore = this._useClones ? this.clone(value) : value;
 
 		const isOverwrite = this._keys.has(keyValue);
+		this._keys.add(keyValue);
 		if (isOverwrite) {
 			const oldValue = await this._keyv.get(keyValue);
 			this._stats.decreaseKSize(keyValue);
@@ -141,14 +142,14 @@ export class NodeCacheStore<T> extends Hookified {
 
 		await this._keyv.set(keyValue, valueToStore as T, finalTtl);
 
-		this._keys.add(keyValue);
 		this.trackExpiration(keyValue, finalTtl);
 
 		this._stats.incrementKSize(keyValue);
 		this._stats.incrementVSize(value);
 		this._stats.incrementCount();
 
-		this.emit("set", keyValue, value);
+		const expirationTimestamp = this._ttls.get(keyValue) ?? 0;
+		this.emit("set", keyValue, value, expirationTimestamp);
 
 		return true;
 	}
@@ -485,7 +486,18 @@ export class NodeCacheStore<T> extends Hookified {
 	}
 
 	private async handleExpired(key: string): Promise<void> {
+		/* v8 ignore next 3 -- @preserve: race condition guard when key is refreshed between caller's check and this call */
+		if (!this.isExpired(key)) {
+			return;
+		}
+
 		const value = await this._keyv.get(key);
+
+		/* v8 ignore next 3 -- @preserve: race condition guard when key is refreshed during async get */
+		if (!this.isExpired(key)) {
+			return;
+		}
+
 		const wasTracked = this._keys.has(key);
 
 		if (this._deleteOnExpire) {

@@ -993,4 +993,51 @@ describe("NodeCacheStore - edge cases", () => {
 		const store = new NodeCacheStore();
 		expect(await store.has(faker.string.uuid())).toBe(false);
 	});
+
+	test("handleExpired should not delete key if it was refreshed before processing", async () => {
+		const store = new NodeCacheStore();
+		const key = faker.string.uuid();
+		await store.set(key, faker.lorem.word(), 50);
+		await sleep(100);
+		// Key is now expired per our tracking, but let's refresh it before the expiration is processed
+		await store.set(key, "refreshed", 60000);
+		// Now try to access the key — handleExpired should detect the key is no longer expired and skip deletion
+		const result = await store.get(key);
+		expect(result).toBe("refreshed");
+		expect(await store.has(key)).toBe(true);
+	});
+
+	test("handleExpired early return when called on non-expired key", async () => {
+		const store = new NodeCacheStore();
+		const key = faker.string.uuid();
+		await store.set(key, faker.lorem.word(), 60000);
+		// Directly trigger getTtl which calls handleExpired if expired — key is not expired
+		const ttl = await store.getTtl(key);
+		expect(ttl).toBeGreaterThan(0);
+		expect(await store.has(key)).toBe(true);
+	});
+
+	test("should emit set event with expiration timestamp", async () => {
+		const store = new NodeCacheStore();
+		const key = faker.string.uuid();
+		const value = faker.lorem.word();
+		let emittedTtl: number | undefined;
+		store.on("set", (_k: unknown, _v: unknown, t: unknown) => {
+			emittedTtl = t as number;
+		});
+		await store.set(key, value, 5000);
+		expect(emittedTtl).toBeDefined();
+		expect(emittedTtl).toBeGreaterThan(0);
+	});
+
+	test("should emit set event with 0 ttl for unlimited keys", async () => {
+		const store = new NodeCacheStore();
+		const key = faker.string.uuid();
+		let emittedTtl: number | undefined;
+		store.on("set", (_k: unknown, _v: unknown, t: unknown) => {
+			emittedTtl = t as number;
+		});
+		await store.set(key, faker.lorem.word());
+		expect(emittedTtl).toBe(0);
+	});
 });
