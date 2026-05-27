@@ -32,6 +32,7 @@
 * [Storage Tiering and Caching](#storage-tiering-and-caching)
 * [TTL Propagation and Storage Tiering](#ttl-propagation-and-storage-tiering)
 * [Shorthand for Time to Live (ttl)](#shorthand-for-time-to-live-ttl)
+* [Maximum Time to Live (maxTtl)](#maximum-time-to-live-maxttl)
 * [Iteration on Primary and Secondary Stores](#iteration-on-primary-and-secondary-stores)
 * [Non-Blocking Operations](#non-blocking-operations)
 * [Non-Blocking with @keyv/redis](#non-blocking-with-keyvredis)
@@ -607,6 +608,36 @@ const value = await serviceB.get('config'); // undefined
 * The sync feature requires a message provider to be running and accessible by all cache instances.
 * Each cache instance has a unique `cacheId`. Events are only applied if they come from a different instance, preventing infinite loops.
 
+# Maximum Time to Live (maxTtl)
+
+You can set a `maxTtl` option to enforce an upper bound on any TTL in the cache. When `maxTtl` is set:
+- Any per-entry TTL that exceeds `maxTtl` will be capped to `maxTtl`.
+- Entries with no TTL (that would otherwise live indefinitely) will be capped to `maxTtl`.
+- The default TTL is still respected if it is within the `maxTtl` limit.
+- The `maxTtl` is enforced on both primary and secondary stores.
+
+This is useful when you want to guarantee that no cache entry lives longer than a certain duration, regardless of what TTL is passed to individual `set()` calls.
+
+```javascript
+import { Cacheable } from 'cacheable';
+
+// No entry can live longer than 1 hour
+const cache = new Cacheable({ maxTtl: '1h' });
+
+await cache.set('key1', 'value1', '2h'); // capped to 1 hour
+await cache.set('key2', 'value2');        // also capped to 1 hour (would otherwise be indefinite)
+await cache.set('key3', 'value3', '30m'); // 30 minutes is within maxTtl, so it stays as-is
+```
+
+You can also set `maxTtl` after construction:
+
+```javascript
+const cache = new Cacheable();
+cache.maxTtl = 5000; // 5 seconds max
+cache.maxTtl = '10m'; // 10 minutes max
+cache.maxTtl = undefined; // disable maxTtl (no upper bound)
+```
+
 # Cacheable Options
 
 The following options are available for you to configure `cacheable`:
@@ -616,6 +647,7 @@ The following options are available for you to configure `cacheable`:
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: To enable statistics for this instance. Default is `false`.
 * `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
+* `maxTtl`: The maximum time to live for any cache entry. When set, TTLs exceeding this value are capped. Enforced on both primary and secondary stores. Default is `undefined` (no maximum).
 * `namespace`: The namespace for the cache. Default is `undefined`.
 * `cacheId`: A unique identifier for this cache instance. Used for sync filtering. Default is a random string.
 * `sync`: Enable distributed cache synchronization. Can be:
@@ -667,6 +699,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `namespace`: The namespace for the cache. Default is `undefined`. This will set the namespace for the primary and secondary stores.
+* `maxTtl`: The maximum time to live for any cache entry. When set, TTLs exceeding this value are capped. Default is `undefined` (no maximum).
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
 

@@ -44,6 +44,13 @@ export type CacheableOptions = {
 	 */
 	ttl?: number | string;
 	/**
+	 * The maximum time-to-live for the cacheable instance. When set, any TTL that exceeds this value
+	 * is capped to maxTtl. Entries with no TTL will also be capped to maxTtl.
+	 * Can be a number in milliseconds or a human-readable format such as `1s`, `1m`, `1h`, `1d`.
+	 * Default is `undefined` (no maximum).
+	 */
+	maxTtl?: number | string;
+	/**
 	 * The namespace for the cacheable instance. It can be a string or a function that returns a string.
 	 */
 	namespace?: string | (() => string);

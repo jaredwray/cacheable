@@ -226,9 +226,39 @@ Our goal with `cacheable` and `CacheableMemory` is to provide a high performance
 
 As you can see from the benchmarks `CacheableMemory` is on par with other caching engines such as `Map`, `Node Cache`, and `bentocache`. We have also tested it against other LRU caching engines such as `quick-lru` and `lru.min` and it performs well against them too.
 
+## Maximum Time to Live (maxTtl)
+
+You can set a `maxTtl` option to enforce an upper bound on any TTL in the cache. When `maxTtl` is set:
+- Any per-entry TTL that exceeds `maxTtl` will be capped to `maxTtl`.
+- Entries with no TTL (that would otherwise live indefinitely) will be capped to `maxTtl`.
+- The default TTL is still respected if it is within the `maxTtl` limit.
+
+This is useful when you want to guarantee that no cache entry lives longer than a certain duration, regardless of what TTL is passed to individual `set()` calls.
+
+```javascript
+import { CacheableMemory } from '@cacheable/memory';
+
+// No entry can live longer than 1 hour
+const cache = new CacheableMemory({ maxTtl: '1h' });
+
+cache.set('key1', 'value1', '2h'); // capped to 1 hour
+cache.set('key2', 'value2');        // also capped to 1 hour (would otherwise be indefinite)
+cache.set('key3', 'value3', '30m'); // 30 minutes is within maxTtl, so it stays as-is
+```
+
+You can also set `maxTtl` after construction:
+
+```javascript
+const cache = new CacheableMemory();
+cache.maxTtl = 5000; // 5 seconds max
+cache.maxTtl = '10m'; // 10 minutes max
+cache.maxTtl = undefined; // disable maxTtl (no upper bound)
+```
+
 ## CacheableMemory Options
 
 * `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.
+* `maxTtl`: The maximum time to live for any cache entry. When set, TTLs exceeding this value are capped. Default is `undefined` (no maximum).
 * `useClones`: If the cache should use clones for the values. Default is `true`.
 * `lruSize`: The size of the LRU cache. Default is `0`, which disables the LRU cache (no LRU eviction is performed). Maximum is `16,777,216 (2^24)`.
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
@@ -252,6 +282,7 @@ As you can see from the benchmarks `CacheableMemory` is on par with other cachin
 * `wrap(function, WrapSyncOptions)`: Wraps a `sync` function in a cache.
 * `clear()`: Clears the cache.
 * `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
+* `maxTtl`: The maximum time to live for any cache entry. When set, TTLs exceeding this value are capped. Default is `undefined` (no maximum).
 * `useClones`: If the cache should use clones for the values. Default is `true`.
 * `lruSize`: The size of the LRU cache. Default is `0`, which disables the LRU cache (no LRU eviction is performed). Maximum is `16,777,216 (2^24)`.
 * `size`: The number of keys in the cache.

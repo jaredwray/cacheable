@@ -33,6 +33,7 @@ export class Cacheable extends Hookified {
 	private _secondary: Keyv | undefined;
 	private _nonBlocking = false;
 	private _ttl?: number | string;
+	private _maxTtl?: number | string;
 	private readonly _stats = new CacheableStats({ enabled: false });
 	private _namespace?: string | (() => string);
 	private _cacheId: string = Math.random().toString(36).slice(2);
@@ -62,6 +63,10 @@ export class Cacheable extends Hookified {
 
 		if (options?.ttl) {
 			this.setTtl(options.ttl);
+		}
+
+		if (options?.maxTtl !== undefined) {
+			this.setMaxTtl(options.maxTtl);
 		}
 
 		if (options?.cacheId) {
@@ -221,6 +226,40 @@ export class Cacheable extends Hookified {
 	 */
 	public set ttl(ttl: number | string | undefined) {
 		this.setTtl(ttl);
+	}
+
+	/**
+	 * Gets the maximum time-to-live for the cacheable instance. When set, any TTL that exceeds this
+	 * value is capped to maxTtl. Entries with no TTL will also be capped to maxTtl.
+	 * Can be a number in milliseconds or a human-readable format such as `1s`, `1m`, `1h`, `1d`.
+	 * Default is `undefined` (no maximum).
+	 *
+	 * @returns {number | string | undefined} The maximum time-to-live or undefined if not set
+	 * @example
+	 * ```typescript
+	 * const cacheable = new Cacheable({ maxTtl: '1h' });
+	 * console.log(cacheable.maxTtl); // '1h'
+	 * ```
+	 */
+	public get maxTtl(): number | string | undefined {
+		return this._maxTtl;
+	}
+
+	/**
+	 * Sets the maximum time-to-live for the cacheable instance. When set, any TTL that exceeds this
+	 * value is capped to maxTtl. Entries with no TTL will also be capped to maxTtl.
+	 * If you set a number it is milliseconds, if you set a string it is a human-readable
+	 * format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined disables the maximum.
+	 *
+	 * @param {number | string | undefined} maxTtl The maximum time-to-live
+	 * @example
+	 * ```typescript
+	 * const cacheable = new Cacheable();
+	 * cacheable.maxTtl = '1h'; // Set the max TTL to 1 hour
+	 * ```
+	 */
+	public set maxTtl(maxTtl: number | string | undefined) {
+		this.setMaxTtl(maxTtl);
 	}
 
 	/**
@@ -517,21 +556,25 @@ export class Cacheable extends Hookified {
 	): Promise<boolean> {
 		let result = false;
 		const explicitTtl = shorthandToMilliseconds(ttl);
+		const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 		try {
-			const primaryTtl = getCascadingTtl(
+			let primaryTtl = getCascadingTtl(
 				this._ttl,
 				this._primary.ttl,
 				explicitTtl,
 			);
+			primaryTtl = this.capTtl(primaryTtl, maxTtlMs);
 			const item = { key, value, ttl: primaryTtl };
 			await this.hook(CacheableHooks.BEFORE_SET, item);
 			const hookOverridden = item.ttl !== primaryTtl;
+			item.ttl = this.capTtl(item.ttl, maxTtlMs);
 			const promises = [];
 			promises.push(this._primary.set(item.key, item.value, item.ttl));
 			if (this._secondary) {
-				const secondaryTtl = hookOverridden
+				let secondaryTtl = hookOverridden
 					? item.ttl
 					: getCascadingTtl(this._ttl, this._secondary.ttl, explicitTtl);
+				secondaryTtl = this.capTtl(secondaryTtl, maxTtlMs);
 				promises.push(this._secondary.set(item.key, item.value, secondaryTtl));
 			}
 
@@ -945,13 +988,15 @@ export class Cacheable extends Hookified {
 		keyv: Keyv,
 		items: CacheableItem[],
 	): Promise<boolean> {
+		const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 		const entries: KeyvEntry[] = [];
 		for (const item of items) {
-			const finalTtl = getCascadingTtl(
+			let finalTtl = getCascadingTtl(
 				this._ttl,
 				keyv.ttl,
 				shorthandToMilliseconds(item.ttl),
 			);
+			finalTtl = this.capTtl(finalTtl, maxTtlMs);
 			entries.push({ key: item.key, value: item.value, ttl: finalTtl });
 		}
 
@@ -1200,6 +1245,31 @@ export class Cacheable extends Hookified {
 		} else {
 			this._ttl = undefined;
 		}
+	}
+
+	private setMaxTtl(maxTtl: number | string | undefined): void {
+		if (typeof maxTtl === "string" || maxTtl === undefined) {
+			this._maxTtl = maxTtl;
+		} else if (maxTtl > 0) {
+			this._maxTtl = maxTtl;
+		} else {
+			this._maxTtl = undefined;
+		}
+	}
+
+	private capTtl(
+		ttl: number | undefined,
+		maxTtlMs: number | undefined,
+	): number | undefined {
+		if (maxTtlMs === undefined) {
+			return ttl;
+		}
+
+		if (ttl === undefined) {
+			return maxTtlMs;
+		}
+
+		return Math.min(ttl, maxTtlMs);
 	}
 }
 

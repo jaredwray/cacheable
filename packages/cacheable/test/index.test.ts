@@ -1816,3 +1816,180 @@ describe("Non-blocking error handling", () => {
 		);
 	});
 });
+
+describe("cacheable maxTtl", () => {
+	test("should have default maxTtl as undefined", () => {
+		const cacheable = new Cacheable();
+		expect(cacheable.maxTtl).toBeUndefined();
+	});
+
+	test("should set maxTtl via constructor with number", () => {
+		const cacheable = new Cacheable({ maxTtl: 5000 });
+		expect(cacheable.maxTtl).toBe(5000);
+	});
+
+	test("should set maxTtl via constructor with string", () => {
+		const cacheable = new Cacheable({ maxTtl: "1h" });
+		expect(cacheable.maxTtl).toBe("1h");
+	});
+
+	test("should set maxTtl via setter", () => {
+		const cacheable = new Cacheable();
+		cacheable.maxTtl = 10_000;
+		expect(cacheable.maxTtl).toBe(10_000);
+	});
+
+	test("should set maxTtl via setter with string", () => {
+		const cacheable = new Cacheable();
+		cacheable.maxTtl = "30m";
+		expect(cacheable.maxTtl).toBe("30m");
+	});
+
+	test("should disable maxTtl by setting to undefined", () => {
+		const cacheable = new Cacheable({ maxTtl: 5000 });
+		expect(cacheable.maxTtl).toBe(5000);
+		cacheable.maxTtl = undefined;
+		expect(cacheable.maxTtl).toBeUndefined();
+	});
+
+	test("should disable maxTtl by setting to 0 or negative", () => {
+		const cacheable = new Cacheable({ maxTtl: 5000 });
+		cacheable.maxTtl = 0;
+		expect(cacheable.maxTtl).toBeUndefined();
+		cacheable.maxTtl = 5000;
+		cacheable.maxTtl = -1;
+		expect(cacheable.maxTtl).toBeUndefined();
+	});
+
+	test("should handle negative maxTtl in constructor", () => {
+		const cacheable = new Cacheable({ maxTtl: -1 });
+		expect(cacheable.maxTtl).toBeUndefined();
+	});
+
+	test("should cap per-entry ttl when it exceeds maxTtl", async () => {
+		const cacheable = new Cacheable({ maxTtl: 100 });
+		await cacheable.set("key1", "value1", 5000);
+		const raw = await cacheable.primary.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeLessThanOrEqual(now + 110);
+		expect(raw.expires).toBeGreaterThan(now);
+	});
+
+	test("should not cap per-entry ttl when within maxTtl", async () => {
+		const cacheable = new Cacheable({ maxTtl: 10_000 });
+		await cacheable.set("key1", "value1", 100);
+		const raw = await cacheable.primary.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeLessThanOrEqual(now + 110);
+		expect(raw.expires).toBeGreaterThan(now);
+	});
+
+	test("should enforce maxTtl when no ttl is set (indefinite)", async () => {
+		const cacheable = new Cacheable({ maxTtl: 200 });
+		await cacheable.set("key1", "value1");
+		const raw = await cacheable.primary.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeLessThanOrEqual(now + 210);
+		expect(raw.expires).toBeGreaterThan(now);
+	});
+
+	test("should enforce maxTtl when default ttl exceeds maxTtl", async () => {
+		const cacheable = new Cacheable({ ttl: 60_000, maxTtl: 200 });
+		await cacheable.set("key1", "value1");
+		const raw = await cacheable.primary.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeLessThanOrEqual(now + 210);
+		expect(raw.expires).toBeGreaterThan(now);
+	});
+
+	test("should work with maxTtl as shorthand string", async () => {
+		const cacheable = new Cacheable({ maxTtl: "1s" });
+		await cacheable.set("key1", "value1", "1h");
+		const raw = await cacheable.primary.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeLessThanOrEqual(now + 1010);
+		expect(raw.expires).toBeGreaterThan(now);
+	});
+
+	test("should expire items at maxTtl boundary", async () => {
+		const cacheable = new Cacheable({ maxTtl: 50 });
+		await cacheable.set("key1", "value1", 10_000);
+		const value1 = await cacheable.get("key1");
+		expect(value1).toBe("value1");
+		await sleep(60);
+		const value2 = await cacheable.get("key1");
+		expect(value2).toBeUndefined();
+	});
+
+	test("should enforce maxTtl on setMany", async () => {
+		const cacheable = new Cacheable({ maxTtl: 200 });
+		await cacheable.setMany([
+			{ key: "k1", value: "v1", ttl: 60_000 },
+			{ key: "k2", value: "v2" },
+		]);
+		const raw1 = await cacheable.primary.getRaw("k1");
+		const raw2 = await cacheable.primary.getRaw("k2");
+		const now = Date.now();
+		expect(raw1).toBeDefined();
+		expect(raw1.expires).toBeDefined();
+		expect(raw1.expires).toBeLessThanOrEqual(now + 210);
+		expect(raw2).toBeDefined();
+		expect(raw2.expires).toBeDefined();
+		expect(raw2.expires).toBeLessThanOrEqual(now + 210);
+	});
+
+	test("should enforce maxTtl on secondary store", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary, maxTtl: 200 });
+		await cacheable.set("key1", "value1", 60_000);
+		const raw = await secondary.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeLessThanOrEqual(now + 210);
+	});
+
+	test("should enforce maxTtl on setMany with secondary store", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary, maxTtl: 200 });
+		await cacheable.setMany([{ key: "k1", value: "v1", ttl: 60_000 }]);
+		const raw = await secondary.getRaw("k1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeLessThanOrEqual(now + 210);
+	});
+
+	test("should not interfere when maxTtl is undefined", async () => {
+		const cacheable = new Cacheable({ ttl: 5000 });
+		await cacheable.set("key1", "value1");
+		const raw = await cacheable.primary.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeGreaterThan(now + 4000);
+	});
+
+	test("should re-cap ttl after BEFORE_SET hook overrides it", async () => {
+		const cacheable = new Cacheable({ maxTtl: 200 });
+		cacheable.onHook(CacheableHooks.BEFORE_SET, (item) => {
+			item.ttl = 60_000;
+		});
+		await cacheable.set("key1", "value1", 100);
+		const raw = await cacheable.primary.getRaw("key1");
+		expect(raw).toBeDefined();
+		expect(raw.expires).toBeDefined();
+		const now = Date.now();
+		expect(raw.expires).toBeLessThanOrEqual(now + 210);
+	});
+});
