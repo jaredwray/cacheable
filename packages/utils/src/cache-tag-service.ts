@@ -50,14 +50,27 @@ export class CacheTagService {
 		return typeof version === "number" ? version : 0;
 	}
 
+	private async getTagVersions(tags: string[]): Promise<number[]> {
+		if (tags.length === 0) {
+			return [];
+		}
+		const tagKeys = tags.map((tag) => this.tagKey(tag));
+		const raw = await this._store.get<number>(tagKeys);
+		return tags.map((_, i) => {
+			const value = raw?.[i];
+			return typeof value === "number" ? value : 0;
+		});
+	}
+
 	public async setKeyTags(
 		key: string,
 		tags: string[],
 		options?: SetKeyTagsOptions,
 	): Promise<void> {
+		const versions = await this.getTagVersions(tags);
 		const snapshot: Record<string, number> = {};
-		for (const tag of tags) {
-			snapshot[tag] = await this.getTagVersion(tag);
+		for (let i = 0; i < tags.length; i++) {
+			snapshot[tags[i]] = versions[i];
 		}
 
 		const entry: KeyTagEntry = { tags: snapshot };
@@ -74,9 +87,11 @@ export class CacheTagService {
 			return false;
 		}
 
-		for (const [tag, snapshotVersion] of Object.entries(entry.tags)) {
-			const currentVersion = await this.getTagVersion(tag);
-			if (currentVersion !== snapshotVersion) {
+		const tags = Object.keys(entry.tags);
+		const currentVersions = await this.getTagVersions(tags);
+
+		for (let i = 0; i < tags.length; i++) {
+			if (currentVersions[i] !== entry.tags[tags[i]]) {
 				return false;
 			}
 		}
@@ -116,11 +131,16 @@ export class CacheTagService {
 	}
 
 	public async invalidateTags(tags: string[]): Promise<string[]> {
-		const bumped: string[] = [];
-		for (const tag of tags) {
-			const [name] = await this.invalidateTag(tag);
-			bumped.push(name);
+		if (tags.length === 0) {
+			return tags;
 		}
-		return bumped;
+		const versions = await this.getTagVersions(tags);
+		await this._store.setMany(
+			tags.map((tag, i) => ({
+				key: this.tagKey(tag),
+				value: versions[i] + 1,
+			})),
+		);
+		return tags;
 	}
 }

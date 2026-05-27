@@ -54,6 +54,14 @@ describe("CacheTagService", () => {
 		expect(result).toEqual(["a", "b", "c"]);
 	});
 
+	test("invalidateTags with empty list is a no-op", async () => {
+		const service = createService();
+		await service.setKeyTags("k", ["t"]);
+		const result = await service.invalidateTags([]);
+		expect(result).toEqual([]);
+		expect(await service.isKeyFresh("k")).toBe(true);
+	});
+
 	test("namespace isolation: tags do not leak across namespaces", async () => {
 		const store = new Keyv();
 		const ns1 = new CacheTagService({ store, namespace: "ns1" });
