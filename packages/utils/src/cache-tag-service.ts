@@ -67,10 +67,11 @@ export class CacheTagService {
 		tags: string[],
 		options?: SetKeyTagsOptions,
 	): Promise<void> {
-		const versions = await this.getTagVersions(tags);
+		const uniqueTags = [...new Set(tags)];
+		const versions = await this.getTagVersions(uniqueTags);
 		const snapshot: Record<string, number> = {};
-		for (let i = 0; i < tags.length; i++) {
-			snapshot[tags[i]] = versions[i];
+		for (let i = 0; i < uniqueTags.length; i++) {
+			snapshot[uniqueTags[i]] = versions[i];
 		}
 
 		const entry: KeyTagEntry = { tags: snapshot };
@@ -131,16 +132,18 @@ export class CacheTagService {
 	}
 
 	public async invalidateTags(tags: string[]): Promise<string[]> {
-		if (tags.length === 0) {
+		const uniqueTags = [...new Set(tags)];
+		if (uniqueTags.length === 0) {
 			return tags;
 		}
-		const versions = await this.getTagVersions(tags);
-		await this._store.setMany(
-			tags.map((tag, i) => ({
-				key: this.tagKey(tag),
-				value: versions[i] + 1,
-			})),
-		);
+		const versions = await this.getTagVersions(uniqueTags);
+
+		const kvPairs = [];
+		for (let i = 0; i < uniqueTags.length; i++) {
+			kvPairs.push({ key: this.tagKey(uniqueTags[i]), value: versions[i] + 1 });
+		}
+
+		await this._store.setMany(kvPairs);
 		return tags;
 	}
 }
