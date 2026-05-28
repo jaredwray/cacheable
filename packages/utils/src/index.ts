@@ -2,6 +2,12 @@ export {
 	shorthandToMilliseconds,
 	shorthandToTime,
 } from "../src/shorthand-time.js";
+export {
+	CacheTagService,
+	type CacheTagServiceOptions,
+	type KeyTagEntry,
+	type SetKeyTagsOptions,
+} from "./cache-tag-service.js";
 export type {
 	CacheableItem,
 	CacheableStoreItem,
