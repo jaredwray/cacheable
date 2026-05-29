@@ -128,7 +128,14 @@ export function create(
 	if (cacheDirectory) {
 		const cachePath = `${cacheDirectory}/${cacheId}`;
 		if (fs.existsSync(cachePath)) {
-			fileEntryCache.cache = createFlatCacheFile(cachePath, opts.cache);
+			try {
+				fileEntryCache.cache = createFlatCacheFile(cachePath, opts.cache);
+			} catch {
+				// If the cache file content is invalid (e.g. corrupted or non-JSON),
+				// start with an empty cache. The existing file will be overwritten on
+				// the next reconcile() rather than throwing.
+				fileEntryCache.cache = new FlatCache(opts.cache);
+			}
 		}
 	}
 
@@ -150,6 +157,15 @@ export class FileEntryCache {
 	private _logger?: ILogger;
 	private _useAbsolutePathAsKey = false;
 	private _useModifiedTime = true;
+	/**
+	 * Snapshot of the persisted meta for each key as of the last load/reconcile.
+	 * Change detection compares against this baseline (not the working cache) so
+	 * that repeated `getFileDescriptor()` calls keep reporting a file as changed
+	 * until the cache is reconciled. The set of keys also tracks which files were
+	 * visited during the current session so that `reconcile()` only updates those.
+	 */
+	private _originalMeta: Map<string, FileDescriptorMeta | undefined> =
+		new Map();
 
 	/**
 	 * Create a new FileEntryCache instance
@@ -203,6 +219,9 @@ export class FileEntryCache {
 	 */
 	public set cache(cache: FlatCache) {
 		this._cache = cache;
+		// The baseline is derived from the cache, so reset it when the cache is
+		// replaced. It will be re-snapshotted lazily on the next getFileDescriptor.
+		this._originalMeta = new Map();
 	}
 
 	/**
@@ -368,6 +387,7 @@ export class FileEntryCache {
 	 */
 	public destroy() {
 		this._cache.destroy();
+		this._originalMeta = new Map();
 	}
 
 	/**
@@ -378,6 +398,7 @@ export class FileEntryCache {
 	public removeEntry(filePath: string): void {
 		const key = this.createFileKey(filePath);
 		this._cache.removeKey(key);
+		this._originalMeta.delete(key);
 	}
 
 	/**
@@ -385,11 +406,30 @@ export class FileEntryCache {
 	 * @method reconcile
 	 */
 	public reconcile(): void {
-		const { items } = this._cache;
-		for (const item of items) {
-			const fileDescriptor = this.getFileDescriptor(item.key);
-			if (fileDescriptor.notFound) {
-				this._cache.removeKey(item.key);
+		// Only reconcile files that were visited via getFileDescriptor() during
+		// this session. Entries that were never inspected keep their previously
+		// persisted meta untouched, so they are not silently revalidated.
+		for (const key of [...this._originalMeta.keys()]) {
+			const meta = this._cache.getKey<FileDescriptorMeta>(key);
+			if (!meta) {
+				// The entry was removed (e.g. file not found) during the session.
+				this._originalMeta.delete(key);
+				continue;
+			}
+
+			try {
+				const absolutePath = this.getAbsolutePath(key);
+				const fstat = fs.statSync(absolutePath);
+				// Refresh the stats to reflect the state at reconcile time.
+				meta.size = fstat.size;
+				meta.mtime = fstat.mtime.getTime();
+				this._cache.setKey(key, meta);
+				// Update the baseline so subsequent checks see the file as unchanged.
+				this._originalMeta.set(key, { ...meta });
+			} catch {
+				// The file no longer exists; drop it from the cache.
+				this._cache.removeKey(key);
+				this._originalMeta.delete(key);
 			}
 		}
 
@@ -499,8 +539,22 @@ export class FileEntryCache {
 			};
 		}
 
-		// If the file is not in the cache, add it
-		if (!metaCache) {
+		// Snapshot the baseline (the persisted state as of the last load/reconcile)
+		// the first time this key is seen in the current session. Change detection
+		// compares against this baseline rather than the working cache so that a
+		// file reported as changed keeps reporting as changed until reconcile().
+		if (!this._originalMeta.has(result.key)) {
+			this._originalMeta.set(
+				result.key,
+				metaCache ? { ...metaCache } : undefined,
+			);
+		}
+
+		const baseline = this._originalMeta.get(result.key);
+
+		// If there is no baseline, the file is new (or has not been reconciled yet)
+		// and is therefore considered changed.
+		if (baseline === undefined) {
 			result.changed = true;
 			this._cache.setKey(result.key, result.meta);
 			this._logger?.debug({ filePath }, "File not in cache, marked as changed");
@@ -508,26 +562,26 @@ export class FileEntryCache {
 		}
 
 		// If the file is in the cache, check if the file has changed
-		if (useModifiedTimeValue && metaCache?.mtime !== result.meta?.mtime) {
+		if (useModifiedTimeValue && baseline.mtime !== result.meta?.mtime) {
 			result.changed = true;
 			this._logger?.debug(
-				{ filePath, oldMtime: metaCache.mtime, newMtime: result.meta.mtime },
+				{ filePath, oldMtime: baseline.mtime, newMtime: result.meta.mtime },
 				"File changed: mtime differs",
 			);
 		}
 
-		if (metaCache?.size !== result.meta?.size) {
+		if (baseline.size !== result.meta?.size) {
 			result.changed = true;
 			this._logger?.debug(
-				{ filePath, oldSize: metaCache.size, newSize: result.meta.size },
+				{ filePath, oldSize: baseline.size, newSize: result.meta.size },
 				"File changed: size differs",
 			);
 		}
 
-		if (useCheckSumValue && metaCache?.hash !== result.meta?.hash) {
+		if (useCheckSumValue && baseline.hash !== result.meta?.hash) {
 			result.changed = true;
 			this._logger?.debug(
-				{ filePath, oldHash: metaCache.hash, newHash: result.meta.hash },
+				{ filePath, oldHash: baseline.hash, newHash: result.meta.hash },
 				"File changed: hash differs",
 			);
 		}
@@ -733,6 +787,11 @@ export class FileEntryCache {
 				const meta = this._cache.getKey(key);
 				this._cache.removeKey(key);
 				this._cache.setKey(newKey, meta);
+				// Keep the change-detection baseline aligned with the renamed key.
+				if (this._originalMeta.has(key)) {
+					this._originalMeta.set(newKey, this._originalMeta.get(key));
+					this._originalMeta.delete(key);
+				}
 			}
 		}
 	}
