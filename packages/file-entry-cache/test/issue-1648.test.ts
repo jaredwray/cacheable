@@ -135,4 +135,33 @@ describe("issue #1648", () => {
 
 		expect(() => fileEntryCache.createFromFile(cachePath)).not.toThrow();
 	});
+
+	test("3c. create() rethrows unexpected (non-parse) load errors", () => {
+		// A directory at the cache path causes a read (EISDIR) error rather than a
+		// parse error. This must propagate instead of silently discarding data.
+		const cachePath = path.resolve(`./${cacheDir}/${cacheId}`);
+		fs.mkdirSync(cachePath, { recursive: true });
+
+		expect(() => fileEntryCache.create(cacheId, cacheDir)).toThrow();
+	});
+
+	test("a file modified between getFileDescriptor and reconcile is detected next run", () => {
+		// Regression for reconcile() refreshing size/mtime: the cached entry must
+		// reflect the content that was actually inspected, not a later edit. With
+		// useModifiedTime (no checksum), refreshing size/mtime at reconcile time
+		// would mask a change made after the file was inspected.
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cache = fileEntryCache.create(cacheId, cacheDir);
+
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		// Modify the file after inspecting it but before reconciling.
+		fs.writeFileSync(fileA, "a much longer content than before");
+		cache.reconcile();
+
+		// The next run must still see the file as changed, because the cached
+		// entry corresponds to the previously-inspected (shorter) content.
+		const next = fileEntryCache.create(cacheId, cacheDir);
+		expect(next.getFileDescriptor(fileA).changed).toBe(true);
+	});
 });

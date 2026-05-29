@@ -130,11 +130,17 @@ export function create(
 		if (fs.existsSync(cachePath)) {
 			try {
 				fileEntryCache.cache = createFlatCacheFile(cachePath, opts.cache);
-			} catch {
+			} catch (error) {
 				// If the cache file content is invalid (e.g. corrupted or non-JSON),
 				// start with an empty cache. The existing file will be overwritten on
-				// the next reconcile() rather than throwing.
-				fileEntryCache.cache = new FlatCache(opts.cache);
+				// the next reconcile() rather than throwing. Unexpected errors (e.g.
+				// IO/permission failures on an otherwise valid file) are re-thrown so
+				// valid cache data is not silently discarded.
+				if (error instanceof SyntaxError) {
+					fileEntryCache.cache = new FlatCache(opts.cache);
+				} else {
+					throw error;
+				}
 			}
 		}
 	}
@@ -418,13 +424,13 @@ export class FileEntryCache {
 			}
 
 			try {
-				const absolutePath = this.getAbsolutePath(key);
-				const fstat = fs.statSync(absolutePath);
-				// Refresh the stats to reflect the state at reconcile time.
-				meta.size = fstat.size;
-				meta.mtime = fstat.mtime.getTime();
-				this._cache.setKey(key, meta);
-				// Update the baseline so subsequent checks see the file as unchanged.
+				// Confirm the file still exists; if it was deleted during the
+				// session, drop it from the cache below.
+				fs.statSync(this.getAbsolutePath(key));
+				// Persist the meta captured when the file was inspected. It already
+				// holds a consistent size/mtime/hash snapshot, so we promote it to
+				// the baseline rather than re-stat'ing (which would refresh
+				// size/mtime but not hash, leaving the baseline inconsistent).
 				this._originalMeta.set(key, { ...meta });
 			} catch {
 				// The file no longer exists; drop it from the cache.
