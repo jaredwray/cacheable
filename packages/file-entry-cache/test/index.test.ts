@@ -169,6 +169,9 @@ describe("file-entry-cache with options", () => {
 			logs.some((l) => l.msg === "File not in cache, marked as changed"),
 		).toBe(true); // 450
 
+		// Reconcile so the file becomes the cached baseline
+		fileEntryCache.reconcile();
+
 		// Second call - file in cache, unchanged
 		logs.length = 0;
 		descriptor = fileEntryCache.getFileDescriptor(testFile);
@@ -250,8 +253,9 @@ describe("file-entry-cache with options", () => {
 			useCheckSum: false, // Disable checksum to use mtime
 		});
 
-		// First call - add file to cache
+		// First call - add file to cache and reconcile to set the baseline
 		fileEntryCache.getFileDescriptor(testFile);
+		fileEntryCache.reconcile();
 
 		// Wait a bit and modify the file to change mtime
 		await new Promise((resolve) => setTimeout(resolve, 10));
@@ -556,6 +560,9 @@ describe("getFileDescriptor()", () => {
 		expect(fileDescriptor.key).toBe(testFile1);
 		expect(fileDescriptor.changed).toBe(true);
 
+		// Reconcile so the file becomes the cached baseline before re-checking
+		fileEntryCache.reconcile();
+
 		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
 		expect(fileDescriptor2).toBeDefined();
 		expect(fileDescriptor2.key).toBe(testFile1);
@@ -599,6 +606,8 @@ describe("getFileDescriptor()", () => {
 		expect(fileDescriptor).toBeDefined();
 		expect(fileDescriptor.key).toBe(testFile1);
 		expect(fileDescriptor.changed).toBe(true);
+		// Reconcile so the file becomes the cached baseline before re-checking
+		fileEntryCache.reconcile();
 		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
 		expect(fileDescriptor2).toBeDefined();
 		expect(fileDescriptor2.key).toBe(testFile1);
@@ -650,6 +659,9 @@ describe("getFileDescriptor()", () => {
 		expect(fileDescriptor2.key).toBe(absPath);
 		expect(fileDescriptor2.changed).toBe(true);
 
+		// Reconcile so both keys become cached baselines
+		fileEntryCache.reconcile();
+
 		// Should be cached separately
 		const fileDescriptor3 = fileEntryCache.getFileDescriptor(relPath);
 		expect(fileDescriptor3.changed).toBe(false);
@@ -694,6 +706,9 @@ describe("hasFileChanged()", () => {
 		const fileEntryCache = new FileEntryCache();
 		const testFile1 = path.resolve("./.cacheHFC/test1.txt");
 		expect(fileEntryCache.hasFileChanged(testFile1)).toBe(true);
+		// Repeated calls keep reporting the file as changed until it is reconciled
+		expect(fileEntryCache.hasFileChanged(testFile1)).toBe(true);
+		fileEntryCache.reconcile();
 		expect(fileEntryCache.hasFileChanged(testFile1)).toBe(false);
 		fs.writeFileSync(testFile1, "test4");
 		expect(fileEntryCache.hasFileChanged(testFile1)).toBe(true);
@@ -729,6 +744,8 @@ describe("normalizeEntries()", () => {
 		const file1 = `./${fileCacheName}/test1.txt`;
 		const file2 = `./${fileCacheName}/test2.txt`;
 		fileEntryCache.getFileDescriptor(file2);
+		// Reconcile so file2 becomes a cached baseline (unchanged on re-check)
+		fileEntryCache.reconcile();
 		const entries = fileEntryCache.normalizeEntries([file1, file2]);
 		expect(entries[0].key).toBe(file1);
 		expect(entries[0].changed).toBe(true);
@@ -744,6 +761,8 @@ describe("normalizeEntries()", () => {
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test1.txt`);
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test2.txt`);
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test3.txt`);
+		// Reconcile so the files become cached baselines (unchanged on re-check)
+		fileEntryCache.reconcile();
 		fs.chmodSync(path.resolve(`./${fileCacheName}/test3.txt`), 0o000);
 		const entries = fileEntryCache.normalizeEntries();
 		expect(entries.length).toBe(2);
@@ -857,6 +876,10 @@ describe("analyzeFiles()", () => {
 			recursive: true,
 			force: true,
 		});
+		fs.rmSync(path.resolve("./.cacheAnalyzeFiles"), {
+			recursive: true,
+			force: true,
+		});
 	});
 
 	test("should analyze files", () => {
@@ -895,6 +918,8 @@ describe("analyzeFiles()", () => {
 		const analyzedFiles = fileEntryCache.analyzeFiles(files);
 		expect(analyzedFiles).toBeDefined();
 		expect(analyzedFiles.changedFiles.length).toBe(4);
+		// Reconcile so the files become cached baselines (unchanged on re-check)
+		fileEntryCache.reconcile();
 		const testFile4 = path.resolve(`./${fileCacheName}/test4.txt`);
 		fs.unlinkSync(testFile4);
 		const analyzedFiles2 = fileEntryCache.analyzeFiles(files);
@@ -937,6 +962,8 @@ describe("getUpdatedFiles()", () => {
 		];
 		const updatedFiles = fileEntryCache.getUpdatedFiles(files);
 		expect(updatedFiles).toEqual(files);
+		// Reconcile so the files become cached baselines (no longer updated)
+		fileEntryCache.reconcile();
 		const updatedFiles2 = fileEntryCache.getUpdatedFiles(files);
 		expect(updatedFiles2).toEqual([]);
 	});
@@ -953,6 +980,8 @@ describe("getUpdatedFiles()", () => {
 		];
 		const updatedFiles = fileEntryCache.getUpdatedFiles(files);
 		expect(updatedFiles).toEqual(files);
+		// Reconcile so the files become cached baselines before modifying one
+		fileEntryCache.reconcile();
 		const testFile4 = path.resolve(`./${fileCacheName}/test4.txt`);
 		fs.writeFileSync(testFile4, "test5booosdkfjsldfkjsldkjfls");
 		const updatedFiles2 = fileEntryCache.getUpdatedFiles(files);
