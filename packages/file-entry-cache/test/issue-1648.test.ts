@@ -112,6 +112,22 @@ describe("issue #1648", () => {
 		expect(reloaded.getFileDescriptor(fileA).changed).toBe(false);
 	});
 
+	test("reconcile() skips visited entries removed from the underlying cache", () => {
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cache = fileEntryCache.create(cacheId, cacheDir);
+
+		// Visit the file so it is tracked as a session baseline.
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		// Remove the entry directly from the underlying flat-cache, so the session
+		// baseline references a key that no longer exists in the cache.
+		cache.cache.removeKey(cache.createFileKey(fileA));
+
+		// reconcile() must skip the now-missing entry instead of throwing.
+		expect(() => cache.reconcile()).not.toThrow();
+		expect(cache.cache.keys()).not.toContain(cache.createFileKey(fileA));
+	});
+
 	test("3b. createFromFile() does not throw on invalid cache file content", () => {
 		const cachePath = path.resolve(`./${cacheDir}/${cacheId}`);
 		fs.mkdirSync(path.resolve(`./${cacheDir}`), { recursive: true });
