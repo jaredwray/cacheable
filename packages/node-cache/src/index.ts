@@ -141,6 +141,7 @@ export class NodeCache<T> extends Hookified {
 		}
 
 		const keyValue = this.formatKey(key);
+		const existing = this.store.get(keyValue);
 		let expirationTimestamp = 0; // 0 = never delete
 
 		if (this.isNegativeTtl(ttl)) {
@@ -170,7 +171,7 @@ export class NodeCache<T> extends Hookified {
 		/* v8 ignore next -- @preserve */
 		if (this.options.maxKeys) {
 			const { maxKeys } = this.options;
-			if (maxKeys > -1 && this.store.size >= maxKeys) {
+			if (maxKeys > -1 && this.store.size >= maxKeys && !existing) {
 				throw this.createError(NodeCacheErrors.ECACHEFULL, this.formatKey(key));
 			}
 		}
@@ -183,6 +184,11 @@ export class NodeCache<T> extends Hookified {
 
 		// Event
 		this.emit("set", keyValue, value, expirationTimestamp);
+
+		if (existing) {
+			this._stats.decreaseKSize(keyValue);
+			this._stats.decreaseVSize(existing.value);
+		}
 
 		// Add the bytes to the stats
 		this._stats.incrementKSize(keyValue);
@@ -285,9 +291,11 @@ export class NodeCache<T> extends Hookified {
 	 * @returns {T | undefined} the value or undefined
 	 */
 	public take<V = T>(key: string | number): V | undefined {
+		const keyValue = this.formatKey(key);
+		const exists = this.store.has(keyValue);
 		const result = this.get(key);
 
-		if (result) {
+		if (exists) {
 			this.del(key);
 			if (this.options.useClones) {
 				return this.clone(result) as V;
@@ -296,7 +304,7 @@ export class NodeCache<T> extends Hookified {
 			return result as V;
 		}
 
-		return undefined;
+		return result as V;
 	}
 
 	/**
