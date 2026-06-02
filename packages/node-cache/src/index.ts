@@ -292,7 +292,8 @@ export class NodeCache<T> extends Hookified {
 	 */
 	public take<V = T>(key: string | number): V | undefined {
 		const keyValue = this.formatKey(key);
-		const exists = this.store.has(keyValue);
+		const item = this.store.get(keyValue);
+		const exists = item ? !(item.ttl > 0 && item.ttl < Date.now()) : false;
 		const result = this.get(key);
 
 		if (exists) {

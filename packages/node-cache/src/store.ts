@@ -364,7 +364,7 @@ export class NodeCacheStore<T> extends Hookified {
 		}
 
 		const result = await this._keyv.get<V>(keyValue);
-		if (result !== undefined) {
+		if (this._values.has(keyValue)) {
 			await this._keyv.delete(keyValue);
 			this._keys.delete(keyValue);
 			this._values.delete(keyValue);
