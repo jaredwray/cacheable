@@ -41,5 +41,8 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Validate Build Output
+        run: node scripts/test-build.mjs
+
       - name: Test
         run: pnpm test:ci
