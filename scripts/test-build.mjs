@@ -130,11 +130,17 @@ async function checkRuntime(pkgDir, pkg) {
 	if (cjsTarget) {
 		try {
 			const mod = require(path.resolve(pkgDir, cjsTarget));
-			const keys = Object.keys(mod).filter((k) => k !== "default");
-			const cjsHasDefault = "default" in mod;
-			// A CJS module that re-exports a default may surface it as the
-			// module itself; treat a non-plain export object as "has default".
-			if (keys.length === 0 && !cjsHasDefault && typeof mod !== "object") {
+			// A CJS module may export an object, a function (module.exports =
+			// fn), or — for a broken bundle — null/undefined/a primitive.
+			// Guard before introspecting so we never throw on the `in` operator
+			// or Object.keys, and so a bare function still counts as an export.
+			const isObjectOrFunction =
+				mod !== null && (typeof mod === "object" || typeof mod === "function");
+			const keys = isObjectOrFunction
+				? Object.keys(mod).filter((k) => k !== "default")
+				: [];
+			const cjsHasDefault = isObjectOrFunction && "default" in mod;
+			if (keys.length === 0 && !cjsHasDefault && !isObjectOrFunction) {
 				errors.push(`CJS bundle (${cjsTarget}) exposes no exports`);
 			}
 
