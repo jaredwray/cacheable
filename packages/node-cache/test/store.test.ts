@@ -906,6 +906,37 @@ describe("NodeCacheStore - overwrite stats", () => {
 		const stats = store.getStats();
 		expect(stats.keys).toBe(1);
 	});
+
+	test("should not leak vsize when overwriting undefined value", async () => {
+		const store = new NodeCacheStore();
+		const key = faker.string.uuid();
+
+		await store.set(key, undefined as unknown);
+		await store.set(key, faker.lorem.word());
+
+		const overwriteStats = store.getStats();
+		expect(overwriteStats.keys).toBe(1);
+
+		await store.del(key);
+		const afterDeleteStats = store.getStats();
+		expect(afterDeleteStats.keys).toBe(0);
+		expect(afterDeleteStats.ksize).toBe(0);
+		expect(afterDeleteStats.vsize).toBe(0);
+	});
+
+	test("should not leak vsize when undefined value expires", async () => {
+		const store = new NodeCacheStore({ checkperiod: 0, deleteOnExpire: true });
+		const key = faker.string.uuid();
+
+		await store.set(key, undefined as unknown, 50);
+		await sleep(100);
+
+		expect(await store.get(key)).toBeUndefined();
+		const stats = store.getStats();
+		expect(stats.keys).toBe(0);
+		expect(stats.ksize).toBe(0);
+		expect(stats.vsize).toBe(0);
+	});
 });
 
 describe("NodeCacheStore - setTtl with falsy values", () => {

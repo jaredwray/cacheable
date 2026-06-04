@@ -35,6 +35,7 @@ export class NodeCacheStore<T> extends Hookified {
 	private _useClones: boolean;
 	private _deleteOnExpire: boolean;
 	private _keys = new Set<string>();
+	private _values = new Map<string, T>();
 	private _ttls = new Map<string, number>();
 	private _intervalId: number | NodeJS.Timeout = 0;
 
@@ -128,19 +129,17 @@ export class NodeCacheStore<T> extends Hookified {
 		const finalTtl = this.resolveTtl(ttl);
 		const valueToStore = this._useClones ? this.clone(value) : value;
 
-		const isOverwrite = this._keys.has(keyValue);
+		const isOverwrite = this._values.has(keyValue);
 		this._keys.add(keyValue);
 		if (isOverwrite) {
-			const oldValue = await this._keyv.get(keyValue);
+			const oldValue = this._values.get(keyValue) as T;
 			this._stats.decreaseKSize(keyValue);
-			if (oldValue !== undefined) {
-				this._stats.decreaseVSize(oldValue);
-			}
-
+			this._stats.decreaseVSize(oldValue);
 			this._stats.decreaseCount();
 		}
 
 		await this._keyv.set(keyValue, valueToStore as T, finalTtl);
+		this._values.set(keyValue, value);
 
 		this.trackExpiration(keyValue, finalTtl);
 
@@ -221,13 +220,15 @@ export class NodeCacheStore<T> extends Hookified {
 	 */
 	public async del(key: string | number): Promise<boolean> {
 		const keyValue = key.toString();
-		const value = await this._keyv.get(keyValue);
+		const hadValue = this._values.has(keyValue);
+		const value = hadValue ? (this._values.get(keyValue) as T) : undefined;
 		const result = await this._keyv.delete(keyValue);
 		if (result) {
 			this._keys.delete(keyValue);
+			this._values.delete(keyValue);
 			this._ttls.delete(keyValue);
 			this._stats.decreaseKSize(keyValue);
-			if (value !== undefined) {
+			if (hadValue) {
 				this._stats.decreaseVSize(value);
 			}
 
@@ -256,6 +257,7 @@ export class NodeCacheStore<T> extends Hookified {
 	public async clear(): Promise<void> {
 		await this._keyv.clear();
 		this._keys.clear();
+		this._values.clear();
 		this._ttls.clear();
 		this._stats.resetStoreValues();
 	}
@@ -267,6 +269,7 @@ export class NodeCacheStore<T> extends Hookified {
 	public async flushAll(): Promise<void> {
 		await this._keyv.clear();
 		this._keys.clear();
+		this._values.clear();
 		this._ttls.clear();
 		this._stats = new Stats({ enabled: true });
 		this.emit("flush");
@@ -283,8 +286,8 @@ export class NodeCacheStore<T> extends Hookified {
 		ttl?: number | string,
 	): Promise<boolean> {
 		const keyValue = key.toString();
-		const item = await this._keyv.get(keyValue);
-		if (item !== undefined) {
+		if (this._values.has(keyValue)) {
+			const item = this._values.get(keyValue) as T;
 			const finalTtl = this.resolveTtl(ttl);
 			await this._keyv.set(keyValue, item, finalTtl);
 			this.trackExpiration(keyValue, finalTtl);
@@ -361,9 +364,10 @@ export class NodeCacheStore<T> extends Hookified {
 		}
 
 		const result = await this._keyv.get<V>(keyValue);
-		if (result !== undefined) {
+		if (this._values.has(keyValue)) {
 			await this._keyv.delete(keyValue);
 			this._keys.delete(keyValue);
+			this._values.delete(keyValue);
 			this._ttls.delete(keyValue);
 			this._stats.incrementHits();
 			this._stats.decreaseKSize(keyValue);
@@ -490,7 +494,8 @@ export class NodeCacheStore<T> extends Hookified {
 			return;
 		}
 
-		const value = await this._keyv.get(key);
+		const hadValue = this._values.has(key);
+		const value = hadValue ? this._values.get(key) : undefined;
 
 		/* v8 ignore next 3 -- @preserve: race condition guard when key is refreshed during async get */
 		if (!this.isExpired(key)) {
@@ -502,11 +507,11 @@ export class NodeCacheStore<T> extends Hookified {
 		if (this._deleteOnExpire) {
 			await this._keyv.delete(key);
 			this._keys.delete(key);
+			this._values.delete(key);
 			this._ttls.delete(key);
 			if (wasTracked) {
 				this._stats.decreaseKSize(key);
-				/* v8 ignore next 3 -- @preserve: value is typically undefined when Keyv also expires the item */
-				if (value !== undefined) {
+				if (hadValue) {
 					this._stats.decreaseVSize(value);
 				}
 
