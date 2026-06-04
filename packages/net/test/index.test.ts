@@ -1,7 +1,9 @@
+import http from "node:http";
+import type { AddressInfo } from "node:net";
 import process from "node:process";
 import { faker } from "@faker-js/faker";
 import { Cacheable } from "cacheable";
-import { describe, expect, test } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import {
 	CacheableNet,
 	type CacheableNetOptions,
@@ -1376,4 +1378,63 @@ describe("Cacheable Net", () => {
 		},
 		testTimeout,
 	);
+
+	// Native fetch parity: CacheableNet helpers must resolve with the Response
+	// on non-2xx (like native fetch) instead of throwing, so callers can inspect
+	// response.ok/status. A local server makes this deterministic.
+	describe("Native fetch parity (local server)", () => {
+		let baseUrl = "";
+		let server: http.Server;
+
+		beforeAll(async () => {
+			server = http.createServer((req, res) => {
+				const path = req.url ?? "/";
+				if (path.startsWith("/status/")) {
+					const code = Number.parseInt(path.slice("/status/".length), 10);
+					res.writeHead(code, { "content-type": "application/json" });
+					res.end(JSON.stringify({ status: code }));
+					return;
+				}
+				res.writeHead(200, { "content-type": "application/json" });
+				res.end(JSON.stringify({ ok: true }));
+			});
+			await new Promise<void>((resolve) => server.listen(0, resolve));
+			const { port } = server.address() as AddressInfo;
+			baseUrl = `http://127.0.0.1:${port}`;
+		});
+
+		afterAll(async () => {
+			await new Promise<void>((resolve, reject) => {
+				server.close((error) => (error ? reject(error) : resolve()));
+			});
+		});
+
+		test("get resolves with the Response on 404 (no throw)", async () => {
+			const net = new CacheableNet();
+			const result = await net.get<{ status: number }>(`${baseUrl}/status/404`);
+			expect(result.response.status).toBe(404);
+			expect(result.response.ok).toBe(false);
+			expect(result.data).toEqual({ status: 404 });
+		});
+
+		test("post resolves with the Response on 500 (no throw)", async () => {
+			const net = new CacheableNet();
+			const result = await net.post(`${baseUrl}/status/500`, { a: 1 });
+			expect(result.response.status).toBe(500);
+			expect(result.response.ok).toBe(false);
+		});
+
+		test("fetch resolves with the Response on non-2xx", async () => {
+			const net = new CacheableNet();
+			const response = await net.fetch(`${baseUrl}/status/404`);
+			expect(response.status).toBe(404);
+			expect(response.ok).toBe(false);
+		});
+
+		test("response.url is preserved through the get helper", async () => {
+			const net = new CacheableNet();
+			const result = await net.get(`${baseUrl}/ok`);
+			expect(result.response.url).toBe(`${baseUrl}/ok`);
+		});
+	});
 });

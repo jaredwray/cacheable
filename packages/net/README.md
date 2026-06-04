@@ -10,7 +10,8 @@
 
 
 Features:
-* `fetch` from [undici](https://github.com/nodejs/undici) with caching enabled via `cacheable`
+* Drop-in `fetch` with native semantics (built on the runtime's global `fetch`) — resolves with a `Response` on any status (check `response.ok`, no throwing on `4xx`/`5xx`) and preserves `response.url`, `redirected`, and `type`
+* Optional response caching via `cacheable` — pass a cache instance (or use `CacheableNet`) to enable it
 * HTTP method helpers: `get`, `post`, `put`, `patch`, `delete`, and `head` for easier development
 * [RFC 7234](http://httpwg.org/specs/rfc7234.html) compliant HTTP caching with `http-cache-semantics`
 * Smart caching with automatic cache key generation
@@ -118,6 +119,29 @@ const result2 = await net.post('https://api.example.com/data', { value: 1 }, {
   caching: true
 });
 ```
+
+## Error Handling
+
+`@cacheable/net` follows native `fetch` semantics. It **resolves** with a `Response` for
+every completed HTTP exchange — including `4xx` and `5xx` — and only rejects when the request
+itself fails (DNS failure, connection refused, abort, etc.). Use `response.ok` (or
+`response.status`) to detect HTTP errors instead of a `try/catch`:
+
+```javascript
+const net = new CacheableNet();
+
+const { response, data } = await net.get('https://api.example.com/thing');
+if (!response.ok) {
+  // 404, 500, etc. — `data` holds any error body the server returned
+  throw new Error(`Request failed with status ${response.status}`);
+}
+```
+
+Only successful responses are cached. Under the default HTTP cache mode, `2xx` responses are
+cached per RFC 7234 (honoring `Cache-Control`, `ETag`, `Expires`, etc.); in simple mode
+(`httpCachePolicy: false`) every `2xx` response is cached. Error responses (`4xx`/`5xx`) are
+always returned to the caller but **never** cached, so a transient failure is never replayed
+from a cache hit.
 
 ## API Reference
 
