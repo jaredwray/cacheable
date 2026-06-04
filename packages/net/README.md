@@ -10,7 +10,8 @@
 
 
 Features:
-* `fetch` from [undici](https://github.com/nodejs/undici) with caching enabled via `cacheable`
+* Drop-in `fetch` with native semantics (built on the runtime's global `fetch`) — resolves with a `Response` on any status (check `response.ok`, no throwing on `4xx`/`5xx`) and preserves `response.url`, `redirected`, and `type`
+* Optional response caching via `cacheable` — pass a cache instance (or use `CacheableNet`) to enable it
 * HTTP method helpers: `get`, `post`, `put`, `patch`, `delete`, and `head` for easier development
 * [RFC 7234](http://httpwg.org/specs/rfc7234.html) compliant HTTP caching with `http-cache-semantics`
 * Smart caching with automatic cache key generation
