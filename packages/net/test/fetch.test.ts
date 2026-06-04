@@ -1159,6 +1159,7 @@ describe("Fetch", () => {
 	describe("Native fetch parity (local server)", () => {
 		let baseUrl = "";
 		let server: http.Server;
+		let coalesceHits = 0;
 
 		beforeAll(async () => {
 			server = http.createServer((req, res) => {
@@ -1172,6 +1173,23 @@ describe("Fetch", () => {
 				if (path === "/redirect") {
 					res.writeHead(302, { location: "/ok" });
 					res.end();
+					return;
+				}
+				if (path === "/coalesce") {
+					// Count origin hits and delay so concurrent requests overlap.
+					coalesceHits += 1;
+					setTimeout(() => {
+						res.writeHead(200, { "content-type": "application/json" });
+						res.end(JSON.stringify({ ok: true }));
+					}, 50);
+					return;
+				}
+				if (path === "/cacheable") {
+					res.writeHead(200, {
+						"content-type": "application/json",
+						"cache-control": "max-age=3600",
+					});
+					res.end(JSON.stringify({ ok: true }));
 					return;
 				}
 				res.writeHead(200, { "content-type": "application/json" });
@@ -1292,6 +1310,87 @@ describe("Fetch", () => {
 			expect(result.response.status).toBe(200);
 			expect(result.response.url).toBe(`${baseUrl}/ok`);
 			expect(result.response.redirected).toBe(true);
+		});
+
+		test("get helper returns a 304 without throwing (null-body status)", async () => {
+			// A conditional GET with no cache hits the no-cache path; the helper
+			// must rebuild a 304 (a null-body status) without throwing.
+			const result = await get(`${baseUrl}/status/304`, { cache: undefined });
+			expect(result.response.status).toBe(304);
+		});
+
+		test("concurrent simple-cache misses coalesce into one origin request", async () => {
+			const cache = new Cacheable();
+			const options: FetchOptions = { cache, httpCachePolicy: false };
+			coalesceHits = 0;
+			const responses = await Promise.all([
+				fetch(`${baseUrl}/coalesce`, options),
+				fetch(`${baseUrl}/coalesce`, options),
+				fetch(`${baseUrl}/coalesce`, options),
+			]);
+			// Every caller succeeds and can read its own independent body.
+			for (const response of responses) {
+				expect(response.status).toBe(200);
+				expect(await response.text()).toBe('{"ok":true}');
+			}
+			// The origin was hit only once despite three concurrent misses.
+			expect(coalesceHits).toBe(1);
+		});
+
+		test("cached redirect reports the final url + redirected on cache hits", async () => {
+			const cache = new Cacheable();
+			const options: FetchOptions = { cache, httpCachePolicy: false };
+			const miss = await fetch(`${baseUrl}/redirect`, options);
+			const hit = await fetch(`${baseUrl}/redirect`, options);
+			expect(miss.url).toBe(`${baseUrl}/ok`);
+			// The cache hit reports the same final URL and redirected flag as the miss.
+			expect(hit.url).toBe(`${baseUrl}/ok`);
+			expect(hit.redirected).toBe(true);
+		});
+
+		test("simple-cache hit falls back to the request url for legacy entries", async () => {
+			// Entries written by older versions have no url/redirected/type metadata;
+			// the request URL is used as a fallback so they still resolve correctly.
+			const cache = new Cacheable();
+			await cache.set(`GET:${baseUrl}/ok`, {
+				body: '{"legacy":true}',
+				status: 200,
+				statusText: "OK",
+				headers: { "content-type": "application/json" },
+			});
+			const response = await fetch(`${baseUrl}/ok`, {
+				cache,
+				httpCachePolicy: false,
+			});
+			expect(response.status).toBe(200);
+			expect(response.url).toBe(`${baseUrl}/ok`);
+			expect(await response.text()).toBe('{"legacy":true}');
+		});
+
+		test("http-cache hit falls back to the request url for legacy entries", async () => {
+			const cache = new Cacheable();
+			const key = `GET:${baseUrl}/cacheable`;
+			// Populate a real, fresh cache policy from a cacheable response.
+			await fetch(`${baseUrl}/cacheable`, { cache, httpCachePolicy: true });
+			// Simulate a legacy entry (no url/redirected/type) while keeping the
+			// freshly-stored policy, so the next request satisfies without
+			// revalidation and exercises the request-url fallback.
+			await cache.set(key, {
+				body: '{"cached":true}',
+				status: 200,
+				statusText: "OK",
+				headers: {
+					"content-type": "application/json",
+					"cache-control": "max-age=3600",
+				},
+			});
+			const response = await fetch(`${baseUrl}/cacheable`, {
+				cache,
+				httpCachePolicy: true,
+			});
+			expect(response.status).toBe(200);
+			expect(response.url).toBe(`${baseUrl}/cacheable`);
+			expect(await response.text()).toBe('{"cached":true}');
 		});
 	});
 });

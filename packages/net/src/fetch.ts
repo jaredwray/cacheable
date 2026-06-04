@@ -1,3 +1,4 @@
+import { coalesceAsync } from "@cacheable/utils";
 import type { Cacheable } from "cacheable";
 import CachePolicy from "http-cache-semantics";
 import type { RequestInit, Response as UndiciResponse } from "undici";
@@ -11,6 +12,11 @@ const runtimeFetch = globalThis.fetch.bind(globalThis) as unknown as (
 	input: string,
 	init?: RequestInit,
 ) => Promise<UndiciResponse>;
+
+// Statuses that must not carry a response body. Reconstructing one of these
+// with a non-null body (e.g. the "" returned by response.text() on a 304/204)
+// throws in the Response constructor, so callers coerce the body to null.
+const NULL_BODY_STATUSES = new Set([101, 103, 204, 205, 304]);
 
 /**
  * Reconstruct a `Response` while preserving the properties the WHATWG
@@ -29,7 +35,13 @@ export function makeResponse(
 	init: { status?: number; statusText?: string; headers?: HeadersInit },
 	source: { url: string; redirected?: boolean; type?: string },
 ): UndiciResponse {
-	const response = new Response(body, init);
+	// Null-body statuses (204/304/…) cannot carry a body; coerce to null so a
+	// reconstructed conditional/empty response is returned instead of throwing.
+	const safeBody =
+		init.status !== undefined && NULL_BODY_STATUSES.has(init.status)
+			? null
+			: body;
+	const response = new Response(safeBody, init);
 
 	// `url` is always known (the request URL or the live response's final URL).
 	Object.defineProperty(response, "url", {
@@ -134,49 +146,61 @@ export async function fetch(
 		status: number;
 		statusText: string;
 		headers: Record<string, string>;
+		// Native-fetch metadata persisted so cache hits report the same final URL
+		// (after redirects) and redirected/type as the original cache miss.
+		url?: string;
+		redirected?: boolean;
+		type?: string;
 	};
 
 	if (!httpCachePolicy) {
-		// Simple caching without HTTP cache semantics. Return a cached response
-		// when present; otherwise fetch and only store successful responses.
-		// Non-2xx responses are returned (like native fetch) but never cached.
-		const cachedData = await options.cache.get<CachedResponse>(cacheKey);
-		if (cachedData) {
-			return makeResponse(
-				cachedData.body,
-				{
-					status: cachedData.status,
-					statusText: cachedData.statusText,
-					headers: cachedData.headers,
-				},
-				{ url },
-			);
-		}
+		// Simple caching without HTTP cache semantics. Coalesce concurrent misses
+		// for the same key so we don't stampede the origin (like Cacheable.getOrSet
+		// did before), return cached data when present, and only store successful
+		// responses. Non-2xx responses are returned (like native fetch) but never
+		// cached. Each caller rebuilds its own Response from the shared data so the
+		// body can be consumed independently.
+		// Capture the (now-narrowed) cache so it stays non-undefined inside the
+		// coalesce closure, where TypeScript would otherwise widen it again.
+		const cache = options.cache;
+		const cachedData = await coalesceAsync<CachedResponse>(
+			`net:simple:${cacheKey}`,
+			async () => {
+				const existing = await cache.get<CachedResponse>(cacheKey);
+				if (existing) {
+					return existing;
+				}
 
-		const response = await runtimeFetch(url, fetchOptions);
-		const body = await response.text();
-		const headers = Object.fromEntries(response.headers.entries());
+				const response = await runtimeFetch(url, fetchOptions);
+				const result: CachedResponse = {
+					body: await response.text(),
+					status: response.status,
+					statusText: response.statusText,
+					headers: Object.fromEntries(response.headers.entries()),
+					url: response.url,
+					redirected: response.redirected,
+					type: response.type,
+				};
 
-		if (response.ok) {
-			await options.cache.set(cacheKey, {
-				body,
-				status: response.status,
-				statusText: response.statusText,
-				headers,
-			});
-		}
+				if (response.ok) {
+					await cache.set(cacheKey, result);
+				}
+
+				return result;
+			},
+		);
 
 		return makeResponse(
-			body,
+			cachedData.body,
 			{
-				status: response.status,
-				statusText: response.statusText,
-				headers,
+				status: cachedData.status,
+				statusText: cachedData.statusText,
+				headers: cachedData.headers,
 			},
 			{
-				url: response.url,
-				redirected: response.redirected,
-				type: response.type,
+				url: cachedData.url ?? url,
+				redirected: cachedData.redirected,
+				type: cachedData.type,
 			},
 		);
 	}
@@ -195,6 +219,9 @@ export async function fetch(
 	let cachedStatus: number | undefined;
 	let cachedStatusText: string | undefined;
 	let cachedHeaders: Record<string, string> | undefined;
+	let cachedUrl: string | undefined;
+	let cachedRedirected: boolean | undefined;
+	let cachedType: string | undefined;
 
 	if (cachedPolicyData && cachedResponse) {
 		// Deserialize the policy
@@ -205,6 +232,9 @@ export async function fetch(
 		cachedStatus = cachedResponse.status;
 		cachedStatusText = cachedResponse.statusText;
 		cachedHeaders = cachedResponse.headers;
+		cachedUrl = cachedResponse.url;
+		cachedRedirected = cachedResponse.redirected;
+		cachedType = cachedResponse.type;
 	}
 
 	// Prepare the request for http-cache-semantics
@@ -226,7 +256,7 @@ export async function fetch(
 				statusText: cachedStatusText,
 				headers: headers as HeadersInit,
 			},
-			{ url },
+			{ url: cachedUrl ?? url, redirected: cachedRedirected, type: cachedType },
 		);
 	}
 
@@ -272,6 +302,9 @@ export async function fetch(
 					status: cachedStatus,
 					statusText: cachedStatusText,
 					headers: cachedHeaders,
+					url: cachedUrl,
+					redirected: cachedRedirected,
+					type: cachedType,
 				},
 				ttl,
 			);
@@ -285,14 +318,36 @@ export async function fetch(
 					statusText: cachedStatusText,
 					headers: headers as HeadersInit,
 				},
-				{ url },
+				{
+					url: cachedUrl ?? url,
+					redirected: cachedRedirected,
+					type: cachedType,
+				},
 			);
 		}
 	}
 
-	// Read the response body. Like native fetch, non-2xx responses are returned;
-	// http-cache-semantics decides below whether they are storable.
+	// Read the response body. Like native fetch, non-2xx responses are returned.
 	const body = await response.text();
+
+	// Per the documented contract, error responses are returned to the caller but
+	// never cached — even though RFC 7234 would consider some (404/410/501/…)
+	// storable. Return early so no policy is created or stored for them.
+	if (!response.ok) {
+		return makeResponse(
+			body,
+			{
+				status: response.status,
+				statusText: response.statusText,
+				headers: response.headers as HeadersInit,
+			},
+			{
+				url: response.url,
+				redirected: response.redirected,
+				type: response.type,
+			},
+		);
+	}
 
 	// Create response object for http-cache-semantics
 	const responseForPolicy = {
@@ -318,6 +373,9 @@ export async function fetch(
 					status: response.status,
 					statusText: response.statusText,
 					headers: responseForPolicy.headers,
+					url: response.url,
+					redirected: response.redirected,
+					type: response.type,
 				},
 				ttl,
 			),

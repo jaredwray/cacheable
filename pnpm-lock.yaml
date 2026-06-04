@@ -255,6 +255,9 @@ importers:
 
   packages/net:
     dependencies:
+      '@cacheable/utils':
+        specifier: workspace:^
+        version: link:../utils
       cacheable:
         specifier: workspace:^
         version: link:../cacheable

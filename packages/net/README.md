@@ -136,9 +136,11 @@ if (!response.ok) {
 }
 ```
 
-Only storable responses are cached. In simple caching mode (`httpCachePolicy: false`) that
-means successful (2xx) responses only; under the default HTTP cache semantics it follows
-RFC 7234. Error responses are always returned to the caller, never silently cached.
+Only successful responses are cached. Under the default HTTP cache mode, `2xx` responses are
+cached per RFC 7234 (honoring `Cache-Control`, `ETag`, `Expires`, etc.); in simple mode
+(`httpCachePolicy: false`) every `2xx` response is cached. Error responses (`4xx`/`5xx`) are
+always returned to the caller but **never** cached, so a transient failure is never replayed
+from a cache hit.
 
 ## API Reference
 
