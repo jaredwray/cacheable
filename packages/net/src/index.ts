@@ -5,6 +5,7 @@ import {
 	type FetchOptions,
 	type Response as FetchResponse,
 	fetch,
+	makeResponse,
 } from "./fetch.js";
 
 export type NetFetchOptions = {
@@ -259,11 +260,19 @@ export class CacheableNet extends Hookified {
 		}
 
 		// Create a new response with the text already consumed
-		const newResponse = new Response(text, {
-			status: response.status,
-			statusText: response.statusText,
-			headers: response.headers as HeadersInit,
-		}) as FetchResponse;
+		const newResponse = makeResponse(
+			text,
+			{
+				status: response.status,
+				statusText: response.statusText,
+				headers: response.headers as HeadersInit,
+			},
+			{
+				url: response.url,
+				redirected: response.redirected,
+				type: response.type,
+			},
+		);
 
 		return {
 			data,
@@ -333,11 +342,19 @@ export class CacheableNet extends Hookified {
 		}
 
 		// Create a new response with the text already consumed
-		const newResponse = new Response(text, {
-			status: response.status,
-			statusText: response.statusText,
-			headers: response.headers as HeadersInit,
-		}) as FetchResponse;
+		const newResponse = makeResponse(
+			text,
+			{
+				status: response.status,
+				statusText: response.statusText,
+				headers: response.headers as HeadersInit,
+			},
+			{
+				url: response.url,
+				redirected: response.redirected,
+				type: response.type,
+			},
+		);
 
 		return {
 			data: responseData,
@@ -434,11 +451,19 @@ export class CacheableNet extends Hookified {
 		}
 
 		// Create a new response with the text already consumed
-		const newResponse = new Response(text, {
-			status: response.status,
-			statusText: response.statusText,
-			headers: response.headers as HeadersInit,
-		}) as FetchResponse;
+		const newResponse = makeResponse(
+			text,
+			{
+				status: response.status,
+				statusText: response.statusText,
+				headers: response.headers as HeadersInit,
+			},
+			{
+				url: response.url,
+				redirected: response.redirected,
+				type: response.type,
+			},
+		);
 
 		return {
 			data: responseData,
@@ -508,11 +533,19 @@ export class CacheableNet extends Hookified {
 		}
 
 		// Create a new response with the text already consumed
-		const newResponse = new Response(text, {
-			status: response.status,
-			statusText: response.statusText,
-			headers: response.headers as HeadersInit,
-		}) as FetchResponse;
+		const newResponse = makeResponse(
+			text,
+			{
+				status: response.status,
+				statusText: response.statusText,
+				headers: response.headers as HeadersInit,
+			},
+			{
+				url: response.url,
+				redirected: response.redirected,
+				type: response.type,
+			},
+		);
 
 		return {
 			data: responseData,
@@ -584,11 +617,19 @@ export class CacheableNet extends Hookified {
 		}
 
 		// Create a new response with the text already consumed
-		const newResponse = new Response(text, {
-			status: response.status,
-			statusText: response.statusText,
-			headers: response.headers as HeadersInit,
-		}) as FetchResponse;
+		const newResponse = makeResponse(
+			text,
+			{
+				status: response.status,
+				statusText: response.statusText,
+				headers: response.headers as HeadersInit,
+			},
+			{
+				url: response.url,
+				redirected: response.redirected,
+				type: response.type,
+			},
+		);
 
 		return {
 			data: responseData,

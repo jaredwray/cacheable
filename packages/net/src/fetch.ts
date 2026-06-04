@@ -12,6 +12,52 @@ const runtimeFetch = globalThis.fetch.bind(globalThis) as unknown as (
 	init?: RequestInit,
 ) => Promise<UndiciResponse>;
 
+/**
+ * Reconstruct a `Response` while preserving the properties the WHATWG
+ * `Response` constructor does not let you set. Native `fetch` exposes the final
+ * URL via `response.url`; rebuilding with `new Response()` resets it to "".
+ * We reattach `url` (and `redirected`/`type` when rebuilding from a live
+ * response) so callers see the same shape native `fetch` returns.
+ *
+ * @param body The response body.
+ * @param init Standard response init (status, statusText, headers).
+ * @param source Optional source values to reattach (url, redirected, type).
+ * @returns A Response with native-`fetch` properties preserved.
+ */
+export function makeResponse(
+	body: BodyInit | null | undefined,
+	init: { status?: number; statusText?: string; headers?: HeadersInit },
+	source: { url: string; redirected?: boolean; type?: string },
+): UndiciResponse {
+	const response = new Response(body, init);
+
+	// `url` is always known (the request URL or the live response's final URL).
+	Object.defineProperty(response, "url", {
+		value: source.url,
+		configurable: true,
+		enumerable: true,
+	});
+
+	// `redirected`/`type` are only known when rebuilding from a live response.
+	if (source.redirected !== undefined) {
+		Object.defineProperty(response, "redirected", {
+			value: source.redirected,
+			configurable: true,
+			enumerable: true,
+		});
+	}
+
+	if (source.type !== undefined) {
+		Object.defineProperty(response, "type", {
+			value: source.type,
+			configurable: true,
+			enumerable: true,
+		});
+	}
+
+	return response as unknown as UndiciResponse;
+}
+
 export type FetchOptions = Omit<RequestInit, "cache"> & {
 	cache?: Cacheable;
 	/**
@@ -54,21 +100,17 @@ export type FetchOptions = Omit<RequestInit, "cache"> & {
  */
 export async function fetch(
 	url: string,
-	options: FetchOptions,
+	options?: FetchOptions,
 ): Promise<UndiciResponse> {
 	const fetchOptions: RequestInit = {
 		...options,
 		cache: "no-cache",
 	};
 
-	// If no cache provided, skip all caching logic
-	if (!options.cache) {
-		const response = await runtimeFetch(url, fetchOptions);
-		/* c8 ignore next 3 */
-		if (!response.ok) {
-			throw new Error(`Fetch failed with status ${response.status}`);
-		}
-		return response;
+	// If no cache provided, skip all caching logic. Like native fetch, the
+	// response is returned regardless of status (no throw on non-2xx).
+	if (!options?.cache) {
+		return runtimeFetch(url, fetchOptions);
 	}
 
 	// Skip caching for POST, PATCH, DELETE, and HEAD requests
@@ -78,12 +120,7 @@ export async function fetch(
 		options.method === "DELETE" ||
 		options.method === "HEAD"
 	) {
-		const response = await runtimeFetch(url, fetchOptions);
-		/* c8 ignore next 3 */
-		if (!response.ok) {
-			throw new Error(`Fetch failed with status ${response.status}`);
-		}
-		return response;
+		return runtimeFetch(url, fetchOptions);
 	}
 
 	const httpCachePolicy = options.httpCachePolicy !== false; // Default to true
@@ -92,48 +129,60 @@ export async function fetch(
 	// Create a cache key that includes the method
 	const cacheKey = `${method}:${url}`;
 
-	if (!httpCachePolicy) {
-		// Simple caching without HTTP cache semantics
-		const cachedData = await options.cache.getOrSet(cacheKey, async () => {
-			// Perform the fetch operation
-			const response = await runtimeFetch(url, fetchOptions);
-			/* v8 ignore next -- @preserve */
-			if (!response.ok) {
-				throw new Error(`Fetch failed with status ${response.status}`);
-			}
-
-			// Convert response to cacheable format
-			const body = await response.text();
-			return {
-				body,
-				status: response.status,
-				statusText: response.statusText,
-				headers: Object.fromEntries(response.headers.entries()),
-			};
-		});
-
-		// Reconstruct Response object from cached data
-		/* v8 ignore next -- @preserve */
-		if (!cachedData) {
-			throw new Error("Failed to get or set cache data");
-		}
-
-		return new Response(cachedData.body, {
-			status: cachedData.status,
-			statusText: cachedData.statusText,
-			headers: cachedData.headers,
-		}) as UndiciResponse;
-	}
-
-	// HTTP cache semantics enabled
-	const policyKey = `${cacheKey}:policy`;
-
 	type CachedResponse = {
 		body: string;
 		status: number;
 		statusText: string;
 		headers: Record<string, string>;
 	};
+
+	if (!httpCachePolicy) {
+		// Simple caching without HTTP cache semantics. Return a cached response
+		// when present; otherwise fetch and only store successful responses.
+		// Non-2xx responses are returned (like native fetch) but never cached.
+		const cachedData = await options.cache.get<CachedResponse>(cacheKey);
+		if (cachedData) {
+			return makeResponse(
+				cachedData.body,
+				{
+					status: cachedData.status,
+					statusText: cachedData.statusText,
+					headers: cachedData.headers,
+				},
+				{ url },
+			);
+		}
+
+		const response = await runtimeFetch(url, fetchOptions);
+		const body = await response.text();
+		const headers = Object.fromEntries(response.headers.entries());
+
+		if (response.ok) {
+			await options.cache.set(cacheKey, {
+				body,
+				status: response.status,
+				statusText: response.statusText,
+				headers,
+			});
+		}
+
+		return makeResponse(
+			body,
+			{
+				status: response.status,
+				statusText: response.statusText,
+				headers,
+			},
+			{
+				url: response.url,
+				redirected: response.redirected,
+				type: response.type,
+			},
+		);
+	}
+
+	// HTTP cache semantics enabled
+	const policyKey = `${cacheKey}:policy`;
 
 	// Try to get cached response and policy
 	const [cachedResponse, cachedPolicyData] = await Promise.all([
@@ -170,11 +219,15 @@ export async function fetch(
 	if (policy?.satisfiesWithoutRevalidation(request)) {
 		// Return cached response with updated headers
 		const headers = policy.responseHeaders();
-		return new Response(cachedBody, {
-			status: cachedStatus,
-			statusText: cachedStatusText,
-			headers: headers as HeadersInit,
-		}) as UndiciResponse;
+		return makeResponse(
+			cachedBody,
+			{
+				status: cachedStatus,
+				statusText: cachedStatusText,
+				headers: headers as HeadersInit,
+			},
+			{ url },
+		);
 	}
 
 	// Check if we need revalidation
@@ -225,20 +278,20 @@ export async function fetch(
 
 			// Return cached response with updated headers
 			const headers = updatedPolicy.responseHeaders();
-			return new Response(cachedBody, {
-				status: cachedStatus,
-				statusText: cachedStatusText,
-				headers: headers as HeadersInit,
-			}) as UndiciResponse;
+			return makeResponse(
+				cachedBody,
+				{
+					status: cachedStatus,
+					statusText: cachedStatusText,
+					headers: headers as HeadersInit,
+				},
+				{ url },
+			);
 		}
 	}
 
-	/* v8 ignore next -- @preserve */
-	if (!response.ok && response.status !== 304) {
-		throw new Error(`Fetch failed with status ${response.status}`);
-	}
-
-	// Read the response body
+	// Read the response body. Like native fetch, non-2xx responses are returned;
+	// http-cache-semantics decides below whether they are storable.
 	const body = await response.text();
 
 	// Create response object for http-cache-semantics
@@ -273,11 +326,19 @@ export async function fetch(
 	}
 
 	// Return the response
-	return new Response(body, {
-		status: response.status,
-		statusText: response.statusText,
-		headers: response.headers as HeadersInit,
-	}) as UndiciResponse;
+	return makeResponse(
+		body,
+		{
+			status: response.status,
+			statusText: response.statusText,
+			headers: response.headers as HeadersInit,
+		},
+		{
+			url: response.url,
+			redirected: response.redirected,
+			type: response.type,
+		},
+	);
 }
 
 export type DataResponse<T = unknown> = {
@@ -310,11 +371,19 @@ export async function get<T = unknown>(
 	}
 
 	// Create a new response with the text already consumed
-	const newResponse = new Response(text, {
-		status: response.status,
-		statusText: response.statusText,
-		headers: response.headers as HeadersInit,
-	}) as UndiciResponse;
+	const newResponse = makeResponse(
+		text,
+		{
+			status: response.status,
+			statusText: response.statusText,
+			headers: response.headers as HeadersInit,
+		},
+		{
+			url: response.url,
+			redirected: response.redirected,
+			type: response.type,
+		},
+	);
 
 	return {
 		data,
@@ -373,11 +442,19 @@ export async function post<T = unknown>(
 	}
 
 	// Create a new response with the text already consumed
-	const newResponse = new Response(text, {
-		status: response.status,
-		statusText: response.statusText,
-		headers: response.headers as HeadersInit,
-	}) as UndiciResponse;
+	const newResponse = makeResponse(
+		text,
+		{
+			status: response.status,
+			statusText: response.statusText,
+			headers: response.headers as HeadersInit,
+		},
+		{
+			url: response.url,
+			redirected: response.redirected,
+			type: response.type,
+		},
+	);
 
 	return {
 		data: responseData,
@@ -437,11 +514,19 @@ export async function patch<T = unknown>(
 	}
 
 	// Create a new response with the text already consumed
-	const newResponse = new Response(text, {
-		status: response.status,
-		statusText: response.statusText,
-		headers: response.headers as HeadersInit,
-	}) as UndiciResponse;
+	const newResponse = makeResponse(
+		text,
+		{
+			status: response.status,
+			statusText: response.statusText,
+			headers: response.headers as HeadersInit,
+		},
+		{
+			url: response.url,
+			redirected: response.redirected,
+			type: response.type,
+		},
+	);
 
 	return {
 		data: responseData,
@@ -525,11 +610,19 @@ export async function del<T = unknown>(
 	}
 
 	// Create a new response with the text already consumed
-	const newResponse = new Response(text, {
-		status: response.status,
-		statusText: response.statusText,
-		headers: response.headers as HeadersInit,
-	}) as UndiciResponse;
+	const newResponse = makeResponse(
+		text,
+		{
+			status: response.status,
+			statusText: response.statusText,
+			headers: response.headers as HeadersInit,
+		},
+		{
+			url: response.url,
+			redirected: response.redirected,
+			type: response.type,
+		},
+	);
 
 	return {
 		data: responseData,

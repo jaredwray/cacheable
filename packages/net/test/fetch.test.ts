@@ -1150,4 +1150,148 @@ describe("Fetch", () => {
 			expect(body.toString("utf8")).toContain('name="id"');
 		});
 	});
+
+	// Native fetch parity: @cacheable/net previously threw on any non-2xx
+	// response, making `response.ok` checks unreachable dead code. Native fetch
+	// resolves with the Response regardless of status and only rejects on
+	// network errors. These tests use a local server to assert that behavior
+	// deterministically across every code path.
+	describe("Native fetch parity (local server)", () => {
+		let baseUrl = "";
+		let server: http.Server;
+
+		beforeAll(async () => {
+			server = http.createServer((req, res) => {
+				const path = req.url ?? "/";
+				if (path.startsWith("/status/")) {
+					const code = Number.parseInt(path.slice("/status/".length), 10);
+					res.writeHead(code, { "content-type": "application/json" });
+					res.end(JSON.stringify({ status: code }));
+					return;
+				}
+				if (path === "/redirect") {
+					res.writeHead(302, { location: "/ok" });
+					res.end();
+					return;
+				}
+				res.writeHead(200, { "content-type": "application/json" });
+				res.end(JSON.stringify({ ok: true }));
+			});
+			await new Promise<void>((resolve) => server.listen(0, resolve));
+			const { port } = server.address() as AddressInfo;
+			baseUrl = `http://127.0.0.1:${port}`;
+		});
+
+		afterAll(async () => {
+			await new Promise<void>((resolve, reject) => {
+				server.close((error) => (error ? reject(error) : resolve()));
+			});
+		});
+
+		test("fetch resolves (does not throw) on 404 with a cache", async () => {
+			const response = await fetch(`${baseUrl}/status/404`, {
+				cache: new Cacheable(),
+			});
+			expect(response.status).toBe(404);
+			expect(response.ok).toBe(false);
+		});
+
+		test("fetch resolves on 500 in simple-cache mode", async () => {
+			const response = await fetch(`${baseUrl}/status/500`, {
+				cache: new Cacheable(),
+				httpCachePolicy: false,
+			});
+			expect(response.status).toBe(500);
+			expect(response.ok).toBe(false);
+		});
+
+		test("fetch resolves on non-2xx without a cache", async () => {
+			const response = await fetch(`${baseUrl}/status/404`, {
+				cache: undefined,
+			});
+			expect(response.status).toBe(404);
+			expect(response.ok).toBe(false);
+		});
+
+		test("fetch works with no options at all (like native fetch)", async () => {
+			const response = await fetch(`${baseUrl}/status/500`);
+			expect(response.status).toBe(500);
+			expect(response.ok).toBe(false);
+		});
+
+		test("POST resolves on non-2xx (not cached)", async () => {
+			const response = await fetch(`${baseUrl}/status/404`, {
+				method: "POST",
+				cache: new Cacheable(),
+				body: JSON.stringify({ a: 1 }),
+				headers: { "Content-Type": "application/json" },
+			});
+			expect(response.status).toBe(404);
+			expect(response.ok).toBe(false);
+		});
+
+		test("HEAD resolves on non-2xx (not cached)", async () => {
+			const response = await fetch(`${baseUrl}/status/500`, {
+				method: "HEAD",
+				cache: new Cacheable(),
+			});
+			expect(response.status).toBe(500);
+			expect(response.ok).toBe(false);
+		});
+
+		test("error responses are not cached in simple-cache mode", async () => {
+			const cache = new Cacheable({ stats: true });
+			const options: FetchOptions = { cache, httpCachePolicy: false };
+			const first = await fetch(`${baseUrl}/status/500`, options);
+			const second = await fetch(`${baseUrl}/status/500`, options);
+			expect(first.status).toBe(500);
+			expect(second.status).toBe(500);
+			// Both were live fetches; nothing was served from cache.
+			expect(cache.stats.hits).toBe(0);
+		});
+
+		test("successful responses are still cached in simple-cache mode", async () => {
+			const cache = new Cacheable({ stats: true });
+			const options: FetchOptions = { cache, httpCachePolicy: false };
+			await fetch(`${baseUrl}/ok`, options);
+			await fetch(`${baseUrl}/ok`, options);
+			expect(cache.stats.hits).toBe(1);
+		});
+
+		test("get helper returns non-2xx without throwing", async () => {
+			const result = await get<{ status: number }>(`${baseUrl}/status/404`, {
+				cache: new Cacheable(),
+			});
+			expect(result.response.status).toBe(404);
+			expect(result.response.ok).toBe(false);
+			expect(result.data).toEqual({ status: 404 });
+		});
+
+		test("post helper returns non-2xx without throwing", async () => {
+			const result = await post(
+				`${baseUrl}/status/500`,
+				{ a: 1 },
+				{ cache: new Cacheable() },
+			);
+			expect(result.response.status).toBe(500);
+			expect(result.response.ok).toBe(false);
+		});
+
+		test("response.url is preserved on a reconstructed cached response", async () => {
+			const cache = new Cacheable();
+			const options: FetchOptions = { cache, httpCachePolicy: false };
+			await fetch(`${baseUrl}/ok`, options);
+			const cached = await fetch(`${baseUrl}/ok`, options);
+			expect(cached.url).toBe(`${baseUrl}/ok`);
+		});
+
+		test("response.url and redirected survive the get helper", async () => {
+			const result = await get(`${baseUrl}/redirect`, {
+				cache: new Cacheable(),
+			});
+			expect(result.response.status).toBe(200);
+			expect(result.response.url).toBe(`${baseUrl}/ok`);
+			expect(result.response.redirected).toBe(true);
+		});
+	});
 });

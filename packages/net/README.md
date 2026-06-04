@@ -119,6 +119,27 @@ const result2 = await net.post('https://api.example.com/data', { value: 1 }, {
 });
 ```
 
+## Error Handling
+
+`@cacheable/net` follows native `fetch` semantics. It **resolves** with a `Response` for
+every completed HTTP exchange — including `4xx` and `5xx` — and only rejects when the request
+itself fails (DNS failure, connection refused, abort, etc.). Use `response.ok` (or
+`response.status`) to detect HTTP errors instead of a `try/catch`:
+
+```javascript
+const net = new CacheableNet();
+
+const { response, data } = await net.get('https://api.example.com/thing');
+if (!response.ok) {
+  // 404, 500, etc. — `data` holds any error body the server returned
+  throw new Error(`Request failed with status ${response.status}`);
+}
+```
+
+Only storable responses are cached. In simple caching mode (`httpCachePolicy: false`) that
+means successful (2xx) responses only; under the default HTTP cache semantics it follows
+RFC 7234. Error responses are always returned to the caller, never silently cached.
+
 ## API Reference
 
 ### CacheableNet Class
