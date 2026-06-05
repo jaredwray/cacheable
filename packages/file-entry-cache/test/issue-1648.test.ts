@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import fileEntryCache from "../src/index.js";
 
 /**
@@ -143,6 +143,95 @@ describe("issue #1648", () => {
 		fs.mkdirSync(cachePath, { recursive: true });
 
 		expect(() => fileEntryCache.create(cacheId, cacheDir)).toThrow();
+	});
+
+	test("3d. create() does not throw on valid-JSON-but-non-array cache content", () => {
+		// A leftover/foreign cache file that is valid JSON but NOT the flatted
+		// array the parser expects (e.g. an ancient plain-object cache or a
+		// hand/3rd-party-written file). flatted.parse throws a TypeError here
+		// rather than a SyntaxError; create() must still recover by starting fresh.
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cachePath = path.resolve(`./${cacheDir}/${cacheId}`);
+
+		fs.mkdirSync(path.resolve(`./${cacheDir}`), { recursive: true });
+		fs.writeFileSync(cachePath, '{"/some/old/path.js":{"size":1,"mtime":2}}');
+
+		let cache!: ReturnType<typeof fileEntryCache.create>;
+		expect(() => {
+			cache = fileEntryCache.create(cacheId, cacheDir);
+		}).not.toThrow();
+
+		// The cache works and the unparseable file is overwritten on reconcile.
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+		cache.reconcile();
+
+		const reloaded = fileEntryCache.create(cacheId, cacheDir);
+		expect(reloaded.getFileDescriptor(fileA).changed).toBe(false);
+	});
+
+	test("reconcile() keeps a cached entry when statSync fails with a non-ENOENT error", () => {
+		// A transient stat failure (e.g. EACCES) for a still-present file must NOT
+		// drop the entry the way an ENOENT (deleted file) does — that would lose
+		// valid cached data and force a spurious re-process.
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cache = fileEntryCache.create(cacheId, cacheDir);
+		const key = cache.createFileKey(fileA);
+
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		const spy = vi.spyOn(fs, "statSync").mockImplementation(() => {
+			const error = new Error(
+				"EACCES: permission denied",
+			) as NodeJS.ErrnoException;
+			error.code = "EACCES";
+			throw error;
+		});
+		try {
+			expect(() => cache.reconcile()).not.toThrow();
+		} finally {
+			spy.mockRestore();
+		}
+
+		// Entry survived in memory and on disk.
+		expect(cache.cache.keys()).toContain(key);
+		const reloaded = fileEntryCache.create(cacheId, cacheDir);
+		expect(reloaded.getFileDescriptor(fileA).changed).toBe(false);
+	});
+
+	test("reconcile() logs (and keeps) on a non-ENOENT stat error when a logger is set", () => {
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const errors: string[] = [];
+		const logger = {
+			level: "error",
+			trace: () => {},
+			debug: () => {},
+			info: () => {},
+			warn: () => {},
+			error: (data: string | object, ...args: unknown[]) => {
+				errors.push(typeof data === "string" ? data : (args[0] as string));
+			},
+			fatal: () => {},
+		};
+		const cache = fileEntryCache.create(cacheId, cacheDir, { logger });
+		const key = cache.createFileKey(fileA);
+
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		const spy = vi.spyOn(fs, "statSync").mockImplementation(() => {
+			const error = new Error("EIO: i/o error") as NodeJS.ErrnoException;
+			error.code = "EIO";
+			throw error;
+		});
+		try {
+			cache.reconcile();
+		} finally {
+			spy.mockRestore();
+		}
+
+		expect(cache.cache.keys()).toContain(key);
+		expect(
+			errors.some((m) => m.includes("reconcile: unable to stat file")),
+		).toBe(true);
 	});
 
 	test("a file modified between getFileDescriptor and reconcile is detected next run", () => {

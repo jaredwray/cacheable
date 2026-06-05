@@ -131,12 +131,15 @@ export function create(
 			try {
 				fileEntryCache.cache = createFlatCacheFile(cachePath, opts.cache);
 			} catch (error) {
-				// If the cache file content is invalid (e.g. corrupted or non-JSON),
-				// start with an empty cache. The existing file will be overwritten on
-				// the next reconcile() rather than throwing. Unexpected errors (e.g.
-				// IO/permission failures on an otherwise valid file) are re-thrown so
-				// valid cache data is not silently discarded.
-				if (error instanceof SyntaxError) {
+				// If the cache file content cannot be parsed (e.g. corrupted,
+				// non-JSON, or a legacy/foreign format the parser rejects), start
+				// with an empty cache. The existing file is overwritten on the next
+				// reconcile() rather than throwing. Parse failures surface as a
+				// SyntaxError (malformed JSON) or a TypeError (valid JSON whose shape
+				// the flatted parser rejects, e.g. a top-level object instead of the
+				// expected array). Genuine IO/permission failures (e.g. EISDIR/EACCES)
+				// are re-thrown so valid cache data is not silently discarded.
+				if (error instanceof SyntaxError || error instanceof TypeError) {
 					fileEntryCache.cache = new FlatCache(opts.cache);
 				} else {
 					throw error;
@@ -432,10 +435,22 @@ export class FileEntryCache {
 				// the baseline rather than re-stat'ing (which would refresh
 				// size/mtime but not hash, leaving the baseline inconsistent).
 				this._originalMeta.set(key, { ...meta });
-			} catch {
-				// The file no longer exists; drop it from the cache.
-				this._cache.removeKey(key);
-				this._originalMeta.delete(key);
+			} catch (error) {
+				if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+					// The file no longer exists; drop it from the cache.
+					this._cache.removeKey(key);
+					this._originalMeta.delete(key);
+				} else {
+					// Any other failure (e.g. EACCES/EIO, or the path-traversal guard
+					// firing when restrictAccessToCwd is toggled) means we could not
+					// confirm the file's current state. Keep the previously persisted
+					// entry rather than discarding valid cached data, and surface the
+					// error instead of silently dropping it.
+					this._logger?.error(
+						{ key, error },
+						"reconcile: unable to stat file; keeping cached entry",
+					);
+				}
 			}
 		}
 
