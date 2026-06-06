@@ -1,14 +1,14 @@
 import { Keyv } from "keyv";
 import { describe, expect, test } from "vitest";
-import { CacheTagService } from "../src/cache-tag-service.js";
+import { CacheTags } from "../src/cache-tags.js";
 import { sleep } from "../src/sleep.js";
 
 const createService = (namespace?: string) => {
 	const store = new Keyv();
-	return new CacheTagService({ store, namespace });
+	return new CacheTags({ store, namespace });
 };
 
-describe("CacheTagService", () => {
+describe("CacheTags", () => {
 	test("isKeyFresh returns true after setKeyTags", async () => {
 		const service = createService();
 		await service.setKeyTags("user:1", ["users"]);
@@ -64,8 +64,8 @@ describe("CacheTagService", () => {
 
 	test("namespace isolation: tags do not leak across namespaces", async () => {
 		const store = new Keyv();
-		const ns1 = new CacheTagService({ store, namespace: "ns1" });
-		const ns2 = new CacheTagService({ store, namespace: "ns2" });
+		const ns1 = new CacheTags({ store, namespace: "ns1" });
+		const ns2 = new CacheTags({ store, namespace: "ns2" });
 
 		await ns1.setKeyTags("user:1", ["users"]);
 		await ns2.setKeyTags("user:1", ["users"]);
@@ -136,19 +136,19 @@ describe("CacheTagService", () => {
 		const store = new Keyv();
 		// Simulate a store that does not expose iterator
 		(store as unknown as { iterator?: unknown }).iterator = undefined;
-		const service = new CacheTagService({ store });
+		const service = new CacheTags({ store });
 		await service.setKeyTags("a", ["x"]);
 		expect(await service.getKeysByTag("x")).toEqual([]);
 	});
 
 	test("default namespace applied when not provided", async () => {
-		const service = new CacheTagService({ store: new Keyv() });
+		const service = new CacheTags({ store: new Keyv() });
 		expect(service.namespace).toBe("default");
 	});
 
 	test("exposes provided store", async () => {
 		const store = new Keyv();
-		const service = new CacheTagService({ store });
+		const service = new CacheTags({ store });
 		expect(service.store).toBe(store);
 	});
 

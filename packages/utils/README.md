@@ -33,7 +33,7 @@
 * [Is Object Helper](#is-object-helper)
 * [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
 * [Get Or Set Memoization Function](#get-or-set-memoization-function)
-* [Cache Tag Service](#cache-tag-service)
+* [Cache Tags](#cache-tags)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -514,9 +514,9 @@ const function_ = async () => Math.random() * 100;
 const value = await getOrSet(generateKey(), function_, { ttl: '1h', cache });
 ```
 
-# Cache Tag Service
+# Cache Tags
 
-The `CacheTagService` provides tag-based invalidation on top of any [Keyv](https://github.com/jaredwray/keyv) store. It is store-agnostic and does not require any adapter changes.
+The `CacheTags` service provides tag-based invalidation on top of any [Keyv](https://github.com/jaredwray/keyv) store. It is store-agnostic and does not require any adapter changes.
 
 The service uses a lazy invalidation model. Instead of scanning and deleting keys, `invalidateTag` increments a per-tag version counter. Each cached key stores a snapshot of its tag versions at the time it was written, and `isKeyFresh` compares that snapshot to the current versions. If any tag version has been incremented since the snapshot was taken, the key is considered stale. Stale entries are not deleted explicitly and are expected to fall out of the cache via their TTL.
 
@@ -524,16 +524,16 @@ This approach keeps invalidation constant-time regardless of how many keys refer
 
 ```typescript
 import { Keyv } from 'keyv';
-import { CacheTagService } from '@cacheable/utils';
+import { CacheTags } from '@cacheable/utils';
 
 const store = new Keyv();
-const tagService = new CacheTagService({ store, namespace: 'app' });
+const cacheTags = new CacheTags({ store, namespace: 'app' });
 
-await tagService.setKeyTags('user:42', ['users', 'org:7'], { ttl: 3600000 });
-console.log(await tagService.isKeyFresh('user:42')); // true
+await cacheTags.setKeyTags('user:42', ['users', 'org:7'], { ttl: 3600000 });
+console.log(await cacheTags.isKeyFresh('user:42')); // true
 
-await tagService.invalidateTag('users');
-console.log(await tagService.isKeyFresh('user:42')); // false
+await cacheTags.invalidateTag('users');
+console.log(await cacheTags.isKeyFresh('user:42')); // false
 ```
 
 The recommended pattern is to call `isKeyFresh` before trusting a value returned from your cache, and to refresh the tag snapshot whenever you write a new value:
@@ -541,15 +541,15 @@ The recommended pattern is to call `isKeyFresh` before trusting a value returned
 ```typescript
 import { Cacheable } from 'cacheable';
 import { Keyv } from 'keyv';
-import { CacheTagService } from '@cacheable/utils';
+import { CacheTags } from '@cacheable/utils';
 
 const cache = new Cacheable();
-const tagService = new CacheTagService({ store: new Keyv() });
+const cacheTags = new CacheTags({ store: new Keyv() });
 
 const getUser = async (id: string) => {
   const key = `user:${id}`;
 
-  if (await tagService.isKeyFresh(key)) {
+  if (await cacheTags.isKeyFresh(key)) {
     const cached = await cache.get(key);
     if (cached !== undefined) {
       return cached;
@@ -558,7 +558,7 @@ const getUser = async (id: string) => {
 
   const fresh = await loadUser(id);
   await cache.set(key, fresh, '1h');
-  await tagService.setKeyTags(key, ['users', `org:${fresh.orgId}`], { ttl: 3600000 });
+  await cacheTags.setKeyTags(key, ['users', `org:${fresh.orgId}`], { ttl: 3600000 });
   return fresh;
 };
 ```
@@ -566,16 +566,16 @@ const getUser = async (id: string) => {
 You can invalidate one or many tags at a time. Both methods return the names of the tags that were bumped:
 
 ```typescript
-const bumped = await tagService.invalidateTags(['users', 'org:7']);
+const bumped = await cacheTags.invalidateTags(['users', 'org:7']);
 console.log(bumped); // ['users', 'org:7']
 ```
 
 The `getKeysByTag` method returns the keys currently referencing a given tag. It iterates the Keyv namespace and is therefore an `O(N)` operation. It is intended for debugging and tests rather than hot paths.
 
 ```typescript
-await tagService.setKeyTags('user:1', ['users']);
-await tagService.setKeyTags('user:2', ['users']);
-const keys = await tagService.getKeysByTag('users');
+await cacheTags.setKeyTags('user:1', ['users']);
+await cacheTags.setKeyTags('user:2', ['users']);
+const keys = await cacheTags.getKeysByTag('users');
 console.log(keys); // ['user:1', 'user:2']
 ```
 

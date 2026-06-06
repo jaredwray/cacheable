@@ -3,11 +3,11 @@ export {
 	shorthandToTime,
 } from "../src/shorthand-time.js";
 export {
-	CacheTagService,
-	type CacheTagServiceOptions,
+	CacheTags,
+	type CacheTagsOptions,
 	type KeyTagEntry,
 	type SetKeyTagsOptions,
-} from "./cache-tag-service.js";
+} from "./cache-tags.js";
 export type {
 	CacheableItem,
 	CacheableStoreItem,
