@@ -61,8 +61,12 @@ let fileDescriptor = cache.getFileDescriptor('./src/file.txt');
 console.log(fileDescriptor.changed); // true as it is the first time
 console.log(fileDescriptor.key); // './src/file.txt' (stored as provided)
 
+// Repeated calls keep reporting `changed: true` until you persist the state
+// with reconcile(); only then does the file become the cached baseline.
+cache.reconcile();
+
 fileDescriptor = cache.getFileDescriptor('./src/file.txt');
-console.log(fileDescriptor.changed); // false as it has not changed
+console.log(fileDescriptor.changed); // false as it has not changed since reconcile()
 
 // do something to change the file
 fs.writeFileSync('./src/file.txt', 'new data foo bar');

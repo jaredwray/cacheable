@@ -291,6 +291,13 @@ export class FileEntryCache {
 
 	/**
 	 * Set the current working directory
+	 *
+	 * Note: when relative paths are used as cache keys (the default), `cwd` must
+	 * stay stable across a `getFileDescriptor()` / `reconcile()` cycle. Relative
+	 * keys are resolved against the *current* `cwd` each time, so changing it
+	 * mid-run can cause `reconcile()` to resolve a key to a different (missing)
+	 * path and drop the entry. Use absolute keys (`useAbsolutePathAsKey: true`)
+	 * if `cwd` must change during a run.
 	 * @param {string} value - The value to set
 	 */
 	public set cwd(value: string) {
@@ -415,26 +422,15 @@ export class FileEntryCache {
 	 * @method reconcile
 	 */
 	public reconcile(): void {
-		// Only reconcile files that were visited via getFileDescriptor() during
-		// this session. Entries that were never inspected keep their previously
-		// persisted meta untouched, so they are not silently revalidated.
-		for (const key of [...this._originalMeta.keys()]) {
-			const meta = this._cache.getKey<FileDescriptorMeta>(key);
-			if (!meta) {
-				// The entry was removed (e.g. file not found) during the session.
-				this._originalMeta.delete(key);
-				continue;
-			}
-
+		// Prune entries for files that have been deleted from disk. This mirrors
+		// v8's removeNotFoundFiles() and sweeps ALL cache keys (not only the ones
+		// visited this session) so stale entries for deleted files do not
+		// accumulate over time. It only REMOVES missing files; it never refreshes
+		// the meta of an existing entry, so it does not reintroduce the
+		// "reconcile() revalidates every file" bug (#1648).
+		for (const key of [...this._cache.keys()]) {
 			try {
-				// Confirm the file still exists; if it was deleted during the
-				// session, drop it from the cache below.
 				fs.statSync(this.getAbsolutePath(key));
-				// Persist the meta captured when the file was inspected. It already
-				// holds a consistent size/mtime/hash snapshot, so we promote it to
-				// the baseline rather than re-stat'ing (which would refresh
-				// size/mtime but not hash, leaving the baseline inconsistent).
-				this._originalMeta.set(key, { ...meta });
 			} catch (error) {
 				if ((error as NodeJS.ErrnoException).code === "ENOENT") {
 					// The file no longer exists; drop it from the cache.
@@ -443,14 +439,30 @@ export class FileEntryCache {
 				} else {
 					// Any other failure (e.g. EACCES/EIO, or the path-traversal guard
 					// firing when restrictAccessToCwd is toggled) means we could not
-					// confirm the file's current state. Keep the previously persisted
-					// entry rather than discarding valid cached data, and surface the
-					// error instead of silently dropping it.
+					// confirm the file's state. Keep the entry rather than discarding
+					// valid cached data, and surface the error instead of silently
+					// dropping it.
 					this._logger?.error(
 						{ key, error },
 						"reconcile: unable to stat file; keeping cached entry",
 					);
 				}
+			}
+		}
+
+		// Promote the inspected meta to the baseline for each file visited via
+		// getFileDescriptor() this session, so that subsequent getFileDescriptor()
+		// calls compare against the freshly reconciled state. Only visited entries
+		// are touched. The inspected meta already holds a consistent size/mtime/hash
+		// snapshot, so it is promoted as-is rather than re-stat'ing (which would
+		// refresh size/mtime but not hash, leaving the baseline inconsistent).
+		for (const key of [...this._originalMeta.keys()]) {
+			const meta = this._cache.getKey<FileDescriptorMeta>(key);
+			if (meta) {
+				this._originalMeta.set(key, { ...meta });
+			} else {
+				// The entry was removed during the session or by the prune above.
+				this._originalMeta.delete(key);
 			}
 		}
 
