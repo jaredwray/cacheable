@@ -1,6 +1,6 @@
 {
 	"name": "flat-cache",
-	"version": "6.1.22",
+	"version": "6.1.23",
 	"description": "A simple key/value storage using files to persist the data",
 	"type": "module",
 	"main": "./dist/index.cjs",

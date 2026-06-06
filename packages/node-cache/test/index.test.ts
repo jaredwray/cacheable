@@ -124,6 +124,21 @@ describe("NodeCache", () => {
 		expect(cache.take(faker.string.uuid())).toBe(undefined);
 	});
 
+	test("should take falsy values and clear stats", () => {
+		const cache = new NodeCache({ checkperiod: 0 });
+		const key = faker.string.uuid();
+		cache.set(key, 0);
+
+		const taken = cache.take(key);
+		expect(taken).toBe(0);
+		expect(cache.has(key)).toBe(false);
+
+		const stats = cache.getStats();
+		expect(stats.keys).toBe(0);
+		expect(stats.ksize).toBe(0);
+		expect(stats.vsize).toBe(0);
+	});
+
 	test("should delete a key", () => {
 		const key = faker.string.uuid();
 		cache.set(key, faker.lorem.word());
@@ -328,6 +343,51 @@ describe("NodeCache", () => {
 		expect(newStats.ksize).toBeGreaterThan(0);
 		cache.flushStats();
 		expect(cache.getStats().keys).toBe(0);
+	});
+
+	test("should not inflate ksize/vsize when overwriting an existing key", () => {
+		const key = faker.string.uuid();
+		const firstValue = faker.lorem.word();
+		const secondValue = faker.lorem.words(6);
+
+		const overwrittenCache = new NodeCache<string>({ checkperiod: 0 });
+		overwrittenCache.set(key, firstValue);
+		overwrittenCache.set(key, secondValue);
+
+		const baselineCache = new NodeCache<string>({ checkperiod: 0 });
+		baselineCache.set(key, secondValue);
+
+		const overwrittenStats = overwrittenCache.getStats();
+		const baselineStats = baselineCache.getStats();
+
+		expect(overwrittenStats.keys).toBe(1);
+		expect(overwrittenStats.ksize).toBe(baselineStats.ksize);
+		expect(overwrittenStats.vsize).toBe(baselineStats.vsize);
+
+		overwrittenCache.del(key);
+		const statsAfterDelete = overwrittenCache.getStats();
+		expect(statsAfterDelete.keys).toBe(0);
+		expect(statsAfterDelete.ksize).toBe(0);
+		expect(statsAfterDelete.vsize).toBe(0);
+	});
+
+	test("should fully clear ksize/vsize after overwritten key expires", async () => {
+		const cache = new NodeCache<string>({
+			checkperiod: 0,
+			deleteOnExpire: true,
+		});
+		const key = faker.string.uuid();
+
+		cache.set(key, faker.lorem.word());
+		cache.set(key, faker.lorem.word(), 0.05);
+
+		await sleep(100);
+		expect(cache.get(key)).toBe(undefined);
+
+		const stats = cache.getStats();
+		expect(stats.keys).toBe(0);
+		expect(stats.ksize).toBe(0);
+		expect(stats.vsize).toBe(0);
 	});
 
 	test("should flush all the keys", () => {

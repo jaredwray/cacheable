@@ -9,6 +9,7 @@ import {
 	describe,
 	expect,
 	test,
+	vi,
 } from "vitest";
 import defaultFileEntryCache, {
 	createFromFile,
@@ -169,6 +170,9 @@ describe("file-entry-cache with options", () => {
 			logs.some((l) => l.msg === "File not in cache, marked as changed"),
 		).toBe(true); // 450
 
+		// Reconcile so the file becomes the cached baseline
+		fileEntryCache.reconcile();
+
 		// Second call - file in cache, unchanged
 		logs.length = 0;
 		descriptor = fileEntryCache.getFileDescriptor(testFile);
@@ -250,8 +254,9 @@ describe("file-entry-cache with options", () => {
 			useCheckSum: false, // Disable checksum to use mtime
 		});
 
-		// First call - add file to cache
+		// First call - add file to cache and reconcile to set the baseline
 		fileEntryCache.getFileDescriptor(testFile);
+		fileEntryCache.reconcile();
 
 		// Wait a bit and modify the file to change mtime
 		await new Promise((resolve) => setTimeout(resolve, 10));
@@ -556,6 +561,9 @@ describe("getFileDescriptor()", () => {
 		expect(fileDescriptor.key).toBe(testFile1);
 		expect(fileDescriptor.changed).toBe(true);
 
+		// Reconcile so the file becomes the cached baseline before re-checking
+		fileEntryCache.reconcile();
+
 		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
 		expect(fileDescriptor2).toBeDefined();
 		expect(fileDescriptor2.key).toBe(testFile1);
@@ -599,6 +607,8 @@ describe("getFileDescriptor()", () => {
 		expect(fileDescriptor).toBeDefined();
 		expect(fileDescriptor.key).toBe(testFile1);
 		expect(fileDescriptor.changed).toBe(true);
+		// Reconcile so the file becomes the cached baseline before re-checking
+		fileEntryCache.reconcile();
 		const fileDescriptor2 = fileEntryCache.getFileDescriptor(testFile1);
 		expect(fileDescriptor2).toBeDefined();
 		expect(fileDescriptor2.key).toBe(testFile1);
@@ -650,6 +660,9 @@ describe("getFileDescriptor()", () => {
 		expect(fileDescriptor2.key).toBe(absPath);
 		expect(fileDescriptor2.changed).toBe(true);
 
+		// Reconcile so both keys become cached baselines
+		fileEntryCache.reconcile();
+
 		// Should be cached separately
 		const fileDescriptor3 = fileEntryCache.getFileDescriptor(relPath);
 		expect(fileDescriptor3.changed).toBe(false);
@@ -694,6 +707,9 @@ describe("hasFileChanged()", () => {
 		const fileEntryCache = new FileEntryCache();
 		const testFile1 = path.resolve("./.cacheHFC/test1.txt");
 		expect(fileEntryCache.hasFileChanged(testFile1)).toBe(true);
+		// Repeated calls keep reporting the file as changed until it is reconciled
+		expect(fileEntryCache.hasFileChanged(testFile1)).toBe(true);
+		fileEntryCache.reconcile();
 		expect(fileEntryCache.hasFileChanged(testFile1)).toBe(false);
 		fs.writeFileSync(testFile1, "test4");
 		expect(fileEntryCache.hasFileChanged(testFile1)).toBe(true);
@@ -729,6 +745,8 @@ describe("normalizeEntries()", () => {
 		const file1 = `./${fileCacheName}/test1.txt`;
 		const file2 = `./${fileCacheName}/test2.txt`;
 		fileEntryCache.getFileDescriptor(file2);
+		// Reconcile so file2 becomes a cached baseline (unchanged on re-check)
+		fileEntryCache.reconcile();
 		const entries = fileEntryCache.normalizeEntries([file1, file2]);
 		expect(entries[0].key).toBe(file1);
 		expect(entries[0].changed).toBe(true);
@@ -744,6 +762,8 @@ describe("normalizeEntries()", () => {
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test1.txt`);
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test2.txt`);
 		fileEntryCache.getFileDescriptor(`./${fileCacheName}/test3.txt`);
+		// Reconcile so the files become cached baselines (unchanged on re-check)
+		fileEntryCache.reconcile();
 		fs.chmodSync(path.resolve(`./${fileCacheName}/test3.txt`), 0o000);
 		const entries = fileEntryCache.normalizeEntries();
 		expect(entries.length).toBe(2);
@@ -857,6 +877,10 @@ describe("analyzeFiles()", () => {
 			recursive: true,
 			force: true,
 		});
+		fs.rmSync(path.resolve("./.cacheAnalyzeFiles"), {
+			recursive: true,
+			force: true,
+		});
 	});
 
 	test("should analyze files", () => {
@@ -895,6 +919,8 @@ describe("analyzeFiles()", () => {
 		const analyzedFiles = fileEntryCache.analyzeFiles(files);
 		expect(analyzedFiles).toBeDefined();
 		expect(analyzedFiles.changedFiles.length).toBe(4);
+		// Reconcile so the files become cached baselines (unchanged on re-check)
+		fileEntryCache.reconcile();
 		const testFile4 = path.resolve(`./${fileCacheName}/test4.txt`);
 		fs.unlinkSync(testFile4);
 		const analyzedFiles2 = fileEntryCache.analyzeFiles(files);
@@ -937,6 +963,8 @@ describe("getUpdatedFiles()", () => {
 		];
 		const updatedFiles = fileEntryCache.getUpdatedFiles(files);
 		expect(updatedFiles).toEqual(files);
+		// Reconcile so the files become cached baselines (no longer updated)
+		fileEntryCache.reconcile();
 		const updatedFiles2 = fileEntryCache.getUpdatedFiles(files);
 		expect(updatedFiles2).toEqual([]);
 	});
@@ -953,6 +981,8 @@ describe("getUpdatedFiles()", () => {
 		];
 		const updatedFiles = fileEntryCache.getUpdatedFiles(files);
 		expect(updatedFiles).toEqual(files);
+		// Reconcile so the files become cached baselines before modifying one
+		fileEntryCache.reconcile();
 		const testFile4 = path.resolve(`./${fileCacheName}/test4.txt`);
 		fs.writeFileSync(testFile4, "test5booosdkfjsldfkjsldkjfls");
 		const updatedFiles2 = fileEntryCache.getUpdatedFiles(files);
@@ -1162,5 +1192,281 @@ describe("renameCacheKeys()", () => {
 			recursive: true,
 			force: true,
 		});
+	});
+});
+
+/**
+ * Regression tests for https://github.com/jaredwray/cacheable/issues/1648
+ *
+ * These cover three behaviors that differed from file-entry-cache v8 and that
+ * ESLint relies on:
+ *   1. reconcile() must only update cache entries for files that were inspected
+ *      via getFileDescriptor(), not every entry tracked in the cache.
+ *   2. getFileDescriptor() must keep reporting `changed: true` on repeated calls
+ *      for the same file until the cache is reconciled.
+ *   3. create() must not throw when the cache file content is invalid; it should
+ *      start fresh and overwrite the file on the next reconcile().
+ */
+describe("issue #1648", () => {
+	const fileCacheName = "issue-1648-files";
+	const cacheDir = ".cache-issue-1648";
+	const cacheId = ".cache";
+
+	beforeEach(() => {
+		fs.mkdirSync(path.resolve(`./${fileCacheName}`), { recursive: true });
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/a.txt`), "a");
+		fs.writeFileSync(path.resolve(`./${fileCacheName}/b.txt`), "b");
+	});
+
+	afterEach(() => {
+		fs.rmSync(path.resolve(`./${fileCacheName}`), {
+			recursive: true,
+			force: true,
+		});
+		fs.rmSync(path.resolve(`./${cacheDir}`), { recursive: true, force: true });
+	});
+
+	test("1. reconcile() only updates files that were inspected this run", () => {
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const fileB = path.resolve(`./${fileCacheName}/b.txt`);
+
+		// Run 1: inspect both files and persist them.
+		const run1 = defaultFileEntryCache.create(cacheId, cacheDir);
+		expect(run1.getFileDescriptor(fileA).changed).toBe(true);
+		expect(run1.getFileDescriptor(fileB).changed).toBe(true);
+		run1.reconcile();
+
+		// Run 2: only file A is inspected. File B changes on disk in the meantime
+		// but is NOT inspected, so reconcile() must not revalidate it.
+		const run2 = defaultFileEntryCache.create(cacheId, cacheDir);
+		expect(run2.getFileDescriptor(fileA).changed).toBe(false);
+		fs.writeFileSync(fileB, "b changed");
+		run2.reconcile();
+
+		// Run 3: file B must still be reported as changed because it was never
+		// inspected (and therefore never revalidated) during run 2.
+		const run3 = defaultFileEntryCache.create(cacheId, cacheDir);
+		expect(run3.getFileDescriptor(fileB).changed).toBe(true);
+	});
+
+	test("reconcile() prunes deleted files even when not inspected this run (v8 removeNotFoundFiles parity)", () => {
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const fileB = path.resolve(`./${fileCacheName}/b.txt`);
+
+		// Run 1: inspect and persist both files.
+		const run1 = defaultFileEntryCache.create(cacheId, cacheDir);
+		run1.getFileDescriptor(fileA);
+		run1.getFileDescriptor(fileB);
+		run1.reconcile();
+
+		// Run 2: delete B on disk and inspect ONLY A. B is never inspected this
+		// run, but reconcile() must still prune its entry because the file is gone
+		// (otherwise stale entries for deleted files accumulate forever).
+		const run2 = defaultFileEntryCache.create(cacheId, cacheDir);
+		run2.getFileDescriptor(fileA);
+		fs.unlinkSync(fileB);
+		run2.reconcile();
+		expect(run2.cache.keys()).not.toContain(run2.createFileKey(fileB));
+
+		// Run 3: the prune is persisted to disk.
+		const run3 = defaultFileEntryCache.create(cacheId, cacheDir);
+		expect(run3.cache.keys()).not.toContain(run3.createFileKey(fileB));
+	});
+
+	test("2. getFileDescriptor() keeps reporting changed until reconcile", () => {
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cache = defaultFileEntryCache.create(cacheId, cacheDir);
+
+		// A brand new file is changed, and stays changed on subsequent calls.
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		// Once reconciled, it is considered unchanged.
+		cache.reconcile();
+		expect(cache.getFileDescriptor(fileA).changed).toBe(false);
+
+		// After a modification it reports changed again, and keeps doing so until
+		// the next reconcile.
+		fs.writeFileSync(fileA, "a modified");
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+	});
+
+	test("2b. getFileDescriptor() keeps reporting changed with useCheckSum", () => {
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cache = defaultFileEntryCache.create(cacheId, cacheDir, {
+			useCheckSum: true,
+		});
+
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		cache.reconcile();
+		expect(cache.getFileDescriptor(fileA).changed).toBe(false);
+	});
+
+	test("3. create() does not throw on invalid cache file content", () => {
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cachePath = path.resolve(`./${cacheDir}/${cacheId}`);
+
+		// Write a cache file with invalid (non-parseable) content.
+		fs.mkdirSync(path.resolve(`./${cacheDir}`), { recursive: true });
+		fs.writeFileSync(cachePath, "this is not valid json {{{");
+
+		// create() should silently start fresh instead of throwing.
+		let cache!: ReturnType<typeof defaultFileEntryCache.create>;
+		expect(() => {
+			cache = defaultFileEntryCache.create(cacheId, cacheDir);
+		}).not.toThrow();
+
+		// The cache works and the corrupt file is overwritten on reconcile.
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+		cache.reconcile();
+
+		const reloaded = defaultFileEntryCache.create(cacheId, cacheDir);
+		expect(reloaded.getFileDescriptor(fileA).changed).toBe(false);
+	});
+
+	test("reconcile() skips visited entries removed from the underlying cache", () => {
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cache = defaultFileEntryCache.create(cacheId, cacheDir);
+
+		// Visit the file so it is tracked as a session baseline.
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		// Remove the entry directly from the underlying flat-cache, so the session
+		// baseline references a key that no longer exists in the cache.
+		cache.cache.removeKey(cache.createFileKey(fileA));
+
+		// reconcile() must skip the now-missing entry instead of throwing.
+		expect(() => cache.reconcile()).not.toThrow();
+		expect(cache.cache.keys()).not.toContain(cache.createFileKey(fileA));
+	});
+
+	test("3b. createFromFile() does not throw on invalid cache file content", () => {
+		const cachePath = path.resolve(`./${cacheDir}/${cacheId}`);
+		fs.mkdirSync(path.resolve(`./${cacheDir}`), { recursive: true });
+		fs.writeFileSync(cachePath, "@@ not json @@");
+
+		expect(() => defaultFileEntryCache.createFromFile(cachePath)).not.toThrow();
+	});
+
+	test("3c. create() rethrows unexpected (non-parse) load errors", () => {
+		// A directory at the cache path causes a read (EISDIR) error rather than a
+		// parse error. This must propagate instead of silently discarding data.
+		const cachePath = path.resolve(`./${cacheDir}/${cacheId}`);
+		fs.mkdirSync(cachePath, { recursive: true });
+
+		expect(() => defaultFileEntryCache.create(cacheId, cacheDir)).toThrow();
+	});
+
+	test("3d. create() does not throw on valid-JSON-but-non-array cache content", () => {
+		// A leftover/foreign cache file that is valid JSON but NOT the flatted
+		// array the parser expects (e.g. an ancient plain-object cache or a
+		// hand/3rd-party-written file). flatted.parse throws a TypeError here
+		// rather than a SyntaxError; create() must still recover by starting fresh.
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cachePath = path.resolve(`./${cacheDir}/${cacheId}`);
+
+		fs.mkdirSync(path.resolve(`./${cacheDir}`), { recursive: true });
+		fs.writeFileSync(cachePath, '{"/some/old/path.js":{"size":1,"mtime":2}}');
+
+		let cache!: ReturnType<typeof defaultFileEntryCache.create>;
+		expect(() => {
+			cache = defaultFileEntryCache.create(cacheId, cacheDir);
+		}).not.toThrow();
+
+		// The cache works and the unparseable file is overwritten on reconcile.
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+		cache.reconcile();
+
+		const reloaded = defaultFileEntryCache.create(cacheId, cacheDir);
+		expect(reloaded.getFileDescriptor(fileA).changed).toBe(false);
+	});
+
+	test("reconcile() keeps a cached entry when statSync fails with a non-ENOENT error", () => {
+		// A transient stat failure (e.g. EACCES) for a still-present file must NOT
+		// drop the entry the way an ENOENT (deleted file) does — that would lose
+		// valid cached data and force a spurious re-process.
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cache = defaultFileEntryCache.create(cacheId, cacheDir);
+		const key = cache.createFileKey(fileA);
+
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		const spy = vi.spyOn(fs, "statSync").mockImplementation(() => {
+			const error = new Error(
+				"EACCES: permission denied",
+			) as NodeJS.ErrnoException;
+			error.code = "EACCES";
+			throw error;
+		});
+		try {
+			expect(() => cache.reconcile()).not.toThrow();
+		} finally {
+			spy.mockRestore();
+		}
+
+		// Entry survived in memory and on disk.
+		expect(cache.cache.keys()).toContain(key);
+		const reloaded = defaultFileEntryCache.create(cacheId, cacheDir);
+		expect(reloaded.getFileDescriptor(fileA).changed).toBe(false);
+	});
+
+	test("reconcile() logs (and keeps) on a non-ENOENT stat error when a logger is set", () => {
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const errors: string[] = [];
+		const logger = {
+			level: "error",
+			trace: () => {},
+			debug: () => {},
+			info: () => {},
+			warn: () => {},
+			error: (data: string | object, ...args: unknown[]) => {
+				errors.push(typeof data === "string" ? data : (args[0] as string));
+			},
+			fatal: () => {},
+		};
+		const cache = defaultFileEntryCache.create(cacheId, cacheDir, { logger });
+		const key = cache.createFileKey(fileA);
+
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		const spy = vi.spyOn(fs, "statSync").mockImplementation(() => {
+			const error = new Error("EIO: i/o error") as NodeJS.ErrnoException;
+			error.code = "EIO";
+			throw error;
+		});
+		try {
+			cache.reconcile();
+		} finally {
+			spy.mockRestore();
+		}
+
+		expect(cache.cache.keys()).toContain(key);
+		expect(
+			errors.some((m) => m.includes("reconcile: unable to stat file")),
+		).toBe(true);
+	});
+
+	test("a file modified between getFileDescriptor and reconcile is detected next run", () => {
+		// Regression for reconcile() refreshing size/mtime: the cached entry must
+		// reflect the content that was actually inspected, not a later edit. With
+		// useModifiedTime (no checksum), refreshing size/mtime at reconcile time
+		// would mask a change made after the file was inspected.
+		const fileA = path.resolve(`./${fileCacheName}/a.txt`);
+		const cache = defaultFileEntryCache.create(cacheId, cacheDir);
+
+		expect(cache.getFileDescriptor(fileA).changed).toBe(true);
+
+		// Modify the file after inspecting it but before reconciling.
+		fs.writeFileSync(fileA, "a much longer content than before");
+		cache.reconcile();
+
+		// The next run must still see the file as changed, because the cached
+		// entry corresponds to the previously-inspected (shorter) content.
+		const next = defaultFileEntryCache.create(cacheId, cacheDir);
+		expect(next.getFileDescriptor(fileA).changed).toBe(true);
 	});
 });
