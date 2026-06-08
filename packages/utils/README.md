@@ -17,6 +17,7 @@
 * Sleep / Delay for Testing and Timing
 * Memoization for wraping or get / set options
 * Time to Live (TTL) Helpers
+* Tag-Based Cache Invalidation
 
 # Table of Contents
 * [Getting Started](#getting-started)
@@ -32,6 +33,7 @@
 * [Is Object Helper](#is-object-helper)
 * [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
 * [Get Or Set Memoization Function](#get-or-set-memoization-function)
+* [Cache Tags](#cache-tags)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -511,6 +513,84 @@ const generateKey = (options?: GetOrSetOptions) => {
 const function_ = async () => Math.random() * 100;
 const value = await getOrSet(generateKey(), function_, { ttl: '1h', cache });
 ```
+
+# Cache Tags
+
+The `CacheTags` service provides tag-based invalidation on top of any [Keyv](https://github.com/jaredwray/keyv) store. It is store-agnostic and does not require any adapter changes.
+
+The service uses a lazy invalidation model. Instead of scanning and deleting keys, `invalidateTag` increments a per-tag version counter. Each cached key stores a snapshot of its tag versions at the time it was written, and `isKeyFresh` compares that snapshot to the current versions. If any tag version has been incremented since the snapshot was taken, the key is considered stale. Stale entries are not deleted explicitly and are expected to fall out of the cache via their TTL.
+
+This approach keeps invalidation constant-time regardless of how many keys reference a tag. The trade-off is one additional `isKeyFresh` read per cache lookup.
+
+```typescript
+import { Keyv } from 'keyv';
+import { CacheTags } from '@cacheable/utils';
+
+const store = new Keyv();
+const cacheTags = new CacheTags({ store, namespace: 'app' });
+
+await cacheTags.setKeyTags('user:42', ['users', 'org:7'], { ttl: 3600000 });
+console.log(await cacheTags.isKeyFresh('user:42')); // true
+
+await cacheTags.invalidateTag('users');
+console.log(await cacheTags.isKeyFresh('user:42')); // false
+```
+
+The recommended pattern is to call `isKeyFresh` before trusting a value returned from your cache, and to refresh the tag snapshot whenever you write a new value:
+
+```typescript
+import { Cacheable } from 'cacheable';
+import { Keyv } from 'keyv';
+import { CacheTags } from '@cacheable/utils';
+
+const cache = new Cacheable();
+const cacheTags = new CacheTags({ store: new Keyv() });
+
+const getUser = async (id: string) => {
+  const key = `user:${id}`;
+
+  if (await cacheTags.isKeyFresh(key)) {
+    const cached = await cache.get(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+  }
+
+  const fresh = await loadUser(id);
+  await cache.set(key, fresh, '1h');
+  await cacheTags.setKeyTags(key, ['users', `org:${fresh.orgId}`], { ttl: 3600000 });
+  return fresh;
+};
+```
+
+You can invalidate one or many tags at a time. Both methods return the names of the tags that were bumped:
+
+```typescript
+const bumped = await cacheTags.invalidateTags(['users', 'org:7']);
+console.log(bumped); // ['users', 'org:7']
+```
+
+The `getKeysByTag` method returns the keys currently referencing a given tag. It iterates the Keyv namespace and is therefore an `O(N)` operation. It is intended for debugging and tests rather than hot paths.
+
+```typescript
+await cacheTags.setKeyTags('user:1', ['users']);
+await cacheTags.setKeyTags('user:2', ['users']);
+const keys = await cacheTags.getKeysByTag('users');
+console.log(keys); // ['user:1', 'user:2']
+```
+
+The service stores its metadata under a reserved prefix so that it cannot collide with user keys:
+
+```
+--cacheable--tags--:<namespace>:tag:<tagName>  → integer version counter
+--cacheable--tags--:<namespace>:key:<keyName>  → { tags: { [tag]: versionAtSetTime } }
+```
+
+Tag version counters are stored without a TTL because they must outlive any key that references them. Key entries respect the `ttl` passed to `setKeyTags`, which should be set to match the TTL of the cached value it tracks.
+
+The namespace defaults to `default` and can be set via the constructor. Two services configured with different namespaces can share the same store without seeing each other's tags or keys.
+
+The read-version then write-snapshot sequence in `setKeyTags` is not atomic across processes. A concurrent `invalidateTag` that runs between the read and the write can leave a freshly written key referencing a stale version. An atomic Redis fast path using `MULTI` or Lua is a planned future enhancement.
 
 # How to Contribute
 
