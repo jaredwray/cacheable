@@ -520,3 +520,153 @@ describe("stats event subscription", () => {
 		expect(stats.sets).toBe(1);
 	});
 });
+
+describe("stats per-key tracking", () => {
+	test("should not record keys when disabled or tracking is off", () => {
+		const disabled = new Stats({ trackKeys: true });
+		disabled.recordKey("a", "hits");
+		expect(disabled.trackedKeyCount).toBe(0);
+
+		const trackingOff = new Stats({ enabled: true });
+		trackingOff.recordKey("a", "hits");
+		expect(trackingOff.trackedKeyCount).toBe(0);
+	});
+
+	test("should record a per-key breakdown with optional amount", () => {
+		const stats = new Stats({ enabled: true, trackKeys: true });
+		stats.recordKey("a", "hits", 2);
+		stats.recordKey("a", "misses");
+		stats.recordKey("a", "gets", 3);
+		stats.recordKey("a", "sets");
+		stats.recordKey("a", "deletes");
+
+		expect(stats.keyStats("a")).toEqual({
+			key: "a",
+			count: 8,
+			hits: 2,
+			misses: 1,
+			gets: 3,
+			sets: 1,
+			deletes: 1,
+			hitRate: 2 / 3,
+		});
+	});
+
+	test("keyStats should return undefined for unknown keys and 0 hitRate with no lookups", () => {
+		const stats = new Stats({ enabled: true, trackKeys: true });
+		expect(stats.keyStats("missing")).toBeUndefined();
+		stats.recordKey("write-only", "sets");
+		expect(stats.keyStats("write-only")?.hitRate).toBe(0);
+	});
+
+	test("topKeys should rank by total count descending with key tie-break", () => {
+		const stats = new Stats({ enabled: true, trackKeys: true });
+		stats.recordKey("hot", "gets", 5);
+		stats.recordKey("warm", "gets", 3);
+		stats.recordKey("a", "gets");
+		stats.recordKey("b", "gets");
+
+		const top = stats.topKeys(3);
+		expect(top.map((entry) => entry.key)).toEqual(["hot", "warm", "a"]);
+		expect(top[0].count).toBe(5);
+	});
+
+	test("bottomKeys should rank ascending with key tie-break", () => {
+		const stats = new Stats({ enabled: true, trackKeys: true });
+		stats.recordKey("hot", "gets", 5);
+		stats.recordKey("b", "gets");
+		stats.recordKey("a", "gets");
+
+		const bottom = stats.bottomKeys(2);
+		expect(bottom.map((entry) => entry.key)).toEqual(["a", "b"]);
+	});
+
+	test("should rank by a specific field when provided", () => {
+		const stats = new Stats({ enabled: true, trackKeys: true });
+		stats.recordKey("reads", "hits", 10);
+		stats.recordKey("writes", "sets", 20);
+
+		expect(stats.topKeys(1, "hits")[0].key).toBe("reads");
+		expect(stats.topKeys(1, "sets")[0].key).toBe("writes");
+		expect(stats.bottomKeys(1, "hits")[0].key).toBe("writes");
+	});
+
+	test("should default to 100 entries for top and bottom", () => {
+		const stats = new Stats({ enabled: true, trackKeys: true });
+		for (let i = 0; i < 105; i++) {
+			stats.recordKey(`key-${i}`, "gets", i + 1);
+		}
+
+		expect(stats.topKeys()).toHaveLength(100);
+		expect(stats.bottomKeys()).toHaveLength(100);
+		expect(stats.topKeys()[0].count).toBe(105);
+		expect(stats.bottomKeys()[0].count).toBe(1);
+	});
+
+	test("should prune lowest-count keys past maxTrackedKeys, protecting the new key", () => {
+		const stats = new Stats({
+			enabled: true,
+			trackKeys: true,
+			maxTrackedKeys: 4,
+		});
+		stats.recordKey("a", "gets", 5);
+		stats.recordKey("b", "gets", 4);
+		stats.recordKey("c", "gets", 3);
+		stats.recordKey("d", "gets", 2);
+		// 5th unique key exceeds the cap and prunes down to floor(4 * 0.9) = 3
+		stats.recordKey("e", "gets");
+
+		expect(stats.trackedKeyCount).toBe(3);
+		expect(stats.keyStats("e")).toBeDefined();
+		expect(stats.keyStats("a")).toBeDefined();
+		expect(stats.keyStats("b")).toBeDefined();
+		expect(stats.keyStats("c")).toBeUndefined();
+		expect(stats.keyStats("d")).toBeUndefined();
+	});
+
+	test("clearKeys should clear only per-key stats; reset clears both", () => {
+		const stats = new Stats({ enabled: true, trackKeys: true });
+		stats.incrementHits();
+		stats.recordKey("a", "hits");
+		stats.clearKeys();
+		expect(stats.trackedKeyCount).toBe(0);
+		expect(stats.hits).toBe(1);
+
+		stats.recordKey("b", "hits");
+		stats.reset();
+		expect(stats.trackedKeyCount).toBe(0);
+		expect(stats.hits).toBe(0);
+	});
+
+	test("should expose trackKeys and maxTrackedKeys accessors and snapshot trackedKeys", () => {
+		const stats = new Stats({ enabled: true });
+		expect(stats.trackKeys).toBe(false);
+		expect(stats.maxTrackedKeys).toBeUndefined();
+		stats.trackKeys = true;
+		stats.maxTrackedKeys = 10;
+		expect(stats.trackKeys).toBe(true);
+		expect(stats.maxTrackedKeys).toBe(10);
+		stats.recordKey("a", "gets");
+		expect(stats.toJSON().trackedKeys).toBe(1);
+	});
+
+	test("nodeCacheStatsEventMap should record keys when tracking is on", () => {
+		const emitter = new OffEmitter();
+		const stats = new Stats({ enabled: true, trackKeys: true });
+		stats.subscribe(emitter, nodeCacheStatsEventMap);
+
+		emitter.emit("set", "user:1", "value");
+		emitter.emit("set", 42, "value");
+		emitter.emit("set"); // no key payload — counted but not key-tracked
+		emitter.emit("del", "user:1");
+		emitter.emit("del", 7);
+		emitter.emit("del"); // no key payload
+
+		expect(stats.sets).toBe(3);
+		expect(stats.deletes).toBe(3);
+		expect(stats.keyStats("user:1")).toMatchObject({ sets: 1, deletes: 1 });
+		expect(stats.keyStats("42")?.sets).toBe(1);
+		expect(stats.keyStats("7")?.deletes).toBe(1);
+		expect(stats.trackedKeyCount).toBe(3);
+	});
+});

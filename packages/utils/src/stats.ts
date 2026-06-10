@@ -42,6 +42,30 @@ export type StatsEventMap = Record<
 >;
 
 /**
+ * A counter field that can be recorded per key via {@link Stats.recordKey}.
+ * This is the subset of {@link StatField} that makes sense for a single key
+ * (`clears` and `count` are cache-wide).
+ */
+export type KeyStatField = "hits" | "misses" | "gets" | "sets" | "deletes";
+
+/**
+ * Per-key statistics returned by {@link Stats.topKeys},
+ * {@link Stats.bottomKeys}, and {@link Stats.keyStats}.
+ */
+export type StatsKeyEntry = {
+	key: string;
+	/** Total recorded operations for this key (sum of all fields). */
+	count: number;
+	hits: number;
+	misses: number;
+	gets: number;
+	sets: number;
+	deletes: number;
+	/** `hits / (hits + misses)` for this key, or `0` when there have been no lookups. */
+	hitRate: number;
+};
+
+/**
  * A plain-object snapshot of a {@link Stats} instance, suitable for logging,
  * metrics, or serialization. Returned by {@link Stats.toJSON}.
  */
@@ -58,6 +82,8 @@ export type StatsSnapshot = {
 	count: number;
 	hitRate: number;
 	missRate: number;
+	/** Number of unique keys currently tracked (0 when key tracking is off). */
+	trackedKeys: number;
 	lastUpdated?: number;
 	lastReset?: number;
 };
@@ -69,6 +95,14 @@ export type StatsOptions = {
 	emitter?: StatsEmitter;
 	/** The event map to use. Required when `emitter` is provided. */
 	eventMap?: StatsEventMap;
+	/** Track per-key statistics via {@link Stats.recordKey}. Defaults to `false`. */
+	trackKeys?: boolean;
+	/**
+	 * Safety cap on the number of unique keys tracked. When exceeded, the
+	 * lowest-count keys are pruned, which keeps top-key rankings approximately
+	 * accurate but makes bottom-key rankings unreliable. Unbounded when unset.
+	 */
+	maxTrackedKeys?: number;
 };
 
 /**
@@ -84,8 +118,18 @@ export type StatsOptions = {
  * their imperative stats. Wire those up with a custom map or imperative calls.
  */
 export const nodeCacheStatsEventMap: StatsEventMap = {
-	set: "sets",
-	del: "deletes",
+	set: (stats: Stats, key?: unknown) => {
+		stats.increment("sets");
+		if (typeof key === "string" || typeof key === "number") {
+			stats.recordKey(String(key), "sets");
+		}
+	},
+	del: (stats: Stats, key?: unknown) => {
+		stats.increment("deletes");
+		if (typeof key === "string" || typeof key === "number") {
+			stats.recordKey(String(key), "deletes");
+		}
+	},
 	flush: "clears",
 	flush_stats: (stats: Stats) => {
 		stats.reset();
@@ -97,6 +141,8 @@ type StatsSubscription = {
 	event: string;
 	listener: (...args: any[]) => void;
 };
+
+type KeyCounters = Record<KeyStatField, number>;
 
 export class Stats {
 	private _counters: Record<StatField, number> = {
@@ -115,10 +161,21 @@ export class Stats {
 	private _lastUpdated: number | undefined;
 	private _lastReset: number | undefined;
 	private _subscriptions: StatsSubscription[] = [];
+	private _keyCounts = new Map<string, KeyCounters>();
+	private _trackKeys = false;
+	private _maxTrackedKeys: number | undefined;
 
 	constructor(options?: StatsOptions) {
 		if (options?.enabled) {
 			this._enabled = options.enabled;
+		}
+
+		if (options?.trackKeys) {
+			this._trackKeys = options.trackKeys;
+		}
+
+		if (options?.maxTrackedKeys !== undefined) {
+			this._maxTrackedKeys = options.maxTrackedKeys;
 		}
 
 		if (options?.emitter && options?.eventMap) {
@@ -138,6 +195,44 @@ export class Stats {
 	 */
 	public set enabled(enabled: boolean) {
 		this._enabled = enabled;
+	}
+
+	/**
+	 * @returns {boolean} - Whether per-key statistics are tracked
+	 */
+	public get trackKeys(): boolean {
+		return this._trackKeys;
+	}
+
+	/**
+	 * @param {boolean} trackKeys - Whether to track per-key statistics
+	 */
+	public set trackKeys(trackKeys: boolean) {
+		this._trackKeys = trackKeys;
+	}
+
+	/**
+	 * @returns {number | undefined} - The cap on unique keys tracked, or
+	 * `undefined` when unbounded
+	 */
+	public get maxTrackedKeys(): number | undefined {
+		return this._maxTrackedKeys;
+	}
+
+	/**
+	 * @param {number | undefined} maxTrackedKeys - The cap on unique keys
+	 * tracked. Set `undefined` for unbounded.
+	 */
+	public set maxTrackedKeys(maxTrackedKeys: number | undefined) {
+		this._maxTrackedKeys = maxTrackedKeys;
+	}
+
+	/**
+	 * @returns {number} - The number of unique keys currently tracked
+	 * @readonly
+	 */
+	public get trackedKeyCount(): number {
+		return this._keyCounts.size;
 	}
 
 	/**
@@ -438,6 +533,7 @@ export class Stats {
 		};
 		this._vsize = 0;
 		this._ksize = 0;
+		this._keyCounts.clear();
 		this._lastReset = Date.now();
 		this._lastUpdated = undefined;
 	}
@@ -466,6 +562,7 @@ export class Stats {
 			count: this._counters.count,
 			hitRate: this.hitRate,
 			missRate: this.missRate,
+			trackedKeys: this._keyCounts.size,
 			lastUpdated: this._lastUpdated,
 			lastReset: this._lastReset,
 		};
@@ -477,6 +574,149 @@ export class Stats {
 	 */
 	public snapshot(): StatsSnapshot {
 		return this.toJSON();
+	}
+
+	/**
+	 * Record an operation against a specific key for per-key statistics. No-op
+	 * unless both {@link enabled} and {@link trackKeys} are `true`.
+	 * @param {string} key - The cache key the operation touched
+	 * @param {KeyStatField} field - The per-key counter to increment
+	 * @param {number} amount - The amount to add (default 1)
+	 */
+	public recordKey(key: string, field: KeyStatField, amount = 1): void {
+		if (!this._enabled || !this._trackKeys) {
+			return;
+		}
+
+		let counters = this._keyCounts.get(key);
+		if (!counters) {
+			counters = { hits: 0, misses: 0, gets: 0, sets: 0, deletes: 0 };
+			this._keyCounts.set(key, counters);
+			this.pruneTrackedKeys(key);
+		}
+
+		counters[field] += amount;
+		this.touch();
+	}
+
+	/**
+	 * The most-used keys, sorted descending. Sorts by total recorded operations,
+	 * or by a single field when `field` is provided. Ties order by key.
+	 * @param {number} limit - Maximum entries to return (default 100)
+	 * @param {KeyStatField} [field] - Optionally rank by one counter (e.g. "hits")
+	 * @returns {StatsKeyEntry[]}
+	 */
+	public topKeys(limit = 100, field?: KeyStatField): StatsKeyEntry[] {
+		return this.sortedKeyEntries(field, "desc").slice(0, limit);
+	}
+
+	/**
+	 * The least-used keys, sorted ascending. Sorts by total recorded operations,
+	 * or by a single field when `field` is provided. Ties order by key. Note:
+	 * only keys that have been recorded at least once can be ranked, and when
+	 * {@link maxTrackedKeys} pruning has occurred the true bottom keys may have
+	 * been evicted.
+	 * @param {number} limit - Maximum entries to return (default 100)
+	 * @param {KeyStatField} [field] - Optionally rank by one counter (e.g. "gets")
+	 * @returns {StatsKeyEntry[]}
+	 */
+	public bottomKeys(limit = 100, field?: KeyStatField): StatsKeyEntry[] {
+		return this.sortedKeyEntries(field, "asc").slice(0, limit);
+	}
+
+	/**
+	 * @param {string} key - The key to look up
+	 * @returns {StatsKeyEntry | undefined} - The per-key statistics, or
+	 * `undefined` if the key has not been recorded
+	 */
+	public keyStats(key: string): StatsKeyEntry | undefined {
+		const counters = this._keyCounts.get(key);
+		return counters ? this.toKeyEntry(key, counters) : undefined;
+	}
+
+	/**
+	 * Clear all per-key statistics without touching the aggregate counters.
+	 */
+	public clearKeys(): void {
+		this._keyCounts.clear();
+	}
+
+	private totalOf(counters: KeyCounters): number {
+		return (
+			counters.hits +
+			counters.misses +
+			counters.gets +
+			counters.sets +
+			counters.deletes
+		);
+	}
+
+	private toKeyEntry(key: string, counters: KeyCounters): StatsKeyEntry {
+		const lookups = counters.hits + counters.misses;
+		return {
+			key,
+			count: this.totalOf(counters),
+			hits: counters.hits,
+			misses: counters.misses,
+			gets: counters.gets,
+			sets: counters.sets,
+			deletes: counters.deletes,
+			hitRate: lookups === 0 ? 0 : counters.hits / lookups,
+		};
+	}
+
+	private sortedKeyEntries(
+		field: KeyStatField | undefined,
+		direction: "asc" | "desc",
+	): StatsKeyEntry[] {
+		const entries: StatsKeyEntry[] = [];
+		for (const [key, counters] of this._keyCounts) {
+			entries.push(this.toKeyEntry(key, counters));
+		}
+
+		const sign = direction === "asc" ? 1 : -1;
+		entries.sort((a, b) => {
+			const valueA = field ? a[field] : a.count;
+			const valueB = field ? b[field] : b.count;
+			if (valueA !== valueB) {
+				return (valueA - valueB) * sign;
+			}
+
+			return a.key < b.key ? -1 : 1;
+		});
+
+		return entries;
+	}
+
+	/**
+	 * When over {@link maxTrackedKeys}, prune the lowest-count keys down to 90%
+	 * of the cap (batched so the sort cost amortizes across inserts). The key
+	 * that was just recorded is never pruned.
+	 */
+	private pruneTrackedKeys(protectedKey: string): void {
+		if (
+			this._maxTrackedKeys === undefined ||
+			this._keyCounts.size <= this._maxTrackedKeys
+		) {
+			return;
+		}
+
+		const target = Math.max(1, Math.floor(this._maxTrackedKeys * 0.9));
+		const sorted = [...this._keyCounts.entries()].sort(
+			(a, b) => this.totalOf(a[1]) - this.totalOf(b[1]),
+		);
+
+		for (const [key] of sorted) {
+			if (this._keyCounts.size <= target) {
+				break;
+			}
+
+			if (key === protectedKey) {
+				continue;
+			}
+
+			this._keyCounts.delete(key);
+		}
 	}
 
 	/**
