@@ -46,7 +46,18 @@ export {
 } from "./memoize.js";
 export { runIfFn } from "./run-if-fn.js";
 export { sleep } from "./sleep.js";
-export { Stats, type StatsOptions } from "./stats.js";
+export {
+	type KeyStatField,
+	nodeCacheStatsEventMap,
+	type StatField,
+	Stats,
+	type StatsEmitter,
+	type StatsEventHandler,
+	type StatsEventMap,
+	type StatsKeyEntry,
+	type StatsOptions,
+	type StatsSnapshot,
+} from "./stats.js";
 export {
 	calculateTtlFromExpiration,
 	getCascadingTtl,
