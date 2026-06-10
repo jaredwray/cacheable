@@ -98,8 +98,10 @@ export const nodeCacheStatsEventMap: StatsEventMap = {
 /**
  * Event map for `cache-manager` instances. `cache-manager` emits `get` on
  * every read (hit and miss), carrying `value` on a hit; hit/miss is therefore
- * derived from the payload. Note: `get` can fire multiple times per read across
- * store layers, so these counts are best-effort.
+ * derived from the payload. Multi-key operations (`mget`/`mset`/`mdel`) carry a
+ * list of keys/items, so they are counted by length via custom handlers. Note:
+ * `get` can fire multiple times per read across store layers, so these counts
+ * are best-effort.
  */
 export const cacheManagerStatsEventMap: StatsEventMap = {
 	get: (stats: Stats, payload?: { value?: unknown; error?: unknown }) => {
@@ -110,10 +112,33 @@ export const cacheManagerStatsEventMap: StatsEventMap = {
 			stats.increment("misses");
 		}
 	},
+	mget: (stats: Stats, payload?: { keys?: unknown[]; values?: unknown[] }) => {
+		const values = payload?.values;
+		if (!values) {
+			return;
+		}
+
+		stats.increment("gets", values.length);
+		for (const value of values) {
+			if (value !== undefined) {
+				stats.increment("hits");
+			} else {
+				stats.increment("misses");
+			}
+		}
+	},
 	set: "sets",
-	mset: "sets",
+	mset: (stats: Stats, payload?: { list?: unknown[] }) => {
+		if (payload?.list) {
+			stats.increment("sets", payload.list.length);
+		}
+	},
 	del: "deletes",
-	mdel: "deletes",
+	mdel: (stats: Stats, payload?: { keys?: unknown[] }) => {
+		if (payload?.keys) {
+			stats.increment("deletes", payload.keys.length);
+		}
+	},
 	clear: "clears",
 };
 
@@ -551,6 +576,10 @@ export class Stats {
 		action: StatField | StatField[] | StatsEventHandler,
 		args: any[],
 	): void {
+		if (!this._enabled) {
+			return;
+		}
+
 		if (typeof action === "function") {
 			action(this, ...args);
 			return;

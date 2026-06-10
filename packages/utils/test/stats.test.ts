@@ -425,13 +425,66 @@ describe("stats event subscription", () => {
 		expect(stats.misses).toBe(2);
 
 		emitter.emit("set", { key: "a", value: 1 });
-		emitter.emit("mset", { list: [] });
 		emitter.emit("del", { key: "a" });
-		emitter.emit("mdel", { keys: ["a"] });
 		emitter.emit("clear");
-		expect(stats.sets).toBe(2);
-		expect(stats.deletes).toBe(2);
+		expect(stats.sets).toBe(1);
+		expect(stats.deletes).toBe(1);
 		expect(stats.clears).toBe(1);
+	});
+
+	test("should count multi-key cache-manager operations by batch size", () => {
+		const emitter = new OffEmitter();
+		const stats = new Stats({ enabled: true });
+		stats.subscribe(emitter, cacheManagerStatsEventMap);
+
+		emitter.emit("mset", {
+			list: [
+				{ key: "a", value: 1 },
+				{ key: "b", value: 2 },
+			],
+		});
+		emitter.emit("mdel", { keys: ["a", "b", "c"] });
+		emitter.emit("mget", { keys: ["a", "b"], values: [1, undefined] });
+
+		expect(stats.sets).toBe(2);
+		expect(stats.deletes).toBe(3);
+		expect(stats.gets).toBe(2);
+		expect(stats.hits).toBe(1);
+		expect(stats.misses).toBe(1);
+	});
+
+	test("should ignore multi-key cache-manager events with missing payloads", () => {
+		const emitter = new OffEmitter();
+		const stats = new Stats({ enabled: true });
+		stats.subscribe(emitter, cacheManagerStatsEventMap);
+
+		emitter.emit("mset");
+		emitter.emit("mdel");
+		emitter.emit("mget");
+		emitter.emit("mget", { keys: ["a"], error: new Error("boom") });
+
+		expect(stats.sets).toBe(0);
+		expect(stats.deletes).toBe(0);
+		expect(stats.gets).toBe(0);
+		expect(stats.misses).toBe(0);
+	});
+
+	test("should not run event handlers when disabled", () => {
+		const emitter = new OffEmitter();
+		const stats = new Stats();
+		let calls = 0;
+		stats.subscribe(emitter, {
+			ping: () => {
+				calls += 1;
+			},
+		});
+
+		emitter.emit("ping");
+		expect(calls).toBe(0);
+
+		stats.enable();
+		emitter.emit("ping");
+		expect(calls).toBe(1);
 	});
 
 	test("should support string, array, and function map entries", () => {
