@@ -559,25 +559,25 @@ describe("stats per-key tracking", () => {
 		expect(stats.keyStats("write-only")?.hitRate).toBe(0);
 	});
 
-	test("topKeys should rank by total count descending with key tie-break", () => {
+	test("mostUsedKeys should rank by total count descending with key tie-break", () => {
 		const stats = new Stats({ enabled: true, trackKeys: true });
 		stats.recordKey("hot", "gets", 5);
 		stats.recordKey("warm", "gets", 3);
 		stats.recordKey("a", "gets");
 		stats.recordKey("b", "gets");
 
-		const top = stats.topKeys(3);
+		const top = stats.mostUsedKeys(3);
 		expect(top.map((entry) => entry.key)).toEqual(["hot", "warm", "a"]);
 		expect(top[0].count).toBe(5);
 	});
 
-	test("bottomKeys should rank ascending with key tie-break", () => {
+	test("leastUsedKeys should rank ascending with key tie-break", () => {
 		const stats = new Stats({ enabled: true, trackKeys: true });
 		stats.recordKey("hot", "gets", 5);
 		stats.recordKey("b", "gets");
 		stats.recordKey("a", "gets");
 
-		const bottom = stats.bottomKeys(2);
+		const bottom = stats.leastUsedKeys(2);
 		expect(bottom.map((entry) => entry.key)).toEqual(["a", "b"]);
 	});
 
@@ -586,9 +586,9 @@ describe("stats per-key tracking", () => {
 		stats.recordKey("reads", "hits", 10);
 		stats.recordKey("writes", "sets", 20);
 
-		expect(stats.topKeys(1, "hits")[0].key).toBe("reads");
-		expect(stats.topKeys(1, "sets")[0].key).toBe("writes");
-		expect(stats.bottomKeys(1, "hits")[0].key).toBe("writes");
+		expect(stats.mostUsedKeys(1, "hits")[0].key).toBe("reads");
+		expect(stats.mostUsedKeys(1, "sets")[0].key).toBe("writes");
+		expect(stats.leastUsedKeys(1, "hits")[0].key).toBe("writes");
 	});
 
 	test("should default to 100 entries for top and bottom", () => {
@@ -597,10 +597,10 @@ describe("stats per-key tracking", () => {
 			stats.recordKey(`key-${i}`, "gets", i + 1);
 		}
 
-		expect(stats.topKeys()).toHaveLength(100);
-		expect(stats.bottomKeys()).toHaveLength(100);
-		expect(stats.topKeys()[0].count).toBe(105);
-		expect(stats.bottomKeys()[0].count).toBe(1);
+		expect(stats.mostUsedKeys()).toHaveLength(100);
+		expect(stats.leastUsedKeys()).toHaveLength(100);
+		expect(stats.mostUsedKeys()[0].count).toBe(105);
+		expect(stats.leastUsedKeys()[0].count).toBe(1);
 	});
 
 	test("should prune lowest-count keys past maxTrackedKeys, protecting the new key", () => {

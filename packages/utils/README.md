@@ -366,7 +366,7 @@ console.log(stats.hitRate); // 1
 
 You can subscribe to multiple emitters from a single `Stats` instance, and pass an emitter to `unsubscribe(emitter)` to detach just that one. Counting is gated by `enabled`, so you can subscribe first and toggle tracking on later — handlers do not run at all while disabled.
 
-## Per-Key Tracking (Top and Bottom Keys)
+## Per-Key Tracking (Most and Least Used Keys)
 
 To find your hottest and coldest keys, enable per-key tracking with `trackKeys`. Each recorded key keeps its own breakdown of `hits`, `misses`, `gets`, `sets`, and `deletes`, plus a computed total `count` and per-key `hitRate`.
 
@@ -379,18 +379,18 @@ stats.recordKey('user:1', 'hits');
 stats.recordKey('user:1', 'gets', 5);
 stats.recordKey('user:2', 'misses');
 
-// Top 100 keys by total operations (descending)
-console.log(stats.topKeys(100));
+// 100 most used keys by total operations (descending)
+console.log(stats.mostUsedKeys(100));
 // [
 //   { key: 'user:1', count: 6, hits: 1, misses: 0, gets: 5, sets: 0, deletes: 0, hitRate: 1 },
 //   { key: 'user:2', count: 1, hits: 0, misses: 1, gets: 0, sets: 0, deletes: 0, hitRate: 0 }
 // ]
 
-// Bottom 100 keys by total operations (ascending)
-console.log(stats.bottomKeys(100));
+// 100 least used keys by total operations (ascending)
+console.log(stats.leastUsedKeys(100));
 
 // Rank by a single counter instead of the total
-console.log(stats.topKeys(100, 'hits'));
+console.log(stats.mostUsedKeys(100, 'hits'));
 
 // Inspect one key, or how many keys are tracked
 console.log(stats.keyStats('user:1'));
@@ -399,14 +399,14 @@ console.log(stats.trackedKeyCount);
 stats.clearKeys(); // clear per-key stats only (reset() clears these too)
 ```
 
-Both `topKeys` and `bottomKeys` default to 100 entries, and `trackedKeys` is included in `toJSON()` snapshots.
+Both `mostUsedKeys` and `leastUsedKeys` default to 100 entries, and `trackedKeys` is included in `toJSON()` snapshots.
 
 Per-key tracking is fed two ways, just like the aggregate counters:
 
 * **Imperatively** — call `recordKey(key, field, amount?)` wherever you already increment stats.
 * **Event-driven** — `nodeCacheStatsEventMap` automatically records keys from `set`/`del` events when `trackKeys` is on, and custom event-map handlers can call `recordKey` with whatever the payload carries.
 
-Memory is proportional to the number of unique keys tracked, so `trackKeys` is off by default. You can also set `maxTrackedKeys` as a safety cap — when exceeded, the lowest-count keys are pruned. Note that pruning keeps `topKeys` approximately accurate but makes `bottomKeys` unreliable (the pruned keys *are* the bottom), so leave it unset if you need exact bottom-key rankings.
+Memory is proportional to the number of unique keys tracked, so `trackKeys` is off by default. You can also set `maxTrackedKeys` as a safety cap — when exceeded, the lowest-count keys are pruned. Note that pruning keeps `mostUsedKeys` approximately accurate but makes `leastUsedKeys` unreliable (the pruned keys *are* the least used), so leave it unset if you need exact least-used-key rankings.
 
 > **Note:** a built-in map is provided only where a library's events map cleanly to stats. `nodeCacheStatsEventMap` is included because `@cacheable/node-cache` emits each lifecycle event exactly once. Libraries that emit per-store probes or omit events on a miss (such as `cacheable` and `cache-manager`) should be wired with a custom map or driven imperatively so the counts stay accurate.
 

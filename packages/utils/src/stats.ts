@@ -49,8 +49,8 @@ export type StatsEventMap = Record<
 export type KeyStatField = "hits" | "misses" | "gets" | "sets" | "deletes";
 
 /**
- * Per-key statistics returned by {@link Stats.topKeys},
- * {@link Stats.bottomKeys}, and {@link Stats.keyStats}.
+ * Per-key statistics returned by {@link Stats.mostUsedKeys},
+ * {@link Stats.leastUsedKeys}, and {@link Stats.keyStats}.
  */
 export type StatsKeyEntry = {
 	key: string;
@@ -99,8 +99,9 @@ export type StatsOptions = {
 	trackKeys?: boolean;
 	/**
 	 * Safety cap on the number of unique keys tracked. When exceeded, the
-	 * lowest-count keys are pruned, which keeps top-key rankings approximately
-	 * accurate but makes bottom-key rankings unreliable. Unbounded when unset.
+	 * lowest-count keys are pruned, which keeps {@link Stats.mostUsedKeys}
+	 * approximately accurate but makes {@link Stats.leastUsedKeys} unreliable.
+	 * Unbounded when unset.
 	 */
 	maxTrackedKeys?: number;
 };
@@ -606,7 +607,7 @@ export class Stats {
 	 * @param {KeyStatField} [field] - Optionally rank by one counter (e.g. "hits")
 	 * @returns {StatsKeyEntry[]}
 	 */
-	public topKeys(limit = 100, field?: KeyStatField): StatsKeyEntry[] {
+	public mostUsedKeys(limit = 100, field?: KeyStatField): StatsKeyEntry[] {
 		return this.sortedKeyEntries(field, "desc").slice(0, limit);
 	}
 
@@ -614,13 +615,13 @@ export class Stats {
 	 * The least-used keys, sorted ascending. Sorts by total recorded operations,
 	 * or by a single field when `field` is provided. Ties order by key. Note:
 	 * only keys that have been recorded at least once can be ranked, and when
-	 * {@link maxTrackedKeys} pruning has occurred the true bottom keys may have
-	 * been evicted.
+	 * {@link maxTrackedKeys} pruning has occurred the true least-used keys may
+	 * have been evicted.
 	 * @param {number} limit - Maximum entries to return (default 100)
 	 * @param {KeyStatField} [field] - Optionally rank by one counter (e.g. "gets")
 	 * @returns {StatsKeyEntry[]}
 	 */
-	public bottomKeys(limit = 100, field?: KeyStatField): StatsKeyEntry[] {
+	public leastUsedKeys(limit = 100, field?: KeyStatField): StatsKeyEntry[] {
 		return this.sortedKeyEntries(field, "asc").slice(0, limit);
 	}
 
