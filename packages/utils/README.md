@@ -13,7 +13,7 @@
 * Data Types for Caching Items
 * Hash Functions for Key Generation
 * Coalesce Async for Handling Multiple Promises
-* Stats Helpers for Caching Statistics
+* Statistics for Tracking Cache Metrics
 * Sleep / Delay for Testing and Timing
 * Memoization for wraping or get / set options
 * Time to Live (TTL) Helpers
@@ -26,7 +26,7 @@
 * [Hash Functions](#hash-functions)
 * [Shorthand Time Helpers](#shorthand-time-helpers)
 * [Sleep Helper](#sleep-helper)
-* [Stats Helpers](#stats-helpers)
+* [Statistics](#statistics)
 * [Time to Live (TTL) Helpers](#time-to-live-ttl-helpers)
 * [Run if Function Helper](#run-if-function-helper)
 * [Less Than Helper](#less-than-helper)
@@ -193,17 +193,180 @@ await sleep(1000); // Pause for 1 second
 console.log('Execution resumed after 1 second');
 ```
 
-# Stats Helpers
+# Statistics
 
-The `@cacheable/utils` package provides statistics helpers that can be used to track and analyze caching operations. These helpers can be used to gather metrics such as hit rates, miss rates, and other performance-related statistics.
+The `Stats` class provides a unified, event-driven way to track caching metrics such as hits, misses, hit rate, item counts, and approximate memory usage. It can be driven two ways:
+
+* **Imperatively** — call `increment` / `decrement` (or the named helpers) directly from your code.
+* **Event-driven** — `subscribe` it to an event emitter (such as `@cacheable/node-cache` or a Node `EventEmitter`) and let matching events update the counters automatically.
+
+Statistics are **opt-in**: a new `Stats` instance is disabled by default and ignores every update until enabled, so there is zero tracking overhead unless you ask for it.
 
 ```typescript
-import { stats } from '@cacheable/utils';
+import { Stats } from '@cacheable/utils';
 
-const cacheStats = stats();
-cacheStats.incrementHits();
-console.log(cacheStats.hits); // Get the hit rate of the cache
+const stats = new Stats({ enabled: true });
+
+stats.incrementHits();
+stats.incrementMisses();
+stats.incrementGets();
+
+console.log(stats.hits);    // 1
+console.log(stats.misses);  // 1
+console.log(stats.hitRate); // 0.5
 ```
+
+## Available Statistics
+
+Every counter is exposed as a read-only property:
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `hits` | `number` | Number of cache hits. |
+| `misses` | `number` | Number of cache misses. |
+| `gets` | `number` | Number of get operations. |
+| `sets` | `number` | Number of set operations. |
+| `deletes` | `number` | Number of delete operations. |
+| `clears` | `number` | Number of clear operations. |
+| `count` | `number` | Number of items currently tracked. |
+| `ksize` | `number` | Approximate size of all keys, in bytes. |
+| `vsize` | `number` | Approximate size of all values, in bytes. |
+
+### Computed Properties
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `hitRate` | `number` | `hits / (hits + misses)`, or `0` when there have been no lookups. |
+| `missRate` | `number` | `misses / (hits + misses)`, or `0` when there have been no lookups. |
+
+### Metadata
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `enabled` | `boolean` | Whether tracking is currently on. |
+| `lastUpdated` | `number \| undefined` | Timestamp (ms since epoch) of the last update while enabled. |
+| `lastReset` | `number \| undefined` | Timestamp (ms since epoch) of the last `reset()` / `clear()`. |
+
+## Enabling, Disabling, and Clearing
+
+```typescript
+const stats = new Stats(); // disabled by default
+
+stats.enable();          // start tracking (or: stats.enabled = true)
+stats.incrementHits();
+console.log(stats.hits); // 1
+
+stats.disable();         // stop tracking (or: stats.enabled = false)
+stats.incrementHits();
+console.log(stats.hits); // still 1
+
+stats.clear();           // reset every counter back to 0 (alias of reset())
+console.log(stats.hits); // 0
+```
+
+* `reset()` / `clear()` — set every counter back to `0` and record `lastReset`.
+* `resetStoreValues()` — reset only `count`, `ksize`, and `vsize`, leaving the hit/miss history intact.
+
+## Incrementing and Decrementing
+
+Use the unified `increment` / `decrement` methods with any counter field, or the named helpers. All updates are ignored while disabled.
+
+```typescript
+const stats = new Stats({ enabled: true });
+
+// Unified API — optional amount (defaults to 1)
+stats.increment('hits');
+stats.increment('sets', 5);
+stats.decrement('count', 2);
+
+// Named helpers
+stats.incrementHits();
+stats.incrementMisses();
+stats.incrementGets();
+stats.incrementSets();
+stats.incrementDeletes();
+stats.incrementClears();
+stats.incrementCount();
+stats.decreaseCount();
+
+// Approximate key/value sizes
+stats.incrementKSize('my-key');  // adds the byte size of the key
+stats.incrementVSize({ a: 1 });  // adds the byte size of the value
+stats.decreaseKSize('my-key');
+stats.decreaseVSize({ a: 1 });
+stats.setCount(10);              // set the item count directly
+```
+
+`StatField` is the union of countable fields: `'hits' | 'misses' | 'gets' | 'sets' | 'deletes' | 'clears' | 'count'`.
+
+## Snapshot
+
+`toJSON()` (aliased as `snapshot()`) returns a plain object of every counter, the computed rates, and the timestamps — handy for logging or sending to a metrics system.
+
+```typescript
+const stats = new Stats({ enabled: true });
+stats.incrementHits(3);
+stats.incrementMisses();
+
+console.log(stats.toJSON());
+// {
+//   enabled: true,
+//   hits: 3, misses: 1, gets: 0, sets: 0, deletes: 0, clears: 0,
+//   vsize: 0, ksize: 0, count: 0,
+//   hitRate: 0.75, missRate: 0.25,
+//   lastUpdated: 1749513600000, lastReset: undefined
+// }
+```
+
+## Event-Driven Tracking
+
+Instead of calling the increment methods yourself, you can `subscribe` a `Stats` instance to an emitter and have events update the counters automatically. The emitter is duck-typed — anything with `.on()` (plus `.off()` or `.removeListener()` to detach) works, including `Hookified`-based classes and Node's `EventEmitter`.
+
+An **event map** describes how each event name updates the stats. A map value can be:
+
+* a single field — `"sets"`
+* an array of fields — `["hits", "gets"]`
+* a custom handler — `(stats, ...args) => void`
+
+```typescript
+import { Stats, nodeCacheStatsEventMap } from '@cacheable/utils';
+import { NodeCache } from '@cacheable/node-cache';
+
+const cache = new NodeCache();
+const stats = new Stats({ enabled: true });
+
+// nodeCacheStatsEventMap maps set -> sets, del -> deletes, flush -> clears,
+// and flush_stats -> reset.
+stats.subscribe(cache, nodeCacheStatsEventMap);
+
+cache.set('key', 'value');
+console.log(stats.sets); // 1
+
+stats.unsubscribe(); // detach all listeners (or pass an emitter to detach just one)
+```
+
+You can also provide your own map for any emitter:
+
+```typescript
+import { EventEmitter } from 'node:events';
+import { Stats } from '@cacheable/utils';
+
+const emitter = new EventEmitter();
+const stats = new Stats({ enabled: true });
+
+stats.subscribe(emitter, {
+  'cache:hit': ['hits', 'gets'],
+  'cache:miss': ['misses', 'gets'],
+  evicted: (s) => s.incrementDeletes(),
+});
+
+emitter.emit('cache:hit', { key: 'a' });
+console.log(stats.hitRate); // 1
+```
+
+You can subscribe to multiple emitters from a single `Stats` instance, and pass an emitter to `unsubscribe(emitter)` to detach just that one. Counting is gated by `enabled`, so you can subscribe first and toggle tracking on later — handlers do not run at all while disabled.
+
+> **Note:** a built-in map is provided only where a library's events map cleanly to stats. `nodeCacheStatsEventMap` is included because `@cacheable/node-cache` emits each lifecycle event exactly once. Libraries that emit per-store probes or omit events on a miss (such as `cacheable` and `cache-manager`) should be wired with a custom map or driven imperatively so the counts stay accurate.
 
 # Time to Live (TTL) Helpers
 
