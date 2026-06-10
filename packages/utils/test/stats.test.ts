@@ -1,10 +1,6 @@
 import { EventEmitter } from "node:events";
 import { describe, expect, test } from "vitest";
-import {
-	cacheManagerStatsEventMap,
-	nodeCacheStatsEventMap,
-	Stats,
-} from "../src/stats.js";
+import { nodeCacheStatsEventMap, Stats } from "../src/stats.js";
 
 type Listener = (...args: unknown[]) => void;
 
@@ -383,10 +379,13 @@ describe("stats snapshot", () => {
 });
 
 describe("stats event subscription", () => {
-	test("should track cacheable events with the default map", () => {
+	test("should track events from a Node EventEmitter with a custom map", () => {
 		const emitter = new EventEmitter();
 		const stats = new Stats({ enabled: true });
-		stats.subscribe(emitter);
+		stats.subscribe(emitter, {
+			"cache:hit": ["hits", "gets"],
+			"cache:miss": ["misses", "gets"],
+		});
 
 		emitter.emit("cache:hit", { key: "a", value: 1, store: "primary" });
 		emitter.emit("cache:miss", { key: "b", store: "primary" });
@@ -399,7 +398,7 @@ describe("stats event subscription", () => {
 		expect(stats.hits).toBe(1);
 	});
 
-	test("should track node-cache events (positional payloads)", () => {
+	test("should track node-cache events and reset on flush_stats", () => {
 		const emitter = new OffEmitter();
 		const stats = new Stats({ enabled: true });
 		stats.subscribe(emitter, nodeCacheStatsEventMap);
@@ -410,63 +409,12 @@ describe("stats event subscription", () => {
 		expect(stats.sets).toBe(1);
 		expect(stats.deletes).toBe(1);
 		expect(stats.clears).toBe(1);
-	});
 
-	test("should derive hit/miss from cache-manager get payloads", () => {
-		const emitter = new OffEmitter();
-		const stats = new Stats({ enabled: true });
-		stats.subscribe(emitter, cacheManagerStatsEventMap);
-
-		emitter.emit("get", { key: "a", value: 1 });
-		emitter.emit("get", { key: "b", error: new Error("miss") });
-		emitter.emit("get");
-		expect(stats.gets).toBe(3);
-		expect(stats.hits).toBe(1);
-		expect(stats.misses).toBe(2);
-
-		emitter.emit("set", { key: "a", value: 1 });
-		emitter.emit("del", { key: "a" });
-		emitter.emit("clear");
-		expect(stats.sets).toBe(1);
-		expect(stats.deletes).toBe(1);
-		expect(stats.clears).toBe(1);
-	});
-
-	test("should count multi-key cache-manager operations by batch size", () => {
-		const emitter = new OffEmitter();
-		const stats = new Stats({ enabled: true });
-		stats.subscribe(emitter, cacheManagerStatsEventMap);
-
-		emitter.emit("mset", {
-			list: [
-				{ key: "a", value: 1 },
-				{ key: "b", value: 2 },
-			],
-		});
-		emitter.emit("mdel", { keys: ["a", "b", "c"] });
-		emitter.emit("mget", { keys: ["a", "b"], values: [1, undefined] });
-
-		expect(stats.sets).toBe(2);
-		expect(stats.deletes).toBe(3);
-		expect(stats.gets).toBe(2);
-		expect(stats.hits).toBe(1);
-		expect(stats.misses).toBe(1);
-	});
-
-	test("should ignore multi-key cache-manager events with missing payloads", () => {
-		const emitter = new OffEmitter();
-		const stats = new Stats({ enabled: true });
-		stats.subscribe(emitter, cacheManagerStatsEventMap);
-
-		emitter.emit("mset");
-		emitter.emit("mdel");
-		emitter.emit("mget");
-		emitter.emit("mget", { keys: ["a"], error: new Error("boom") });
-
+		emitter.emit("flush_stats");
 		expect(stats.sets).toBe(0);
 		expect(stats.deletes).toBe(0);
-		expect(stats.gets).toBe(0);
-		expect(stats.misses).toBe(0);
+		expect(stats.clears).toBe(0);
+		expect(typeof stats.lastReset).toBe("number");
 	});
 
 	test("should not run event handlers when disabled", () => {
@@ -554,12 +502,11 @@ describe("stats event subscription", () => {
 		expect(stats.hits).toBe(1);
 	});
 
-	test("should auto-subscribe from the constructor with the default map", () => {
+	test("should not auto-subscribe when eventMap is omitted", () => {
 		const emitter = new EventEmitter();
 		const stats = new Stats({ enabled: true, emitter });
-		emitter.emit("cache:hit", { key: "a", value: 1 });
-		expect(stats.hits).toBe(1);
-		expect(stats.gets).toBe(1);
+		emitter.emit("set");
+		expect(stats.sets).toBe(0);
 	});
 
 	test("should auto-subscribe from the constructor with a custom map", () => {

@@ -67,79 +67,29 @@ export type StatsOptions = {
 	enabled?: boolean;
 	/** Optionally subscribe to an emitter immediately on construction. */
 	emitter?: StatsEmitter;
-	/**
-	 * The event map to use when `emitter` is provided. Defaults to
-	 * {@link cacheableStatsEventMap}.
-	 */
+	/** The event map to use. Required when `emitter` is provided. */
 	eventMap?: StatsEventMap;
 };
 
 /**
- * The default event map for `cacheable` instances. `cacheable` only emits
- * `cache:hit` and `cache:miss` on its instance (set/delete are distributed
- * sync events, not instance events), so a hit/miss also counts as a get.
- */
-export const cacheableStatsEventMap: StatsEventMap = {
-	"cache:hit": ["hits", "gets"],
-	"cache:miss": ["misses", "gets"],
-};
-
-/**
  * Event map for `@cacheable/node-cache` instances. node-cache emits with
- * positional arguments (e.g. `set(key, value)`), but counting only needs the
- * event name.
+ * positional arguments (e.g. `set(key, value)`), and emits each lifecycle
+ * event exactly once, so the counts map cleanly. `flush` clears the cache data
+ * and `flush_stats` resets the stats counters, mirroring node-cache's
+ * `flushAll()` / `flushStats()` lifecycle.
+ *
+ * Presets for `cacheable` and `cache-manager` are intentionally not provided:
+ * their event streams emit per-store probes (and, for cache-manager, do not
+ * emit an event on a normal miss), so a simple map cannot faithfully reproduce
+ * their imperative stats. Wire those up with a custom map or imperative calls.
  */
 export const nodeCacheStatsEventMap: StatsEventMap = {
 	set: "sets",
 	del: "deletes",
 	flush: "clears",
-};
-
-/**
- * Event map for `cache-manager` instances. `cache-manager` emits `get` on
- * every read (hit and miss), carrying `value` on a hit; hit/miss is therefore
- * derived from the payload. Multi-key operations (`mget`/`mset`/`mdel`) carry a
- * list of keys/items, so they are counted by length via custom handlers. Note:
- * `get` can fire multiple times per read across store layers, so these counts
- * are best-effort.
- */
-export const cacheManagerStatsEventMap: StatsEventMap = {
-	get: (stats: Stats, payload?: { value?: unknown; error?: unknown }) => {
-		stats.increment("gets");
-		if (payload && payload.value !== undefined) {
-			stats.increment("hits");
-		} else {
-			stats.increment("misses");
-		}
+	flush_stats: (stats: Stats) => {
+		stats.reset();
 	},
-	mget: (stats: Stats, payload?: { keys?: unknown[]; values?: unknown[] }) => {
-		const values = payload?.values;
-		if (!values) {
-			return;
-		}
-
-		stats.increment("gets", values.length);
-		for (const value of values) {
-			if (value !== undefined) {
-				stats.increment("hits");
-			} else {
-				stats.increment("misses");
-			}
-		}
-	},
-	set: "sets",
-	mset: (stats: Stats, payload?: { list?: unknown[] }) => {
-		if (payload?.list) {
-			stats.increment("sets", payload.list.length);
-		}
-	},
-	del: "deletes",
-	mdel: (stats: Stats, payload?: { keys?: unknown[] }) => {
-		if (payload?.keys) {
-			stats.increment("deletes", payload.keys.length);
-		}
-	},
-	clear: "clears",
 };
 
 type StatsSubscription = {
@@ -171,7 +121,7 @@ export class Stats {
 			this._enabled = options.enabled;
 		}
 
-		if (options?.emitter) {
+		if (options?.emitter && options?.eventMap) {
 			this.subscribe(options.emitter, options.eventMap);
 		}
 	}
@@ -534,13 +484,10 @@ export class Stats {
 	 * stats. Counting is gated by {@link enabled}, so you may subscribe first and
 	 * toggle enablement later. Call {@link unsubscribe} to detach.
 	 * @param {StatsEmitter} emitter - The emitter to listen on
-	 * @param {StatsEventMap} eventMap - The event-to-stat mapping (defaults to
-	 * {@link cacheableStatsEventMap})
+	 * @param {StatsEventMap} eventMap - The event-to-stat mapping (e.g.
+	 * {@link nodeCacheStatsEventMap} or a custom map)
 	 */
-	public subscribe(
-		emitter: StatsEmitter,
-		eventMap: StatsEventMap = cacheableStatsEventMap,
-	): void {
+	public subscribe(emitter: StatsEmitter, eventMap: StatsEventMap): void {
 		for (const [event, action] of Object.entries(eventMap)) {
 			const listener = (...args: any[]): void => {
 				this.applyEvent(action, args);

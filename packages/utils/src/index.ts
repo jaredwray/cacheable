@@ -47,8 +47,6 @@ export {
 export { runIfFn } from "./run-if-fn.js";
 export { sleep } from "./sleep.js";
 export {
-	cacheableStatsEventMap,
-	cacheManagerStatsEventMap,
 	nodeCacheStatsEventMap,
 	type StatField,
 	Stats,
