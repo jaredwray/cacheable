@@ -6,6 +6,7 @@ export {
 	CacheTags,
 	type CacheTagsOptions,
 	type KeyTagEntry,
+	type RemoveKeysOptions,
 	type SetKeyTagsOptions,
 } from "./cache-tags.js";
 export type {

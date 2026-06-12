@@ -6,10 +6,18 @@ import type { Keyv } from "keyv";
  * @property {Keyv} store - The Keyv store used to persist tag versions and key snapshots.
  * @property {string} [namespace] - An optional namespace that isolates this service's tags
  * and keys from others sharing the same store. Defaults to `"default"`.
+ * @property {boolean} [enabled] - Whether the service is enabled. While disabled, every method
+ * is a no-op: read methods return their neutral value ({@link CacheTags.isKeyFresh} returns
+ * `true`, {@link CacheTags.isKeyStale} returns `false`, etc.) and writes are skipped. The
+ * service must be explicitly enabled to use tags. Defaults to `true`.
+ * @property {(error: unknown) => void} [onError] - Invoked with errors from non-blocking
+ * (fire-and-forget) operations, which cannot be thrown to the caller. Defaults to ignoring them.
  */
 export type CacheTagsOptions = {
 	store: Keyv;
 	namespace?: string;
+	enabled?: boolean;
+	onError?: (error: unknown) => void;
 };
 
 /**
@@ -18,9 +26,22 @@ export type CacheTagsOptions = {
  * @property {number} [ttl] - Time-to-live in milliseconds for the key's tag snapshot. Should
  * match the TTL of the cached value it tracks so the snapshot expires alongside it. If omitted,
  * the snapshot does not expire.
+ * @property {boolean} [nonBlocking] - When `true`, the snapshot write is fire-and-forget:
+ * the call resolves immediately and failures are reported via the `onError` option.
  */
 export type SetKeyTagsOptions = {
 	ttl?: number;
+	nonBlocking?: boolean;
+};
+
+/**
+ * Options for {@link CacheTags.removeKey} and {@link CacheTags.removeKeys}.
+ * @typedef {Object} RemoveKeysOptions
+ * @property {boolean} [nonBlocking] - When `true`, the removal is fire-and-forget:
+ * the call resolves immediately and failures are reported via the `onError` option.
+ */
+export type RemoveKeysOptions = {
+	nonBlocking?: boolean;
 };
 
 /**
@@ -56,6 +77,11 @@ const DEFAULT_NAMESPACE = "default";
  * This keeps invalidation constant-time regardless of how many keys reference a tag, at the cost of
  * one additional `isKeyFresh` read per cache lookup.
  *
+ * The service can be disabled via the `enabled` option or property so integrations pay no cost for
+ * untagged workloads: while disabled, every method is a no-op — reads return their neutral value
+ * and writes are skipped. The service must be explicitly enabled to use tags; it never enables
+ * itself, which keeps behavior consistent across distributed instances sharing a store.
+ *
  * All metadata is written under a reserved prefix so it cannot collide with user keys:
  * - `--cacheable--tags--:<namespace>:tag:<tag>` → integer version counter (stored without TTL).
  * - `--cacheable--tags--:<namespace>:key:<key>` → the {@link KeyTagEntry} snapshot.
@@ -76,14 +102,19 @@ const DEFAULT_NAMESPACE = "default";
 export class CacheTags {
 	private readonly _store: Keyv;
 	private readonly _namespace: string;
+	private _enabled: boolean;
+	private readonly _onError?: (error: unknown) => void;
 
 	/**
 	 * Creates a new tag service.
-	 * @param {CacheTagsOptions} options - The store and optional namespace to use.
+	 * @param {CacheTagsOptions} options - The store, optional namespace, enabled state, and
+	 * non-blocking error handler to use.
 	 */
 	constructor(options: CacheTagsOptions) {
 		this._store = options.store;
 		this._namespace = options.namespace ?? DEFAULT_NAMESPACE;
+		this._enabled = options.enabled ?? true;
+		this._onError = options.onError;
 	}
 
 	/**
@@ -100,6 +131,25 @@ export class CacheTags {
 	 */
 	public get namespace(): string {
 		return this._namespace;
+	}
+
+	/**
+	 * Whether the service is enabled. While disabled, every method is a no-op — read methods
+	 * return their neutral value and writes are skipped — so integrations pay no extra store
+	 * reads for untagged workloads. The service must be explicitly enabled to use tags; it never
+	 * enables itself.
+	 * @returns {boolean} Whether the service is enabled.
+	 */
+	public get enabled(): boolean {
+		return this._enabled;
+	}
+
+	/**
+	 * Sets whether the service is enabled.
+	 * @param {boolean} enabled Whether the service is enabled.
+	 */
+	public set enabled(enabled: boolean) {
+		this._enabled = enabled;
 	}
 
 	/**
@@ -158,17 +208,24 @@ export class CacheTags {
 	}
 
 	/**
-	 * Associates a cache key with a set of tags by recording a snapshot of each tag's current
-	 * version. Call this whenever you write a fresh value to the cache. Duplicate tags are ignored.
+	 * Reports a fire-and-forget failure to the `onError` handler, if one was provided.
+	 * @param error - The error raised by the non-blocking operation.
+	 */
+	private handleNonBlockingError(error: unknown): void {
+		this._onError?.(error);
+	}
+
+	/**
+	 * Reads the version snapshot of each tag and writes the key's tag snapshot to the store.
 	 * @param key - The cache key to tag.
 	 * @param tags - The tags to associate with the key.
-	 * @param {SetKeyTagsOptions} [options] - Optional settings, such as a `ttl` for the snapshot.
+	 * @param ttl - Time-to-live in milliseconds for the snapshot.
 	 * @returns {Promise<void>} Resolves once the snapshot has been written.
 	 */
-	public async setKeyTags(
+	private async writeKeyTags(
 		key: string,
 		tags: string[],
-		options?: SetKeyTagsOptions,
+		ttl?: number,
 	): Promise<void> {
 		const uniqueTags = [...new Set(tags)];
 		const versions = await this.getTagVersions(uniqueTags);
@@ -178,28 +235,100 @@ export class CacheTags {
 		}
 
 		const entry: KeyTagEntry = { tags: snapshot };
-		await this._store.set(this.keyEntryKey(key), entry, options?.ttl);
+		await this._store.set(this.keyEntryKey(key), entry, ttl);
+	}
+
+	/**
+	 * Associates a cache key with a set of tags by recording a snapshot of each tag's current
+	 * version. Call this whenever you write a fresh value to the cache. Duplicate tags are ignored.
+	 * No-op while the service is disabled.
+	 * @param key - The cache key to tag.
+	 * @param tags - The tags to associate with the key.
+	 * @param {SetKeyTagsOptions} [options] - Optional settings, such as a `ttl` for the snapshot or
+	 * `nonBlocking` to fire-and-forget the write.
+	 * @returns {Promise<void>} Resolves once the snapshot has been written, or immediately when
+	 * `nonBlocking` is set.
+	 */
+	public async setKeyTags(
+		key: string,
+		tags: string[],
+		options?: SetKeyTagsOptions,
+	): Promise<void> {
+		if (!this._enabled) {
+			return;
+		}
+		const work = this.writeKeyTags(key, tags, options?.ttl);
+		if (options?.nonBlocking) {
+			work.catch((error) => {
+				this.handleNonBlockingError(error);
+			});
+			return;
+		}
+
+		await work;
 	}
 
 	/**
 	 * Removes a key's tag snapshot. After this, {@link CacheTags.isKeyFresh} returns `false`
-	 * for the key. Use when the cached value itself is deleted.
+	 * for the key. Use when the cached value itself is deleted. No-op while the service is
+	 * disabled.
 	 * @param key - The cache key whose snapshot should be removed.
-	 * @returns {Promise<void>} Resolves once the snapshot has been deleted.
+	 * @param {RemoveKeysOptions} [options] - Optional settings, such as `nonBlocking` to
+	 * fire-and-forget the removal.
+	 * @returns {Promise<void>} Resolves once the snapshot has been deleted, or immediately when
+	 * `nonBlocking` is set.
 	 */
-	public async removeKey(key: string): Promise<void> {
-		await this._store.delete(this.keyEntryKey(key));
+	public async removeKey(
+		key: string,
+		options?: RemoveKeysOptions,
+	): Promise<void> {
+		await this.removeKeys([key], options);
+	}
+
+	/**
+	 * Removes multiple keys' tag snapshots in a single batched store delete. After this,
+	 * {@link CacheTags.isKeyFresh} returns `false` for each key. An empty list is a no-op, as is
+	 * the entire call while the service is disabled.
+	 * @param keys - The cache keys whose snapshots should be removed.
+	 * @param {RemoveKeysOptions} [options] - Optional settings, such as `nonBlocking` to
+	 * fire-and-forget the removal.
+	 * @returns {Promise<void>} Resolves once the snapshots have been deleted, or immediately when
+	 * `nonBlocking` is set.
+	 */
+	public async removeKeys(
+		keys: string[],
+		options?: RemoveKeysOptions,
+	): Promise<void> {
+		if (!this._enabled || keys.length === 0) {
+			return;
+		}
+
+		const entryKeys = keys.map((key) => this.keyEntryKey(key));
+		const work = this._store.deleteMany(entryKeys);
+		if (options?.nonBlocking) {
+			work.catch((error) => {
+				this.handleNonBlockingError(error);
+			});
+			return;
+		}
+
+		await work;
 	}
 
 	/**
 	 * Determines whether a key's cached value can still be trusted. A key is fresh only when a
 	 * snapshot exists for it and every tag in that snapshot still has the version it had at set time.
 	 * A key with no tags is trivially fresh. Call this before returning a value from your cache.
+	 * Always returns `true` while the service is disabled.
 	 * @param key - The cache key to check.
 	 * @returns {Promise<boolean>} `true` if the key is still fresh; `false` if it is unknown or any of
 	 * its tags has been invalidated since the snapshot was taken.
 	 */
 	public async isKeyFresh(key: string): Promise<boolean> {
+		if (!this._enabled) {
+			return true;
+		}
+
 		const entry = await this._store.get<KeyTagEntry>(this.keyEntryKey(key));
 		if (!entry?.tags) {
 			return false;
@@ -218,14 +347,107 @@ export class CacheTags {
 	}
 
 	/**
+	 * Determines whether a key's cached value is known to be stale due to tag invalidation. This is
+	 * the complement of {@link CacheTags.isKeyFresh} for tagged keys, but treats keys without a
+	 * snapshot as not stale — making it safe to call for every cache lookup, including keys that were
+	 * never tagged. Always returns `false` while the service is disabled.
+	 * @param key - The cache key to check.
+	 * @returns {Promise<boolean>} `true` only when a snapshot exists for the key and at least one of
+	 * its tags has been invalidated since the snapshot was taken; `false` otherwise (including when
+	 * the key has no snapshot).
+	 */
+	public async isKeyStale(key: string): Promise<boolean> {
+		if (!this._enabled) {
+			return false;
+		}
+
+		const staleKeys = await this.getStaleKeys([key]);
+		return staleKeys.length > 0;
+	}
+
+	/**
+	 * Determines which of the given keys are known to be stale due to tag invalidation, using two
+	 * batched store reads regardless of how many keys are checked: one for the snapshots and one for
+	 * the union of their tag versions. Keys without a snapshot are not considered stale. Returns an
+	 * empty array while the service is disabled.
+	 * @param keys - The cache keys to check.
+	 * @returns {Promise<string[]>} The subset of `keys` whose snapshot references at least one tag
+	 * that has been invalidated since the snapshot was taken.
+	 */
+	public async getStaleKeys(keys: string[]): Promise<string[]> {
+		if (!this._enabled || keys.length === 0) {
+			return [];
+		}
+
+		const entryKeys = keys.map((key) => this.keyEntryKey(key));
+		const entries = await this._store.get<KeyTagEntry>(entryKeys);
+
+		const tagSet = new Set<string>();
+		for (const entry of entries) {
+			if (entry?.tags) {
+				for (const tag of Object.keys(entry.tags)) {
+					tagSet.add(tag);
+				}
+			}
+		}
+
+		const tags = [...tagSet];
+		const versions = await this.getTagVersions(tags);
+		const currentVersions = new Map<string, number>();
+		for (let i = 0; i < tags.length; i++) {
+			currentVersions.set(tags[i], versions[i]);
+		}
+
+		const staleKeys: string[] = [];
+		for (const [i, entry] of entries.entries()) {
+			if (!entry?.tags) {
+				continue;
+			}
+			for (const [tag, version] of Object.entries(entry.tags)) {
+				if (currentVersions.get(tag) !== version) {
+					staleKeys.push(keys[i]);
+					break;
+				}
+			}
+		}
+
+		return staleKeys;
+	}
+
+	/**
+	 * Returns the tags currently associated with a key. Returns `undefined` while the service is
+	 * disabled.
+	 * @param key - The cache key to look up.
+	 * @returns {Promise<string[] | undefined>} The tag names from the key's snapshot, or `undefined`
+	 * if the key has no snapshot.
+	 */
+	public async getTags(key: string): Promise<string[] | undefined> {
+		if (!this._enabled) {
+			return undefined;
+		}
+
+		const entry = await this._store.get<KeyTagEntry>(this.keyEntryKey(key));
+		if (!entry?.tags) {
+			return undefined;
+		}
+
+		return Object.keys(entry.tags);
+	}
+
+	/**
 	 * Returns all cache keys whose snapshot references the given tag. This scans every key entry in
 	 * the namespace via the Keyv iterator, making it an `O(N)` operation intended for debugging and
-	 * tests rather than hot paths. Returns an empty array if the underlying store exposes no iterator.
+	 * tests rather than hot paths. Returns an empty array if the underlying store exposes no iterator
+	 * or while the service is disabled.
 	 * @param tag - The tag to search for.
 	 * @returns {Promise<string[]>} The cache keys (with the reserved prefix stripped) referencing the tag.
 	 */
 	public async getKeysByTag(tag: string): Promise<string[]> {
 		const result: string[] = [];
+		if (!this._enabled) {
+			return result;
+		}
+
 		const prefix = this.keyPrefix();
 		const iterator = this._store.iterator?.(this._store.namespace);
 		if (!iterator) {
@@ -248,11 +470,16 @@ export class CacheTags {
 	/**
 	 * Invalidates a single tag by incrementing its version counter. Every key whose snapshot
 	 * references this tag becomes stale immediately. Runs in constant time regardless of how many
-	 * keys reference the tag.
+	 * keys reference the tag. No-op while the service is disabled.
 	 * @param tag - The tag to invalidate.
-	 * @returns {Promise<string[]>} A single-element array containing the invalidated tag.
+	 * @returns {Promise<string[]>} A single-element array containing the invalidated tag, or an
+	 * empty array while the service is disabled.
 	 */
 	public async invalidateTag(tag: string): Promise<string[]> {
+		if (!this._enabled) {
+			return [];
+		}
+
 		const current = await this.getTagVersion(tag);
 		await this._store.set(this.tagKey(tag), current + 1);
 		return [tag];
@@ -260,15 +487,22 @@ export class CacheTags {
 
 	/**
 	 * Invalidates multiple tags by incrementing each of their version counters in a single batched
-	 * store write. Duplicate tags are bumped once. An empty list is a no-op.
+	 * store write. Duplicate tags are bumped once. An empty list is a no-op, as is the entire call
+	 * while the service is disabled.
 	 * @param tags - The tags to invalidate.
-	 * @returns {Promise<string[]>} The `tags` argument as provided (including any duplicates).
+	 * @returns {Promise<string[]>} The `tags` argument as provided (including any duplicates), or
+	 * an empty array while the service is disabled.
 	 */
 	public async invalidateTags(tags: string[]): Promise<string[]> {
+		if (!this._enabled) {
+			return [];
+		}
+
 		const uniqueTags = [...new Set(tags)];
 		if (uniqueTags.length === 0) {
 			return tags;
 		}
+
 		const versions = await this.getTagVersions(uniqueTags);
 
 		const kvPairs = [];

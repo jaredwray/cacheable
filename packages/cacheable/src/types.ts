@@ -1,3 +1,4 @@
+import type { CacheableItem } from "@cacheable/utils";
 import type { Keyv, KeyvStoreAdapter } from "keyv";
 import type { CacheableSync, CacheableSyncOptions } from "./sync.js";
 
@@ -63,6 +64,14 @@ export type CacheableOptions = {
 	 * The sync instance for the cacheable instance to enable synchronization across cache instances
 	 */
 	sync?: CacheableSync | CacheableSyncOptions;
+	/**
+	 * Enables the tag service so tag-based invalidation can be used and freshness checks run on
+	 * every `get` / `getMany`. Tags must be explicitly enabled — while disabled, all tag
+	 * operations are no-ops and values set with `tags` are stored without tag tracking. Enable
+	 * this on every instance that shares the store (writers and readers) so invalidations are
+	 * honored consistently across distributed instances. Default is `false`.
+	 */
+	tags?: boolean;
 };
 
 export type GetOptions = {
@@ -79,6 +88,33 @@ export type SetOptions = {
 	 * @type {boolean}
 	 */
 	nonBlocking?: boolean;
+	/**
+	 * Time-to-live. If you set a number it is milliseconds, if you set a string it is a
+	 * human-readable format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means
+	 * that it will use the default time-to-live.
+	 * @type {number | string}
+	 */
+	ttl?: number | string;
+	/**
+	 * Tags to associate with the entry for tag-based invalidation. Invalidating any of these tags
+	 * via `invalidateTag` / `invalidateTags` makes the entry stale, causing the next `get` to treat
+	 * it as a miss and remove it.
+	 * @type {string[]}
+	 */
+	tags?: string[];
+};
+
+/**
+ * An item for `setMany` that can optionally carry tags for tag-based invalidation.
+ */
+export type CacheableSetItem = CacheableItem & {
+	/**
+	 * Tags to associate with the entry for tag-based invalidation. Invalidating any of these tags
+	 * via `invalidateTag` / `invalidateTags` makes the entry stale, causing the next `get` to treat
+	 * it as a miss and remove it.
+	 * @type {string[]}
+	 */
+	tags?: string[];
 };
 
 export type TakeOptions = {
