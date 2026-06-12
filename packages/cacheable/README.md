@@ -652,7 +652,7 @@ await cache.set('page:/products', html, { ttl: '10m', tags: ['entity:42', 'colle
 await cache.set('page:/products/42', detailHtml, { ttl: '10m', tags: ['entity:42'] });
 
 // entity 42 changed - purge everything that referenced it
-await cache.invalidateTag('entity:42');
+await cache.tags.invalidateTag('entity:42');
 
 await cache.get('page:/products'); // undefined
 await cache.get('page:/products/42'); // undefined
@@ -666,10 +666,10 @@ await cache.setMany([
   { key: 'user:2', value: userTwo, tags: ['users', 'org:7'] },
 ]);
 
-await cache.invalidateTags(['users', 'org:7']);
+await cache.tags.invalidateTags(['users', 'org:7']);
 ```
 
-Invalidation is powered by the `CacheTags` service from [`@cacheable/utils`](https://npmjs.com/package/@cacheable/utils) and uses a lazy, constant-time model: `invalidateTag` simply bumps a version counter for the tag, no matter how many entries reference it. Each tagged entry stores a snapshot of its tags' versions, and on the next `get` / `getMany` the snapshot is compared to the live versions. If any tag has been bumped since, the entry is treated as a miss and removed from both the primary and secondary stores (and a `delete` is published via [sync](#cacheablesync---distributed-updates) when enabled). The trade-off is one additional tag-store read per cache lookup while tag support is enabled.
+Tag functionality lives on the `tags` service — an instance of the `CacheTags` class from [`@cacheable/utils`](https://npmjs.com/package/@cacheable/utils) that is created by default in the constructor. Invalidation uses a lazy, constant-time model: `invalidateTag` simply bumps a version counter for the tag, no matter how many entries reference it. Each tagged entry stores a snapshot of its tags' versions, and on the next `get` / `getMany` the snapshot is compared to the live versions. If any tag has been bumped since, the entry is treated as a miss and removed from both the primary and secondary stores (and a `delete` is published via [sync](#cacheablesync---distributed-updates) when enabled). The trade-off is one additional tag-store read per cache lookup while the tag service is enabled.
 
 Tag metadata is stored in the secondary store when one is configured, otherwise in the primary store. With a shared secondary store (such as Redis), an invalidation performed by one instance is seen by every instance:
 
@@ -682,18 +682,18 @@ const writer = new Cacheable({ secondary: new KeyvRedis('redis://localhost:6379'
 const reader = new Cacheable({ secondary: new KeyvRedis('redis://localhost:6379'), tags: true });
 
 await writer.set('page:/products', html, { tags: ['entity:42'] });
-await writer.invalidateTag('entity:42');
+await writer.tags.invalidateTag('entity:42');
 await reader.get('page:/products'); // undefined - stale copy is also purged from reader's primary
 ```
 
-Tag support is off by default so untagged workloads pay no extra cost. It turns on automatically the first time you use a tag feature on an instance (setting a value with `tags`, calling `invalidateTag` / `invalidateTags`, or accessing the `tags` service), or explicitly via the `tags: true` option. When using tags across multiple instances that share a store, set `tags: true` on all of them so every instance honors invalidations and cleans up tag snapshots consistently.
+The tag service starts disabled so untagged workloads pay no extra cost. It enables automatically the first time a tag is written (setting a value with `tags` or calling `tags.invalidateTag` / `tags.invalidateTags`), or explicitly via the `tags: true` option or the `tags.enabled` property. When using tags across multiple instances that share a store, set `tags: true` on all of them so every instance honors invalidations and cleans up tag snapshots consistently.
 
-Helper methods:
+The full `CacheTags` API is available on the service:
 
 ```javascript
-await cache.getTags('page:/products'); // ['entity:42', 'collection:products']
-cache.tagsEnabled; // whether freshness checks run on get / getMany
-cache.tags; // the underlying CacheTags service for advanced use (getKeysByTag, isKeyStale, ...)
+await cache.tags.getTags('page:/products'); // ['entity:42', 'collection:products']
+await cache.tags.getKeysByTag('entity:42'); // keys referencing a tag (debugging / tests)
+cache.tags.enabled; // whether freshness checks run on get / getMany
 ```
 
 # Cacheable Options
@@ -708,7 +708,7 @@ The following options are available for you to configure `cacheable`:
 * `maxTtl`: The maximum time to live for any cache entry. When set, TTLs exceeding this value are capped. Enforced on both primary and secondary stores. Default is `undefined` (no maximum).
 * `namespace`: The namespace for the cache. Default is `undefined`.
 * `cacheId`: A unique identifier for this cache instance. Used for sync filtering. Default is a random string.
-* `tags`: Enables tag-based invalidation freshness checks on `get` / `getMany`. Tag support also turns on automatically the first time you use a tag feature on the instance. Default is `false`.
+* `tags`: Enables the tag service so tag-based invalidation freshness checks run on `get` / `getMany`. The service also enables automatically the first time a tag is written on the instance. Default is `false`.
 * `sync`: Enable distributed cache synchronization. Can be:
   - `CacheableSync` instance
   - `CacheableSyncOptions` object with `{ qified: MessageProvider | MessageProvider[] | Qified }`
@@ -746,11 +746,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `delete(key)`: Deletes a value from the cache.
 * `deleteMany([keys])`: Deletes multiple values from the cache.
 * `clear()`: Clears the cache stores. Be careful with this as it will clear both layer 1 and layer 2.
-* `invalidateTag(tag)`: Invalidates every cache entry that was set with the tag. Constant-time regardless of how many entries reference it.
-* `invalidateTags([tags])`: Invalidates every cache entry that was set with any of the tags.
-* `getTags(key)`: Returns the tags associated with a key, or `undefined` if the key was not set with tags.
-* `tags`: The underlying `CacheTags` service from `@cacheable/utils` for advanced use.
-* `tagsEnabled`: Whether tag freshness checks run on `get` / `getMany`.
+* `tags`: The `CacheTags` service from `@cacheable/utils` used for tag-based invalidation, such as `tags.invalidateTag(tag)`, `tags.invalidateTags([tags])`, `tags.getTags(key)`, `tags.getKeysByTag(tag)`, and `tags.enabled`.
 * `wrap(function, WrapOptions)`: Wraps an `async` function in a cache.
 * `getOrSet(GetOrSetKey, valueFunction, GetOrSetFunctionOptions)`: Gets a value from cache or sets it if not found using the provided function.
 * `disconnect()`: Disconnects from the cache stores.

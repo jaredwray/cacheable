@@ -1,5 +1,5 @@
 import { Keyv } from "keyv";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import { CacheTags } from "../src/cache-tags.js";
 import { sleep } from "../src/sleep.js";
 
@@ -200,20 +200,120 @@ describe("CacheTags", () => {
 		expect(await service.isKeyStale("user:1")).toBe(false);
 	});
 
-	test("getKeyTags returns the tags for a key", async () => {
+	test("getTags returns the tags for a key", async () => {
 		const service = createService();
 		await service.setKeyTags("user:1", ["users", "org:7"]);
-		expect(await service.getKeyTags("user:1")).toEqual(["users", "org:7"]);
+		expect(await service.getTags("user:1")).toEqual(["users", "org:7"]);
 	});
 
-	test("getKeyTags returns undefined for an unknown key", async () => {
+	test("getTags returns undefined for an unknown key", async () => {
 		const service = createService();
-		expect(await service.getKeyTags("nope")).toBeUndefined();
+		expect(await service.getTags("nope")).toBeUndefined();
 	});
 
-	test("getKeyTags returns empty array for a key tagged with no tags", async () => {
+	test("getTags returns empty array for a key tagged with no tags", async () => {
 		const service = createService();
 		await service.setKeyTags("empty", []);
-		expect(await service.getKeyTags("empty")).toEqual([]);
+		expect(await service.getTags("empty")).toEqual([]);
+	});
+
+	test("enabled defaults to true and can be toggled", () => {
+		const service = createService();
+		expect(service.enabled).toBe(true);
+		service.enabled = false;
+		expect(service.enabled).toBe(false);
+	});
+
+	test("disabled service treats read methods as no-ops", async () => {
+		const service = new CacheTags({ store: new Keyv(), enabled: false });
+		expect(await service.isKeyFresh("k")).toBe(true);
+		expect(await service.isKeyStale("k")).toBe(false);
+		expect(await service.getTags("k")).toBeUndefined();
+		expect(await service.getKeysByTag("t")).toEqual([]);
+		expect(await service.getStaleKeys(["k"])).toEqual([]);
+	});
+
+	test("disabled service skips snapshot removal", async () => {
+		const service = createService();
+		await service.setKeyTags("k", ["t"]);
+		service.enabled = false;
+		await service.removeKeys(["k"]);
+		service.enabled = true;
+		expect(await service.isKeyFresh("k")).toBe(true);
+	});
+
+	test("setKeyTags re-enables a disabled service", async () => {
+		const service = new CacheTags({ store: new Keyv(), enabled: false });
+		await service.setKeyTags("k", ["t"]);
+		expect(service.enabled).toBe(true);
+		expect(await service.isKeyFresh("k")).toBe(true);
+	});
+
+	test("invalidateTag and invalidateTags re-enable a disabled service", async () => {
+		const single = new CacheTags({ store: new Keyv(), enabled: false });
+		await single.invalidateTag("t");
+		expect(single.enabled).toBe(true);
+
+		const many = new CacheTags({ store: new Keyv(), enabled: false });
+		await many.invalidateTags(["a", "b"]);
+		expect(many.enabled).toBe(true);
+	});
+
+	test("invalidateTags with an empty list does not enable the service", async () => {
+		const service = new CacheTags({ store: new Keyv(), enabled: false });
+		await service.invalidateTags([]);
+		expect(service.enabled).toBe(false);
+	});
+
+	test("getStaleKeys returns only stale keys", async () => {
+		const service = createService();
+		await service.setKeyTags("a", ["x"]);
+		await service.setKeyTags("b", ["y"]);
+		await service.setKeyTags("c", ["x", "z"]);
+		await service.invalidateTag("x");
+		const staleKeys = await service.getStaleKeys(["a", "b", "c", "untagged"]);
+		expect(staleKeys.sort()).toEqual(["a", "c"]);
+	});
+
+	test("getStaleKeys with an empty list returns an empty array", async () => {
+		const service = createService();
+		expect(await service.getStaleKeys([])).toEqual([]);
+	});
+
+	test("non-blocking setKeyTags reports failures via onError", async () => {
+		const store = new Keyv();
+		const errors: unknown[] = [];
+		const service = new CacheTags({
+			store,
+			onError: (error) => errors.push(error),
+		});
+		vi.spyOn(store, "set").mockRejectedValueOnce(new Error("down"));
+		await service.setKeyTags("k", ["t"], { nonBlocking: true });
+		await sleep(10);
+		expect(errors).toHaveLength(1);
+	});
+
+	test("non-blocking removeKeys reports failures via onError", async () => {
+		const store = new Keyv();
+		const errors: unknown[] = [];
+		const service = new CacheTags({
+			store,
+			onError: (error) => errors.push(error),
+		});
+		await service.setKeyTags("k", ["t"]);
+		vi.spyOn(store, "deleteMany").mockRejectedValueOnce(new Error("down"));
+		await service.removeKeys(["k"], { nonBlocking: true });
+		await sleep(10);
+		expect(errors).toHaveLength(1);
+	});
+
+	test("non-blocking failures without onError are swallowed", async () => {
+		const store = new Keyv();
+		const service = new CacheTags({ store });
+		await service.setKeyTags("k", ["t"]);
+		vi.spyOn(store, "deleteMany").mockRejectedValueOnce(new Error("down"));
+		await service.removeKeys(["k"], { nonBlocking: true });
+		await sleep(10);
+		expect(await service.isKeyFresh("k")).toBe(true);
 	});
 });

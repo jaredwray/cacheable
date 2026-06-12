@@ -44,8 +44,7 @@ export class Cacheable extends Hookified {
 	private _namespace?: string | (() => string);
 	private _cacheId: string = Math.random().toString(36).slice(2);
 	private _sync?: CacheableSync;
-	private _cacheTags?: CacheTags;
-	private _tagsEnabled = false;
+	private _tags: CacheTags = this.createCacheTags();
 	/**
 	 * Creates a new cacheable instance
 	 * @param {CacheableOptions} [options] The options for the cacheable instance
@@ -90,7 +89,7 @@ export class Cacheable extends Hookified {
 		}
 
 		if (options?.tags) {
-			this._tagsEnabled = true;
+			this._tags.enabled = true;
 		}
 
 		if (options?.sync) {
@@ -154,7 +153,7 @@ export class Cacheable extends Hookified {
 	 */
 	public set primary(primary: Keyv) {
 		this._primary = primary;
-		this._cacheTags = undefined;
+		this._tags = this.createCacheTags();
 	}
 
 	/**
@@ -172,7 +171,7 @@ export class Cacheable extends Hookified {
 	 */
 	public set secondary(secondary: Keyv | undefined) {
 		this._secondary = secondary;
-		this._cacheTags = undefined;
+		this._tags = this.createCacheTags();
 	}
 
 	/**
@@ -317,32 +316,42 @@ export class Cacheable extends Hookified {
 
 	/**
 	 * The tag service for the cacheable instance, used for tag-based invalidation. It is created
-	 * lazily on first access and persists tag metadata in the secondary store when one is
+	 * by default in the constructor and persists tag metadata in the secondary store when one is
 	 * configured (so invalidations are shared across instances), otherwise the primary store.
 	 *
-	 * Accessing this getter enables tag freshness checks on `get` / `getMany` for this instance.
+	 * The service starts disabled so untagged workloads pay no extra store reads; it enables
+	 * automatically when a value is set with `tags` or a tag is invalidated, or explicitly via the
+	 * `tags` option or `tags.enabled` property. While enabled, `get` / `getMany` perform tag
+	 * freshness checks and remove stale entries.
 	 *
 	 * [Learn more about tag-based invalidation](https://cacheable.org/docs/cacheable/#tag-based-invalidation).
 	 *
 	 * @returns {CacheTags} The tag service for the cacheable instance
+	 * @example
+	 * ```typescript
+	 * const cache = new Cacheable();
+	 * await cache.set('page:/products', html, { tags: ['entity:42'] });
+	 * await cache.tags.invalidateTag('entity:42');
+	 * await cache.get('page:/products'); // undefined
+	 * ```
 	 */
 	public get tags(): CacheTags {
-		this._tagsEnabled = true;
-		this._cacheTags ??= new CacheTags({
-			store: this._secondary ?? this._primary,
-		});
-		return this._cacheTags;
+		return this._tags;
 	}
 
 	/**
-	 * Whether tag-based invalidation freshness checks are enabled on `get` / `getMany`. This is
-	 * `false` by default and becomes `true` once a tag feature is used on this instance (setting a
-	 * value with `tags`, calling `invalidateTag` / `invalidateTags`, or accessing the `tags`
-	 * service) or when the `tags` option is set in the constructor.
-	 * @returns {boolean} Whether tag support is enabled
+	 * Creates the tag service backed by the secondary store when one is configured, otherwise the
+	 * primary store, preserving the enabled state of any previous service and reporting
+	 * non-blocking failures as error events.
 	 */
-	public get tagsEnabled(): boolean {
-		return this._tagsEnabled;
+	private createCacheTags(): CacheTags {
+		return new CacheTags({
+			store: this._secondary ?? this._primary,
+			enabled: this._tags?.enabled ?? false,
+			onError: (error: unknown) => {
+				this.emit(CacheableEvents.ERROR, error);
+			},
+		});
 	}
 
 	/**
@@ -363,7 +372,7 @@ export class Cacheable extends Hookified {
 			this.emit(CacheableEvents.ERROR, error);
 		});
 
-		this._cacheTags = undefined;
+		this._tags = this.createCacheTags();
 	}
 
 	/**
@@ -384,7 +393,7 @@ export class Cacheable extends Hookified {
 			this.emit(CacheableEvents.ERROR, error);
 		});
 
-		this._cacheTags = undefined;
+		this._tags = this.createCacheTags();
 	}
 
 	public getNameSpace(): string | undefined {
@@ -478,7 +487,7 @@ export class Cacheable extends Hookified {
 				}
 			}
 
-			if (result && this._tagsEnabled && (await this.tags.isKeyStale(key))) {
+			if (result && this._tags.enabled && (await this._tags.isKeyStale(key))) {
 				await this.delete(key);
 				result = undefined;
 			}
@@ -555,17 +564,17 @@ export class Cacheable extends Hookified {
 				}
 			}
 
-			if (this._tagsEnabled) {
-				const staleKeys: string[] = [];
-				await Promise.all(
-					keys.map(async (key, i) => {
-						if (result[i] && (await this.tags.isKeyStale(key))) {
-							staleKeys.push(key);
+			if (this._tags.enabled) {
+				const presentKeys = keys.filter((_, i) => result[i] !== undefined);
+				const staleKeys = await this._tags.getStaleKeys(presentKeys);
+				if (staleKeys.length > 0) {
+					const staleSet = new Set(staleKeys);
+					for (const [i, key] of keys.entries()) {
+						if (staleSet.has(key)) {
 							result[i] = undefined;
 						}
-					}),
-				);
-				if (staleKeys.length > 0) {
+					}
+
 					await this.deleteMany(staleKeys);
 				}
 			}
@@ -671,10 +680,13 @@ export class Cacheable extends Hookified {
 			}
 
 			if (item.tags && item.tags.length > 0) {
-				await this.setKeyTags(item.key, item.tags, tagTtl, nonBlocking);
-			} else if (this._tagsEnabled) {
+				await this._tags.setKeyTags(item.key, item.tags, {
+					ttl: tagTtl,
+					nonBlocking,
+				});
+			} else {
 				// Remove any previous tag snapshot so a stale one cannot invalidate this fresh value
-				await this.removeKeyTags([item.key], nonBlocking);
+				await this._tags.removeKeys([item.key], { nonBlocking });
 			}
 
 			await this.hook(CacheableHooks.AFTER_SET, item);
@@ -864,9 +876,7 @@ export class Cacheable extends Hookified {
 			result = resultAll[0];
 		}
 
-		if (this._tagsEnabled) {
-			await this.removeKeyTags([key], this.nonBlocking);
-		}
+		await this._tags.removeKeys([key], { nonBlocking: this.nonBlocking });
 
 		// Publish to sync if enabled
 		if (this._sync && result) {
@@ -907,9 +917,7 @@ export class Cacheable extends Hookified {
 			}
 		}
 
-		if (this._tagsEnabled) {
-			await this.removeKeyTags(keys, this._nonBlocking);
-		}
+		await this._tags.removeKeys(keys, { nonBlocking: this._nonBlocking });
 
 		// Publish to sync if enabled
 		if (this._sync && result) {
@@ -922,64 +930,6 @@ export class Cacheable extends Hookified {
 		}
 
 		return result;
-	}
-
-	/**
-	 * Invalidates every cache entry that was set with the given tag. This is a constant-time
-	 * operation regardless of how many entries reference the tag: the tag's version counter is
-	 * bumped and stale entries are detected lazily (and removed) on their next `get`.
-	 *
-	 * [Learn more about tag-based invalidation](https://cacheable.org/docs/cacheable/#tag-based-invalidation).
-	 *
-	 * @param {string} tag The tag to invalidate
-	 * @returns {Promise<void>}
-	 * @example
-	 * ```typescript
-	 * const cache = new Cacheable();
-	 * await cache.set('page:/products', html, { ttl: '10m', tags: ['entity:42'] });
-	 * await cache.invalidateTag('entity:42');
-	 * await cache.get('page:/products'); // undefined
-	 * ```
-	 */
-	public async invalidateTag(tag: string): Promise<void> {
-		await this.invalidateTags([tag]);
-	}
-
-	/**
-	 * Invalidates every cache entry that was set with any of the given tags. This is a
-	 * constant-time operation regardless of how many entries reference the tags: each tag's
-	 * version counter is bumped and stale entries are detected lazily (and removed) on their
-	 * next `get`.
-	 *
-	 * [Learn more about tag-based invalidation](https://cacheable.org/docs/cacheable/#tag-based-invalidation).
-	 *
-	 * @param {string[]} tags The tags to invalidate
-	 * @returns {Promise<void>}
-	 */
-	public async invalidateTags(tags: string[]): Promise<void> {
-		if (tags.length === 0) {
-			return;
-		}
-
-		try {
-			await this.tags.invalidateTags(tags);
-		} catch (error: unknown) {
-			this.emit(CacheableEvents.ERROR, error);
-		}
-	}
-
-	/**
-	 * Returns the tags associated with a key, or `undefined` if the key was not set with tags.
-	 * @param {string} key The key to look up
-	 * @returns {Promise<string[] | undefined>} The tags for the key
-	 */
-	public async getTags(key: string): Promise<string[] | undefined> {
-		try {
-			return await this.tags.getKeyTags(key);
-		} catch (error: unknown) {
-			this.emit(CacheableEvents.ERROR, error);
-			return undefined;
-		}
 	}
 
 	/**
@@ -1161,63 +1111,22 @@ export class Cacheable extends Hookified {
 	}
 
 	/**
-	 * Writes the tag snapshot for a key and enables tag freshness checks. In non-blocking mode the
-	 * write is fire-and-forget and errors are emitted instead of thrown.
-	 */
-	private async setKeyTags(
-		key: string,
-		tags: string[],
-		ttl: number | undefined,
-		nonBlocking: boolean,
-	): Promise<void> {
-		const promise = this.tags.setKeyTags(key, tags, { ttl });
-		if (nonBlocking) {
-			promise.catch((error) => {
-				this.emit(CacheableEvents.ERROR, error);
-			});
-			return;
-		}
-
-		await promise;
-	}
-
-	/**
-	 * Removes the tag snapshots for keys so a stale snapshot cannot invalidate a fresh value. In
-	 * non-blocking mode the removal is fire-and-forget and errors are emitted instead of thrown.
-	 */
-	private async removeKeyTags(
-		keys: string[],
-		nonBlocking: boolean,
-	): Promise<void> {
-		const promise = this.tags.removeKeys(keys);
-		if (nonBlocking) {
-			promise.catch((error) => {
-				this.emit(CacheableEvents.ERROR, error);
-			});
-			return;
-		}
-
-		await promise;
-	}
-
-	/**
 	 * Writes tag snapshots for `setMany` items that carry tags and removes any previous snapshots
 	 * for items that do not.
 	 */
 	private async setManyKeyTags(items: CacheableSetItem[]): Promise<void> {
-		const taggedItems = items.filter(
-			(item) => item.tags && item.tags.length > 0,
-		);
-		if (taggedItems.length === 0 && !this._tagsEnabled) {
-			return;
-		}
-
 		const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 		// The tag snapshot lives in the same store as the tag service, so it should
 		// expire alongside the copy of the value held there.
 		const tagStoreTtl = (this._secondary ?? this._primary).ttl;
 		const promises = [];
-		for (const item of taggedItems) {
+		const untaggedKeys: string[] = [];
+		for (const item of items) {
+			if (!item.tags || item.tags.length === 0) {
+				untaggedKeys.push(item.key);
+				continue;
+			}
+
 			let ttl = getCascadingTtl(
 				this._ttl,
 				tagStoreTtl,
@@ -1225,20 +1134,19 @@ export class Cacheable extends Hookified {
 			);
 			ttl = this.capTtl(ttl, maxTtlMs);
 			promises.push(
-				this.setKeyTags(
-					item.key,
-					item.tags as string[],
+				this._tags.setKeyTags(item.key, item.tags, {
 					ttl,
-					this._nonBlocking,
-				),
+					nonBlocking: this._nonBlocking,
+				}),
 			);
 		}
 
-		const untaggedKeys = items
-			.filter((item) => !item.tags || item.tags.length === 0)
-			.map((item) => item.key);
 		if (untaggedKeys.length > 0) {
-			promises.push(this.removeKeyTags(untaggedKeys, this._nonBlocking));
+			promises.push(
+				this._tags.removeKeys(untaggedKeys, {
+					nonBlocking: this._nonBlocking,
+				}),
+			);
 		}
 
 		await Promise.all(promises);

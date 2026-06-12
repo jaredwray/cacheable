@@ -785,12 +785,43 @@ await cacheTags.invalidateTag('users');
 console.log(await cacheTags.isKeyStale('user:42')); // true
 ```
 
-The `getKeyTags` method returns the tags currently associated with a key, or `undefined` if the key has no snapshot:
+The `getStaleKeys` method checks many keys at once using two batched store reads regardless of how many keys are passed — one for the snapshots and one for the union of their tag versions:
+
+```typescript
+await cacheTags.setKeyTags('a', ['x']);
+await cacheTags.setKeyTags('b', ['y']);
+await cacheTags.invalidateTag('x');
+console.log(await cacheTags.getStaleKeys(['a', 'b', 'untagged'])); // ['a']
+```
+
+The `getTags` method returns the tags currently associated with a key, or `undefined` if the key has no snapshot:
 
 ```typescript
 await cacheTags.setKeyTags('user:42', ['users', 'org:7']);
-console.log(await cacheTags.getKeyTags('user:42')); // ['users', 'org:7']
-console.log(await cacheTags.getKeyTags('missing')); // undefined
+console.log(await cacheTags.getTags('user:42')); // ['users', 'org:7']
+console.log(await cacheTags.getTags('missing')); // undefined
+```
+
+The `removeKey` and `removeKeys` methods delete tag snapshots when the cached values themselves are deleted. `removeKeys` performs a single batched delete:
+
+```typescript
+await cacheTags.removeKeys(['user:1', 'user:2']);
+```
+
+The service can be disabled via the `enabled` option or property so integrations pay no extra store reads for untagged workloads. While disabled, read methods are no-ops (`isKeyFresh` returns `true`, `isKeyStale` returns `false`, `getStaleKeys` returns `[]`, and so on) and snapshot removals are skipped. Tag writes — `setKeyTags`, `invalidateTag`, and `invalidateTags` — automatically re-enable the service:
+
+```typescript
+const cacheTags = new CacheTags({ store, enabled: false });
+console.log(await cacheTags.isKeyStale('anything')); // false, no store read
+await cacheTags.setKeyTags('user:42', ['users']); // re-enables the service
+console.log(cacheTags.enabled); // true
+```
+
+`setKeyTags`, `removeKey`, and `removeKeys` accept a `nonBlocking` option to fire-and-forget the store write. Failures from non-blocking operations are reported to the `onError` constructor option since they cannot be thrown to the caller:
+
+```typescript
+const cacheTags = new CacheTags({ store, onError: (error) => console.error(error) });
+await cacheTags.setKeyTags('user:42', ['users'], { ttl: 3600000, nonBlocking: true });
 ```
 
 The `getKeysByTag` method returns the keys currently referencing a given tag. It iterates the Keyv namespace and is therefore an `O(N)` operation. It is intended for debugging and tests rather than hot paths.
