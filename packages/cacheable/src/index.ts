@@ -680,14 +680,16 @@ export class Cacheable extends Hookified {
 				result = results[0];
 			}
 
-			if (item.tags && item.tags.length > 0) {
-				await this._tags.setKeyTags(item.key, item.tags, {
-					ttl: tagTtl,
-					nonBlocking,
-				});
-			} else {
-				// Remove any previous tag snapshot so a stale one cannot invalidate this fresh value
-				await this._tags.removeKeys([item.key], { nonBlocking });
+			if (this._tags.enabled) {
+				if (item.tags && item.tags.length > 0) {
+					await this._tags.setKeyTags(item.key, item.tags, {
+						ttl: tagTtl,
+						nonBlocking,
+					});
+				} else {
+					// Remove any previous tag snapshot so a stale one cannot invalidate this fresh value
+					await this._tags.removeKeys([item.key], { nonBlocking });
+				}
 			}
 
 			await this.hook(CacheableHooks.AFTER_SET, item);
@@ -738,7 +740,9 @@ export class Cacheable extends Hookified {
 				}
 			}
 
-			await this.setManyKeyTags(items);
+			if (this._tags.enabled) {
+				await this.setManyKeyTags(items);
+			}
 
 			await this.hook(CacheableHooks.AFTER_SET_MANY, items);
 
@@ -877,7 +881,9 @@ export class Cacheable extends Hookified {
 			result = resultAll[0];
 		}
 
-		await this._tags.removeKeys([key], { nonBlocking: this.nonBlocking });
+		if (this._tags.enabled) {
+			await this._tags.removeKeys([key], { nonBlocking: this.nonBlocking });
+		}
 
 		// Publish to sync if enabled
 		if (this._sync && result) {
@@ -918,7 +924,9 @@ export class Cacheable extends Hookified {
 			}
 		}
 
-		await this._tags.removeKeys(keys, { nonBlocking: this._nonBlocking });
+		if (this._tags.enabled) {
+			await this._tags.removeKeys(keys, { nonBlocking: this._nonBlocking });
+		}
 
 		// Publish to sync if enabled
 		if (this._sync && result) {
