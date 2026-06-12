@@ -775,6 +775,24 @@ const bumped = await cacheTags.invalidateTags(['users', 'org:7']);
 console.log(bumped); // ['users', 'org:7']
 ```
 
+When integrating with a cache where most keys are untagged, use `isKeyStale` instead of `isKeyFresh`. It only reports `true` when a snapshot exists for the key and one of its tags has been invalidated, so keys that were never tagged are not treated as stale:
+
+```typescript
+console.log(await cacheTags.isKeyStale('never-tagged')); // false
+await cacheTags.setKeyTags('user:42', ['users']);
+console.log(await cacheTags.isKeyStale('user:42')); // false
+await cacheTags.invalidateTag('users');
+console.log(await cacheTags.isKeyStale('user:42')); // true
+```
+
+The `getKeyTags` method returns the tags currently associated with a key, or `undefined` if the key has no snapshot:
+
+```typescript
+await cacheTags.setKeyTags('user:42', ['users', 'org:7']);
+console.log(await cacheTags.getKeyTags('user:42')); // ['users', 'org:7']
+console.log(await cacheTags.getKeyTags('missing')); // undefined
+```
+
 The `getKeysByTag` method returns the keys currently referencing a given tag. It iterates the Keyv namespace and is therefore an `O(N)` operation. It is intended for debugging and tests rather than hot paths.
 
 ```typescript

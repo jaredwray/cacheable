@@ -218,6 +218,49 @@ export class CacheTags {
 	}
 
 	/**
+	 * Determines whether a key's cached value is known to be stale due to tag invalidation. This is
+	 * the complement of {@link CacheTags.isKeyFresh} for tagged keys, but treats keys without a
+	 * snapshot as not stale — making it safe to call for every cache lookup, including keys that were
+	 * never tagged.
+	 * @param key - The cache key to check.
+	 * @returns {Promise<boolean>} `true` only when a snapshot exists for the key and at least one of
+	 * its tags has been invalidated since the snapshot was taken; `false` otherwise (including when
+	 * the key has no snapshot).
+	 */
+	public async isKeyStale(key: string): Promise<boolean> {
+		const entry = await this._store.get<KeyTagEntry>(this.keyEntryKey(key));
+		if (!entry?.tags) {
+			return false;
+		}
+
+		const tags = Object.keys(entry.tags);
+		const currentVersions = await this.getTagVersions(tags);
+
+		for (let i = 0; i < tags.length; i++) {
+			if (currentVersions[i] !== entry.tags[tags[i]]) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Returns the tags currently associated with a key.
+	 * @param key - The cache key to look up.
+	 * @returns {Promise<string[] | undefined>} The tag names from the key's snapshot, or `undefined`
+	 * if the key has no snapshot.
+	 */
+	public async getKeyTags(key: string): Promise<string[] | undefined> {
+		const entry = await this._store.get<KeyTagEntry>(this.keyEntryKey(key));
+		if (!entry?.tags) {
+			return undefined;
+		}
+
+		return Object.keys(entry.tags);
+	}
+
+	/**
 	 * Returns all cache keys whose snapshot references the given tag. This scans every key entry in
 	 * the namespace via the Keyv iterator, making it an `O(N)` operation intended for debugging and
 	 * tests rather than hot paths. Returns an empty array if the underlying store exposes no iterator.

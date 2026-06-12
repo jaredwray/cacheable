@@ -157,4 +157,47 @@ describe("CacheTags", () => {
 		await service.setKeyTags("empty", []);
 		expect(await service.isKeyFresh("empty")).toBe(true);
 	});
+
+	test("isKeyStale returns false for a key with no snapshot", async () => {
+		const service = createService();
+		expect(await service.isKeyStale("untagged")).toBe(false);
+	});
+
+	test("isKeyStale returns false for a fresh tagged key", async () => {
+		const service = createService();
+		await service.setKeyTags("user:1", ["users"]);
+		expect(await service.isKeyStale("user:1")).toBe(false);
+	});
+
+	test("isKeyStale returns true after invalidateTag", async () => {
+		const service = createService();
+		await service.setKeyTags("user:1", ["users", "org:7"]);
+		await service.invalidateTag("org:7");
+		expect(await service.isKeyStale("user:1")).toBe(true);
+	});
+
+	test("isKeyStale returns false again after re-tagging the key", async () => {
+		const service = createService();
+		await service.setKeyTags("user:1", ["users"]);
+		await service.invalidateTag("users");
+		await service.setKeyTags("user:1", ["users"]);
+		expect(await service.isKeyStale("user:1")).toBe(false);
+	});
+
+	test("getKeyTags returns the tags for a key", async () => {
+		const service = createService();
+		await service.setKeyTags("user:1", ["users", "org:7"]);
+		expect(await service.getKeyTags("user:1")).toEqual(["users", "org:7"]);
+	});
+
+	test("getKeyTags returns undefined for an unknown key", async () => {
+		const service = createService();
+		expect(await service.getKeyTags("nope")).toBeUndefined();
+	});
+
+	test("getKeyTags returns empty array for a key tagged with no tags", async () => {
+		const service = createService();
+		await service.setKeyTags("empty", []);
+		expect(await service.getKeyTags("empty")).toEqual([]);
+	});
 });
