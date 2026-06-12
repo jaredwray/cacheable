@@ -646,7 +646,7 @@ You can associate cache entries with tags and later invalidate every entry that 
 ```javascript
 import { Cacheable } from 'cacheable';
 
-const cache = new Cacheable();
+const cache = new Cacheable({ tags: true });
 
 await cache.set('page:/products', html, { ttl: '10m', tags: ['entity:42', 'collection:products'] });
 await cache.set('page:/products/42', detailHtml, { ttl: '10m', tags: ['entity:42'] });
@@ -677,8 +677,8 @@ Tag metadata is stored in the secondary store when one is configured, otherwise 
 import { Cacheable } from 'cacheable';
 import KeyvRedis from '@keyv/redis';
 
-const writer = new Cacheable({ secondary: new KeyvRedis('redis://localhost:6379') });
-// instances that only read tagged entries should opt in with `tags: true`
+// enable tags on every instance that shares the store - writers and readers
+const writer = new Cacheable({ secondary: new KeyvRedis('redis://localhost:6379'), tags: true });
 const reader = new Cacheable({ secondary: new KeyvRedis('redis://localhost:6379'), tags: true });
 
 await writer.set('page:/products', html, { tags: ['entity:42'] });
@@ -686,7 +686,7 @@ await writer.tags.invalidateTag('entity:42');
 await reader.get('page:/products'); // undefined - stale copy is also purged from reader's primary
 ```
 
-The tag service starts disabled so untagged workloads pay no extra cost. It enables automatically the first time a tag is written (setting a value with `tags` or calling `tags.invalidateTag` / `tags.invalidateTags`), or explicitly via the `tags: true` option or the `tags.enabled` property. When using tags across multiple instances that share a store, set `tags: true` on all of them so every instance honors invalidations and cleans up tag snapshots consistently.
+The tag service is disabled by default so untagged workloads pay no extra cost, and you have to turn it on to use it — either with the `tags: true` option or by setting `cache.tags.enabled = true`. While disabled, all tag operations are no-ops: values set with `tags` are stored without tag tracking and invalidations have no effect. The service never enables itself, which keeps behavior predictable across distributed instances — enable it on every instance that shares the store (writers and readers) so invalidations are honored and tag snapshots are cleaned up consistently.
 
 The full `CacheTags` API is available on the service:
 
@@ -708,7 +708,7 @@ The following options are available for you to configure `cacheable`:
 * `maxTtl`: The maximum time to live for any cache entry. When set, TTLs exceeding this value are capped. Enforced on both primary and secondary stores. Default is `undefined` (no maximum).
 * `namespace`: The namespace for the cache. Default is `undefined`.
 * `cacheId`: A unique identifier for this cache instance. Used for sync filtering. Default is a random string.
-* `tags`: Enables the tag service so tag-based invalidation freshness checks run on `get` / `getMany`. The service also enables automatically the first time a tag is written on the instance. Default is `false`.
+* `tags`: Enables the tag service so tag-based invalidation can be used and freshness checks run on `get` / `getMany`. Tags must be explicitly enabled — while disabled, all tag operations are no-ops. Default is `false`.
 * `sync`: Enable distributed cache synchronization. Can be:
   - `CacheableSync` instance
   - `CacheableSyncOptions` object with `{ qified: MessageProvider | MessageProvider[] | Qified }`

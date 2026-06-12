@@ -319,17 +319,18 @@ export class Cacheable extends Hookified {
 	 * by default in the constructor and persists tag metadata in the secondary store when one is
 	 * configured (so invalidations are shared across instances), otherwise the primary store.
 	 *
-	 * The service starts disabled so untagged workloads pay no extra store reads; it enables
-	 * automatically when a value is set with `tags` or a tag is invalidated, or explicitly via the
-	 * `tags` option or `tags.enabled` property. While enabled, `get` / `getMany` perform tag
-	 * freshness checks and remove stale entries.
+	 * The service starts disabled so untagged workloads pay no extra store reads, and must be
+	 * explicitly enabled to use tags — via the `tags: true` option or the `tags.enabled`
+	 * property. While disabled, all tag operations are no-ops. Enable it on every instance that
+	 * shares the store so behavior is consistent across distributed instances. While enabled,
+	 * `get` / `getMany` perform tag freshness checks and remove stale entries.
 	 *
 	 * [Learn more about tag-based invalidation](https://cacheable.org/docs/cacheable/#tag-based-invalidation).
 	 *
 	 * @returns {CacheTags} The tag service for the cacheable instance
 	 * @example
 	 * ```typescript
-	 * const cache = new Cacheable();
+	 * const cache = new Cacheable({ tags: true });
 	 * await cache.set('page:/products', html, { tags: ['entity:42'] });
 	 * await cache.tags.invalidateTag('entity:42');
 	 * await cache.get('page:/products'); // undefined

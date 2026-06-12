@@ -6,11 +6,10 @@ import type { Keyv } from "keyv";
  * @property {Keyv} store - The Keyv store used to persist tag versions and key snapshots.
  * @property {string} [namespace] - An optional namespace that isolates this service's tags
  * and keys from others sharing the same store. Defaults to `"default"`.
- * @property {boolean} [enabled] - Whether the service is enabled. When disabled, read methods
- * are no-ops ({@link CacheTags.isKeyFresh} returns `true`, {@link CacheTags.isKeyStale}
- * returns `false`, etc.) and snapshot writes/removals are skipped. Tag writes
- * ({@link CacheTags.setKeyTags}, {@link CacheTags.invalidateTag},
- * {@link CacheTags.invalidateTags}) automatically re-enable the service. Defaults to `true`.
+ * @property {boolean} [enabled] - Whether the service is enabled. While disabled, every method
+ * is a no-op: read methods return their neutral value ({@link CacheTags.isKeyFresh} returns
+ * `true`, {@link CacheTags.isKeyStale} returns `false`, etc.) and writes are skipped. The
+ * service must be explicitly enabled to use tags. Defaults to `true`.
  * @property {(error: unknown) => void} [onError] - Invoked with errors from non-blocking
  * (fire-and-forget) operations, which cannot be thrown to the caller. Defaults to ignoring them.
  */
@@ -79,9 +78,9 @@ const DEFAULT_NAMESPACE = "default";
  * one additional `isKeyFresh` read per cache lookup.
  *
  * The service can be disabled via the `enabled` option or property so integrations pay no cost for
- * untagged workloads: while disabled, read methods are no-ops and snapshot writes/removals are
- * skipped. Using a tag write ({@link CacheTags.setKeyTags}, {@link CacheTags.invalidateTag},
- * {@link CacheTags.invalidateTags}) automatically re-enables it.
+ * untagged workloads: while disabled, every method is a no-op — reads return their neutral value
+ * and writes are skipped. The service must be explicitly enabled to use tags; it never enables
+ * itself, which keeps behavior consistent across distributed instances sharing a store.
  *
  * All metadata is written under a reserved prefix so it cannot collide with user keys:
  * - `--cacheable--tags--:<namespace>:tag:<tag>` → integer version counter (stored without TTL).
@@ -135,10 +134,10 @@ export class CacheTags {
 	}
 
 	/**
-	 * Whether the service is enabled. While disabled, read methods are no-ops and snapshot
-	 * writes/removals are skipped, so integrations pay no extra store reads for untagged
-	 * workloads. Tag writes ({@link CacheTags.setKeyTags}, {@link CacheTags.invalidateTag},
-	 * {@link CacheTags.invalidateTags}) automatically re-enable the service.
+	 * Whether the service is enabled. While disabled, every method is a no-op — read methods
+	 * return their neutral value and writes are skipped — so integrations pay no extra store
+	 * reads for untagged workloads. The service must be explicitly enabled to use tags; it never
+	 * enables itself.
 	 * @returns {boolean} Whether the service is enabled.
 	 */
 	public get enabled(): boolean {
@@ -242,7 +241,7 @@ export class CacheTags {
 	/**
 	 * Associates a cache key with a set of tags by recording a snapshot of each tag's current
 	 * version. Call this whenever you write a fresh value to the cache. Duplicate tags are ignored.
-	 * Automatically enables the service.
+	 * No-op while the service is disabled.
 	 * @param key - The cache key to tag.
 	 * @param tags - The tags to associate with the key.
 	 * @param {SetKeyTagsOptions} [options] - Optional settings, such as a `ttl` for the snapshot or
@@ -255,7 +254,9 @@ export class CacheTags {
 		tags: string[],
 		options?: SetKeyTagsOptions,
 	): Promise<void> {
-		this._enabled = true;
+		if (!this._enabled) {
+			return;
+		}
 		const work = this.writeKeyTags(key, tags, options?.ttl);
 		if (options?.nonBlocking) {
 			work.catch((error) => {
@@ -469,12 +470,16 @@ export class CacheTags {
 	/**
 	 * Invalidates a single tag by incrementing its version counter. Every key whose snapshot
 	 * references this tag becomes stale immediately. Runs in constant time regardless of how many
-	 * keys reference the tag. Automatically enables the service.
+	 * keys reference the tag. No-op while the service is disabled.
 	 * @param tag - The tag to invalidate.
-	 * @returns {Promise<string[]>} A single-element array containing the invalidated tag.
+	 * @returns {Promise<string[]>} A single-element array containing the invalidated tag, or an
+	 * empty array while the service is disabled.
 	 */
 	public async invalidateTag(tag: string): Promise<string[]> {
-		this._enabled = true;
+		if (!this._enabled) {
+			return [];
+		}
+
 		const current = await this.getTagVersion(tag);
 		await this._store.set(this.tagKey(tag), current + 1);
 		return [tag];
@@ -482,18 +487,22 @@ export class CacheTags {
 
 	/**
 	 * Invalidates multiple tags by incrementing each of their version counters in a single batched
-	 * store write. Duplicate tags are bumped once. An empty list is a no-op. Automatically enables
-	 * the service.
+	 * store write. Duplicate tags are bumped once. An empty list is a no-op, as is the entire call
+	 * while the service is disabled.
 	 * @param tags - The tags to invalidate.
-	 * @returns {Promise<string[]>} The `tags` argument as provided (including any duplicates).
+	 * @returns {Promise<string[]>} The `tags` argument as provided (including any duplicates), or
+	 * an empty array while the service is disabled.
 	 */
 	public async invalidateTags(tags: string[]): Promise<string[]> {
+		if (!this._enabled) {
+			return [];
+		}
+
 		const uniqueTags = [...new Set(tags)];
 		if (uniqueTags.length === 0) {
 			return tags;
 		}
 
-		this._enabled = true;
 		const versions = await this.getTagVersions(uniqueTags);
 
 		const kvPairs = [];

@@ -808,13 +808,13 @@ The `removeKey` and `removeKeys` methods delete tag snapshots when the cached va
 await cacheTags.removeKeys(['user:1', 'user:2']);
 ```
 
-The service can be disabled via the `enabled` option or property so integrations pay no extra store reads for untagged workloads. While disabled, read methods are no-ops (`isKeyFresh` returns `true`, `isKeyStale` returns `false`, `getStaleKeys` returns `[]`, and so on) and snapshot removals are skipped. Tag writes — `setKeyTags`, `invalidateTag`, and `invalidateTags` — automatically re-enable the service:
+The service can be disabled via the `enabled` option or property so integrations pay no extra store reads for untagged workloads. While disabled, every method is a no-op: read methods return their neutral value (`isKeyFresh` returns `true`, `isKeyStale` returns `false`, `getStaleKeys` returns `[]`, and so on) and writes are skipped. The service never enables itself — you have to turn it on explicitly, which keeps behavior consistent across distributed instances sharing a store:
 
 ```typescript
 const cacheTags = new CacheTags({ store, enabled: false });
 console.log(await cacheTags.isKeyStale('anything')); // false, no store read
-await cacheTags.setKeyTags('user:42', ['users']); // re-enables the service
-console.log(cacheTags.enabled); // true
+await cacheTags.setKeyTags('user:42', ['users']); // no-op while disabled
+cacheTags.enabled = true; // turn it on to use tags
 ```
 
 `setKeyTags`, `removeKey`, and `removeKeys` accept a `nonBlocking` option to fire-and-forget the store write. Failures from non-blocking operations are reported to the `onError` constructor option since they cannot be thrown to the caller:

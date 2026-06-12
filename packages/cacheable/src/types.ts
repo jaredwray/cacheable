@@ -65,11 +65,11 @@ export type CacheableOptions = {
 	 */
 	sync?: CacheableSync | CacheableSyncOptions;
 	/**
-	 * Enables the tag service so freshness checks run on every `get` / `getMany`. The service is
-	 * also enabled automatically the first time a tag is written on this instance (setting a value
-	 * with `tags` or invalidating a tag via `tags.invalidateTag` / `tags.invalidateTags`).
-	 * Set this to `true` for instances that only read tagged entries written by other instances so
-	 * they also honor invalidations. Default is `false`.
+	 * Enables the tag service so tag-based invalidation can be used and freshness checks run on
+	 * every `get` / `getMany`. Tags must be explicitly enabled — while disabled, all tag
+	 * operations are no-ops and values set with `tags` are stored without tag tracking. Enable
+	 * this on every instance that shares the store (writers and readers) so invalidations are
+	 * honored consistently across distributed instances. Default is `false`.
 	 */
 	tags?: boolean;
 };

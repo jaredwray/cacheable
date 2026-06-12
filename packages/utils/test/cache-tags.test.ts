@@ -242,27 +242,22 @@ describe("CacheTags", () => {
 		expect(await service.isKeyFresh("k")).toBe(true);
 	});
 
-	test("setKeyTags re-enables a disabled service", async () => {
+	test("setKeyTags is a no-op while the service is disabled", async () => {
 		const service = new CacheTags({ store: new Keyv(), enabled: false });
 		await service.setKeyTags("k", ["t"]);
-		expect(service.enabled).toBe(true);
-		expect(await service.isKeyFresh("k")).toBe(true);
-	});
-
-	test("invalidateTag and invalidateTags re-enable a disabled service", async () => {
-		const single = new CacheTags({ store: new Keyv(), enabled: false });
-		await single.invalidateTag("t");
-		expect(single.enabled).toBe(true);
-
-		const many = new CacheTags({ store: new Keyv(), enabled: false });
-		await many.invalidateTags(["a", "b"]);
-		expect(many.enabled).toBe(true);
-	});
-
-	test("invalidateTags with an empty list does not enable the service", async () => {
-		const service = new CacheTags({ store: new Keyv(), enabled: false });
-		await service.invalidateTags([]);
 		expect(service.enabled).toBe(false);
+		service.enabled = true;
+		expect(await service.getTags("k")).toBeUndefined();
+	});
+
+	test("invalidateTag and invalidateTags are no-ops while the service is disabled", async () => {
+		const service = createService();
+		await service.setKeyTags("k", ["t"]);
+		service.enabled = false;
+		expect(await service.invalidateTag("t")).toEqual([]);
+		expect(await service.invalidateTags(["t"])).toEqual([]);
+		service.enabled = true;
+		expect(await service.isKeyFresh("k")).toBe(true);
 	});
 
 	test("getStaleKeys returns only stale keys", async () => {
