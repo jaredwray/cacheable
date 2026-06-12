@@ -192,6 +192,21 @@ export class CacheTags {
 	}
 
 	/**
+	 * Removes multiple keys' tag snapshots in a single batched store delete. After this,
+	 * {@link CacheTags.isKeyFresh} returns `false` for each key. An empty list is a no-op.
+	 * @param keys - The cache keys whose snapshots should be removed.
+	 * @returns {Promise<void>} Resolves once the snapshots have been deleted.
+	 */
+	public async removeKeys(keys: string[]): Promise<void> {
+		if (keys.length === 0) {
+			return;
+		}
+
+		const entryKeys = keys.map((key) => this.keyEntryKey(key));
+		await this._store.deleteMany(entryKeys);
+	}
+
+	/**
 	 * Determines whether a key's cached value can still be trusted. A key is fresh only when a
 	 * snapshot exists for it and every tag in that snapshot still has the version it had at set time.
 	 * A key with no tags is trivially fresh. Call this before returning a value from your cache.

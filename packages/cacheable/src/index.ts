@@ -556,14 +556,18 @@ export class Cacheable extends Hookified {
 			}
 
 			if (this._tagsEnabled) {
+				const staleKeys: string[] = [];
 				await Promise.all(
 					keys.map(async (key, i) => {
 						if (result[i] && (await this.tags.isKeyStale(key))) {
-							await this.delete(key);
+							staleKeys.push(key);
 							result[i] = undefined;
 						}
 					}),
 				);
+				if (staleKeys.length > 0) {
+					await this.deleteMany(staleKeys);
+				}
 			}
 
 			await this.hook(CacheableHooks.AFTER_GET_MANY, { keys, result });
@@ -1185,7 +1189,7 @@ export class Cacheable extends Hookified {
 		keys: string[],
 		nonBlocking: boolean,
 	): Promise<void> {
-		const promise = Promise.all(keys.map((key) => this.tags.removeKey(key)));
+		const promise = this.tags.removeKeys(keys);
 		if (nonBlocking) {
 			promise.catch((error) => {
 				this.emit(CacheableEvents.ERROR, error);

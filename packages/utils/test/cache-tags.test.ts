@@ -42,6 +42,22 @@ describe("CacheTags", () => {
 		expect(await service.isKeyFresh("user:1")).toBe(false);
 	});
 
+	test("removeKeys deletes multiple snapshots in one batch", async () => {
+		const service = createService();
+		await service.setKeyTags("a", ["t"]);
+		await service.setKeyTags("b", ["t"]);
+		await service.removeKeys(["a", "b"]);
+		expect(await service.isKeyFresh("a")).toBe(false);
+		expect(await service.isKeyFresh("b")).toBe(false);
+	});
+
+	test("removeKeys with an empty list is a no-op", async () => {
+		const service = createService();
+		await service.setKeyTags("a", ["t"]);
+		await service.removeKeys([]);
+		expect(await service.isKeyFresh("a")).toBe(true);
+	});
+
 	test("invalidateTag returns the bumped tag", async () => {
 		const service = createService();
 		const result = await service.invalidateTag("users");

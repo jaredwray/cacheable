@@ -163,6 +163,8 @@ describe("cacheable tags", () => {
 			{ key: "b", value: 2, tags: ["y"] },
 			{ key: "c", value: 3 },
 		]);
+		// all entries are fresh before invalidation
+		expect(await cacheable.getMany(["a", "b", "c"])).toEqual([1, 2, 3]);
 		await cacheable.invalidateTag("x");
 		expect(await cacheable.getMany(["a", "b", "c"])).toEqual([undefined, 2, 3]);
 	});
@@ -292,7 +294,7 @@ describe("cacheable tags", () => {
 
 	test("emits an error when a non-blocking snapshot removal fails", async () => {
 		const cacheable = new Cacheable({ nonBlocking: true, tags: true });
-		vi.spyOn(cacheable.tags, "removeKey").mockRejectedValueOnce(
+		vi.spyOn(cacheable.tags, "removeKeys").mockRejectedValueOnce(
 			new Error("tag store down"),
 		);
 		let errored: unknown;
