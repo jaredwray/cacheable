@@ -92,6 +92,25 @@ describe("per-store ttl via the BEFORE_SET hook", () => {
 		expect(await secondary.get("key")).toBeUndefined();
 	});
 
+	test("clearing the ttl with null clears it instead of cascading", {
+		timeout: 2000,
+	}, async () => {
+		// typeof null === "object", so the hook must not treat null as a per-store object.
+		// With no store defaults, null clears the ttl (like undefined) rather than cascading to
+		// the instance ttl, so the value never expires.
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary, ttl: 100 });
+		cacheable.onHook(CacheableHooks.BEFORE_SET, (item) => {
+			item.ttl = null;
+		});
+		await cacheable.set("key", "value");
+		await sleep(150);
+		// The instance ttl (100ms) is ignored; both copies survive
+		expect(await primary.get("key")).toEqual("value");
+		expect(await secondary.get("key")).toEqual("value");
+	});
+
 	test("a scalar applies to both stores", { timeout: 2000 }, async () => {
 		const primary = new Keyv();
 		const secondary = new Keyv();
@@ -184,6 +203,26 @@ describe("per-store ttl via the BEFORE_SET hook", () => {
 		expect(await primary.get("key")).toBeUndefined();
 		expect(await cacheable.get("key")).toEqual("value");
 		// The tag snapshot is immortal too, so invalidation still reaches the surviving copy
+		await cacheable.tags.invalidateTag("t1");
+		expect(await cacheable.get("key")).toBeUndefined();
+	});
+
+	test("keeps the tag snapshot immortal when a per-store ttl is 0", {
+		timeout: 2000,
+	}, async () => {
+		// ttl 0 means the copy never expires, so the snapshot must stay immortal too.
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary, tags: true });
+		cacheable.onHook(CacheableHooks.BEFORE_SET, (item) => {
+			item.ttl = { primary: 0, secondary: 100 }; // primary immortal, secondary 100ms
+		});
+		await cacheable.set("key", "value", { tags: ["t1"] });
+		await sleep(150);
+		// Secondary copy expired; the immortal primary copy survives
+		expect(await primary.get("key")).toEqual("value");
+		expect(await cacheable.get("key")).toEqual("value");
+		// The snapshot is immortal too, so invalidation still reaches the surviving copy
 		await cacheable.tags.invalidateTag("t1");
 		expect(await cacheable.get("key")).toBeUndefined();
 	});
@@ -342,5 +381,26 @@ describe("per-store ttl via setMany / BEFORE_SET_MANY", () => {
 		expect(received).toHaveLength(1);
 		expect(typeof received[0]?.data.ttl).toBe("number");
 		expect(received[0]?.data.ttl).toBe(50);
+	});
+
+	test("sync publishes the cascaded primary ttl when an item omits primary", async () => {
+		const provider = new MemoryMessageProvider({
+			id: "per-store-many-cascade",
+		});
+		const cacheable = new Cacheable({ ttl: 100, sync: { qified: provider } });
+		// biome-ignore lint/suspicious/noExplicitAny: Message type not exported from qified
+		let received: any;
+		await cacheable.sync?.qified.subscribe(CacheableSyncEvents.SET, {
+			handler: async (message) => {
+				received = message;
+			},
+		});
+		await new Promise((resolve) => setTimeout(resolve, 50));
+		// Primary omitted -> cascades to the instance ttl (100), which is what is written and synced
+		await cacheable.setMany([
+			{ key: "key", value: "value", ttl: { secondary: 500 } },
+		]);
+		await new Promise((resolve) => setTimeout(resolve, 100));
+		expect(received?.data.ttl).toBe(100);
 	});
 });

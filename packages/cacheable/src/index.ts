@@ -687,7 +687,7 @@ export class Cacheable extends Hookified {
 							explicitSecondaryTtl,
 						)
 					: undefined;
-			} else if (typeof hookTtl === "object") {
+			} else if (typeof hookTtl === "object" && hookTtl !== null) {
 				const { primary: hookPrimaryTtl, secondary: hookSecondaryTtl } =
 					resolvePerStoreTtl(hookTtl);
 				primaryTtlEffective =
@@ -793,12 +793,16 @@ export class Cacheable extends Hookified {
 			if (this._secondary) {
 				if (this._nonBlocking) {
 					// Catch any errors to avoid unhandled promise rejections
-					this.setManyKeyv(this._secondary, items, "secondary").catch(
-						(error) => {
-							/* v8 ignore next -- @preserve */
-							this.emit(CacheableEvents.ERROR, error);
-						},
+					const secondaryPromise = this.setManyKeyv(
+						this._secondary,
+						items,
+						"secondary",
 					);
+					/* v8 ignore next -- @preserve */
+					secondaryPromise.catch((error) => {
+						/* v8 ignore next -- @preserve */
+						this.emit(CacheableEvents.ERROR, error);
+					});
 				} else {
 					await this.setManyKeyv(this._secondary, items, "secondary");
 				}
@@ -812,12 +816,20 @@ export class Cacheable extends Hookified {
 
 			// Publish to sync if enabled
 			if (this._sync && result) {
+				const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 				for (const item of items) {
 					await this._sync.publish(CacheableSyncEvents.SET, {
 						cacheId: this._cacheId,
 						key: item.key,
 						value: item.value,
-						ttl: resolvePerStoreTtl(item.ttl).primary,
+						// Replicate the effective primary ttl actually written (cascade + maxTtl),
+						// not just the explicit per-store field, so subscribers stay in sync.
+						ttl: this.resolveStoreTtl(
+							item.ttl,
+							this._primary.ttl,
+							"primary",
+							maxTtlMs,
+						),
 					});
 				}
 			}
@@ -1178,11 +1190,12 @@ export class Cacheable extends Hookified {
 		const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 		const entries: KeyvEntry[] = [];
 		for (const item of items) {
-			// Resolve the item's ttl for this specific store. A scalar applies to both stores; a
-			// per-store object (`{ primary, secondary }`) is honored independently.
-			const explicitTtl = resolvePerStoreTtl(item.ttl)[store];
-			let finalTtl = getCascadingTtl(this._ttl, keyv.ttl, explicitTtl);
-			finalTtl = this.capTtl(finalTtl, maxTtlMs);
+			const finalTtl = this.resolveStoreTtl(
+				item.ttl,
+				keyv.ttl,
+				store,
+				maxTtlMs,
+			);
 			entries.push({ key: item.key, value: item.value, ttl: finalTtl });
 		}
 
@@ -1208,19 +1221,17 @@ export class Cacheable extends Hookified {
 			// The tag snapshot must outlive the longest-lived copy of the value across the stores,
 			// so it uses the maximum of each store's resolved ttl (matching `set`). Per-store ttl
 			// objects are honored independently.
-			const { primary: explicitPrimaryTtl, secondary: explicitSecondaryTtl } =
-				resolvePerStoreTtl(item.ttl);
-			const primaryTtl = this.capTtl(
-				getCascadingTtl(this._ttl, this._primary.ttl, explicitPrimaryTtl),
+			const primaryTtl = this.resolveStoreTtl(
+				item.ttl,
+				this._primary.ttl,
+				"primary",
 				maxTtlMs,
 			);
 			const secondaryTtl = this._secondary
-				? this.capTtl(
-						getCascadingTtl(
-							this._ttl,
-							this._secondary.ttl,
-							explicitSecondaryTtl,
-						),
+				? this.resolveStoreTtl(
+						item.ttl,
+						this._secondary.ttl,
+						"secondary",
 						maxTtlMs,
 					)
 				: undefined;
@@ -1528,9 +1539,37 @@ export class Cacheable extends Hookified {
 			return primaryTtl;
 		}
 
-		return primaryTtl === undefined || secondaryTtl === undefined
-			? undefined
-			: Math.max(primaryTtl, secondaryTtl);
+		// A ttl of 0 or undefined means that store's copy never expires, so the snapshot must be
+		// immortal too; otherwise it could lapse while an immortal copy is still cached and a later
+		// invalidation could no longer reach it.
+		if (!primaryTtl || !secondaryTtl) {
+			return undefined;
+		}
+
+		return Math.max(primaryTtl, secondaryTtl);
+	}
+
+	/**
+	 * Resolves the effective ttl actually written to one store for a `setMany` item: the per-store
+	 * explicit value (a scalar applies to both stores; a `{ primary, secondary }` object is honored
+	 * per field) cascaded with the store default and instance ttl, then capped by maxTtl.
+	 * @param itemTtl - the item's ttl (number, shorthand string, or per-store object)
+	 * @param storeTtl - the target store's default ttl in milliseconds
+	 * @param store - which store's field to resolve from a per-store object
+	 * @param maxTtlMs - the resolved maxTtl in milliseconds, or undefined for no cap
+	 * @returns {number | undefined} The effective ttl in milliseconds, or undefined for no expiry
+	 */
+	private resolveStoreTtl(
+		itemTtl: number | string | PerStoreTtl | undefined,
+		storeTtl: number | undefined,
+		store: "primary" | "secondary",
+		maxTtlMs: number | undefined,
+	): number | undefined {
+		const explicitTtl = resolvePerStoreTtl(itemTtl)[store];
+		return this.capTtl(
+			getCascadingTtl(this._ttl, storeTtl, explicitTtl),
+			maxTtlMs,
+		);
 	}
 }
 
