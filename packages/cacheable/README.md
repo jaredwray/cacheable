@@ -31,6 +31,7 @@
 * [Hooks and Events](#hooks-and-events)
 * [Storage Tiering and Caching](#storage-tiering-and-caching)
 * [TTL Propagation and Storage Tiering](#ttl-propagation-and-storage-tiering)
+* [Per-Store TTL per Operation](#per-store-ttl-per-operation)
 * [Shorthand for Time to Live (ttl)](#shorthand-for-time-to-live-ttl)
 * [Maximum Time to Live (maxTtl)](#maximum-time-to-live-maxttl)
 * [Tag Based Invalidation](#tag-based-invalidation)
@@ -211,6 +212,41 @@ ttl = set at the function ?? storage adapter ttl ?? cacheable ttl
 ```
 
 This means that if you set a TTL at the function level it will override the storage adapter TTL and the cacheable TTL. If you do not set a TTL at the function level it will use the storage adapter TTL and then the cacheable TTL. If you do not set a TTL at all it will use the default TTL of `undefined` which is disabled.
+
+# Per-Store TTL per Operation
+
+When you override the `ttl` on an operation it normally applies to both the primary and secondary stores. If you want each store to expire at a different rate for that specific key, pass a per-store object as the `ttl` with `primary` and/or `secondary` fields. Each field accepts a number in milliseconds or a [shorthand string](#shorthand-for-time-to-live-ttl).
+
+```javascript
+import { Cacheable } from 'cacheable';
+import { Keyv } from 'keyv';
+import KeyvRedis from '@keyv/redis';
+const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
+const cache = new Cacheable({ secondary });
+
+// Keep this key 10 seconds in memory (primary) but 5 minutes in Redis (secondary)
+await cache.set('key', 'value', { ttl: { primary: '10s', secondary: '5m' } });
+```
+
+Any field you leave out falls back to that store's own default TTL resolution (storage adapter TTL, then the cacheable instance TTL). For example, only overriding the primary store leaves the secondary on its default:
+
+```javascript
+const secondary = new Keyv({ store: new KeyvRedis('redis://user:pass@localhost:6379'), ttl: '1h' });
+const cache = new Cacheable({ secondary });
+
+// Primary expires in 10s; secondary keeps its own 1 hour default
+await cache.set('key', 'value', { ttl: { primary: '10s' } });
+```
+
+The per-store object works anywhere a `ttl` is accepted, including [`getOrSet`](#get-or-set-memoization-function) and [`wrap`](#wrap--memoization-for-sync-and-async-functions):
+
+```javascript
+await cache.getOrSet('key', async () => 'value', { ttl: { primary: '10s', secondary: '5m' } });
+
+const getUser = cache.wrap(fetchUser, { ttl: { primary: '1m', secondary: '1d' } });
+```
+
+Passing a plain number or shorthand string (such as `'1h'`) still applies the same TTL to every store, and the [`maxTtl`](#maximum-time-to-live-maxttl) cap is applied to each store independently.
 
 # Shorthand for Time to Live (ttl)
 
@@ -884,12 +920,14 @@ The `getOrSet`  method that comes from [@cacheable/utils](https://cacheable.org/
 
 ```typescript
 export type GetOrSetFunctionOptions = {
-	ttl?: number | string;
+	ttl?: number | string | { primary?: number | string; secondary?: number | string };
 	cacheErrors?: boolean;
 	throwErrors?: boolean;
 	nonBlocking?: boolean;
 };
 ```
+
+The `ttl` also accepts a [per-store object](#per-store-ttl-per-operation) such as `{ primary: '10s', secondary: '5m' }` to give the primary and secondary stores different expirations for this operation.
 
 The `nonBlocking` option allows you to override the instance-level `nonBlocking` setting for the `get` call within `getOrSet`. When set to `false`, the `get` will block and wait for a response from the secondary store before deciding whether to call the provided function. When set to `true`, the primary store returns immediately and syncs from secondary in the background.
 

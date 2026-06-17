@@ -1,6 +1,45 @@
 import { shorthandToMilliseconds } from "../src/shorthand-time.js";
 
 /**
+ * A per-store time-to-live override. Each field is a normal TTL (a number in milliseconds or a
+ * human-readable shorthand such as `1s`, `1m`, `1h`, `1d`) applied to that specific store. Fields
+ * left undefined fall back to that store's own default TTL resolution.
+ */
+export type PerStoreTtl = {
+	/**
+	 * The time-to-live to use for the primary store.
+	 */
+	primary?: number | string;
+	/**
+	 * The time-to-live to use for the secondary store.
+	 */
+	secondary?: number | string;
+};
+
+/**
+ * Normalizes a TTL input into per-store milliseconds. When given an object it resolves the
+ * `primary` and `secondary` fields independently; when given a number or shorthand string it
+ * applies the same value to both stores. Undefined fields (or undefined input) resolve to
+ * `undefined` so the caller can fall back to its own default TTL.
+ * @param ttl - The TTL input: a number (ms), a shorthand string, or a {@link PerStoreTtl} object.
+ * @returns {{ primary?: number; secondary?: number }} The resolved per-store TTLs in milliseconds.
+ */
+export function resolvePerStoreTtl(ttl?: number | string | PerStoreTtl): {
+	primary?: number;
+	secondary?: number;
+} {
+	if (ttl !== null && typeof ttl === "object") {
+		return {
+			primary: shorthandToMilliseconds(ttl.primary),
+			secondary: shorthandToMilliseconds(ttl.secondary),
+		};
+	}
+
+	const milliseconds = shorthandToMilliseconds(ttl);
+	return { primary: milliseconds, secondary: milliseconds };
+}
+
+/**
  * Converts a exspires value to a TTL value.
  * @param expires - The expires value to convert.
  * @returns {number | undefined} The TTL value in milliseconds, or undefined if the expires value is not valid.

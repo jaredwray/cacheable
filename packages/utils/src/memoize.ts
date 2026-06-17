@@ -1,12 +1,17 @@
 import { coalesceAsync } from "./coalesce-async.js";
 import { hashSync } from "./hash.js";
+import type { PerStoreTtl } from "./ttl.js";
 
 export type CacheInstance = {
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	get: (key: string) => Promise<any | undefined>;
 	has: (key: string) => Promise<boolean>;
-	// biome-ignore lint/suspicious/noExplicitAny: type format
-	set: (key: string, value: any, ttl?: number | string) => Promise<void>;
+	set: (
+		key: string,
+		// biome-ignore lint/suspicious/noExplicitAny: type format
+		value: any,
+		ttl?: number | string | PerStoreTtl,
+	) => Promise<void>;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	on: (event: string, listener: (...args: any[]) => void) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
@@ -17,8 +22,12 @@ export type CacheSyncInstance = {
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	get: (key: string) => any | undefined;
 	has: (key: string) => boolean;
-	// biome-ignore lint/suspicious/noExplicitAny: type format
-	set: (key: string, value: any, ttl?: number | string) => void;
+	set: (
+		key: string,
+		// biome-ignore lint/suspicious/noExplicitAny: type format
+		value: any,
+		ttl?: number | string | PerStoreTtl,
+	) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	on: (event: string, listener: (...args: any[]) => void) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
@@ -30,7 +39,7 @@ export type GetOrSetKey = string | ((options?: GetOrSetOptions) => string);
 type GetOrSetThrowErrorsContext = "function" | "store";
 
 export type GetOrSetFunctionOptions = {
-	ttl?: number | string;
+	ttl?: number | string | PerStoreTtl;
 	cacheErrors?: boolean;
 	/** Whether or not to throw errors:
 	 * - `false` (default) - do not throw any errors
@@ -59,7 +68,7 @@ export type CreateWrapKey = (
 ) => string;
 
 export type WrapFunctionOptions = {
-	ttl?: number | string;
+	ttl?: number | string | PerStoreTtl;
 	keyPrefix?: string;
 	createKey?: CreateWrapKey;
 	cacheErrors?: boolean;

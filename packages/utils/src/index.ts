@@ -59,8 +59,10 @@ export {
 	type StatsOptions,
 	type StatsSnapshot,
 } from "./stats.js";
+export type { PerStoreTtl } from "./ttl.js";
 export {
 	calculateTtlFromExpiration,
 	getCascadingTtl,
 	getTtlFromExpires,
+	resolvePerStoreTtl,
 } from "./ttl.js";

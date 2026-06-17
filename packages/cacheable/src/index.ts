@@ -14,6 +14,8 @@ import {
 	hash,
 	hashSync,
 	isKeyvInstance,
+	type PerStoreTtl,
+	resolvePerStoreTtl,
 	shorthandToMilliseconds,
 	type WrapFunctionOptions,
 	wrap,
@@ -626,7 +628,8 @@ export class Cacheable extends Hookified {
 	 * @param {number | string | SetOptions} [ttlOrOptions] set a number it is miliseconds, set a string it is a human-readable
 	 * format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means that it will use the default time-to-live.
 	 * You can also pass a {@link SetOptions} object such as `{ ttl: '1h', tags: ['user:42'] }` to associate the entry with
-	 * tags for tag-based invalidation.
+	 * tags for tag-based invalidation. To give each store its own TTL for this operation, pass a per-store object as the
+	 * `ttl`, such as `{ ttl: { primary: '10s', secondary: '5m' } }`.
 	 * @returns {boolean} Whether the value was set
 	 */
 	public async set<T>(
@@ -640,13 +643,14 @@ export class Cacheable extends Hookified {
 				? ttlOrOptions
 				: { ttl: ttlOrOptions ?? undefined };
 		const nonBlocking = options.nonBlocking ?? this._nonBlocking;
-		const explicitTtl = shorthandToMilliseconds(options.ttl);
+		const { primary: explicitPrimaryTtl, secondary: explicitSecondaryTtl } =
+			resolvePerStoreTtl(options.ttl);
 		const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 		try {
 			let primaryTtl = getCascadingTtl(
 				this._ttl,
 				this._primary.ttl,
-				explicitTtl,
+				explicitPrimaryTtl,
 			);
 			primaryTtl = this.capTtl(primaryTtl, maxTtlMs);
 			const item = { key, value, ttl: primaryTtl, tags: options.tags };
@@ -661,7 +665,11 @@ export class Cacheable extends Hookified {
 			if (this._secondary) {
 				let secondaryTtl = hookOverridden
 					? item.ttl
-					: getCascadingTtl(this._ttl, this._secondary.ttl, explicitTtl);
+					: getCascadingTtl(
+							this._ttl,
+							this._secondary.ttl,
+							explicitSecondaryTtl,
+						);
 				secondaryTtl = this.capTtl(secondaryTtl, maxTtlMs);
 				promises.push(this._secondary.set(item.key, item.value, secondaryTtl));
 				tagTtl = secondaryTtl;
@@ -996,8 +1004,12 @@ export class Cacheable extends Hookified {
 			/* v8 ignore next -- @preserve */
 			has: async (key: string) => this.has(key),
 
-			set: async (key: string, value: unknown, ttl?: number | string) => {
-				await this.set(key, value, ttl);
+			set: async (
+				key: string,
+				value: unknown,
+				ttl?: number | string | PerStoreTtl,
+			) => {
+				await this.set(key, value, { ttl });
 			},
 			/* v8 ignore next -- @preserve */
 			on: (event: string, listener: (...args: unknown[]) => void) => {
@@ -1044,8 +1056,12 @@ export class Cacheable extends Hookified {
 			get: async (key: string) => this.get(key, getOptions),
 			/* v8 ignore next -- @preserve */
 			has: async (key: string) => this.has(key),
-			set: async (key: string, value: unknown, ttl?: number | string) => {
-				await this.set(key, value, ttl);
+			set: async (
+				key: string,
+				value: unknown,
+				ttl?: number | string | PerStoreTtl,
+			) => {
+				await this.set(key, value, { ttl });
 			},
 			/* v8 ignore next -- @preserve */
 			on: (event: string, listener: (...args: unknown[]) => void) => {
