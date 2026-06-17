@@ -186,6 +186,26 @@ test("should support a per-store ttl in getOrSet", {
 	expect(await secondary.get("key")).toEqual("value");
 });
 
+test("should keep the tag snapshot alive for the longest-lived store copy", {
+	timeout: 3000,
+}, async () => {
+	const primary = new Keyv();
+	const secondary = new Keyv();
+	const cacheable = new Cacheable({ primary, secondary, tags: true });
+	// Primary outlives the secondary for this key
+	await cacheable.set("key", "value", {
+		ttl: { primary: 2000, secondary: 100 },
+		tags: ["t1"],
+	});
+	await sleep(250);
+	// Secondary copy has expired but the primary copy is still live
+	expect(await primary.get("key")).toEqual("value");
+	expect(await cacheable.get("key")).toEqual("value");
+	// Invalidation must still be honored against the surviving primary copy
+	await cacheable.tags.invalidateTag("t1");
+	expect(await cacheable.get("key")).toBeUndefined();
+});
+
 test("should support a per-store ttl in wrap", { timeout: 3000 }, async () => {
 	const primary = new Keyv();
 	const secondary = new Keyv();

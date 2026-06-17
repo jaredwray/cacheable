@@ -657,8 +657,9 @@ export class Cacheable extends Hookified {
 			await this.hook(CacheableHooks.BEFORE_SET, item);
 			const hookOverridden = item.ttl !== primaryTtl;
 			item.ttl = this.capTtl(item.ttl, maxTtlMs);
-			// The tag snapshot lives in the same store as the tag service, so it should
-			// expire alongside the copy of the value held there.
+			// The tag snapshot must outlive the longest-lived copy of the value across the stores;
+			// otherwise the snapshot could expire while a copy is still cached, and a later
+			// invalidation would no longer be able to mark that copy as stale.
 			let tagTtl = item.ttl;
 			const promises = [];
 			promises.push(this._primary.set(item.key, item.value, item.ttl));
@@ -672,7 +673,10 @@ export class Cacheable extends Hookified {
 						);
 				secondaryTtl = this.capTtl(secondaryTtl, maxTtlMs);
 				promises.push(this._secondary.set(item.key, item.value, secondaryTtl));
-				tagTtl = secondaryTtl;
+				tagTtl =
+					item.ttl === undefined || secondaryTtl === undefined
+						? undefined
+						: Math.max(item.ttl, secondaryTtl);
 			}
 
 			if (nonBlocking) {
