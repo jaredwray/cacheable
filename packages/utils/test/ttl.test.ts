@@ -3,6 +3,7 @@ import {
 	calculateTtlFromExpiration,
 	getCascadingTtl,
 	getTtlFromExpires,
+	resolvePerStoreTtl,
 } from "../src/ttl.js";
 
 describe("TTL utilities", () => {
@@ -55,5 +56,51 @@ describe("TTL utilities", () => {
 		const ttl = 5000;
 		const expires = Date.now() + 2000;
 		expect(calculateTtlFromExpiration(ttl, expires)).toBeCloseTo(2000, -2);
+	});
+
+	test("resolvePerStoreTtl should apply a number to both stores", () => {
+		expect(resolvePerStoreTtl(5000)).toEqual({
+			primary: 5000,
+			secondary: 5000,
+		});
+	});
+
+	test("resolvePerStoreTtl should apply a shorthand string to both stores", () => {
+		expect(resolvePerStoreTtl("5s")).toEqual({
+			primary: 5000,
+			secondary: 5000,
+		});
+	});
+
+	test("resolvePerStoreTtl should resolve undefined to both stores", () => {
+		expect(resolvePerStoreTtl()).toEqual({
+			primary: undefined,
+			secondary: undefined,
+		});
+	});
+
+	test("resolvePerStoreTtl should resolve null to both stores", () => {
+		expect(resolvePerStoreTtl(null as unknown as undefined)).toEqual({
+			primary: undefined,
+			secondary: undefined,
+		});
+	});
+
+	test("resolvePerStoreTtl should resolve per-store object fields independently", () => {
+		expect(resolvePerStoreTtl({ primary: "1s", secondary: 60_000 })).toEqual({
+			primary: 1000,
+			secondary: 60_000,
+		});
+	});
+
+	test("resolvePerStoreTtl should leave undefined per-store fields undefined", () => {
+		expect(resolvePerStoreTtl({ primary: "10s" })).toEqual({
+			primary: 10_000,
+			secondary: undefined,
+		});
+		expect(resolvePerStoreTtl({ secondary: "10s" })).toEqual({
+			primary: undefined,
+			secondary: 10_000,
+		});
 	});
 });

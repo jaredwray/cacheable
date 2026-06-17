@@ -5,6 +5,7 @@ import {
 	sleep,
 } from "@cacheable/utils";
 import { faker } from "@faker-js/faker";
+import { Keyv } from "keyv";
 import { expect, test } from "vitest";
 import { Cacheable } from "../src/index.js";
 
@@ -104,4 +105,127 @@ test("should calculate and choose expires as ttl is undefined", () => {
 test("should calculate and choose undefined as both are undefined", () => {
 	const result = calculateTtlFromExpiration(undefined, undefined);
 	expect(result).toBeUndefined();
+});
+
+test("should set a different ttl per store with a per-store object", {
+	timeout: 2000,
+}, async () => {
+	const primary = new Keyv();
+	const secondary = new Keyv();
+	const cacheable = new Cacheable({ primary, secondary });
+	await cacheable.set("key", "value", {
+		ttl: { primary: 50, secondary: 500 },
+	});
+	expect(await primary.get("key")).toEqual("value");
+	expect(await secondary.get("key")).toEqual("value");
+	await sleep(120);
+	// Primary has expired while the secondary still holds the value
+	expect(await primary.get("key")).toBeUndefined();
+	expect(await secondary.get("key")).toEqual("value");
+	await sleep(450);
+	expect(await secondary.get("key")).toBeUndefined();
+});
+
+test("should fall back to the store default when a per-store ttl field is omitted", {
+	timeout: 3000,
+}, async () => {
+	const primary = new Keyv();
+	const secondary = new Keyv({ ttl: 1000 });
+	const cacheable = new Cacheable({ primary, secondary, ttl: 60_000 });
+	await cacheable.set("key", "value", { ttl: { primary: 50 } });
+	await sleep(120);
+	// Primary used the explicit 50ms; secondary fell back to its own 1s default
+	expect(await primary.get("key")).toBeUndefined();
+	expect(await secondary.get("key")).toEqual("value");
+	await sleep(1000);
+	expect(await secondary.get("key")).toBeUndefined();
+});
+
+test("should apply a scalar ttl to both stores", {
+	timeout: 2000,
+}, async () => {
+	const primary = new Keyv();
+	const secondary = new Keyv();
+	const cacheable = new Cacheable({ primary, secondary });
+	await cacheable.set("key", "value", { ttl: 100 });
+	expect(await primary.get("key")).toEqual("value");
+	expect(await secondary.get("key")).toEqual("value");
+	await sleep(150);
+	expect(await primary.get("key")).toBeUndefined();
+	expect(await secondary.get("key")).toBeUndefined();
+});
+
+test("should cap each store's per-store ttl with maxTtl", {
+	timeout: 2000,
+}, async () => {
+	const primary = new Keyv();
+	const secondary = new Keyv();
+	const cacheable = new Cacheable({ primary, secondary, maxTtl: 100 });
+	await cacheable.set("key", "value", {
+		ttl: { primary: 50, secondary: 5000 },
+	});
+	await sleep(150);
+	// Secondary requested 5000ms but was capped to maxTtl (100ms)
+	expect(await primary.get("key")).toBeUndefined();
+	expect(await secondary.get("key")).toBeUndefined();
+});
+
+test("should support a per-store ttl in getOrSet", {
+	timeout: 2000,
+}, async () => {
+	const primary = new Keyv();
+	const secondary = new Keyv();
+	const cacheable = new Cacheable({ primary, secondary });
+	await cacheable.getOrSet("key", async () => "value", {
+		ttl: { primary: 50, secondary: 500 },
+	});
+	expect(await primary.get("key")).toEqual("value");
+	expect(await secondary.get("key")).toEqual("value");
+	await sleep(120);
+	expect(await primary.get("key")).toBeUndefined();
+	expect(await secondary.get("key")).toEqual("value");
+});
+
+test("should keep the tag snapshot alive for the longest-lived store copy", {
+	timeout: 3000,
+}, async () => {
+	const primary = new Keyv();
+	const secondary = new Keyv();
+	const cacheable = new Cacheable({ primary, secondary, tags: true });
+	// Primary outlives the secondary for this key
+	await cacheable.set("key", "value", {
+		ttl: { primary: 2000, secondary: 100 },
+		tags: ["t1"],
+	});
+	await sleep(250);
+	// Secondary copy has expired but the primary copy is still live
+	expect(await primary.get("key")).toEqual("value");
+	expect(await cacheable.get("key")).toEqual("value");
+	// Invalidation must still be honored against the surviving primary copy
+	await cacheable.tags.invalidateTag("t1");
+	expect(await cacheable.get("key")).toBeUndefined();
+});
+
+test("should support a per-store ttl in wrap", { timeout: 3000 }, async () => {
+	const primary = new Keyv();
+	const secondary = new Keyv();
+	const cacheable = new Cacheable({ primary, secondary });
+	let calls = 0;
+	const wrapped = cacheable.wrap(
+		async (n: number) => {
+			calls++;
+			return n * 2;
+		},
+		{ ttl: { primary: 100, secondary: 700 } },
+	);
+	expect(await wrapped(5)).toEqual(10);
+	expect(calls).toBe(1);
+	await sleep(250);
+	// Primary expired but the secondary still serves the value without re-running
+	expect(await wrapped(5)).toEqual(10);
+	expect(calls).toBe(1);
+	await sleep(700);
+	// Secondary expired too, so the function runs again
+	expect(await wrapped(5)).toEqual(10);
+	expect(calls).toBe(2);
 });

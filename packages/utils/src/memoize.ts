@@ -1,12 +1,17 @@
 import { coalesceAsync } from "./coalesce-async.js";
 import { hashSync } from "./hash.js";
+import type { PerStoreTtl } from "./ttl.js";
 
 export type CacheInstance = {
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	get: (key: string) => Promise<any | undefined>;
 	has: (key: string) => Promise<boolean>;
-	// biome-ignore lint/suspicious/noExplicitAny: type format
-	set: (key: string, value: any, ttl?: number | string) => Promise<void>;
+	set: (
+		key: string,
+		// biome-ignore lint/suspicious/noExplicitAny: type format
+		value: any,
+		ttl?: number | string | PerStoreTtl,
+	) => Promise<void>;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	on: (event: string, listener: (...args: any[]) => void) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
@@ -46,7 +51,10 @@ export type GetOrSetFunctionOptions = {
 	nonBlocking?: boolean;
 };
 
-export type GetOrSetOptions = GetOrSetFunctionOptions & {
+export type GetOrSetOptions = Omit<GetOrSetFunctionOptions, "ttl"> & {
+	// The cache adapter may interpret a per-store TTL object (e.g. Cacheable's primary/secondary
+	// stores); single-store callers continue to use a number or shorthand string.
+	ttl?: number | string | PerStoreTtl;
 	cacheId?: string;
 	cache: CacheInstance;
 };
@@ -68,7 +76,10 @@ export type WrapFunctionOptions = {
 	serialize?: (object: any) => string;
 };
 
-export type WrapOptions = WrapFunctionOptions & {
+export type WrapOptions = Omit<WrapFunctionOptions, "ttl"> & {
+	// The cache adapter may interpret a per-store TTL object (e.g. Cacheable's primary/secondary
+	// stores); single-store callers continue to use a number or shorthand string.
+	ttl?: number | string | PerStoreTtl;
 	cache: CacheInstance;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	serialize?: (object: any) => string;

@@ -5,7 +5,6 @@ import {
 	type CacheInstance,
 	CacheTags,
 	calculateTtlFromExpiration,
-	type GetOrSetFunctionOptions,
 	type GetOrSetKey,
 	type GetOrSetOptions,
 	getCascadingTtl,
@@ -14,8 +13,9 @@ import {
 	hash,
 	hashSync,
 	isKeyvInstance,
+	type PerStoreTtl,
+	resolvePerStoreTtl,
 	shorthandToMilliseconds,
-	type WrapFunctionOptions,
 	wrap,
 } from "@cacheable/utils";
 import { Hookified } from "hookified";
@@ -31,7 +31,9 @@ import type {
 	CacheableOptions,
 	CacheableSetItem,
 	GetOptions,
+	GetOrSetFunctionOptions,
 	SetOptions,
+	WrapFunctionOptions,
 } from "./types.js";
 
 export class Cacheable extends Hookified {
@@ -626,7 +628,8 @@ export class Cacheable extends Hookified {
 	 * @param {number | string | SetOptions} [ttlOrOptions] set a number it is miliseconds, set a string it is a human-readable
 	 * format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means that it will use the default time-to-live.
 	 * You can also pass a {@link SetOptions} object such as `{ ttl: '1h', tags: ['user:42'] }` to associate the entry with
-	 * tags for tag-based invalidation.
+	 * tags for tag-based invalidation. To give each store its own TTL for this operation, pass a per-store object as the
+	 * `ttl`, such as `{ ttl: { primary: '10s', secondary: '5m' } }`.
 	 * @returns {boolean} Whether the value was set
 	 */
 	public async set<T>(
@@ -640,31 +643,40 @@ export class Cacheable extends Hookified {
 				? ttlOrOptions
 				: { ttl: ttlOrOptions ?? undefined };
 		const nonBlocking = options.nonBlocking ?? this._nonBlocking;
-		const explicitTtl = shorthandToMilliseconds(options.ttl);
+		const { primary: explicitPrimaryTtl, secondary: explicitSecondaryTtl } =
+			resolvePerStoreTtl(options.ttl);
 		const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 		try {
 			let primaryTtl = getCascadingTtl(
 				this._ttl,
 				this._primary.ttl,
-				explicitTtl,
+				explicitPrimaryTtl,
 			);
 			primaryTtl = this.capTtl(primaryTtl, maxTtlMs);
 			const item = { key, value, ttl: primaryTtl, tags: options.tags };
 			await this.hook(CacheableHooks.BEFORE_SET, item);
 			const hookOverridden = item.ttl !== primaryTtl;
 			item.ttl = this.capTtl(item.ttl, maxTtlMs);
-			// The tag snapshot lives in the same store as the tag service, so it should
-			// expire alongside the copy of the value held there.
+			// The tag snapshot must outlive the longest-lived copy of the value across the stores;
+			// otherwise the snapshot could expire while a copy is still cached, and a later
+			// invalidation would no longer be able to mark that copy as stale.
 			let tagTtl = item.ttl;
 			const promises = [];
 			promises.push(this._primary.set(item.key, item.value, item.ttl));
 			if (this._secondary) {
 				let secondaryTtl = hookOverridden
 					? item.ttl
-					: getCascadingTtl(this._ttl, this._secondary.ttl, explicitTtl);
+					: getCascadingTtl(
+							this._ttl,
+							this._secondary.ttl,
+							explicitSecondaryTtl,
+						);
 				secondaryTtl = this.capTtl(secondaryTtl, maxTtlMs);
 				promises.push(this._secondary.set(item.key, item.value, secondaryTtl));
-				tagTtl = secondaryTtl;
+				tagTtl =
+					item.ttl === undefined || secondaryTtl === undefined
+						? undefined
+						: Math.max(item.ttl, secondaryTtl);
 			}
 
 			if (nonBlocking) {
@@ -996,8 +1008,12 @@ export class Cacheable extends Hookified {
 			/* v8 ignore next -- @preserve */
 			has: async (key: string) => this.has(key),
 
-			set: async (key: string, value: unknown, ttl?: number | string) => {
-				await this.set(key, value, ttl);
+			set: async (
+				key: string,
+				value: unknown,
+				ttl?: number | string | PerStoreTtl,
+			) => {
+				await this.set(key, value, { ttl });
 			},
 			/* v8 ignore next -- @preserve */
 			on: (event: string, listener: (...args: unknown[]) => void) => {
@@ -1044,8 +1060,12 @@ export class Cacheable extends Hookified {
 			get: async (key: string) => this.get(key, getOptions),
 			/* v8 ignore next -- @preserve */
 			has: async (key: string) => this.has(key),
-			set: async (key: string, value: unknown, ttl?: number | string) => {
-				await this.set(key, value, ttl);
+			set: async (
+				key: string,
+				value: unknown,
+				ttl?: number | string | PerStoreTtl,
+			) => {
+				await this.set(key, value, { ttl });
 			},
 			/* v8 ignore next -- @preserve */
 			on: (event: string, listener: (...args: unknown[]) => void) => {
@@ -1441,7 +1461,6 @@ export {
 	CacheTags,
 	type CacheTagsOptions,
 	calculateTtlFromExpiration,
-	type GetOrSetFunctionOptions,
 	type GetOrSetKey,
 	type GetOrSetOptions,
 	getCascadingTtl,
@@ -1470,5 +1489,8 @@ export type {
 	CacheableOptions,
 	CacheableSetItem,
 	GetOptions,
+	GetOrSetFunctionOptions,
+	PerStoreTtl,
 	SetOptions,
+	WrapFunctionOptions,
 } from "./types.js";
