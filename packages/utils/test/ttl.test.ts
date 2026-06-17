@@ -79,6 +79,13 @@ describe("TTL utilities", () => {
 		});
 	});
 
+	test("resolvePerStoreTtl should resolve null to both stores", () => {
+		expect(resolvePerStoreTtl(null as unknown as undefined)).toEqual({
+			primary: undefined,
+			secondary: undefined,
+		});
+	});
+
 	test("resolvePerStoreTtl should resolve per-store object fields independently", () => {
 		expect(resolvePerStoreTtl({ primary: "1s", secondary: 60_000 })).toEqual({
 			primary: 1000,

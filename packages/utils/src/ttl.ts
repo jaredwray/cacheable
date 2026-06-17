@@ -28,7 +28,11 @@ export function resolvePerStoreTtl(ttl?: number | string | PerStoreTtl): {
 	primary?: number;
 	secondary?: number;
 } {
-	if (ttl !== null && typeof ttl === "object") {
+	if (ttl === undefined || ttl === null) {
+		return { primary: undefined, secondary: undefined };
+	}
+
+	if (typeof ttl === "object") {
 		return {
 			primary: shorthandToMilliseconds(ttl.primary),
 			secondary: shorthandToMilliseconds(ttl.secondary),
