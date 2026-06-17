@@ -1,8 +1,35 @@
-import type { CacheableItem, PerStoreTtl } from "@cacheable/utils";
+import type {
+	CacheableItem,
+	PerStoreTtl,
+	GetOrSetFunctionOptions as UtilsGetOrSetFunctionOptions,
+	WrapFunctionOptions as UtilsWrapFunctionOptions,
+} from "@cacheable/utils";
 import type { Keyv, KeyvStoreAdapter } from "keyv";
 import type { CacheableSync, CacheableSyncOptions } from "./sync.js";
 
 export type { PerStoreTtl } from "@cacheable/utils";
+
+/**
+ * Options for {@link Cacheable.getOrSet}. Identical to the shared
+ * `GetOrSetFunctionOptions` from `@cacheable/utils`, except `ttl` also accepts a per-store object
+ * (`{ primary, secondary }`) so the primary and secondary stores can be given different
+ * expirations for that operation.
+ */
+export type GetOrSetFunctionOptions = Omit<
+	UtilsGetOrSetFunctionOptions,
+	"ttl"
+> & {
+	ttl?: number | string | PerStoreTtl;
+};
+
+/**
+ * Options for {@link Cacheable.wrap}. Identical to the shared `WrapFunctionOptions` from
+ * `@cacheable/utils`, except `ttl` also accepts a per-store object (`{ primary, secondary }`) so the
+ * primary and secondary stores can be given different expirations for the wrapped value.
+ */
+export type WrapFunctionOptions = Omit<UtilsWrapFunctionOptions, "ttl"> & {
+	ttl?: number | string | PerStoreTtl;
+};
 
 export enum CacheableHooks {
 	BEFORE_SET = "BEFORE_SET",

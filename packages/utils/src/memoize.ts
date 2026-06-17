@@ -22,12 +22,8 @@ export type CacheSyncInstance = {
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	get: (key: string) => any | undefined;
 	has: (key: string) => boolean;
-	set: (
-		key: string,
-		// biome-ignore lint/suspicious/noExplicitAny: type format
-		value: any,
-		ttl?: number | string | PerStoreTtl,
-	) => void;
+	// biome-ignore lint/suspicious/noExplicitAny: type format
+	set: (key: string, value: any, ttl?: number | string) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	on: (event: string, listener: (...args: any[]) => void) => void;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
@@ -39,7 +35,7 @@ export type GetOrSetKey = string | ((options?: GetOrSetOptions) => string);
 type GetOrSetThrowErrorsContext = "function" | "store";
 
 export type GetOrSetFunctionOptions = {
-	ttl?: number | string | PerStoreTtl;
+	ttl?: number | string;
 	cacheErrors?: boolean;
 	/** Whether or not to throw errors:
 	 * - `false` (default) - do not throw any errors
@@ -55,7 +51,10 @@ export type GetOrSetFunctionOptions = {
 	nonBlocking?: boolean;
 };
 
-export type GetOrSetOptions = GetOrSetFunctionOptions & {
+export type GetOrSetOptions = Omit<GetOrSetFunctionOptions, "ttl"> & {
+	// The cache adapter may interpret a per-store TTL object (e.g. Cacheable's primary/secondary
+	// stores); single-store callers continue to use a number or shorthand string.
+	ttl?: number | string | PerStoreTtl;
 	cacheId?: string;
 	cache: CacheInstance;
 };
@@ -68,7 +67,7 @@ export type CreateWrapKey = (
 ) => string;
 
 export type WrapFunctionOptions = {
-	ttl?: number | string | PerStoreTtl;
+	ttl?: number | string;
 	keyPrefix?: string;
 	createKey?: CreateWrapKey;
 	cacheErrors?: boolean;
@@ -77,7 +76,10 @@ export type WrapFunctionOptions = {
 	serialize?: (object: any) => string;
 };
 
-export type WrapOptions = WrapFunctionOptions & {
+export type WrapOptions = Omit<WrapFunctionOptions, "ttl"> & {
+	// The cache adapter may interpret a per-store TTL object (e.g. Cacheable's primary/secondary
+	// stores); single-store callers continue to use a number or shorthand string.
+	ttl?: number | string | PerStoreTtl;
 	cache: CacheInstance;
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	serialize?: (object: any) => string;

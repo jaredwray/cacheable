@@ -248,6 +248,8 @@ const getUser = cache.wrap(fetchUser, { ttl: { primary: '1m', secondary: '1d' } 
 
 Passing a plain number or shorthand string (such as `'1h'`) still applies the same TTL to every store, and the [`maxTtl`](#maximum-time-to-live-maxttl) cap is applied to each store independently.
 
+> **Note on backfills:** A per-store TTL governs the *write* of that operation. The primary TTL is not persisted per key, so once a primary (layer 1) entry expires, the next read is served from the secondary and repopulates the primary using the secondary's remaining lifetime — following the usual [TTL propagation](#ttl-propagation-and-storage-tiering) rules — rather than re-applying the original primary TTL. If you need the primary to keep a consistently shorter lifetime across backfills, set a primary store default TTL (`new Keyv({ ttl })`) or an instance `maxTtl`, which both bound the repopulated TTL.
+
 # Shorthand for Time to Live (ttl)
 
 By default `Cacheable` and `CacheableMemory` the `ttl` is in milliseconds but you can use shorthand for the time to live. Here are the following shorthand values:

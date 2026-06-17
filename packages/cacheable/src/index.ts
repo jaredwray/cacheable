@@ -5,7 +5,6 @@ import {
 	type CacheInstance,
 	CacheTags,
 	calculateTtlFromExpiration,
-	type GetOrSetFunctionOptions,
 	type GetOrSetKey,
 	type GetOrSetOptions,
 	getCascadingTtl,
@@ -17,7 +16,6 @@ import {
 	type PerStoreTtl,
 	resolvePerStoreTtl,
 	shorthandToMilliseconds,
-	type WrapFunctionOptions,
 	wrap,
 } from "@cacheable/utils";
 import { Hookified } from "hookified";
@@ -33,7 +31,9 @@ import type {
 	CacheableOptions,
 	CacheableSetItem,
 	GetOptions,
+	GetOrSetFunctionOptions,
 	SetOptions,
+	WrapFunctionOptions,
 } from "./types.js";
 
 export class Cacheable extends Hookified {
@@ -1461,7 +1461,6 @@ export {
 	CacheTags,
 	type CacheTagsOptions,
 	calculateTtlFromExpiration,
-	type GetOrSetFunctionOptions,
 	type GetOrSetKey,
 	type GetOrSetOptions,
 	getCascadingTtl,
@@ -1490,5 +1489,8 @@ export type {
 	CacheableOptions,
 	CacheableSetItem,
 	GetOptions,
+	GetOrSetFunctionOptions,
+	PerStoreTtl,
 	SetOptions,
+	WrapFunctionOptions,
 } from "./types.js";
