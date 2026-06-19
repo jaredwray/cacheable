@@ -7,6 +7,8 @@ import {
 	fetch,
 	makeResponse,
 } from "./fetch.js";
+import { type RdapOptions, type RdapResult, rdap } from "./rdap.js";
+import { type WhoisOptions, type WhoisResult, whois } from "./whois.js";
 
 export type NetFetchOptions = {
 	/**
@@ -638,6 +640,56 @@ export class CacheableNet extends Hookified {
 	}
 
 	/**
+	 * Perform a WHOIS lookup for a domain, IP address, or ASN, returning both the
+	 * raw text and parsed JSON fields. Uses the instance cache so repeated lookups
+	 * are served from cache and concurrent identical lookups are coalesced. To
+	 * disable caching for a single lookup, set `options.caching` to false.
+	 * @param {string} query The domain, URL, IP address, or ASN to look up.
+	 * @param {WhoisOptions} options Optional lookup options.
+	 * @returns {Promise<WhoisResult>} The raw text and parsed fields.
+	 */
+	public async whois(
+		query: string,
+		options?: WhoisOptions,
+	): Promise<WhoisResult> {
+		const whoisOptions: WhoisOptions = {
+			...options,
+			cache: this._cache,
+		};
+
+		// remove cache if they explicitly disable caching
+		if (options?.caching === false) {
+			delete whoisOptions.cache;
+		}
+
+		return whois(query, whoisOptions);
+	}
+
+	/**
+	 * Perform an RDAP lookup for a domain, IP address, or ASN, returning both the
+	 * raw JSON text and the parsed object. Uses the instance cache so repeated
+	 * lookups are served from cache and concurrent identical lookups are
+	 * coalesced. To disable caching for a single lookup, set `options.caching` to
+	 * false.
+	 * @param {string} query The domain, URL, IP address, or ASN to look up.
+	 * @param {RdapOptions} options Optional lookup options.
+	 * @returns {Promise<RdapResult>} The raw JSON text and parsed data.
+	 */
+	public async rdap(query: string, options?: RdapOptions): Promise<RdapResult> {
+		const rdapOptions: RdapOptions = {
+			...options,
+			cache: this._cache,
+		};
+
+		// remove cache if they explicitly disable caching
+		if (options?.caching === false) {
+			delete rdapOptions.cache;
+		}
+
+		return rdap(query, rdapOptions);
+	}
+
+	/**
 	 * Sets the Content-Type header if not already set.
 	 * Checks both "Content-Type" and "content-type" to handle case variations.
 	 * @param headers - The headers object to modify
@@ -669,3 +721,22 @@ export {
 	post,
 	type Response as FetchResponse,
 } from "./fetch.js";
+export {
+	type RdapOptions,
+	type RdapResult,
+	rdap,
+} from "./rdap.js";
+export {
+	detectQueryType,
+	normalizeWhoisQuery,
+	parseWhois,
+	type QueryWhoisServerOptions,
+	queryWhoisServer,
+	type WhoisFields,
+	type WhoisHop,
+	type WhoisOptions,
+	type WhoisQueryType,
+	type WhoisResult,
+	whois,
+	whoisRaw,
+} from "./whois.js";
