@@ -135,7 +135,9 @@ function ipv6ToBigInt(ip: string): bigint {
 	const [head, tail] = ip.split("::");
 	const headParts = head ? head.split(":") : [];
 	const tailParts = tail ? tail.split(":") : [];
-	const missing = 8 - headParts.length - tailParts.length;
+	// Clamp so a malformed address with more than 8 groups never yields a
+	// negative length (which would make Array() throw a RangeError).
+	const missing = Math.max(0, 8 - headParts.length - tailParts.length);
 	const parts = [...headParts, ...Array(missing).fill("0"), ...tailParts];
 	return parts.reduce(
 		(accumulator, part) =>
@@ -235,6 +237,11 @@ async function resolveRdapBase(
 	const base = trimTrailingSlash(options.bootstrapUrl ?? IANA_RDAP_BOOTSTRAP);
 	const url = `${base}/${bootstrapFileForType(type)}`;
 	const response = await fetch(url, buildFetchOptions(options.headers, cache));
+	if (!response.ok) {
+		throw new Error(
+			`Failed to fetch RDAP bootstrap from ${url}: ${response.status} ${response.statusText}`,
+		);
+	}
 	const bootstrap = JSON.parse(await response.text()) as RdapBootstrap;
 
 	const rdapBase = findRdapBase(bootstrap, type, normalized);

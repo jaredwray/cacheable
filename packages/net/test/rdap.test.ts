@@ -130,6 +130,12 @@ describe("rdap lookups", () => {
 		);
 	});
 
+	test("throws when the bootstrap registry cannot be fetched", async () => {
+		await expect(
+			rdap("foo.test", { bootstrapUrl: `${origin}/missing-bootstrap` }),
+		).rejects.toThrow(/Failed to fetch RDAP bootstrap/);
+	});
+
 	test("uses an explicit server (without a trailing slash) and skips the bootstrap", async () => {
 		const before = countRequests("/rdap/dns.json");
 		const result = await rdap("skip.test", {

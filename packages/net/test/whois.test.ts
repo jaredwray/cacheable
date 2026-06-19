@@ -73,6 +73,7 @@ let silent: Fake;
 let noRefer: Fake;
 let badRefer: Fake;
 let noPortRefer: Fake;
+let badPortRefer: Fake;
 let capture: Fake;
 let idnPort: number;
 
@@ -164,6 +165,13 @@ beforeAll(async () => {
 		[
 			`Domain Name: ${query}`,
 			"Registrar WHOIS Server: nonexistent.invalid",
+			"",
+		].join("\n"),
+	);
+	badPortRefer = await startFakeWhois((query) =>
+		[
+			`Domain Name: ${query}`,
+			"Registrar WHOIS Server: nonexistent.invalid:abc",
 			"",
 		].join("\n"),
 	);
@@ -325,6 +333,14 @@ describe("parseWhois", () => {
 		expect(fields.emptyval).toBeUndefined();
 		expect(fields.NoColonLine).toBeUndefined();
 	});
+
+	test("does not pollute the object prototype", () => {
+		const fields = parseWhois(
+			["__proto__: polluted", "constructor: nope", "Domain: ok", ""].join("\n"),
+		);
+		expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+		expect(fields.Domain).toBe("ok");
+	});
 });
 
 describe("whois lookups", () => {
@@ -436,6 +452,17 @@ describe("whois lookups", () => {
 			whois("x.test", {
 				server: "127.0.0.1",
 				port: noPortRefer.port,
+				follow: 1,
+				timeout: 2000,
+			}),
+		).rejects.toThrow();
+	});
+
+	test("falls back to the default port for a non-numeric referral port", async () => {
+		await expect(
+			whois("x.test", {
+				server: "127.0.0.1",
+				port: badPortRefer.port,
 				follow: 1,
 				timeout: 2000,
 			}),

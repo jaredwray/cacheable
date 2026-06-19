@@ -231,8 +231,11 @@ export function normalizeWhoisQuery(input: string): string {
 	value = value.replace(/^www\./, "");
 	// Cut everything from the first path, query, or hash separator.
 	value = value.split(/[/?#]/)[0];
-	// Strip trailing dots (FQDN root) and surrounding whitespace.
-	value = value.replace(/\.+$/, "").trim();
+	// Strip trailing dots (FQDN root) without a backtracking regex, then trim.
+	while (value.endsWith(".")) {
+		value = value.slice(0, -1);
+	}
+	value = value.trim();
 
 	// Convert internationalized domain names to punycode. domainToASCII returns
 	// "" for invalid input, so fall back to the cleaned value when that happens.
@@ -275,7 +278,10 @@ export function detectQueryType(value: string): WhoisQueryType {
  * @returns {WhoisFields} The parsed fields.
  */
 export function parseWhois(raw: string): WhoisFields {
-	const fields: WhoisFields = {};
+	// Use a null-prototype object so untrusted keys (e.g. "__proto__",
+	// "constructor") cannot pollute the prototype chain and inherited members
+	// (e.g. "toString") never interfere with field lookups.
+	const fields: WhoisFields = Object.create(null);
 
 	for (const line of raw.split(/\r?\n/)) {
 		const trimmed = line.trim();
@@ -344,7 +350,9 @@ function parseReferralValue(value: string): ServerRef | undefined {
 
 	const port =
 		portString === undefined ? WHOIS_PORT : Number.parseInt(portString, 10);
-	return { host, port };
+	// Guard against a non-numeric port (e.g. "host:abc") which would make
+	// createConnection throw; fall back to the default WHOIS port.
+	return { host, port: Number.isNaN(port) ? WHOIS_PORT : port };
 }
 
 /**
@@ -497,7 +505,7 @@ async function runWhois(
 		next = referral;
 	}
 
-	const mergedFields: WhoisFields = {};
+	const mergedFields: WhoisFields = Object.create(null);
 	for (const hop of hops) {
 		mergeFields(mergedFields, hop.fields);
 	}
