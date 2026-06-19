@@ -525,11 +525,11 @@ describe("stats per-key tracking", () => {
 	test("should not record keys when disabled or tracking is off", () => {
 		const disabled = new Stats({ trackKeys: true });
 		disabled.recordKey("a", "hits");
-		expect(disabled.trackedKeyCount).toBe(0);
+		expect(disabled.trackedKeys.size).toBe(0);
 
 		const trackingOff = new Stats({ enabled: true });
 		trackingOff.recordKey("a", "hits");
-		expect(trackingOff.trackedKeyCount).toBe(0);
+		expect(trackingOff.trackedKeys.size).toBe(0);
 	});
 
 	test("should record a per-key breakdown with optional amount", () => {
@@ -549,6 +549,15 @@ describe("stats per-key tracking", () => {
 			sets: 1,
 			deletes: 1,
 			hitRate: 2 / 3,
+		});
+
+		// `trackedKeys` is the public map of raw per-key counters
+		expect(stats.trackedKeys.get("a")).toEqual({
+			hits: 2,
+			misses: 1,
+			gets: 3,
+			sets: 1,
+			deletes: 1,
 		});
 	});
 
@@ -616,7 +625,7 @@ describe("stats per-key tracking", () => {
 		// 5th unique key exceeds the cap and prunes down to floor(4 * 0.9) = 3
 		stats.recordKey("e", "gets");
 
-		expect(stats.trackedKeyCount).toBe(3);
+		expect(stats.trackedKeys.size).toBe(3);
 		expect(stats.keyStats("e")).toBeDefined();
 		expect(stats.keyStats("a")).toBeDefined();
 		expect(stats.keyStats("b")).toBeDefined();
@@ -629,12 +638,12 @@ describe("stats per-key tracking", () => {
 		stats.incrementHits();
 		stats.recordKey("a", "hits");
 		stats.clearKeys();
-		expect(stats.trackedKeyCount).toBe(0);
+		expect(stats.trackedKeys.size).toBe(0);
 		expect(stats.hits).toBe(1);
 
 		stats.recordKey("b", "hits");
 		stats.reset();
-		expect(stats.trackedKeyCount).toBe(0);
+		expect(stats.trackedKeys.size).toBe(0);
 		expect(stats.hits).toBe(0);
 	});
 
@@ -667,6 +676,6 @@ describe("stats per-key tracking", () => {
 		expect(stats.keyStats("user:1")).toMatchObject({ sets: 1, deletes: 1 });
 		expect(stats.keyStats("42")?.sets).toBe(1);
 		expect(stats.keyStats("7")?.deletes).toBe(1);
-		expect(stats.trackedKeyCount).toBe(3);
+		expect(stats.trackedKeys.size).toBe(3);
 	});
 });

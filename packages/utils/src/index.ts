@@ -48,6 +48,7 @@ export {
 export { runIfFn } from "./run-if-fn.js";
 export { sleep } from "./sleep.js";
 export {
+	type KeyCounters,
 	type KeyStatField,
 	nodeCacheStatsEventMap,
 	type StatField,

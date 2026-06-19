@@ -392,9 +392,9 @@ console.log(stats.leastUsedKeys(100));
 // Rank by a single counter instead of the total
 console.log(stats.mostUsedKeys(100, 'hits'));
 
-// Inspect one key, or how many keys are tracked
+// Inspect one key, or read the tracked-keys map directly (e.g. its size)
 console.log(stats.keyStats('user:1'));
-console.log(stats.trackedKeyCount);
+console.log(stats.trackedKeys.size);
 
 stats.clearKeys(); // clear per-key stats only (reset() clears these too)
 ```
