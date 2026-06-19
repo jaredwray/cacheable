@@ -20,10 +20,12 @@ Features:
 * Full TypeScript support with comprehensive type definitions
 * Request-level cache control with the `caching` option
 * All the features of [cacheable](https://npmjs.com/package/cacheable) - layered caching, LRU, TTL expiration, and more!
+* `whois` and `rdap` lookups for domains, IPs, and ASNs with **both raw and JSON output**, dynamic IANA server discovery, referral following, and built-in caching
 * Extensively tested with 100% code coverage
 
 # Table of Contents
 * [Getting Started](#getting-started)
+* [WHOIS and RDAP Lookups](#whois-and-rdap-lookups)
 * [How to Contribute](#how-to-contribute)
 * [License and Copyright](#license-and-copyright)
 
@@ -201,6 +203,97 @@ By default:
 - To enable caching for POST/PUT/PATCH/DELETE, set `caching: true` in the options
 - To disable caching for GET/HEAD, set `caching: false` in the options
 
+
+# WHOIS and RDAP Lookups
+
+`@cacheable/net` ships first-class lookups for domains, IP addresses (v4/v6), and ASNs over both
+the traditional **WHOIS** protocol (TCP port 43) and the modern **RDAP** protocol (HTTPS/JSON).
+WHOIS returns the registry's **raw text** which is also parsed into a JSON object, while RDAP
+returns native JSON. The authoritative server is discovered dynamically through IANA and cached, so
+you never have to ship or maintain a static list of TLD servers.
+
+Because WHOIS and RDAP servers are heavily rate-limited, results are cached (and concurrent
+identical lookups are coalesced) using the same `cacheable` instance as the rest of the library.
+
+## WHOIS
+
+```javascript
+import { CacheableNet } from '@cacheable/net';
+
+const net = new CacheableNet();
+
+const result = await net.whois('example.com');
+
+result.raw;     // the full raw WHOIS text (all hops joined)
+result.fields;  // parsed JSON, e.g. { "Domain Name": "EXAMPLE.COM", "Name Server": ["A", "B"] }
+result.server;  // the authoritative server that produced the data
+result.type;    // "domain" | "ipv4" | "ipv6" | "asn"
+result.hops;    // every server response in order (registry, registrar, ...)
+```
+
+You can also use the standalone functions. `whoisRaw` returns just the raw text:
+
+```javascript
+import { whois, whoisRaw } from '@cacheable/net';
+
+const { fields } = await whois('8.8.8.8');   // IP address lookup
+const { fields: asn } = await whois('AS15169'); // ASN lookup
+const raw = await whoisRaw('example.com');   // raw text only
+```
+
+By default a registry response's `Registrar WHOIS Server` referral is followed to fetch fuller
+data. Control this with the `follow` option (`false`/`0` to disable, `true` for the default depth,
+or a number of hops):
+
+```javascript
+const shallow = await net.whois('example.com', { follow: false }); // registry only
+const deep = await net.whois('example.com', { follow: 2 });        // follow up to 2 referrals
+```
+
+### WhoisOptions
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `server` | `string` | – | Query this server directly and skip IANA discovery |
+| `port` | `number` | `43` | TCP port for the initial server |
+| `timeout` | `number` | `10000` | Socket timeout in milliseconds |
+| `follow` | `boolean \| number` | `true` | Follow registry → registrar referrals (`true` = depth 2) |
+| `queryPrefix` | `string` | `""` | Text written before the query (e.g. `"domain "` for some registries) |
+| `encoding` | `BufferEncoding` | `"utf8"` | Encoding used to decode responses |
+| `caching` | `boolean` | `true` | Disable caching for this lookup when `false` |
+| `cache` | `Cacheable` | instance cache | Cache instance (standalone `whois` caches only when provided) |
+| `ttl` | `number \| string` | instance default | TTL override for the cached result |
+
+## RDAP
+
+RDAP is the modern, fully structured replacement for WHOIS. The RDAP server is resolved from the
+IANA bootstrap registries (cached through the library's own `fetch`).
+
+```javascript
+import { CacheableNet, rdap } from '@cacheable/net';
+
+const net = new CacheableNet();
+
+const result = await net.rdap('example.com');
+result.data;   // parsed RDAP object
+result.raw;    // raw JSON text
+result.server; // the RDAP base URL used
+
+// standalone, with IP and ASN support
+const ip = await rdap('1.1.1.1');
+const asn = await rdap('AS15169');
+```
+
+### RdapOptions
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `server` | `string` | – | Query this RDAP base URL directly and skip bootstrap discovery |
+| `bootstrapUrl` | `string` | `https://data.iana.org/rdap` | Override the IANA bootstrap base URL |
+| `headers` | `Record<string, string>` | – | Additional request headers |
+| `caching` | `boolean` | `true` | Disable caching for this lookup when `false` |
+| `cache` | `Cacheable` | instance cache | Cache instance (standalone `rdap` caches only when provided) |
+| `ttl` | `number \| string` | instance default | TTL override for the cached result |
 
 # How to Contribute
 
