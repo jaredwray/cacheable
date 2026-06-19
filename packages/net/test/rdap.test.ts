@@ -8,6 +8,7 @@ let server: http.Server;
 let origin = "";
 let bootstrapUrl = "";
 const requests: string[] = [];
+const authByPath = new Map<string, string | undefined>();
 
 /** Count how many times a given path has been requested. */
 function countRequests(path: string): number {
@@ -27,6 +28,7 @@ beforeAll(async () => {
 	server = http.createServer((req, res) => {
 		const url = req.url ?? "/";
 		requests.push(url);
+		authByPath.set(url, req.headers.authorization);
 		const rdapBase = `${origin}/rdap-server/`;
 		const other = "https://unused.example/rdap/";
 
@@ -222,6 +224,24 @@ describe("rdap caching", () => {
 		await rdap("free.test", { bootstrapUrl });
 		await rdap("free.test", { bootstrapUrl });
 		expect(countRequests("/rdap-server/domain/free.test")).toBe(2);
+	});
+
+	test("varies the cache key by server/bootstrap so endpoints are not confused", async () => {
+		const cache = new Cacheable();
+		await rdap("keyed.test", { bootstrapUrl, cache });
+		await rdap("keyed.test", { server: `${origin}/rdap-server`, cache });
+		expect(countRequests("/rdap-server/domain/keyed.test")).toBe(2);
+	});
+});
+
+describe("rdap headers", () => {
+	test("does not forward caller headers to the bootstrap registry", async () => {
+		await rdap("hdr.test", {
+			bootstrapUrl,
+			headers: { authorization: "secret" },
+		});
+		expect(authByPath.get("/rdap/dns.json")).toBeUndefined();
+		expect(authByPath.get("/rdap-server/domain/hdr.test")).toBe("secret");
 	});
 });
 

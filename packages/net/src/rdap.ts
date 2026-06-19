@@ -236,7 +236,9 @@ async function resolveRdapBase(
 	/* v8 ignore next -- @preserve the real IANA default is only used off the test harness */
 	const base = trimTrailingSlash(options.bootstrapUrl ?? IANA_RDAP_BOOTSTRAP);
 	const url = `${base}/${bootstrapFileForType(type)}`;
-	const response = await fetch(url, buildFetchOptions(options.headers, cache));
+	// Do not forward caller headers (e.g. Authorization for a registry) to the
+	// public IANA bootstrap endpoint.
+	const response = await fetch(url, buildFetchOptions(undefined, cache));
 	if (!response.ok) {
 		throw new Error(
 			`Failed to fetch RDAP bootstrap from ${url}: ${response.status} ${response.statusText}`,
@@ -265,7 +267,13 @@ async function runRdap(
 	const key = type === "asn" ? normalized.replace(/^as/i, "") : normalized;
 	const url = `${ensureTrailingSlash(base)}${rdapPathForType(type)}/${key}`;
 
-	const response = await fetch(url, buildFetchOptions(options.headers, cache));
+	// The RDAP result is cached at the rdap:<query> level with the requested TTL,
+	// so the final query is not cached again at the fetch layer (which would
+	// persist a GET:<url> entry that can outlive and bypass that TTL).
+	const response = await fetch(
+		url,
+		buildFetchOptions(options.headers, undefined),
+	);
 	const raw = await response.text();
 	if (!response.ok) {
 		throw new Error(
@@ -306,7 +314,13 @@ export async function rdap(
 		return runRdap(normalized, type, options, undefined);
 	}
 
-	const cacheKey = `rdap:${normalized}`;
+	// Include every option that changes the result so a lookup against one
+	// server/bootstrap/headers never serves a cache hit meant for another.
+	const cacheKey = `rdap:${normalized}:${JSON.stringify({
+		server: options.server,
+		bootstrapUrl: options.bootstrapUrl,
+		headers: options.headers,
+	})}`;
 
 	return coalesceAsync(`net:${cacheKey}`, async () => {
 		const existing = await cache.get<RdapResult>(cacheKey);

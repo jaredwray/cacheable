@@ -283,6 +283,10 @@ describe("normalizeWhoisQuery", () => {
 		["español.com", "xn--espaol-zwa.com"],
 		["8.8.8.8", "8.8.8.8"],
 		["AS15169", "as15169"],
+		["https://example.com:8443/path", "example.com"],
+		["example.com:abc", "example.com:abc"],
+		["example.com:", "example.com:"],
+		["2001:db8::1", "2001:db8::1"],
 	])("normalizes %s -> %s", (input, expected) => {
 		expect(normalizeWhoisQuery(input)).toBe(expected);
 	});
@@ -299,6 +303,7 @@ describe("detectQueryType", () => {
 		["2001:db8::1", "ipv6"],
 		["as15169", "asn"],
 		["AS15169", "asn"],
+		["15169", "asn"],
 	])("detects %s as %s", (input, expected) => {
 		expect(detectQueryType(input)).toBe(expected);
 	});
@@ -578,6 +583,24 @@ describe("whois caching", () => {
 		});
 		expect(result.type).toBe("ipv4");
 		expect(await cache.get("whois:server:ipv4:8.8.8.8")).toBeDefined();
+	});
+
+	test("varies the cache key by server so different servers are not confused", async () => {
+		const cache = new Cacheable();
+		const a = await whois("keyed.test", {
+			server: "127.0.0.1",
+			port: counter.port,
+			follow: false,
+			cache,
+		});
+		const b = await whois("keyed.test", {
+			server: "127.0.0.1",
+			port: registrar.port,
+			follow: false,
+			cache,
+		});
+		expect(a.hops[0].port).toBe(counter.port);
+		expect(b.hops[0].port).toBe(registrar.port);
 	});
 
 	test("does not cache failed lookups", async () => {

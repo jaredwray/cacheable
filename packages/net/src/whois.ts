@@ -231,6 +231,18 @@ export function normalizeWhoisQuery(input: string): string {
 	value = value.replace(/^www\./, "");
 	// Cut everything from the first path, query, or hash separator.
 	value = value.split(/[/?#]/)[0];
+
+	// Strip an authority port (e.g. "example.com:8443"). An IPv6 literal has
+	// multiple colons, so only strip when there is exactly one colon followed
+	// by digits.
+	const colonIndex = value.indexOf(":");
+	if (colonIndex !== -1 && value.indexOf(":", colonIndex + 1) === -1) {
+		const portPart = value.slice(colonIndex + 1);
+		if (portPart.length > 0 && /^\d+$/.test(portPart)) {
+			value = value.slice(0, colonIndex);
+		}
+	}
+
 	// Strip trailing dots (FQDN root) without a backtracking regex, then trim.
 	while (value.endsWith(".")) {
 		value = value.slice(0, -1);
@@ -258,7 +270,9 @@ export function normalizeWhoisQuery(input: string): string {
  * @returns {WhoisQueryType} The detected query type.
  */
 export function detectQueryType(value: string): WhoisQueryType {
-	if (/^as\d+$/i.test(value)) {
+	// "AS15169" or a bare autonomous system number like "15169" (a value made up
+	// only of digits is neither a domain nor an IP address).
+	if (/^as\d+$/i.test(value) || /^\d+$/.test(value)) {
 		return "asn";
 	}
 	if (isIPv4(value)) {
@@ -544,8 +558,17 @@ export async function whois(
 		return runWhois(normalized, type, effectiveOptions);
 	}
 
-	const followDepth = resolveFollowDepth(options.follow);
-	const cacheKey = `whois:${normalized}:f${followDepth}`;
+	// Include every option that changes the result so a lookup against one
+	// server/config never serves a cache hit meant for another.
+	const cacheKey = `whois:${normalized}:${JSON.stringify({
+		follow: resolveFollowDepth(options.follow),
+		server: options.server,
+		port: options.port,
+		bootstrapServer: options.bootstrapServer,
+		bootstrapPort: options.bootstrapPort,
+		queryPrefix: options.queryPrefix,
+		encoding: options.encoding,
+	})}`;
 
 	return coalesceAsync(`net:${cacheKey}`, async () => {
 		const existing = await cache.get<WhoisResult>(cacheKey);
