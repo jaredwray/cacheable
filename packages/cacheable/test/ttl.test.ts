@@ -229,3 +229,35 @@ test("should support a per-store ttl in wrap", { timeout: 3000 }, async () => {
 	expect(await wrapped(5)).toEqual(10);
 	expect(calls).toBe(2);
 });
+
+test("treats a negative ttl as no ttl", { timeout: 2000 }, async () => {
+	const cacheable = new Cacheable();
+	await cacheable.set("key", "value", -5);
+	await sleep(50);
+	// A negative ttl is invalid, so it is treated as no ttl rather than expiring immediately
+	expect(await cacheable.get("key")).toEqual("value");
+});
+
+test("treats a NaN ttl as no ttl", { timeout: 2000 }, async () => {
+	const cacheable = new Cacheable();
+	await cacheable.set("key", "value", Number.NaN);
+	const raw = await cacheable.getRaw("key");
+	expect(raw?.value).toEqual("value");
+	// A NaN ttl must not produce a NaN expiry
+	expect(Number.isNaN(raw?.expires)).toBe(false);
+	await sleep(50);
+	expect(await cacheable.get("key")).toEqual("value");
+});
+
+test("treats a negative per-store ttl field as no ttl for that store", {
+	timeout: 2000,
+}, async () => {
+	const primary = new Keyv();
+	const secondary = new Keyv();
+	const cacheable = new Cacheable({ primary, secondary });
+	await cacheable.set("key", "value", { ttl: { primary: -5, secondary: 100 } });
+	await sleep(150);
+	// Primary's negative ttl is treated as no ttl; the secondary honored its 100ms
+	expect(await primary.get("key")).toEqual("value");
+	expect(await secondary.get("key")).toBeUndefined();
+});

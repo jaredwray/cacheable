@@ -1578,6 +1578,13 @@ export class Cacheable extends Hookified {
 		ttl: number | undefined,
 		maxTtlMs: number | undefined,
 	): number | undefined {
+		// A negative or NaN ttl is invalid; treat it as "no ttl" (parity with the instance-level
+		// guards in setTtl/setMaxTtl). A ttl of 0 is preserved because it means the entry never
+		// expires.
+		if (ttl !== undefined && (Number.isNaN(ttl) || ttl < 0)) {
+			ttl = undefined;
+		}
+
 		if (maxTtlMs === undefined) {
 			return ttl;
 		}

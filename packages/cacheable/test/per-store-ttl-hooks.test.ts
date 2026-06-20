@@ -111,6 +111,22 @@ describe("per-store ttl via the BEFORE_SET hook", () => {
 		expect(await secondary.get("key")).toEqual("value");
 	});
 
+	test("a hook setting a negative ttl is treated as no ttl", {
+		timeout: 2000,
+	}, async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary });
+		cacheable.onHook(CacheableHooks.BEFORE_SET, (item) => {
+			item.ttl = -5;
+		});
+		await cacheable.set("key", "value");
+		await sleep(50);
+		// The invalid negative ttl is treated as no ttl rather than expiring immediately
+		expect(await primary.get("key")).toEqual("value");
+		expect(await secondary.get("key")).toEqual("value");
+	});
+
 	test("a scalar applies to both stores", { timeout: 2000 }, async () => {
 		const primary = new Keyv();
 		const secondary = new Keyv();
