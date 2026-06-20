@@ -143,7 +143,11 @@ type StatsSubscription = {
 	listener: (...args: any[]) => void;
 };
 
-type KeyCounters = Record<KeyStatField, number>;
+/**
+ * Raw per-key counters stored in {@link Stats.trackedKeys}: the
+ * `hits`/`misses`/`gets`/`sets`/`deletes` totals for a single cache key.
+ */
+export type KeyCounters = Record<KeyStatField, number>;
 
 export class Stats {
 	private _counters: Record<StatField, number> = {
@@ -162,7 +166,8 @@ export class Stats {
 	private _lastUpdated: number | undefined;
 	private _lastReset: number | undefined;
 	private _subscriptions: StatsSubscription[] = [];
-	private _keyCounts = new Map<string, KeyCounters>();
+	/** Backing store for the public {@link trackedKeys} read-only view. */
+	private _trackedKeys = new Map<string, KeyCounters>();
 	private _trackKeys = false;
 	private _maxTrackedKeys: number | undefined;
 
@@ -229,11 +234,17 @@ export class Stats {
 	}
 
 	/**
-	 * @returns {number} - The number of unique keys currently tracked
+	 * Per-key statistics, keyed by cache key, holding each key's raw
+	 * `hits`/`misses`/`gets`/`sets`/`deletes` counters. Populated by
+	 * {@link recordKey} when {@link trackKeys} is enabled; read `trackedKeys.size`
+	 * for the number of unique keys currently tracked. The returned map is a
+	 * read-only view — mutate per-key stats via {@link recordKey} /
+	 * {@link clearKeys} / {@link reset}.
+	 * @returns {ReadonlyMap<string, Readonly<KeyCounters>>}
 	 * @readonly
 	 */
-	public get trackedKeyCount(): number {
-		return this._keyCounts.size;
+	public get trackedKeys(): ReadonlyMap<string, Readonly<KeyCounters>> {
+		return this._trackedKeys;
 	}
 
 	/**
@@ -534,7 +545,7 @@ export class Stats {
 		};
 		this._vsize = 0;
 		this._ksize = 0;
-		this._keyCounts.clear();
+		this._trackedKeys.clear();
 		this._lastReset = Date.now();
 		this._lastUpdated = undefined;
 	}
@@ -563,7 +574,7 @@ export class Stats {
 			count: this._counters.count,
 			hitRate: this.hitRate,
 			missRate: this.missRate,
-			trackedKeys: this._keyCounts.size,
+			trackedKeys: this._trackedKeys.size,
 			lastUpdated: this._lastUpdated,
 			lastReset: this._lastReset,
 		};
@@ -589,10 +600,10 @@ export class Stats {
 			return;
 		}
 
-		let counters = this._keyCounts.get(key);
+		let counters = this._trackedKeys.get(key);
 		if (!counters) {
 			counters = { hits: 0, misses: 0, gets: 0, sets: 0, deletes: 0 };
-			this._keyCounts.set(key, counters);
+			this._trackedKeys.set(key, counters);
 			this.pruneTrackedKeys(key);
 		}
 
@@ -631,7 +642,7 @@ export class Stats {
 	 * `undefined` if the key has not been recorded
 	 */
 	public keyStats(key: string): StatsKeyEntry | undefined {
-		const counters = this._keyCounts.get(key);
+		const counters = this._trackedKeys.get(key);
 		return counters ? this.toKeyEntry(key, counters) : undefined;
 	}
 
@@ -639,7 +650,7 @@ export class Stats {
 	 * Clear all per-key statistics without touching the aggregate counters.
 	 */
 	public clearKeys(): void {
-		this._keyCounts.clear();
+		this._trackedKeys.clear();
 	}
 
 	private totalOf(counters: KeyCounters): number {
@@ -671,7 +682,7 @@ export class Stats {
 		direction: "asc" | "desc",
 	): StatsKeyEntry[] {
 		const entries: StatsKeyEntry[] = [];
-		for (const [key, counters] of this._keyCounts) {
+		for (const [key, counters] of this._trackedKeys) {
 			entries.push(this.toKeyEntry(key, counters));
 		}
 
@@ -697,18 +708,18 @@ export class Stats {
 	private pruneTrackedKeys(protectedKey: string): void {
 		if (
 			this._maxTrackedKeys === undefined ||
-			this._keyCounts.size <= this._maxTrackedKeys
+			this._trackedKeys.size <= this._maxTrackedKeys
 		) {
 			return;
 		}
 
 		const target = Math.max(1, Math.floor(this._maxTrackedKeys * 0.9));
-		const sorted = [...this._keyCounts.entries()].sort(
+		const sorted = [...this._trackedKeys.entries()].sort(
 			(a, b) => this.totalOf(a[1]) - this.totalOf(b[1]),
 		);
 
 		for (const [key] of sorted) {
-			if (this._keyCounts.size <= target) {
+			if (this._trackedKeys.size <= target) {
 				break;
 			}
 
@@ -716,7 +727,7 @@ export class Stats {
 				continue;
 			}
 
-			this._keyCounts.delete(key);
+			this._trackedKeys.delete(key);
 		}
 	}
 

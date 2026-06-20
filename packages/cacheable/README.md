@@ -399,42 +399,88 @@ The `hasMany` method returns an array of booleans in the same order as the input
 
 # Iteration on Primary and Secondary Stores
 
-The `Cacheable` class exposes both `primary` and `secondary` Keyv instances, which support iteration over their stored entries using the `iterator()` method. This allows you to access and process all keys and values in either storage layer.
+The `Cacheable` class exposes both `primary` and `secondary` as [Keyv](https://keyv.org) instances. Keyv provides an `iterator()` async generator for walking every entry in a store, but **it is only available on stores that support iteration**. When a store does not support it, `keyv.iterator` is `undefined`, so you must feature-check it before calling.
+
+Keyv enables `iterator()` for:
+
+- A plain `new Keyv()` whose store is a `Map` (the Keyv default), and
+- The server-backed adapters Keyv recognizes as iterable: `@keyv/redis`, `@keyv/valkey`, `@keyv/mongo`, `@keyv/sqlite`, `@keyv/postgres`, `@keyv/mysql`, and `@keyv/etcd`.
+
+> **Heads up:** Cacheable's *default* primary store is the high-performance in-memory store from [`@cacheable/memory`](https://cacheable.org/docs/memory/) (created with `createKeyv()`). It is neither a raw `Map` nor one of the recognized adapters, so `cache.primary.iterator` is `undefined`. See [Iterating the default in-memory primary](#iterating-the-default-in-memory-primary) for how to walk it.
 
 **Important Notes:**
-- Not all storage adapters support iteration. Always check if `iterator` exists before using it.
-- The iterator automatically filters by namespace, skips expired entries (and deletes them), and deserializes values.
-- **Performance Warning:** Be careful when using `iterator()` as it can cause performance issues with large datasets.
 
-## Basic Iteration Example
+- Always check that `iterator` exists before using it — it is `undefined` on stores that don't support iteration.
+- The iterator filters by namespace, skips expired entries (deleting them), and deserializes values for you.
+- **Performance Warning:** Iterating can be expensive on large datasets (for example, `@keyv/redis` uses `SCAN` under the hood). Avoid it on hot paths.
+
+## Iterating a Secondary Store
+
+A secondary store backed by a recognized adapter (Redis, Valkey, Mongo, SQLite, Postgres, MySQL, etcd) supports `iterator()` directly. Each iteration yields a `[key, value]` tuple:
 
 ```typescript
 import { Cacheable } from 'cacheable';
 import KeyvRedis from '@keyv/redis';
 
-// Create cache with primary (in-memory) and secondary (Redis) stores
 const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
 const cache = new Cacheable({ secondary });
 
-// Add some data
 await cache.set('user:1', { name: 'Alice', role: 'admin' });
 await cache.set('user:2', { name: 'Bob', role: 'user' });
-await cache.set('session:abc', { userId: '1', active: true });
 
-// Iterate over primary store (in-memory)
-console.log('Primary store contents:');
-if (cache.primary.iterator) {
-    for await (const [key, value] of cache.primary.iterator()) {
-        console.log(`  ${key}:`, JSON.stringify(value));
-    }
-}
-
-// Iterate over secondary store (Redis)
-console.log('\nSecondary store contents:');
 if (cache.secondary?.iterator) {
     for await (const [key, value] of cache.secondary.iterator()) {
-        console.log(`  ${key}:`, JSON.stringify(value));
+        console.log(`${key}:`, value);
     }
+}
+```
+
+## Iterating the Primary Store
+
+If you need a primary store you can walk with `iterator()`, use a `Map`-backed `new Keyv()` (or any recognized adapter) as the primary. A plain `Keyv` is iterable because its default store is a `Map`:
+
+```typescript
+import { Cacheable } from 'cacheable';
+import { Keyv } from 'keyv';
+
+const cache = new Cacheable({ primary: new Keyv() });
+
+await cache.set('user:1', { name: 'Alice' });
+await cache.set('user:2', { name: 'Bob' });
+
+if (cache.primary.iterator) {
+    for await (const [key, value] of cache.primary.iterator()) {
+        console.log(`${key}:`, value);
+    }
+}
+```
+
+### Iterating the default in-memory primary
+
+The default primary from `@cacheable/memory` does not provide a Keyv `iterator()`. To walk it, reach the underlying `CacheableMemory` store through `cache.primary.store` and use its `items` iterator. Each item is a `{ key, value, expires }` record (expired entries are skipped automatically), where `value` holds Keyv's stored envelope — the decoded value is at `item.value.value`:
+
+```typescript
+import { Cacheable, KeyvCacheableMemory } from 'cacheable';
+
+const cache = new Cacheable();
+await cache.set('user:1', { name: 'Alice' });
+await cache.set('user:2', { name: 'Bob' });
+
+// cache.primary.store is the KeyvCacheableMemory adapter; its .store is the CacheableMemory
+const memory = (cache.primary.store as KeyvCacheableMemory).store;
+
+for (const item of memory.items) {
+    // item.value is Keyv's { value, expires } envelope
+    console.log(`${item.key}:`, item.value.value);
+}
+```
+
+If you'd rather not depend on the envelope shape, iterate the keys and read each entry back through the cache:
+
+```typescript
+const memory = (cache.primary.store as KeyvCacheableMemory).store;
+for (const { key } of memory.items) {
+    console.log(`${key}:`, await cache.get(key));
 }
 ```
 
@@ -469,18 +515,22 @@ await iterateStore(cache.primary, 'Primary');
 await iterateStore(cache.secondary, 'Secondary');
 ```
 
+Note that with the default configuration the `Primary` branch above will report that it "does not support iteration" — that is expected, because the default `@cacheable/memory` primary has no `iterator()`. Use the [`CacheableMemory.items`](#iterating-the-default-in-memory-primary) approach for it.
+
 ## Storage Adapter Support
 
-The `iterator()` method is available when:
-- The store is a Map instance (has Symbol.iterator)
-- The store implements an `iterator()` method (e.g., Redis, Valkey, etc.)
-- The store is a supported iterable adapter
+Keyv assigns an `iterator()` method only when the store is a raw `Map` or one of the adapters it recognizes as iterable. For every other store, `keyv.iterator` is `undefined`.
 
-Common stores that support iteration:
-- In-memory (Map-based stores)
-- @keyv/redis
-- @keyv/valkey
-- Other Keyv adapters that implement the iterator interface
+Stores that support `iterator()`:
+
+- A plain `new Keyv()` (its store is a `Map`)
+- `@keyv/redis` and `@keyv/valkey`
+- `@keyv/mongo`, `@keyv/sqlite`, `@keyv/postgres`, `@keyv/mysql`, and `@keyv/etcd`
+
+Stores that do **not** support `iterator()`:
+
+- The default `@cacheable/memory` primary (`createKeyv()`) — walk it through its [`CacheableMemory.items`](#iterating-the-default-in-memory-primary) accessor instead
+- Any adapter that doesn't implement Keyv's iterable interface
 
 # Non-Blocking Operations
 

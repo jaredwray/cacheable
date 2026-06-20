@@ -1,7 +1,7 @@
 {
 	"name": "@cacheable/net",
 	"version": "2.0.9",
-	"description": "High Performance Network Caching for Node.js with fetch, request, http 1.1, and http 2 support",
+	"description": "High Performance Network Caching for Node.js with fetch, http 1.1, http 2, and cached WHOIS and RDAP lookups",
 	"type": "module",
 	"main": "./dist/index.cjs",
 	"module": "./dist/index.mjs",
@@ -21,7 +21,7 @@
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/jaredwray/cacheable.git",
-		"directory": "packages/cacheable"
+		"directory": "packages/net"
 	},
 	"author": "Jared Wray <me@jaredwray.com>",
 	"license": "MIT",
@@ -55,6 +55,11 @@
 		"http 2 caching",
 		"dns caching",
 		"whois caching",
+		"whois",
+		"rdap",
+		"whois lookup",
+		"rdap lookup",
+		"domain lookup",
 		"high performance",
 		"layer 1 caching",
 		"layer 2 caching",
