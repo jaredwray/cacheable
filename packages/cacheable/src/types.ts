@@ -4,7 +4,7 @@ import type {
 	GetOrSetFunctionOptions as UtilsGetOrSetFunctionOptions,
 	WrapFunctionOptions as UtilsWrapFunctionOptions,
 } from "@cacheable/utils";
-import type { Keyv, KeyvStoreAdapter } from "keyv";
+import type { Keyv, KeyvStoreAdapter, StoredDataRaw } from "keyv";
 import type { CacheableSync, CacheableSyncOptions } from "./sync.js";
 
 export type { PerStoreTtl } from "@cacheable/utils";
@@ -141,7 +141,18 @@ export type SetOptions = {
 /**
  * An item for `setMany` that can optionally carry tags for tag-based invalidation.
  */
-export type CacheableSetItem = CacheableItem & {
+export type CacheableSetItem = Omit<CacheableItem, "ttl"> & {
+	/**
+	 * Time-to-live. If you set a number it is milliseconds, if you set a string it is a
+	 * human-readable format such as `1s` for 1 second or `1h` for 1 hour. Setting undefined means
+	 * that it will use the default time-to-live.
+	 *
+	 * You can also pass a per-store object to give each store its own TTL for this item, such as
+	 * `{ primary: '10s', secondary: '5m' }`. Any field left undefined falls back to that store's own
+	 * default TTL resolution.
+	 * @type {number | string | PerStoreTtl}
+	 */
+	ttl?: number | string | PerStoreTtl;
 	/**
 	 * Tags to associate with the entry for tag-based invalidation. Invalidating any of these tags
 	 * via `invalidateTag` / `invalidateTags` makes the entry stale, causing the next `get` to treat
@@ -149,6 +160,53 @@ export type CacheableSetItem = CacheableItem & {
 	 * @type {string[]}
 	 */
 	tags?: string[];
+};
+
+/**
+ * The mutable item passed to the `BEFORE_SET` and `AFTER_SET` hooks. Within a `BEFORE_SET` handler
+ * you may reassign `ttl` to give the entry a new expiration — either a single value (a number in
+ * milliseconds or a shorthand string, applied to every store) or a per-store object
+ * (`{ primary, secondary }`) so the primary and secondary stores expire at different rates. Any
+ * assignment counts as an override (even assigning the value it already holds); a field omitted from
+ * a per-store object falls back to that store's normal TTL resolution.
+ *
+ * By the time `AFTER_SET` runs, `ttl` has been normalized to the effective **primary** TTL as a
+ * number (the value written to the primary store, after `maxTtl` capping); the secondary store's
+ * effective TTL is not exposed on the item.
+ */
+export type CacheableHookItem<T = unknown> = {
+	key: string;
+	value: T;
+	ttl?: number | string | PerStoreTtl;
+	tags?: string[];
+};
+
+/**
+ * The item passed to the `AFTER_GET` hook after a `get` / `getRaw`.
+ */
+export type CacheableAfterGetItem = {
+	key: string;
+	result?: StoredDataRaw<unknown>;
+	ttl?: number | string;
+};
+
+/**
+ * The item passed to the `AFTER_GET_MANY` hook after a `getMany` / `getManyRaw`.
+ */
+export type CacheableAfterGetManyItem = {
+	keys: string[];
+	result: Array<StoredDataRaw<unknown>>;
+};
+
+/**
+ * The item passed to the `BEFORE_SECONDARY_SETS_PRIMARY` hook. This hook only writes the primary
+ * store, so its `ttl` is a single value (a number in milliseconds or a shorthand string), not a
+ * per-store object.
+ */
+export type CacheableSecondarySetsPrimaryItem<T = unknown> = {
+	key: string;
+	value: T;
+	ttl?: number | string;
 };
 
 export type TakeOptions = {

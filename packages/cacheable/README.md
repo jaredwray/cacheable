@@ -29,6 +29,7 @@
 * [v1 to v2 Changes](#v1-to-v2-changes)
 * [Basic Usage](#basic-usage)
 * [Hooks and Events](#hooks-and-events)
+  * [Overriding the TTL in a BEFORE_SET Hook](#overriding-the-ttl-in-a-before_set-hook)
 * [Storage Tiering and Caching](#storage-tiering-and-caching)
 * [TTL Propagation and Storage Tiering](#ttl-propagation-and-storage-tiering)
 * [Per-Store TTL per Operation](#per-store-ttl-per-operation)
@@ -117,6 +118,61 @@ cacheable.onHook(CacheableHooks.BEFORE_SET, (data) => {
 });
 ```
 
+## Overriding the TTL in a BEFORE_SET Hook
+
+A `BEFORE_SET` hook can change an entry's time-to-live by reassigning `data.ttl`. This works for `set()`, `getOrSet()`, and `wrap()` because they all run through `BEFORE_SET`. You can assign a single value (applied to every store) or a per-store object so the primary and secondary stores expire at different rates:
+
+```javascript
+import { Cacheable, CacheableHooks } from 'cacheable';
+import KeyvRedis from '@keyv/redis';
+const secondary = new KeyvRedis('redis://user:pass@localhost:6379');
+const cache = new Cacheable({ secondary });
+
+cache.onHook(CacheableHooks.BEFORE_SET, (data) => {
+  // Keep this entry short-lived in memory (primary) but longer in Redis (secondary)
+  data.ttl = { primary: '10s', secondary: '5m' };
+});
+```
+
+Each store resolves its TTL independently, taking the first defined value down this list and then capping it with [`maxTtl`](#maximum-time-to-live-maxttl). This is the single source of truth for how *every* TTL (operation, hook, or default) is resolved:
+
+| Precedence (highest first) | Primary store | Secondary store |
+| --- | --- | --- |
+| 1. `BEFORE_SET` hook | `data.ttl` (scalar, or `.primary`) | `data.ttl` (scalar, or `.secondary`) |
+| 2. Operation `ttl` | `ttl` (scalar, or `.primary`) | `ttl` (scalar, or `.secondary`) |
+| 3. Store default | `new Keyv({ ttl })` on the primary | `new Keyv({ ttl })` on the secondary |
+| 4. Instance `ttl` | `new Cacheable({ ttl })` | `new Cacheable({ ttl })` |
+| Cap (applied last) | `maxTtl` | `maxTtl` |
+
+What happens when you override:
+
+* **Per-store object** (`{ primary, secondary }`): each field applies to that store independently. A field you leave out falls back to that store's normal resolution — including any per-store `ttl` you passed to the operation.
+* **Scalar** (a number or [shorthand string](#shorthand-for-time-to-live-ttl)): applied to **every** store, discarding any per-store `secondary` you passed to the operation. Use the object form if you want the stores to differ.
+* **Any assignment counts as an override**, even assigning the value `data.ttl` already holds. Leaving `data.ttl` untouched keeps each store on its normal resolution (the default behavior).
+* **`0`, `null`, or `undefined` clears the TTL** → the entry never expires, *ignoring* the cascade (store default and instance `ttl`). This matches the "disable the ttl" behavior in [Shorthand for Time to Live](#shorthand-for-time-to-live-ttl); take care when assigning a possibly-nullable value to `data.ttl`.
+* **An invalid shorthand string aborts the whole write.** Assigning an unparseable string (e.g. `'10 seconds'`) throws; `set` catches it, emits the [`error` event](#hooks-and-events), and returns `false` **without caching** — so a hook typo silently disables caching for that write. Listen on `error` to catch it.
+* **`maxTtl` is re-applied to each store after the hook**, so a hook can never push an entry past the cap.
+* **Tag snapshots** use the longer of the two store TTLs (and never expire while either copy is immortal, including `ttl: 0`) so [tag invalidation](#tag-based-invalidation) can always reach the longest-lived copy.
+* By the time **`AFTER_SET`** runs (and for [sync replication](#cacheablesync---distributed-updates)), `data.ttl` has been normalized to the effective **primary** TTL as a number; the secondary store's effective TTL is not exposed on the item. **`AFTER_SET_MANY` differs:** `setMany` does not mutate the items you passed, so a handler there still sees each `item.ttl` exactly as set (a per-store object stays an object).
+
+> **TypeScript:** `onHook(CacheableHooks.BEFORE_SET, (data) => …)` types `data` automatically — no annotation needed, and an invalid `data.ttl` shape is a compile error. Payload types are exported too (`CacheableHookItem`, `CacheableSetItem`).
+
+> **Note on backfills:** like a per-store `ttl` passed to an operation, a primary TTL set by a hook governs only that write — it is not persisted per key. Once the primary copy expires, the next read repopulates the primary from the secondary using the usual [TTL propagation](#ttl-propagation-and-storage-tiering) rules. Set a primary store default TTL (`new Keyv({ ttl })`) or an instance `maxTtl` if you need the primary to stay short across backfills.
+
+> **Note on sync:** a per-store TTL writes the secondary's TTL to the (typically shared) secondary store directly; [CacheableSync](#cacheablesync---distributed-updates) replicates only the **primary** TTL to other instances' in-memory primaries. For the usual shared-secondary topology this is correct — the secondary is written once and read by every instance.
+
+The same per-store object is accepted by `setMany` items and the `BEFORE_SET_MANY` hook:
+
+```javascript
+cache.onHook(CacheableHooks.BEFORE_SET_MANY, (items) => {
+  for (const item of items) {
+    item.ttl = { primary: '10s', secondary: '5m' };
+  }
+});
+
+await cache.setMany([{ key: 'a', value: 1, ttl: { primary: '10s', secondary: '5m' } }]);
+```
+
 Here is an example of how to use `BEFORE_SECONDARY_SETS_PRIMARY` hook:
 
 ```javascript
@@ -128,7 +184,7 @@ cache.onHook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, (data) => {
   console.log(`before secondary sets primary: ${data.key} ${data.value} ${data.ttl}`);
 });
 ```
-This is called when the secondary store sets the value in the primary store. This is useful if you want to do something before the value is set in the primary store such as manipulating the ttl or the value.
+This is called when the secondary store sets the value in the primary store. This is useful if you want to do something before the value is set in the primary store such as manipulating the ttl or the value. Because this hook only writes the primary store, its `ttl` is a single value (a number or shorthand string), not a per-store object.
 
 The following events are provided:
 
@@ -246,9 +302,9 @@ await cache.getOrSet('key', async () => 'value', { ttl: { primary: '10s', second
 const getUser = cache.wrap(fetchUser, { ttl: { primary: '1m', secondary: '1d' } });
 ```
 
-Passing a plain number or shorthand string (such as `'1h'`) still applies the same TTL to every store, and the [`maxTtl`](#maximum-time-to-live-maxttl) cap is applied to each store independently.
+Passing a plain number or shorthand string (such as `'1h'`) still applies the same TTL to every store, and the [`maxTtl`](#maximum-time-to-live-maxttl) cap is applied to each store independently. The same per-store object is accepted by `setMany` items, and a [`BEFORE_SET` hook](#overriding-the-ttl-in-a-before_set-hook) can override these per-store TTLs and takes precedence over the value passed to the operation.
 
-> **Note on backfills:** A per-store TTL governs the *write* of that operation. The primary TTL is not persisted per key, so once a primary (layer 1) entry expires, the next read is served from the secondary and repopulates the primary using the secondary's remaining lifetime — following the usual [TTL propagation](#ttl-propagation-and-storage-tiering) rules — rather than re-applying the original primary TTL. If you need the primary to keep a consistently shorter lifetime across backfills, set a primary store default TTL (`new Keyv({ ttl })`) or an instance `maxTtl`, which both bound the repopulated TTL.
+> **Note on backfills:** A per-store TTL (whether passed to the operation or set by a `BEFORE_SET` hook) governs the *write* of that operation. The primary TTL is not persisted per key, so once a primary (layer 1) entry expires, the next read is served from the secondary and repopulates the primary using the secondary's remaining lifetime — following the usual [TTL propagation](#ttl-propagation-and-storage-tiering) rules — rather than re-applying the original primary TTL. If you need the primary to keep a consistently shorter lifetime across backfills, set a primary store default TTL (`new Keyv({ ttl })`) or an instance `maxTtl`, which both bound the repopulated TTL.
 
 # Shorthand for Time to Live (ttl)
 
@@ -704,8 +760,9 @@ You can set a `maxTtl` option to enforce an upper bound on any TTL in the cache.
 - Entries with no TTL (that would otherwise live indefinitely) will be capped to `maxTtl`.
 - The default TTL is still respected if it is within the `maxTtl` limit.
 - The `maxTtl` is enforced on both primary and secondary stores.
+- A TTL set by a [`BEFORE_SET` hook](#overriding-the-ttl-in-a-before_set-hook) is also capped, per store.
 
-This is useful when you want to guarantee that no cache entry lives longer than a certain duration, regardless of what TTL is passed to individual `set()` calls.
+This is useful when you want to guarantee that no cache entry lives longer than a certain duration, regardless of what TTL is passed to individual `set()` calls or set by a hook.
 
 ```javascript
 import { Cacheable } from 'cacheable';

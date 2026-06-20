@@ -1,6 +1,5 @@
 import { createKeyv } from "@cacheable/memory";
 import {
-	type CacheableItem,
 	Stats as CacheableStats,
 	type CacheInstance,
 	CacheTags,
@@ -18,7 +17,7 @@ import {
 	shorthandToMilliseconds,
 	wrap,
 } from "@cacheable/utils";
-import { Hookified } from "hookified";
+import { type Hook, Hookified } from "hookified";
 import {
 	Keyv,
 	type KeyvEntry,
@@ -28,13 +27,47 @@ import {
 import { CacheableEvents, CacheableHooks } from "./enums.js";
 import { CacheableSync, CacheableSyncEvents } from "./sync.js";
 import type {
+	CacheableAfterGetItem,
+	CacheableAfterGetManyItem,
+	CacheableHookItem,
 	CacheableOptions,
+	CacheableSecondarySetsPrimaryItem,
 	CacheableSetItem,
 	GetOptions,
 	GetOrSetFunctionOptions,
 	SetOptions,
 	WrapFunctionOptions,
 } from "./types.js";
+
+/**
+ * Maps each {@link CacheableHooks} name to the payload its handler receives, so `onHook` can be
+ * strongly typed. Within `BEFORE_SET` you can reassign `item.ttl` (including to a per-store
+ * `{ primary, secondary }` object); `BEFORE_SECONDARY_SETS_PRIMARY` only writes the primary store,
+ * so its `ttl` is a single value.
+ */
+export type CacheableHookHandlerMap = {
+	[CacheableHooks.BEFORE_SET]: (
+		item: CacheableHookItem,
+	) => void | Promise<void>;
+	[CacheableHooks.AFTER_SET]: (item: CacheableHookItem) => void | Promise<void>;
+	[CacheableHooks.BEFORE_SET_MANY]: (
+		items: CacheableSetItem[],
+	) => void | Promise<void>;
+	[CacheableHooks.AFTER_SET_MANY]: (
+		items: CacheableSetItem[],
+	) => void | Promise<void>;
+	[CacheableHooks.BEFORE_GET]: (key: string) => void | Promise<void>;
+	[CacheableHooks.AFTER_GET]: (
+		item: CacheableAfterGetItem,
+	) => void | Promise<void>;
+	[CacheableHooks.BEFORE_GET_MANY]: (keys: string[]) => void | Promise<void>;
+	[CacheableHooks.AFTER_GET_MANY]: (
+		item: CacheableAfterGetManyItem,
+	) => void | Promise<void>;
+	[CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY]: (
+		item: CacheableSecondarySetsPrimaryItem,
+	) => void | Promise<void>;
+};
 
 export class Cacheable extends Hookified {
 	private _primary: Keyv = createKeyv();
@@ -106,6 +139,22 @@ export class Cacheable extends Hookified {
 			// Subscribe to sync events to update local cache
 			this._sync.subscribe(this._primary, this._cacheId);
 		}
+	}
+
+	/**
+	 * Registers a handler for a hook. Built-in {@link CacheableHooks} names get a strongly-typed
+	 * payload (e.g. `BEFORE_SET` receives a {@link CacheableHookItem} whose `ttl` you can reassign);
+	 * any other event name falls back to the loose Hookified signature.
+	 * @param hook The hook to register the handler for
+	 * @param handler The handler to call when the hook is triggered
+	 */
+	public onHook<K extends CacheableHooks>(
+		hook: K,
+		handler: CacheableHookHandlerMap[K],
+	): void;
+	public onHook(event: string, handler: Hook): void;
+	public onHook(event: string, handler: Hook): void {
+		super.onHook(event, handler);
 	}
 
 	/**
@@ -653,30 +702,81 @@ export class Cacheable extends Hookified {
 				explicitPrimaryTtl,
 			);
 			primaryTtl = this.capTtl(primaryTtl, maxTtlMs);
-			const item = { key, value, ttl: primaryTtl, tags: options.tags };
+			// Build the hook item with a tracked `ttl` accessor so we can tell whether the
+			// BEFORE_SET handler explicitly assigned a ttl — assigning the same value still counts
+			// as an override. The handler may assign a number, a shorthand string, or a per-store
+			// object (`{ primary, secondary }`) to give each store its own expiration.
+			let hookTtl: number | string | PerStoreTtl | undefined = primaryTtl;
+			let ttlOverridden = false;
+			const item = {
+				key,
+				value,
+				tags: options.tags,
+				get ttl(): number | string | PerStoreTtl | undefined {
+					return hookTtl;
+				},
+				set ttl(value: number | string | PerStoreTtl | undefined) {
+					hookTtl = value;
+					ttlOverridden = true;
+				},
+			};
 			await this.hook(CacheableHooks.BEFORE_SET, item);
-			const hookOverridden = item.ttl !== primaryTtl;
-			item.ttl = this.capTtl(item.ttl, maxTtlMs);
-			// The tag snapshot must outlive the longest-lived copy of the value across the stores;
-			// otherwise the snapshot could expire while a copy is still cached, and a later
-			// invalidation would no longer be able to mark that copy as stale.
-			let tagTtl = item.ttl;
-			const promises = [];
-			promises.push(this._primary.set(item.key, item.value, item.ttl));
-			if (this._secondary) {
-				let secondaryTtl = hookOverridden
-					? item.ttl
-					: getCascadingTtl(
+
+			// Resolve the effective per-store ttls from whatever the hook left behind. When the hook
+			// did not touch the ttl, each store keeps its own cascade (today's behavior). When the
+			// hook set a per-store object, each field is honored independently and an omitted field
+			// falls back to that store's cascade. A scalar applies to every store.
+			let primaryTtlEffective: number | undefined;
+			let secondaryTtlEffective: number | undefined;
+			if (!ttlOverridden) {
+				primaryTtlEffective = primaryTtl;
+				secondaryTtlEffective = this._secondary
+					? getCascadingTtl(
 							this._ttl,
 							this._secondary.ttl,
 							explicitSecondaryTtl,
-						);
-				secondaryTtl = this.capTtl(secondaryTtl, maxTtlMs);
-				promises.push(this._secondary.set(item.key, item.value, secondaryTtl));
-				tagTtl =
-					item.ttl === undefined || secondaryTtl === undefined
-						? undefined
-						: Math.max(item.ttl, secondaryTtl);
+						)
+					: undefined;
+			} else if (typeof hookTtl === "object" && hookTtl !== null) {
+				const { primary: hookPrimaryTtl, secondary: hookSecondaryTtl } =
+					resolvePerStoreTtl(hookTtl);
+				primaryTtlEffective =
+					hookPrimaryTtl ??
+					getCascadingTtl(this._ttl, this._primary.ttl, explicitPrimaryTtl);
+				secondaryTtlEffective = this._secondary
+					? (hookSecondaryTtl ??
+						getCascadingTtl(
+							this._ttl,
+							this._secondary.ttl,
+							explicitSecondaryTtl,
+						))
+					: undefined;
+			} else {
+				const hookScalarTtl = shorthandToMilliseconds(hookTtl);
+				primaryTtlEffective = hookScalarTtl;
+				secondaryTtlEffective = this._secondary ? hookScalarTtl : undefined;
+			}
+			primaryTtlEffective = this.capTtl(primaryTtlEffective, maxTtlMs);
+			secondaryTtlEffective = this.capTtl(secondaryTtlEffective, maxTtlMs);
+			// Normalize the hook item's ttl to the effective primary number so AFTER_SET handlers
+			// and sync replication observe a number, never the per-store object.
+			hookTtl = primaryTtlEffective;
+
+			// The tag snapshot must outlive the longest-lived copy of the value across the stores;
+			// otherwise the snapshot could expire while a copy is still cached, and a later
+			// invalidation would no longer be able to mark that copy as stale.
+			const tagTtl = this.maxStoreTtl(
+				primaryTtlEffective,
+				secondaryTtlEffective,
+			);
+			const promises = [];
+			promises.push(
+				this._primary.set(item.key, item.value, primaryTtlEffective),
+			);
+			if (this._secondary) {
+				promises.push(
+					this._secondary.set(item.key, item.value, secondaryTtlEffective),
+				);
 			}
 
 			if (nonBlocking) {
@@ -712,7 +812,7 @@ export class Cacheable extends Hookified {
 					cacheId: this._cacheId,
 					key: item.key,
 					value: item.value,
-					ttl: item.ttl,
+					ttl: primaryTtlEffective,
 				});
 			}
 		} catch (error: unknown) {
@@ -739,16 +839,22 @@ export class Cacheable extends Hookified {
 		let result = false;
 		try {
 			await this.hook(CacheableHooks.BEFORE_SET_MANY, items);
-			result = await this.setManyKeyv(this._primary, items);
+			result = await this.setManyKeyv(this._primary, items, "primary");
 			if (this._secondary) {
 				if (this._nonBlocking) {
 					// Catch any errors to avoid unhandled promise rejections
-					this.setManyKeyv(this._secondary, items).catch((error) => {
+					const secondaryPromise = this.setManyKeyv(
+						this._secondary,
+						items,
+						"secondary",
+					);
+					/* v8 ignore next -- @preserve */
+					secondaryPromise.catch((error) => {
 						/* v8 ignore next -- @preserve */
 						this.emit(CacheableEvents.ERROR, error);
 					});
 				} else {
-					await this.setManyKeyv(this._secondary, items);
+					await this.setManyKeyv(this._secondary, items, "secondary");
 				}
 			}
 
@@ -760,12 +866,20 @@ export class Cacheable extends Hookified {
 
 			// Publish to sync if enabled
 			if (this._sync && result) {
+				const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 				for (const item of items) {
 					await this._sync.publish(CacheableSyncEvents.SET, {
 						cacheId: this._cacheId,
 						key: item.key,
 						value: item.value,
-						ttl: shorthandToMilliseconds(item.ttl),
+						// Replicate the effective primary ttl actually written (cascade + maxTtl),
+						// not just the explicit per-store field, so subscribers stay in sync.
+						ttl: this.resolveStoreTtl(
+							item.ttl,
+							this._primary.ttl,
+							"primary",
+							maxTtlMs,
+						),
 					});
 				}
 			}
@@ -1120,17 +1234,18 @@ export class Cacheable extends Hookified {
 
 	private async setManyKeyv(
 		keyv: Keyv,
-		items: CacheableItem[],
+		items: CacheableSetItem[],
+		store: "primary" | "secondary",
 	): Promise<boolean> {
 		const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 		const entries: KeyvEntry[] = [];
 		for (const item of items) {
-			let finalTtl = getCascadingTtl(
-				this._ttl,
+			const finalTtl = this.resolveStoreTtl(
+				item.ttl,
 				keyv.ttl,
-				shorthandToMilliseconds(item.ttl),
+				store,
+				maxTtlMs,
 			);
-			finalTtl = this.capTtl(finalTtl, maxTtlMs);
 			entries.push({ key: item.key, value: item.value, ttl: finalTtl });
 		}
 
@@ -1145,9 +1260,6 @@ export class Cacheable extends Hookified {
 	 */
 	private async setManyKeyTags(items: CacheableSetItem[]): Promise<void> {
 		const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
-		// The tag snapshot lives in the same store as the tag service, so it should
-		// expire alongside the copy of the value held there.
-		const tagStoreTtl = (this._secondary ?? this._primary).ttl;
 		const promises = [];
 		const untaggedKeys: string[] = [];
 		for (const item of items) {
@@ -1156,12 +1268,25 @@ export class Cacheable extends Hookified {
 				continue;
 			}
 
-			let ttl = getCascadingTtl(
-				this._ttl,
-				tagStoreTtl,
-				shorthandToMilliseconds(item.ttl),
+			// The tag snapshot must outlive the longest-lived copy of the value across the stores,
+			// so it uses the maximum of each store's resolved ttl (matching `set`). Per-store ttl
+			// objects are honored independently.
+			const primaryTtl = this.resolveStoreTtl(
+				item.ttl,
+				this._primary.ttl,
+				"primary",
+				maxTtlMs,
 			);
-			ttl = this.capTtl(ttl, maxTtlMs);
+			const secondaryTtl = this._secondary
+				? this.resolveStoreTtl(
+						item.ttl,
+						this._secondary.ttl,
+						"secondary",
+						maxTtlMs,
+					)
+				: undefined;
+			const ttl = this.maxStoreTtl(primaryTtl, secondaryTtl);
+
 			promises.push(
 				this._tags.setKeyTags(item.key, item.tags, {
 					ttl,
@@ -1212,7 +1337,11 @@ export class Cacheable extends Hookified {
 			const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 			const setItem = { key, value: secondaryResult.value, ttl };
 			await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
-			await primary.set(setItem.key, setItem.value, setItem.ttl);
+			await primary.set(
+				setItem.key,
+				setItem.value,
+				resolvePerStoreTtl(setItem.ttl).primary,
+			);
 
 			return { result: secondaryResult, ttl };
 		} else {
@@ -1258,7 +1387,11 @@ export class Cacheable extends Hookified {
 			/* v8 ignore next -- @preserve */
 			this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 				.then(async () => {
-					await primary.set(setItem.key, setItem.value, setItem.ttl);
+					await primary.set(
+						setItem.key,
+						setItem.value,
+						resolvePerStoreTtl(setItem.ttl).primary,
+					);
 				})
 				/* v8 ignore next -- @preserve */
 				.catch((error) => {
@@ -1327,7 +1460,11 @@ export class Cacheable extends Hookified {
 						CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
 						setItem,
 					);
-					await primary.set(setItem.key, setItem.value, setItem.ttl);
+					await primary.set(
+						setItem.key,
+						setItem.value,
+						resolvePerStoreTtl(setItem.ttl).primary,
+					);
 				} else {
 					// Emit cache miss for secondary store
 					this.emit(CacheableEvents.CACHE_MISS, {
@@ -1394,7 +1531,11 @@ export class Cacheable extends Hookified {
 					/* v8 ignore next -- @preserve */
 					this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 						.then(async () => {
-							await primary.set(setItem.key, setItem.value, setItem.ttl);
+							await primary.set(
+								setItem.key,
+								setItem.value,
+								resolvePerStoreTtl(setItem.ttl).primary,
+							);
 						})
 						/* v8 ignore next -- @preserve */
 						.catch((error) => {
@@ -1437,6 +1578,13 @@ export class Cacheable extends Hookified {
 		ttl: number | undefined,
 		maxTtlMs: number | undefined,
 	): number | undefined {
+		// A negative or NaN ttl is invalid; treat it as "no ttl" (parity with the instance-level
+		// guards in setTtl/setMaxTtl). A ttl of 0 is preserved because it means the entry never
+		// expires.
+		if (ttl !== undefined && (Number.isNaN(ttl) || ttl < 0)) {
+			ttl = undefined;
+		}
+
 		if (maxTtlMs === undefined) {
 			return ttl;
 		}
@@ -1446,6 +1594,55 @@ export class Cacheable extends Hookified {
 		}
 
 		return Math.min(ttl, maxTtlMs);
+	}
+
+	/**
+	 * Resolves the ttl for a tag snapshot so it outlives the longest-lived copy of the value across
+	 * the stores. With a secondary store the snapshot uses the larger of the two ttls and never
+	 * expires if either copy never expires; with only a primary store it tracks the primary ttl.
+	 * @param primaryTtl - the resolved primary store ttl in milliseconds, or undefined for no expiry
+	 * @param secondaryTtl - the resolved secondary store ttl in milliseconds, or undefined for no expiry
+	 * @returns {number | undefined} The tag snapshot ttl in milliseconds, or undefined for no expiry
+	 */
+	private maxStoreTtl(
+		primaryTtl: number | undefined,
+		secondaryTtl: number | undefined,
+	): number | undefined {
+		if (!this._secondary) {
+			return primaryTtl;
+		}
+
+		// A ttl of 0 or undefined means that store's copy never expires, so the snapshot must be
+		// immortal too; otherwise it could lapse while an immortal copy is still cached and a later
+		// invalidation could no longer reach it.
+		if (!primaryTtl || !secondaryTtl) {
+			return undefined;
+		}
+
+		return Math.max(primaryTtl, secondaryTtl);
+	}
+
+	/**
+	 * Resolves the effective ttl actually written to one store for a `setMany` item: the per-store
+	 * explicit value (a scalar applies to both stores; a `{ primary, secondary }` object is honored
+	 * per field) cascaded with the store default and instance ttl, then capped by maxTtl.
+	 * @param itemTtl - the item's ttl (number, shorthand string, or per-store object)
+	 * @param storeTtl - the target store's default ttl in milliseconds
+	 * @param store - which store's field to resolve from a per-store object
+	 * @param maxTtlMs - the resolved maxTtl in milliseconds, or undefined for no cap
+	 * @returns {number | undefined} The effective ttl in milliseconds, or undefined for no expiry
+	 */
+	private resolveStoreTtl(
+		itemTtl: number | string | PerStoreTtl | undefined,
+		storeTtl: number | undefined,
+		store: "primary" | "secondary",
+		maxTtlMs: number | undefined,
+	): number | undefined {
+		const explicitTtl = resolvePerStoreTtl(itemTtl)[store];
+		return this.capTtl(
+			getCascadingTtl(this._ttl, storeTtl, explicitTtl),
+			maxTtlMs,
+		);
 	}
 }
 
@@ -1486,7 +1683,11 @@ export {
 	type CacheableSyncOptions,
 } from "./sync.js";
 export type {
+	CacheableAfterGetItem,
+	CacheableAfterGetManyItem,
+	CacheableHookItem,
 	CacheableOptions,
+	CacheableSecondarySetsPrimaryItem,
 	CacheableSetItem,
 	GetOptions,
 	GetOrSetFunctionOptions,
