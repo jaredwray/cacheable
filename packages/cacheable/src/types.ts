@@ -4,7 +4,7 @@ import type {
 	GetOrSetFunctionOptions as UtilsGetOrSetFunctionOptions,
 	WrapFunctionOptions as UtilsWrapFunctionOptions,
 } from "@cacheable/utils";
-import type { Keyv, KeyvStoreAdapter } from "keyv";
+import type { Keyv, KeyvStoreAdapter, StoredDataRaw } from "keyv";
 import type { CacheableSync, CacheableSyncOptions } from "./sync.js";
 
 export type { PerStoreTtl } from "@cacheable/utils";
@@ -179,6 +179,34 @@ export type CacheableHookItem<T = unknown> = {
 	value: T;
 	ttl?: number | string | PerStoreTtl;
 	tags?: string[];
+};
+
+/**
+ * The item passed to the `AFTER_GET` hook after a `get` / `getRaw`.
+ */
+export type CacheableAfterGetItem = {
+	key: string;
+	result?: StoredDataRaw<unknown>;
+	ttl?: number | string;
+};
+
+/**
+ * The item passed to the `AFTER_GET_MANY` hook after a `getMany` / `getManyRaw`.
+ */
+export type CacheableAfterGetManyItem = {
+	keys: string[];
+	result: Array<StoredDataRaw<unknown>>;
+};
+
+/**
+ * The item passed to the `BEFORE_SECONDARY_SETS_PRIMARY` hook. This hook only writes the primary
+ * store, so its `ttl` is a single value (a number in milliseconds or a shorthand string), not a
+ * per-store object.
+ */
+export type CacheableSecondarySetsPrimaryItem<T = unknown> = {
+	key: string;
+	value: T;
+	ttl?: number | string;
 };
 
 export type TakeOptions = {

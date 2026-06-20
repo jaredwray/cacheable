@@ -1,4 +1,4 @@
-import { sleep } from "@cacheable/utils";
+import { getTtlFromExpires, sleep } from "@cacheable/utils";
 import { Keyv } from "keyv";
 import { MemoryMessageProvider } from "qified";
 import { describe, expect, test } from "vitest";
@@ -402,5 +402,54 @@ describe("per-store ttl via setMany / BEFORE_SET_MANY", () => {
 		]);
 		await new Promise((resolve) => setTimeout(resolve, 100));
 		expect(received?.data.ttl).toBe(100);
+	});
+});
+
+describe("hook payload behavior", () => {
+	test("AFTER_SET sees the effective primary number, AFTER_SET_MANY sees the item as passed", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary });
+		let afterSetTtl: unknown;
+		let afterSetManyTtl: unknown;
+		cacheable.onHook(CacheableHooks.BEFORE_SET, (item) => {
+			item.ttl = { primary: 50, secondary: 500 };
+		});
+		cacheable.onHook(CacheableHooks.AFTER_SET, (item) => {
+			afterSetTtl = item.ttl;
+		});
+		cacheable.onHook(CacheableHooks.BEFORE_SET_MANY, (items) => {
+			items[0].ttl = { primary: 50, secondary: 500 };
+		});
+		cacheable.onHook(CacheableHooks.AFTER_SET_MANY, (items) => {
+			afterSetManyTtl = items[0].ttl;
+		});
+		await cacheable.set("a", "1");
+		await cacheable.setMany([{ key: "b", value: "2" }]);
+		// Single-key set normalizes item.ttl to the effective primary number for AFTER_SET
+		expect(afterSetTtl).toBe(50);
+		// setMany leaves the caller's items untouched, so AFTER_SET_MANY still sees the object
+		expect(afterSetManyTtl).toEqual({ primary: 50, secondary: 500 });
+	});
+
+	test("BEFORE_SECONDARY_SETS_PRIMARY honors only the primary field of a per-store object", {
+		timeout: 2000,
+	}, async () => {
+		const secondary = new Keyv({ ttl: 1000 });
+		const cacheable = new Cacheable({ secondary });
+		cacheable.onHook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, (item) => {
+			// JS callers can still assign a per-store object here; only `.primary` is applied to
+			// the primary write (the type forbids this for TS users).
+			(item as { ttl: unknown }).ttl = { primary: 50, secondary: 999 };
+		});
+		await cacheable.set("key", "value");
+		// Drop the primary copy so the next read backfills from the secondary
+		await cacheable.primary.delete("key");
+		await cacheable.get("key");
+		const raw = await cacheable.primary.getRaw("key");
+		expect(raw?.value).toEqual("value");
+		const ttl = getTtlFromExpires(raw?.expires ?? undefined);
+		expect(ttl).toBeGreaterThan(0);
+		expect(ttl).toBeLessThanOrEqual(50);
 	});
 });

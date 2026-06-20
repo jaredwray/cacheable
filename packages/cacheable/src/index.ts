@@ -17,7 +17,7 @@ import {
 	shorthandToMilliseconds,
 	wrap,
 } from "@cacheable/utils";
-import { Hookified } from "hookified";
+import { type Hook, Hookified } from "hookified";
 import {
 	Keyv,
 	type KeyvEntry,
@@ -27,13 +27,47 @@ import {
 import { CacheableEvents, CacheableHooks } from "./enums.js";
 import { CacheableSync, CacheableSyncEvents } from "./sync.js";
 import type {
+	CacheableAfterGetItem,
+	CacheableAfterGetManyItem,
+	CacheableHookItem,
 	CacheableOptions,
+	CacheableSecondarySetsPrimaryItem,
 	CacheableSetItem,
 	GetOptions,
 	GetOrSetFunctionOptions,
 	SetOptions,
 	WrapFunctionOptions,
 } from "./types.js";
+
+/**
+ * Maps each {@link CacheableHooks} name to the payload its handler receives, so `onHook` can be
+ * strongly typed. Within `BEFORE_SET` you can reassign `item.ttl` (including to a per-store
+ * `{ primary, secondary }` object); `BEFORE_SECONDARY_SETS_PRIMARY` only writes the primary store,
+ * so its `ttl` is a single value.
+ */
+export type CacheableHookHandlerMap = {
+	[CacheableHooks.BEFORE_SET]: (
+		item: CacheableHookItem,
+	) => void | Promise<void>;
+	[CacheableHooks.AFTER_SET]: (item: CacheableHookItem) => void | Promise<void>;
+	[CacheableHooks.BEFORE_SET_MANY]: (
+		items: CacheableSetItem[],
+	) => void | Promise<void>;
+	[CacheableHooks.AFTER_SET_MANY]: (
+		items: CacheableSetItem[],
+	) => void | Promise<void>;
+	[CacheableHooks.BEFORE_GET]: (key: string) => void | Promise<void>;
+	[CacheableHooks.AFTER_GET]: (
+		item: CacheableAfterGetItem,
+	) => void | Promise<void>;
+	[CacheableHooks.BEFORE_GET_MANY]: (keys: string[]) => void | Promise<void>;
+	[CacheableHooks.AFTER_GET_MANY]: (
+		item: CacheableAfterGetManyItem,
+	) => void | Promise<void>;
+	[CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY]: (
+		item: CacheableSecondarySetsPrimaryItem,
+	) => void | Promise<void>;
+};
 
 export class Cacheable extends Hookified {
 	private _primary: Keyv = createKeyv();
@@ -105,6 +139,22 @@ export class Cacheable extends Hookified {
 			// Subscribe to sync events to update local cache
 			this._sync.subscribe(this._primary, this._cacheId);
 		}
+	}
+
+	/**
+	 * Registers a handler for a hook. Built-in {@link CacheableHooks} names get a strongly-typed
+	 * payload (e.g. `BEFORE_SET` receives a {@link CacheableHookItem} whose `ttl` you can reassign);
+	 * any other event name falls back to the loose Hookified signature.
+	 * @param hook The hook to register the handler for
+	 * @param handler The handler to call when the hook is triggered
+	 */
+	public onHook<K extends CacheableHooks>(
+		hook: K,
+		handler: CacheableHookHandlerMap[K],
+	): void;
+	public onHook(event: string, handler: Hook): void;
+	public onHook(event: string, handler: Hook): void {
+		super.onHook(event, handler);
 	}
 
 	/**
@@ -762,7 +812,7 @@ export class Cacheable extends Hookified {
 					cacheId: this._cacheId,
 					key: item.key,
 					value: item.value,
-					ttl: item.ttl,
+					ttl: primaryTtlEffective,
 				});
 			}
 		} catch (error: unknown) {
@@ -1287,7 +1337,11 @@ export class Cacheable extends Hookified {
 			const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 			const setItem = { key, value: secondaryResult.value, ttl };
 			await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
-			await primary.set(setItem.key, setItem.value, setItem.ttl);
+			await primary.set(
+				setItem.key,
+				setItem.value,
+				resolvePerStoreTtl(setItem.ttl).primary,
+			);
 
 			return { result: secondaryResult, ttl };
 		} else {
@@ -1333,7 +1387,11 @@ export class Cacheable extends Hookified {
 			/* v8 ignore next -- @preserve */
 			this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 				.then(async () => {
-					await primary.set(setItem.key, setItem.value, setItem.ttl);
+					await primary.set(
+						setItem.key,
+						setItem.value,
+						resolvePerStoreTtl(setItem.ttl).primary,
+					);
 				})
 				/* v8 ignore next -- @preserve */
 				.catch((error) => {
@@ -1402,7 +1460,11 @@ export class Cacheable extends Hookified {
 						CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
 						setItem,
 					);
-					await primary.set(setItem.key, setItem.value, setItem.ttl);
+					await primary.set(
+						setItem.key,
+						setItem.value,
+						resolvePerStoreTtl(setItem.ttl).primary,
+					);
 				} else {
 					// Emit cache miss for secondary store
 					this.emit(CacheableEvents.CACHE_MISS, {
@@ -1469,7 +1531,11 @@ export class Cacheable extends Hookified {
 					/* v8 ignore next -- @preserve */
 					this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
 						.then(async () => {
-							await primary.set(setItem.key, setItem.value, setItem.ttl);
+							await primary.set(
+								setItem.key,
+								setItem.value,
+								resolvePerStoreTtl(setItem.ttl).primary,
+							);
 						})
 						/* v8 ignore next -- @preserve */
 						.catch((error) => {
@@ -1610,8 +1676,11 @@ export {
 	type CacheableSyncOptions,
 } from "./sync.js";
 export type {
+	CacheableAfterGetItem,
+	CacheableAfterGetManyItem,
 	CacheableHookItem,
 	CacheableOptions,
+	CacheableSecondarySetsPrimaryItem,
 	CacheableSetItem,
 	GetOptions,
 	GetOrSetFunctionOptions,

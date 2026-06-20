@@ -134,22 +134,32 @@ cache.onHook(CacheableHooks.BEFORE_SET, (data) => {
 });
 ```
 
-Each store's TTL is resolved with this precedence (highest first), then bounded by [`maxTtl`](#maximum-time-to-live-maxttl):
+Each store resolves its TTL independently, taking the first defined value down this list and then capping it with [`maxTtl`](#maximum-time-to-live-maxttl). This is the single source of truth for how *every* TTL (operation, hook, or default) is resolved:
 
-```
-BEFORE_SET hook ?? operation ttl ?? store default ttl ?? cacheable instance ttl
-```
+| Precedence (highest first) | Primary store | Secondary store |
+| --- | --- | --- |
+| 1. `BEFORE_SET` hook | `data.ttl` (scalar, or `.primary`) | `data.ttl` (scalar, or `.secondary`) |
+| 2. Operation `ttl` | `ttl` (scalar, or `.primary`) | `ttl` (scalar, or `.secondary`) |
+| 3. Store default | `new Keyv({ ttl })` on the primary | `new Keyv({ ttl })` on the secondary |
+| 4. Instance `ttl` | `new Cacheable({ ttl })` | `new Cacheable({ ttl })` |
+| Cap (applied last) | `maxTtl` | `maxTtl` |
 
 What happens when you override:
 
 * **Per-store object** (`{ primary, secondary }`): each field applies to that store independently. A field you leave out falls back to that store's normal resolution — including any per-store `ttl` you passed to the operation.
 * **Scalar** (a number or [shorthand string](#shorthand-for-time-to-live-ttl)): applied to **every** store, discarding any per-store `secondary` you passed to the operation. Use the object form if you want the stores to differ.
 * **Any assignment counts as an override**, even assigning the value `data.ttl` already holds. Leaving `data.ttl` untouched keeps each store on its normal resolution (the default behavior).
+* **`0`, `null`, or `undefined` clears the TTL** → the entry never expires, *ignoring* the cascade (store default and instance `ttl`). This matches the "disable the ttl" behavior in [Shorthand for Time to Live](#shorthand-for-time-to-live-ttl); take care when assigning a possibly-nullable value to `data.ttl`.
+* **An invalid shorthand string aborts the whole write.** Assigning an unparseable string (e.g. `'10 seconds'`) throws; `set` catches it, emits the [`error` event](#hooks-and-events), and returns `false` **without caching** — so a hook typo silently disables caching for that write. Listen on `error` to catch it.
 * **`maxTtl` is re-applied to each store after the hook**, so a hook can never push an entry past the cap.
-* **Tag snapshots** use the longer of the two store TTLs (and never expire while either copy is immortal) so [tag invalidation](#tag-based-invalidation) can always reach the longest-lived copy.
-* By the time **`AFTER_SET`** runs (and for [sync replication](#cacheablesync---distributed-updates)), `data.ttl` has been normalized to the effective **primary** TTL as a number; the secondary store's effective TTL is not exposed on the item.
+* **Tag snapshots** use the longer of the two store TTLs (and never expire while either copy is immortal, including `ttl: 0`) so [tag invalidation](#tag-based-invalidation) can always reach the longest-lived copy.
+* By the time **`AFTER_SET`** runs (and for [sync replication](#cacheablesync---distributed-updates)), `data.ttl` has been normalized to the effective **primary** TTL as a number; the secondary store's effective TTL is not exposed on the item. **`AFTER_SET_MANY` differs:** `setMany` does not mutate the items you passed, so a handler there still sees each `item.ttl` exactly as set (a per-store object stays an object).
+
+> **TypeScript:** `onHook(CacheableHooks.BEFORE_SET, (data) => …)` types `data` automatically — no annotation needed, and an invalid `data.ttl` shape is a compile error. Payload types are exported too (`CacheableHookItem`, `CacheableSetItem`).
 
 > **Note on backfills:** like a per-store `ttl` passed to an operation, a primary TTL set by a hook governs only that write — it is not persisted per key. Once the primary copy expires, the next read repopulates the primary from the secondary using the usual [TTL propagation](#ttl-propagation-and-storage-tiering) rules. Set a primary store default TTL (`new Keyv({ ttl })`) or an instance `maxTtl` if you need the primary to stay short across backfills.
+
+> **Note on sync:** a per-store TTL writes the secondary's TTL to the (typically shared) secondary store directly; [CacheableSync](#cacheablesync---distributed-updates) replicates only the **primary** TTL to other instances' in-memory primaries. For the usual shared-secondary topology this is correct — the secondary is written once and read by every instance.
 
 The same per-store object is accepted by `setMany` items and the `BEFORE_SET_MANY` hook:
 
