@@ -12,9 +12,9 @@ name: release
 #   - Configure a "Trusted Publisher" for each package on npmjs.com pointing at
 #     repo `jaredwray/cacheable` + workflow `release.yml`. Once configured, no
 #     npm token is needed (pnpm 11 performs the OIDC exchange natively).
-#   - `NPM_TOKEN` is kept as a fallback for cases OIDC cannot cover (e.g. the
-#     very first publish of a brand-new package). pnpm prefers OIDC when it is
-#     available, so the token never overrides trusted publishing.
+#   - This workflow is fully tokenless: every published package must have a
+#     trusted publisher configured first. A brand-new package's first-ever
+#     publish (which OIDC cannot do) needs a one-time manual `pnpm publish`.
 
 on:
   # Manual runs — supports a dry run that prints the plan and validates
@@ -78,7 +78,3 @@ jobs:
 
       - name: Release
         run: node scripts/release.mjs ${{ inputs.dry-run && '--dry-run' || '' }}
-        env:
-          # Fallback only — OIDC trusted publishing takes precedence when a
-          # trusted publisher is configured on npmjs.com. Safe to leave unset.
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -49,9 +49,11 @@ Publisher under *Settings → Publishing access*:
 - Repository: `jaredwray/cacheable`
 - Workflow filename: `release.yml`
 
-Until a package has a trusted publisher configured, OIDC cannot mint a token for
-it. As a fallback the workflow also reads an optional `NPM_TOKEN` repository
-secret (`NODE_AUTH_TOKEN`); pnpm prefers OIDC whenever it is available, so the
-token only steps in for cases OIDC can't cover (most notably the *first ever*
-publish of a brand-new package). You can leave it unset once every package is
-configured for trusted publishing.
+The workflow is **fully tokenless** — there is no `NPM_TOKEN` secret. Every
+published package must have a trusted publisher configured before the workflow
+can publish it; until then that package's publish step fails to authenticate.
+
+One caveat: OIDC cannot perform the *first ever* publish of a brand-new package.
+When adding a new package, publish its initial version once manually (e.g.
+`pnpm --filter <name> publish --access public` while logged in to npm), then add
+its trusted publisher so every subsequent release flows through this workflow.
