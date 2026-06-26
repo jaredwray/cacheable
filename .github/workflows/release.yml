@@ -1,0 +1,82 @@
+name: release
+
+# Publishes workspace packages to npm whose manually-set version is ahead of
+# the registry. Versions are never bumped here — a human bumps each package's
+# `version` (typically via a release PR); publishing a GitHub release then
+# triggers this workflow, which figures out what actually needs publishing and
+# publishes it in dependency order. See scripts/release.mjs for the decision logic.
+#
+# Authentication uses OIDC trusted publishing (tokenless) with provenance:
+#   - `id-token: write` lets GitHub mint the OIDC token pnpm exchanges for a
+#     short-lived npm token and uses to sign the provenance attestation.
+#   - Configure a "Trusted Publisher" for each package on npmjs.com pointing at
+#     repo `jaredwray/cacheable` + workflow `release.yml`. Once configured, no
+#     npm token is needed (pnpm 11 performs the OIDC exchange natively).
+#   - This workflow is fully tokenless: every published package must have a
+#     trusted publisher configured first. A brand-new package's first-ever
+#     publish (which OIDC cannot do) needs a one-time manual `pnpm publish`.
+
+on:
+  # Manual runs — supports a dry run that prints the plan and validates
+  # packaging without publishing anything.
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Dry run (compute the plan + validate packaging, publish nothing)"
+        type: boolean
+        default: false
+  # Publishing a (non-pre) GitHub release publishes the bumped packages to npm,
+  # in lockstep with the website deploy, which also runs on `released`.
+  release:
+    types: [released]
+
+# Never run two releases at once; let an in-flight publish finish rather than
+# cancelling it half-way through the package set.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # required for OIDC trusted publishing + provenance
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest # provenance/OIDC require a cloud-hosted runner
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # This job only reads the repo (it never pushes), so don't leave the
+          # GITHUB_TOKEN in .git/config for later steps / actions to read.
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org # writes the .npmrc the registry expects
+          cache: pnpm
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Validate build output
+        run: node scripts/test-build.mjs
+
+      - name: Release
+        # A published release publishes for real. A manual (workflow_dispatch)
+        # run honors its dry-run input, and is forced to a dry run from any ref
+        # other than main so branch versions can't be pushed to npm.
+        run: node scripts/release.mjs ${{ (github.event_name == 'workflow_dispatch' && (inputs.dry-run || github.ref != 'refs/heads/main')) && '--dry-run' || '' }}
