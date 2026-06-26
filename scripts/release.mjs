@@ -168,12 +168,17 @@ function orderByDependencies(packages) {
 
 /** Fetch a package's document from the registry, with retry + backoff. 404 → null. */
 async function fetchRegistryDoc(name, { retries = 4 } = {}) {
-	const url = `${REGISTRY}/${name.replace("/", "%2F")}`;
+	const url = `${REGISTRY}/${name.replaceAll("/", "%2F")}`;
 	let lastError;
 
 	for (let attempt = 0; attempt <= retries; attempt++) {
 		try {
-			const res = await fetch(url, { headers: { accept: "application/json" } });
+			const res = await fetch(url, {
+				headers: { accept: "application/json" },
+				// Fail fast instead of hanging on a stalled registry; a timeout is
+				// caught below and retried with backoff like any other error.
+				signal: AbortSignal.timeout(10_000),
+			});
 			if (res.status === 404) {
 				return null;
 			}
@@ -324,7 +329,19 @@ async function main() {
 	const failed = [];
 	for (const entry of toPublish) {
 		const ok = publishPackage(entry, { dryRun: args.dryRun });
-		(ok ? published : failed).push(entry);
+		if (ok) {
+			published.push(entry);
+			continue;
+		}
+
+		failed.push(entry);
+		// Stop a real publish at the first failure: the list is in dependency
+		// order, so releasing a dependent after its dependency failed would
+		// reference a version that never made it to the registry. A dry run
+		// keeps going to surface every packaging problem at once.
+		if (!args.dryRun) {
+			break;
+		}
 	}
 
 	if (!args.dryRun) {
@@ -336,6 +353,15 @@ async function main() {
 		console.error(`Failed to publish ${failed.length} package(s):`);
 		for (const entry of failed) {
 			console.error(`  - ${entry.name}@${entry.version}`);
+		}
+
+		const attempted = new Set([...published, ...failed].map((entry) => entry.name));
+		const notAttempted = toPublish.filter((entry) => !attempted.has(entry.name));
+		if (notAttempted.length > 0) {
+			console.error("\nNot attempted (aborted after the failure above, in dependency order):");
+			for (const entry of notAttempted) {
+				console.error(`  - ${entry.name}@${entry.version}`);
+			}
 		}
 
 		process.exit(1);

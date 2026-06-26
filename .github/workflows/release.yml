@@ -49,6 +49,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # This job only reads the repo (it never pushes), so don't leave the
+          # GITHUB_TOKEN in .git/config for later steps / actions to read.
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
