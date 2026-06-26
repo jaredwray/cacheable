@@ -1184,7 +1184,7 @@ describe("CacheableMemory Hooks", () => {
 		expect(afterGetResult).toBeUndefined();
 	});
 
-	test("exposes typed hook payloads via onHook", () => {
+	test("supports annotating hook handlers with the exported payload types", () => {
 		const cache = new CacheableMemory();
 		let setItem: CacheableMemoryHookItem | undefined;
 		let getItem: CacheableMemoryAfterGetItem | undefined;

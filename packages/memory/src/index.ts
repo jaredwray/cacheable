@@ -13,9 +13,14 @@ import {
 	type WrapFunctionOptions,
 	wrapSync,
 } from "@cacheable/utils";
-import { type Hook, Hookified } from "hookified";
+import { Hookified } from "hookified";
 import { DoublyLinkedList } from "./memory-lru.js";
 
+/**
+ * Lifecycle hooks fired by {@link CacheableMemory}. Register handlers with the inherited
+ * `onHook(hook, handler)` method. Hooks are dispatched synchronously via `hookSync`, which skips
+ * `async` handler functions entirely — register only synchronous handlers.
+ */
 export enum CacheableMemoryHooks {
 	BEFORE_SET = "BEFORE_SET",
 	AFTER_SET = "AFTER_SET",
@@ -96,30 +101,6 @@ export type CacheableMemoryAfterGetManyItem<T = unknown> = {
 	result: Array<T | undefined>;
 };
 
-/**
- * Maps each {@link CacheableMemoryHooks} name to the payload its handler receives, so `onHook`
- * can be strongly typed. Handlers are dispatched synchronously via `hookSync`, which skips
- * `async` handler functions entirely — register only synchronous handlers.
- */
-export type CacheableMemoryHookHandlerMap = {
-	[CacheableMemoryHooks.BEFORE_SET]: (item: CacheableMemoryHookItem) => void;
-	[CacheableMemoryHooks.AFTER_SET]: (item: CacheableMemoryHookItem) => void;
-	[CacheableMemoryHooks.BEFORE_SET_MANY]: (items: CacheableItem[]) => void;
-	[CacheableMemoryHooks.AFTER_SET_MANY]: (items: CacheableItem[]) => void;
-	[CacheableMemoryHooks.BEFORE_GET]: (key: string) => void;
-	[CacheableMemoryHooks.AFTER_GET]: (item: CacheableMemoryAfterGetItem) => void;
-	[CacheableMemoryHooks.BEFORE_GET_MANY]: (keys: string[]) => void;
-	[CacheableMemoryHooks.AFTER_GET_MANY]: (
-		item: CacheableMemoryAfterGetManyItem,
-	) => void;
-	[CacheableMemoryHooks.BEFORE_DELETE]: (key: string) => void;
-	[CacheableMemoryHooks.AFTER_DELETE]: (key: string) => void;
-	[CacheableMemoryHooks.BEFORE_DELETE_MANY]: (keys: string[]) => void;
-	[CacheableMemoryHooks.AFTER_DELETE_MANY]: (keys: string[]) => void;
-	[CacheableMemoryHooks.BEFORE_CLEAR]: () => void;
-	[CacheableMemoryHooks.AFTER_CLEAR]: () => void;
-};
-
 export const defaultStoreHashSize = 16; // Default is 16
 export const maximumMapSize = 16_777_216; // Maximum size of a Map is 16,777,216 (2^24) due to the way JavaScript handles memory allocation
 
@@ -195,23 +176,6 @@ export class CacheableMemory extends Hookified {
 		);
 
 		this.startIntervalCheck();
-	}
-
-	/**
-	 * Registers a handler for a hook. Built-in {@link CacheableMemoryHooks} names get a
-	 * strongly-typed payload (e.g. `BEFORE_SET` receives a {@link CacheableMemoryHookItem} whose
-	 * `key`, `value`, and `ttl` you can reassign); any other event name falls back to the loose
-	 * Hookified signature.
-	 * @param hook The hook to register the handler for
-	 * @param handler The handler to call when the hook is triggered
-	 */
-	public onHook<K extends CacheableMemoryHooks>(
-		hook: K,
-		handler: CacheableMemoryHookHandlerMap[K],
-	): void;
-	public onHook(event: string, handler: Hook): void;
-	public onHook(event: string, handler: Hook): void {
-		super.onHook(event, handler);
 	}
 
 	/**
