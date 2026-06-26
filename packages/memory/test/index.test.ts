@@ -730,6 +730,104 @@ describe("cacheable wrap", async () => {
 	});
 });
 
+describe("cacheable getOrSet", async () => {
+	test("should compute on miss and return the cached value on hit", () => {
+		const cacheable = new CacheableMemory();
+		let calls = 0;
+		const function_ = () => {
+			calls++;
+			return Math.random() * 100;
+		};
+		const result1 = cacheable.getOrSet("gos-key", function_);
+		const result2 = cacheable.getOrSet("gos-key", function_);
+		expect(result1).toBe(result2);
+		expect(calls).toBe(1);
+		expect(cacheable.get("gos-key")).toBe(result1);
+	});
+
+	test("should use the instance default ttl and recompute after expiry", async () => {
+		const cacheable = new CacheableMemory({ ttl: 50 });
+		let calls = 0;
+		const function_ = () => {
+			calls++;
+			return calls;
+		};
+		expect(cacheable.getOrSet("gos-ttl-default", function_)).toBe(1);
+		expect(cacheable.getOrSet("gos-ttl-default", function_)).toBe(1); // cached
+		await sleep(60);
+		expect(cacheable.getOrSet("gos-ttl-default", function_)).toBe(2); // recomputed
+	});
+
+	test("should override the ttl per call", async () => {
+		const cacheable = new CacheableMemory();
+		let calls = 0;
+		const function_ = () => {
+			calls++;
+			return calls;
+		};
+		cacheable.getOrSet("gos-ttl-override", function_, { ttl: "50ms" });
+		await sleep(60);
+		expect(
+			cacheable.getOrSet("gos-ttl-override", function_, { ttl: "50ms" }),
+		).toBe(2);
+	});
+
+	test("should support a key function", () => {
+		const cacheable = new CacheableMemory();
+		let calls = 0;
+		const function_ = () => {
+			calls++;
+			return calls;
+		};
+		const key = () => "gos-computed-key";
+		const result1 = cacheable.getOrSet(key, function_);
+		const result2 = cacheable.getOrSet(key, function_);
+		expect(result1).toBe(result2);
+		expect(calls).toBe(1);
+	});
+
+	test("should emit an error and return undefined when the function throws", () => {
+		const cacheable = new CacheableMemory();
+		let errorCount = 0;
+		cacheable.on("error", (error: Error) => {
+			expect(error.message).toBe("boom");
+			errorCount++;
+		});
+		const result = cacheable.getOrSet("gos-err", () => {
+			throw new Error("boom");
+		});
+		expect(result).toBeUndefined();
+		expect(errorCount).toBe(1);
+		expect(cacheable.get("gos-err")).toBeUndefined(); // not cached by default
+	});
+
+	test("should cache the error when cacheErrors is enabled", () => {
+		const cacheable = new CacheableMemory();
+		let calls = 0;
+		const function_ = () => {
+			calls++;
+			throw new Error("boom");
+		};
+		cacheable.getOrSet("gos-err-cache", function_, { cacheErrors: true });
+		const cached = cacheable.get("gos-err-cache");
+		expect(cached).toBeInstanceOf(Error);
+		expect(calls).toBe(1);
+	});
+
+	test("should rethrow when throwErrors is true", () => {
+		const cacheable = new CacheableMemory();
+		expect(() =>
+			cacheable.getOrSet(
+				"gos-err-throw",
+				() => {
+					throw new Error("boom");
+				},
+				{ throwErrors: true },
+			),
+		).toThrow("boom");
+	});
+});
+
 describe("CacheableMemory LRU and TTL integration", () => {
 	test("should remove from LRU when item expires via get()", async () => {
 		const cache = new CacheableMemory({ lruSize: 5 });

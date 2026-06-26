@@ -35,6 +35,8 @@ export type {
 	GetOrSetFunctionOptions,
 	GetOrSetKey,
 	GetOrSetOptions,
+	GetOrSetSyncKey,
+	GetOrSetSyncOptions,
 	WrapFunctionOptions,
 	WrapOptions,
 	WrapSyncOptions,
@@ -42,6 +44,7 @@ export type {
 export {
 	createWrapKey,
 	getOrSet,
+	getOrSetSync,
 	wrap,
 	wrapSync,
 } from "./memoize.js";
