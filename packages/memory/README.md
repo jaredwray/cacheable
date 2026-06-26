@@ -292,7 +292,7 @@ The `stats` property exposes the following counters:
 
 You can get a plain-object snapshot via `cache.stats.toJSON()` and reset all counters with `cache.stats.reset()`.
 
-Because expiration is lazy, the `count`, `ksize`, and `vsize` values are maintained on `set`, `delete`, and `clear`. Methods that perform a read internally — such as `has()`, `take()`, and the `wrap()` / `getOrSet()` memoization helpers — flow through `get`/`set`, so they update the statistics as well.
+The `count`, `ksize`, and `vsize` values are kept in sync as entries are added, removed, overwritten, and lazily expired, so they reflect the current contents of the cache. (Expired entries are not counted as `deletes`, since their removal is not user-initiated.) Methods that perform a read internally — such as `has()`, `take()`, and the `wrap()` / `getOrSet()` memoization helpers — flow through `get`/`set`, so they update the statistics as well.
 
 ## CacheableMemory Options
 

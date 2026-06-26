@@ -323,6 +323,7 @@ export class CacheableMemory extends Hookified {
 			for (const key of store.keys()) {
 				const item = store.get(key);
 				if (item && this.hasExpired(item)) {
+					this.recordExpiration(item);
 					store.delete(key);
 					this.lruRemove(key);
 					continue;
@@ -344,6 +345,7 @@ export class CacheableMemory extends Hookified {
 		for (const store of this._store) {
 			for (const item of store.values()) {
 				if (this.hasExpired(item)) {
+					this.recordExpiration(item);
 					store.delete(item.key);
 					this.lruRemove(item.key);
 					continue;
@@ -380,6 +382,7 @@ export class CacheableMemory extends Hookified {
 		}
 
 		if (item.expires && Date.now() > item.expires) {
+			this.recordExpiration(item);
 			store.delete(key);
 			this.lruRemove(key);
 			this.recordRead(false);
@@ -430,7 +433,8 @@ export class CacheableMemory extends Hookified {
 			return undefined;
 		}
 
-		if (item.expires && item.expires && Date.now() > item.expires) {
+		if (item.expires && Date.now() > item.expires) {
+			this.recordExpiration(item);
 			store.delete(key);
 			this.lruRemove(key);
 			this.recordRead(false);
@@ -788,6 +792,7 @@ export class CacheableMemory extends Hookified {
 		for (const store of this._store) {
 			for (const item of store.values()) {
 				if (item.expires && Date.now() > item.expires) {
+					this.recordExpiration(item);
 					store.delete(item.key);
 					this.lruRemove(item.key);
 				}
@@ -895,6 +900,23 @@ export class CacheableMemory extends Hookified {
 		}
 
 		this._stats.incrementGets();
+	}
+
+	/**
+	 * Decrements the size statistics (`count`, `ksize`, and `vsize`) for an entry that is being removed
+	 * because it expired. Expirations are not counted as `deletes` since they are not user-initiated.
+	 * No-op when statistics are disabled. This is for internal use.
+	 * @param {CacheableStoreItem} item - The expired item being removed from the store
+	 * @returns {void}
+	 */
+	private recordExpiration(item: CacheableStoreItem): void {
+		if (!this._stats.enabled) {
+			return;
+		}
+
+		this._stats.decreaseKSize(item.key);
+		this._stats.decreaseVSize(item.value);
+		this._stats.decreaseCount();
 	}
 
 	// biome-ignore lint/suspicious/noExplicitAny: type format

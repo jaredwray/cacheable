@@ -1418,14 +1418,22 @@ describe("CacheableMemory Statistics", () => {
 		expect(cache.stats.misses).toBe(1);
 	});
 
-	test("should record a miss when a get finds an expired entry", async () => {
+	test("should record a miss and decrement size stats when a get finds an expired entry", async () => {
 		const cache = new CacheableMemory({ stats: true });
 		cache.set("key", "value", 1);
+		expect(cache.stats.count).toBe(1);
+		expect(cache.stats.ksize).toBeGreaterThan(0);
+		expect(cache.stats.vsize).toBeGreaterThan(0);
 		await sleep(5);
 		expect(cache.get("key")).toBeUndefined();
 		expect(cache.stats.misses).toBe(1);
 		expect(cache.stats.hits).toBe(0);
 		expect(cache.stats.gets).toBe(1);
+		// Lazily removing an expired entry decrements the size stats but is not a delete
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
 	});
 
 	test("should track each key in getMany as a separate get", () => {
@@ -1448,13 +1456,50 @@ describe("CacheableMemory Statistics", () => {
 		expect(cache.stats.gets).toBe(2);
 	});
 
-	test("should record a miss when getRaw finds an expired entry", async () => {
+	test("should record a miss and decrement size stats when getRaw finds an expired entry", async () => {
 		const cache = new CacheableMemory({ stats: true });
 		cache.set("key", "value", 1);
 		await sleep(5);
 		expect(cache.getRaw("key")).toBeUndefined();
 		expect(cache.stats.misses).toBe(1);
 		expect(cache.stats.gets).toBe(1);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
+	});
+
+	test("should decrement size stats when the keys getter purges an expired entry", async () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value", 1);
+		await sleep(5);
+		expect([...cache.keys]).toEqual([]);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
+	});
+
+	test("should decrement size stats when the items getter purges an expired entry", async () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value", 1);
+		await sleep(5);
+		expect([...cache.items]).toEqual([]);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
+	});
+
+	test("should decrement size stats when checkExpiration removes an expired entry", async () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value", 1);
+		await sleep(5);
+		cache.checkExpiration();
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
 	});
 
 	test("should track each key in getManyRaw as a separate get", () => {
