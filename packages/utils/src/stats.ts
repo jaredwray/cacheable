@@ -427,7 +427,9 @@ export class Stats {
 			return;
 		}
 
-		this._vsize -= this.roughSizeOfObject(value);
+		// Clamp at 0 so the counter never goes negative when an entry is removed that
+		// was added before stats were enabled (and was therefore never counted).
+		this._vsize = Math.max(0, this._vsize - this.roughSizeOfObject(value));
 		this.touch();
 	}
 
@@ -445,7 +447,9 @@ export class Stats {
 			return;
 		}
 
-		this._ksize -= this.roughSizeOfString(key);
+		// Clamp at 0 so the counter never goes negative when an entry is removed that
+		// was added before stats were enabled (and was therefore never counted).
+		this._ksize = Math.max(0, this._ksize - this.roughSizeOfString(key));
 		this.touch();
 	}
 
@@ -454,7 +458,14 @@ export class Stats {
 	}
 
 	public decreaseCount(amount = 1): void {
-		this.decrement("count", amount);
+		if (!this._enabled) {
+			return;
+		}
+
+		// Clamp at 0 so the counter never goes negative when an entry is removed that
+		// was added before stats were enabled (and was therefore never counted).
+		this._counters.count = Math.max(0, this._counters.count - amount);
+		this.touch();
 	}
 
 	public setCount(count: number): void {

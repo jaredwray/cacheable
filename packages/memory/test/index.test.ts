@@ -1339,3 +1339,334 @@ describe("CacheableMemory maxTtl", () => {
 		expect(raw?.expires as number).toBeGreaterThan(now + 4000);
 	});
 });
+
+describe("CacheableMemory Statistics", () => {
+	test("should have stats disabled by default and never count", () => {
+		const cache = new CacheableMemory();
+		expect(cache.stats.enabled).toBe(false);
+		cache.set("key", "value");
+		cache.get("key");
+		cache.get("missing");
+		cache.delete("key");
+		cache.clear();
+		expect(cache.stats.hits).toBe(0);
+		expect(cache.stats.misses).toBe(0);
+		expect(cache.stats.gets).toBe(0);
+		expect(cache.stats.sets).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
+		expect(cache.stats.clears).toBe(0);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+	});
+
+	test("should enable stats via the constructor option", () => {
+		const cache = new CacheableMemory({ stats: true });
+		expect(cache.stats.enabled).toBe(true);
+	});
+
+	test("should enable and disable stats via the setter", () => {
+		const cache = new CacheableMemory();
+		expect(cache.stats.enabled).toBe(false);
+		cache.stats.enabled = true;
+		cache.set("key", "value");
+		expect(cache.stats.sets).toBe(1);
+		cache.stats.enabled = false;
+		cache.set("key2", "value2");
+		expect(cache.stats.sets).toBe(1);
+	});
+
+	test("should track sets, count, ksize, and vsize on set", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value");
+		expect(cache.stats.sets).toBe(1);
+		expect(cache.stats.count).toBe(1);
+		expect(cache.stats.ksize).toBeGreaterThan(0);
+		expect(cache.stats.vsize).toBeGreaterThan(0);
+	});
+
+	test("should not inflate count or ksize when overwriting a key", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "short");
+		const ksizeAfterFirst = cache.stats.ksize;
+		cache.set("key", "a-much-longer-value-than-before");
+		expect(cache.stats.count).toBe(1);
+		expect(cache.stats.ksize).toBe(ksizeAfterFirst);
+		expect(cache.stats.sets).toBe(2);
+		expect(cache.stats.vsize).toBeGreaterThan(0);
+	});
+
+	test("should track each item in setMany as a set", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.setMany([
+			{ key: "a", value: 1 },
+			{ key: "b", value: 2 },
+		]);
+		expect(cache.stats.sets).toBe(2);
+		expect(cache.stats.count).toBe(2);
+		expect(cache.stats.ksize).toBeGreaterThan(0);
+		expect(cache.stats.vsize).toBeGreaterThan(0);
+	});
+
+	test("should track gets, hits, and misses on get", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value");
+		expect(cache.get("key")).toBe("value");
+		expect(cache.get("missing")).toBeUndefined();
+		expect(cache.stats.gets).toBe(2);
+		expect(cache.stats.hits).toBe(1);
+		expect(cache.stats.misses).toBe(1);
+	});
+
+	test("should record a miss and decrement size stats when a get finds an expired entry", async () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value", 1);
+		expect(cache.stats.count).toBe(1);
+		expect(cache.stats.ksize).toBeGreaterThan(0);
+		expect(cache.stats.vsize).toBeGreaterThan(0);
+		await sleep(5);
+		expect(cache.get("key")).toBeUndefined();
+		expect(cache.stats.misses).toBe(1);
+		expect(cache.stats.hits).toBe(0);
+		expect(cache.stats.gets).toBe(1);
+		// Lazily removing an expired entry decrements the size stats but is not a delete
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
+	});
+
+	test("should track each key in getMany as a separate get", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("a", 1);
+		const result = cache.getMany(["a", "b"]);
+		expect(result).toEqual([1, undefined]);
+		expect(cache.stats.gets).toBe(2);
+		expect(cache.stats.hits).toBe(1);
+		expect(cache.stats.misses).toBe(1);
+	});
+
+	test("should track hits and misses on getRaw", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("a", 1);
+		expect(cache.getRaw("a")).toBeDefined();
+		expect(cache.getRaw("b")).toBeUndefined();
+		expect(cache.stats.hits).toBe(1);
+		expect(cache.stats.misses).toBe(1);
+		expect(cache.stats.gets).toBe(2);
+	});
+
+	test("should record a miss and decrement size stats when getRaw finds an expired entry", async () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value", 1);
+		await sleep(5);
+		expect(cache.getRaw("key")).toBeUndefined();
+		expect(cache.stats.misses).toBe(1);
+		expect(cache.stats.gets).toBe(1);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
+	});
+
+	test("should decrement size stats when the keys getter purges an expired entry", async () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value", 1);
+		await sleep(5);
+		expect([...cache.keys]).toEqual([]);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
+	});
+
+	test("should decrement size stats when the items getter purges an expired entry", async () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value", 1);
+		await sleep(5);
+		expect([...cache.items]).toEqual([]);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
+	});
+
+	test("should decrement size stats when checkExpiration removes an expired entry", async () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value", 1);
+		await sleep(5);
+		cache.checkExpiration();
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.deletes).toBe(0);
+	});
+
+	test("should track each key in getManyRaw as a separate get", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("a", 1);
+		cache.getManyRaw(["a", "b"]);
+		expect(cache.stats.gets).toBe(2);
+		expect(cache.stats.hits).toBe(1);
+		expect(cache.stats.misses).toBe(1);
+	});
+
+	test("should count has() as a read", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value");
+		expect(cache.has("key")).toBe(true);
+		expect(cache.has("missing")).toBe(false);
+		expect(cache.stats.hits).toBe(1);
+		expect(cache.stats.misses).toBe(1);
+		expect(cache.stats.gets).toBe(2);
+	});
+
+	test("should track deletes and decrement count, ksize, and vsize on delete", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value");
+		cache.delete("key");
+		expect(cache.stats.deletes).toBe(1);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+	});
+
+	test("should not change stats when deleting a missing key", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.delete("missing");
+		expect(cache.stats.deletes).toBe(0);
+		expect(cache.stats.count).toBe(0);
+	});
+
+	test("should track deletes for deleteMany", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.setMany([
+			{ key: "a", value: 1 },
+			{ key: "b", value: 2 },
+		]);
+		cache.deleteMany(["a", "b"]);
+		expect(cache.stats.deletes).toBe(2);
+		expect(cache.stats.count).toBe(0);
+	});
+
+	test("should record a get and a delete for take()", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value");
+		expect(cache.take("key")).toBe("value");
+		expect(cache.stats.hits).toBe(1);
+		expect(cache.stats.gets).toBe(1);
+		expect(cache.stats.deletes).toBe(1);
+		expect(cache.stats.count).toBe(0);
+	});
+
+	test("should count an LRU eviction as a delete", () => {
+		const cache = new CacheableMemory({ stats: true, lruSize: 1 });
+		cache.set("a", "1");
+		cache.set("b", "2"); // evicts "a"
+		expect(cache.stats.sets).toBe(2);
+		expect(cache.stats.deletes).toBe(1);
+		expect(cache.stats.count).toBe(1);
+	});
+
+	test("should not produce negative size stats when enabled after entries exist", () => {
+		const cache = new CacheableMemory();
+		cache.set("a", "value-a");
+		cache.set("b", "value-b");
+		// Enable stats after the cache already holds entries that were never counted.
+		cache.stats.enabled = true;
+		cache.delete("a");
+		cache.delete("b");
+		cache.set("a", "longer-replacement-value"); // overwrite an untracked key
+		expect(cache.stats.count).toBeGreaterThanOrEqual(0);
+		expect(cache.stats.ksize).toBeGreaterThanOrEqual(0);
+		expect(cache.stats.vsize).toBeGreaterThanOrEqual(0);
+	});
+
+	test("should reset size stats when storeHashSize changes and clears the store", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("a", "value-a");
+		cache.set("b", "value-b");
+		expect(cache.stats.count).toBe(2);
+		expect(cache.stats.ksize).toBeGreaterThan(0);
+		expect(cache.stats.vsize).toBeGreaterThan(0);
+		cache.storeHashSize = 32; // recreates the store, clearing all entries
+		expect(cache.size).toBe(0);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+	});
+
+	test("should reset store values and increment clears on clear", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.setMany([
+			{ key: "a", value: 1 },
+			{ key: "b", value: 2 },
+		]);
+		expect(cache.stats.count).toBe(2);
+		expect(cache.stats.ksize).toBeGreaterThan(0);
+		expect(cache.stats.vsize).toBeGreaterThan(0);
+		cache.clear();
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+		expect(cache.stats.clears).toBe(1);
+	});
+
+	test("should expose hitRate and a snapshot via toJSON", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value");
+		cache.get("key");
+		cache.get("missing");
+		expect(cache.stats.hitRate).toBeCloseTo(0.5);
+		const snapshot = cache.stats.toJSON();
+		expect(snapshot.enabled).toBe(true);
+		expect(snapshot.hits).toBe(1);
+		expect(snapshot.misses).toBe(1);
+		expect(snapshot.count).toBe(1);
+	});
+
+	test("should reset counters via stats.reset()", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("key", "value");
+		cache.get("key");
+		cache.stats.reset();
+		expect(cache.stats.hits).toBe(0);
+		expect(cache.stats.gets).toBe(0);
+		expect(cache.stats.sets).toBe(0);
+		expect(cache.stats.count).toBe(0);
+	});
+
+	test("should track stats for wrapped functions", () => {
+		const cache = new CacheableMemory({ stats: true });
+		let calls = 0;
+		const wrapped = cache.wrap(
+			(value: number) => {
+				calls++;
+				return value * 2;
+			},
+			{ keyPrefix: "double" },
+		);
+		expect(wrapped(2)).toBe(4);
+		expect(wrapped(2)).toBe(4);
+		expect(calls).toBe(1);
+		expect(cache.stats.misses).toBe(1);
+		expect(cache.stats.hits).toBe(1);
+		expect(cache.stats.sets).toBe(1);
+		expect(cache.stats.gets).toBe(2);
+	});
+
+	test("should track stats for getOrSet", () => {
+		const cache = new CacheableMemory({ stats: true });
+		let calls = 0;
+		const compute = () => {
+			calls++;
+			return 42;
+		};
+		expect(cache.getOrSet("answer", compute)).toBe(42);
+		expect(cache.getOrSet("answer", compute)).toBe(42);
+		expect(calls).toBe(1);
+		expect(cache.stats.misses).toBe(1);
+		expect(cache.stats.hits).toBe(1);
+		expect(cache.stats.sets).toBe(1);
+	});
+});

@@ -8,6 +8,7 @@ import {
 	getOrSetSync,
 	HashAlgorithm,
 	hashToNumberSync,
+	Stats,
 	shorthandToTime,
 	type WrapFunctionOptions,
 	wrapSync,
@@ -49,6 +50,8 @@ export type StoreHashAlgorithmFunction = (
  * @property {number} [lruSize] - The size of the LRU cache. If set to 0, it will not use LRU cache. Default is 0. If you are using LRU then the limit is based on Map() size 17mm.
  * @property {number} [checkInterval] - The interval to check for expired items. If set to 0, it will not check for expired items. Default is 0.
  * @property {number} [storeHashSize] - The number of how many Map stores we have for the hash. Default is 10.
+ * @property {boolean} [stats] - If true, it will track statistics such as hits, misses, gets, sets, and deletes for this
+ * instance. Statistics are accessible via the `stats` property. Default is `false`.
  */
 export type CacheableMemoryOptions = {
 	ttl?: number | string;
@@ -60,6 +63,7 @@ export type CacheableMemoryOptions = {
 	storeHashAlgorithm?:
 		| HashAlgorithm
 		| ((key: string, storeHashSize: number) => number);
+	stats?: boolean;
 };
 
 export type SetOptions = {
@@ -86,6 +90,7 @@ export class CacheableMemory extends Hookified {
 	private _lruSize = 0; // Turned off by default
 	private _checkInterval = 0; // Turned off by default
 	private _interval: number | NodeJS.Timeout = 0; // Turned off by default
+	private readonly _stats = new Stats({ enabled: false }); // Turned off by default
 
 	/**
 	 * @constructor
@@ -104,6 +109,10 @@ export class CacheableMemory extends Hookified {
 
 		if (options?.useClone !== undefined) {
 			this._useClone = options.useClone;
+		}
+
+		if (options?.stats) {
+			this._stats.enabled = options.stats;
 		}
 
 		if (options?.storeHashSize && options.storeHashSize > 0) {
@@ -252,6 +261,16 @@ export class CacheableMemory extends Hookified {
 	}
 
 	/**
+	 * Gets the statistics of the cache. Statistics track aggregate counters such as `hits`, `misses`,
+	 * `gets`, `sets`, `deletes`, `clears`, `count`, `ksize`, and `vsize`. They are disabled by default;
+	 * enable them via the `stats` option or by setting `cache.stats.enabled = true`.
+	 * @returns {Stats} - The statistics for this CacheableMemory instance
+	 */
+	public get stats(): Stats {
+		return this._stats;
+	}
+
+	/**
 	 * Gets the number of hash stores
 	 * @returns {number} - The number of hash stores
 	 */
@@ -274,6 +293,11 @@ export class CacheableMemory extends Hookified {
 			{ length: this._storeHashSize },
 			() => new Map<string, CacheableStoreItem>(),
 		);
+
+		// Recreating the store clears all data, so the size stats no longer describe the cache.
+		if (this._stats.enabled) {
+			this._stats.resetStoreValues();
+		}
 	}
 
 	/**
@@ -304,6 +328,7 @@ export class CacheableMemory extends Hookified {
 			for (const key of store.keys()) {
 				const item = store.get(key);
 				if (item && this.hasExpired(item)) {
+					this.recordExpiration(item);
 					store.delete(key);
 					this.lruRemove(key);
 					continue;
@@ -325,6 +350,7 @@ export class CacheableMemory extends Hookified {
 		for (const store of this._store) {
 			for (const item of store.values()) {
 				if (this.hasExpired(item)) {
+					this.recordExpiration(item);
 					store.delete(item.key);
 					this.lruRemove(item.key);
 					continue;
@@ -355,13 +381,16 @@ export class CacheableMemory extends Hookified {
 		const store = this.getStore(key);
 		const item = store.get(key);
 		if (!item) {
+			this.recordRead(false);
 			this.hookSync(CacheableMemoryHooks.AFTER_GET, { key, result: undefined });
 			return undefined;
 		}
 
 		if (item.expires && Date.now() > item.expires) {
+			this.recordExpiration(item);
 			store.delete(key);
 			this.lruRemove(key);
+			this.recordRead(false);
 			this.hookSync(CacheableMemoryHooks.AFTER_GET, { key, result: undefined });
 			return undefined;
 		}
@@ -375,6 +404,7 @@ export class CacheableMemory extends Hookified {
 			result = this.clone(item.value) as T;
 		}
 
+		this.recordRead(true);
 		this.hookSync(CacheableMemoryHooks.AFTER_GET, { key, result });
 		return result;
 	}
@@ -404,16 +434,20 @@ export class CacheableMemory extends Hookified {
 		const store = this.getStore(key);
 		const item = store.get(key);
 		if (!item) {
+			this.recordRead(false);
 			return undefined;
 		}
 
-		if (item.expires && item.expires && Date.now() > item.expires) {
+		if (item.expires && Date.now() > item.expires) {
+			this.recordExpiration(item);
 			store.delete(key);
 			this.lruRemove(key);
+			this.recordRead(false);
 			return undefined;
 		}
 
 		this.lruMoveToFront(key);
+		this.recordRead(true);
 		return item;
 	}
 
@@ -504,6 +538,20 @@ export class CacheableMemory extends Hookified {
 			}
 		}
 
+		if (this._stats.enabled) {
+			const existing = store.get(hookItem.key);
+			if (existing) {
+				// Overwrite: the key is already counted, so only swap the value size
+				this._stats.decreaseVSize(existing.value);
+			} else {
+				this._stats.incrementKSize(hookItem.key);
+				this._stats.incrementCount();
+			}
+
+			this._stats.incrementVSize(hookItem.value);
+			this._stats.incrementSets();
+		}
+
 		const item = { key: hookItem.key, value: hookItem.value, expires };
 		store.set(hookItem.key, item);
 
@@ -587,6 +635,16 @@ export class CacheableMemory extends Hookified {
 	public delete(key: string): void {
 		this.hookSync(CacheableMemoryHooks.BEFORE_DELETE, key);
 		const store = this.getStore(key);
+		if (this._stats.enabled) {
+			const item = store.get(key);
+			if (item) {
+				this._stats.decreaseKSize(key);
+				this._stats.decreaseVSize(item.value);
+				this._stats.decreaseCount();
+				this._stats.incrementDeletes();
+			}
+		}
+
 		store.delete(key);
 		this.lruRemove(key);
 		this.hookSync(CacheableMemoryHooks.AFTER_DELETE, key);
@@ -617,6 +675,11 @@ export class CacheableMemory extends Hookified {
 			() => new Map<string, CacheableStoreItem>(),
 		);
 		this._lru = new DoublyLinkedList<string>();
+		if (this._stats.enabled) {
+			this._stats.resetStoreValues();
+			this._stats.incrementClears();
+		}
+
 		this.hookSync(CacheableMemoryHooks.AFTER_CLEAR);
 	}
 
@@ -734,6 +797,7 @@ export class CacheableMemory extends Hookified {
 		for (const store of this._store) {
 			for (const item of store.values()) {
 				if (item.expires && Date.now() > item.expires) {
+					this.recordExpiration(item);
 					store.delete(item.key);
 					this.lruRemove(item.key);
 				}
@@ -823,6 +887,43 @@ export class CacheableMemory extends Hookified {
 		return getOrSetSync<T>(key, function_, getOrSetOptions);
 	}
 
+	/**
+	 * Records a single read against the statistics counters. Each read increments `gets` and either
+	 * `hits` or `misses`. No-op when statistics are disabled. This is for internal use.
+	 * @param {boolean} hit - Whether the read found a (non-expired) value
+	 * @returns {void}
+	 */
+	private recordRead(hit: boolean): void {
+		if (!this._stats.enabled) {
+			return;
+		}
+
+		if (hit) {
+			this._stats.incrementHits();
+		} else {
+			this._stats.incrementMisses();
+		}
+
+		this._stats.incrementGets();
+	}
+
+	/**
+	 * Decrements the size statistics (`count`, `ksize`, and `vsize`) for an entry that is being removed
+	 * because it expired. Expirations are not counted as `deletes` since they are not user-initiated.
+	 * No-op when statistics are disabled. This is for internal use.
+	 * @param {CacheableStoreItem} item - The expired item being removed from the store
+	 * @returns {void}
+	 */
+	private recordExpiration(item: CacheableStoreItem): void {
+		if (!this._stats.enabled) {
+			return;
+		}
+
+		this._stats.decreaseKSize(item.key);
+		this._stats.decreaseVSize(item.value);
+		this._stats.decreaseCount();
+	}
+
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	private isPrimitive(value: any): boolean {
 		const result = false;
@@ -882,6 +983,9 @@ export {
 	HashAlgorithm,
 	hash,
 	hashToNumber,
+	Stats,
+	type StatsOptions,
+	type StatsSnapshot,
 } from "@cacheable/utils";
 export {
 	createKeyv,
