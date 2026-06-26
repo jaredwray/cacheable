@@ -341,7 +341,7 @@ cache.onHook(CacheableMemoryHooks.BEFORE_SET, (item) => {
 });
 ```
 
-Hooks run synchronously (via `hookSync`), so an `async` handler will not be awaited.
+Hooks are dispatched synchronously via `hookSync`, which **skips `async` handler functions entirely** — an `async` handler will not run at all (not merely run un-awaited), so register only synchronous handlers.
 
 > **TypeScript:** `onHook` is strongly typed for built-in `CacheableMemoryHooks` names — the handler argument is inferred (e.g. `BEFORE_SET` receives a `CacheableMemoryHookItem`), so no annotation is needed. The payload types are exported too: `CacheableMemoryHookItem`, `CacheableMemoryAfterGetItem`, and `CacheableMemoryAfterGetManyItem`.
 

@@ -1209,10 +1209,12 @@ describe("CacheableMemory Hooks", () => {
 		);
 		cache.set("typed", "value");
 		cache.get("typed");
-		cache.getMany(["typed"]);
+		// Assert AFTER_GET before getMany, which re-fires AFTER_GET per key
 		expect(setItem?.key).toEqual("typed");
 		expect(getItem?.result).toEqual("value");
-		expect(getManyItem?.result).toEqual(["value"]);
+		cache.getMany(["typed", "absent"]);
+		// AFTER_GET_MANY result includes `undefined` for missing/expired keys
+		expect(getManyItem?.result).toEqual(["value", undefined]);
 	});
 });
 

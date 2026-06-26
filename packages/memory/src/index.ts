@@ -87,16 +87,19 @@ export type CacheableMemoryAfterGetItem<T = unknown> = {
 	result: T | undefined;
 };
 
-/** The payload passed to the `AFTER_GET_MANY` hook. */
+/**
+ * The payload passed to the `AFTER_GET_MANY` hook. Entries are `undefined` for keys that were
+ * missing or expired, mirroring what `getMany` collects.
+ */
 export type CacheableMemoryAfterGetManyItem<T = unknown> = {
 	keys: string[];
-	result: T[];
+	result: Array<T | undefined>;
 };
 
 /**
  * Maps each {@link CacheableMemoryHooks} name to the payload its handler receives, so `onHook`
- * can be strongly typed. Handlers run synchronously (via `hookSync`), so an async handler would
- * not be awaited.
+ * can be strongly typed. Handlers are dispatched synchronously via `hookSync`, which skips
+ * `async` handler functions entirely — register only synchronous handlers.
  */
 export type CacheableMemoryHookHandlerMap = {
 	[CacheableMemoryHooks.BEFORE_SET]: (item: CacheableMemoryHookItem) => void;
