@@ -1,7 +1,13 @@
 import { createWrapKey, HashAlgorithm, sleep } from "@cacheable/utils";
 import { faker } from "@faker-js/faker";
 import { describe, expect, test } from "vitest";
-import { CacheableMemory, CacheableMemoryHooks } from "../src/index.js";
+import {
+	CacheableMemory,
+	type CacheableMemoryAfterGetItem,
+	type CacheableMemoryAfterGetManyItem,
+	type CacheableMemoryHookItem,
+	CacheableMemoryHooks,
+} from "../src/index.js";
 
 const cacheItemList = [
 	{ key: "key", value: "value" },
@@ -1176,6 +1182,37 @@ describe("CacheableMemory Hooks", () => {
 		await sleep(20);
 		cache.get("key");
 		expect(afterGetResult).toBeUndefined();
+	});
+
+	test("exposes typed hook payloads via onHook", () => {
+		const cache = new CacheableMemory();
+		let setItem: CacheableMemoryHookItem | undefined;
+		let getItem: CacheableMemoryAfterGetItem | undefined;
+		let getManyItem: CacheableMemoryAfterGetManyItem | undefined;
+		cache.onHook(
+			CacheableMemoryHooks.BEFORE_SET,
+			(item: CacheableMemoryHookItem) => {
+				setItem = item;
+			},
+		);
+		cache.onHook(
+			CacheableMemoryHooks.AFTER_GET,
+			(item: CacheableMemoryAfterGetItem) => {
+				getItem = item;
+			},
+		);
+		cache.onHook(
+			CacheableMemoryHooks.AFTER_GET_MANY,
+			(item: CacheableMemoryAfterGetManyItem) => {
+				getManyItem = item;
+			},
+		);
+		cache.set("typed", "value");
+		cache.get("typed");
+		cache.getMany(["typed"]);
+		expect(setItem?.key).toEqual("typed");
+		expect(getItem?.result).toEqual("value");
+		expect(getManyItem?.result).toEqual(["value"]);
 	});
 });
 

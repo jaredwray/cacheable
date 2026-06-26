@@ -13,7 +13,7 @@ import {
 	type WrapFunctionOptions,
 	wrapSync,
 } from "@cacheable/utils";
-import { Hookified } from "hookified";
+import { type Hook, Hookified } from "hookified";
 import { DoublyLinkedList } from "./memory-lru.js";
 
 export enum CacheableMemoryHooks {
@@ -69,6 +69,52 @@ export type CacheableMemoryOptions = {
 export type SetOptions = {
 	ttl?: number | string;
 	expire?: number | Date;
+};
+
+/**
+ * The payload passed to the `BEFORE_SET` and `AFTER_SET` hooks. Inside a `BEFORE_SET` handler
+ * you can reassign `key`, `value`, or `ttl` to change what gets stored.
+ */
+export type CacheableMemoryHookItem<T = unknown> = {
+	key: string;
+	value: T;
+	ttl?: number | string | SetOptions;
+};
+
+/** The payload passed to the `AFTER_GET` hook. `result` is `undefined` on a cache miss. */
+export type CacheableMemoryAfterGetItem<T = unknown> = {
+	key: string;
+	result: T | undefined;
+};
+
+/** The payload passed to the `AFTER_GET_MANY` hook. */
+export type CacheableMemoryAfterGetManyItem<T = unknown> = {
+	keys: string[];
+	result: T[];
+};
+
+/**
+ * Maps each {@link CacheableMemoryHooks} name to the payload its handler receives, so `onHook`
+ * can be strongly typed. Handlers run synchronously (via `hookSync`), so an async handler would
+ * not be awaited.
+ */
+export type CacheableMemoryHookHandlerMap = {
+	[CacheableMemoryHooks.BEFORE_SET]: (item: CacheableMemoryHookItem) => void;
+	[CacheableMemoryHooks.AFTER_SET]: (item: CacheableMemoryHookItem) => void;
+	[CacheableMemoryHooks.BEFORE_SET_MANY]: (items: CacheableItem[]) => void;
+	[CacheableMemoryHooks.AFTER_SET_MANY]: (items: CacheableItem[]) => void;
+	[CacheableMemoryHooks.BEFORE_GET]: (key: string) => void;
+	[CacheableMemoryHooks.AFTER_GET]: (item: CacheableMemoryAfterGetItem) => void;
+	[CacheableMemoryHooks.BEFORE_GET_MANY]: (keys: string[]) => void;
+	[CacheableMemoryHooks.AFTER_GET_MANY]: (
+		item: CacheableMemoryAfterGetManyItem,
+	) => void;
+	[CacheableMemoryHooks.BEFORE_DELETE]: (key: string) => void;
+	[CacheableMemoryHooks.AFTER_DELETE]: (key: string) => void;
+	[CacheableMemoryHooks.BEFORE_DELETE_MANY]: (keys: string[]) => void;
+	[CacheableMemoryHooks.AFTER_DELETE_MANY]: (keys: string[]) => void;
+	[CacheableMemoryHooks.BEFORE_CLEAR]: () => void;
+	[CacheableMemoryHooks.AFTER_CLEAR]: () => void;
 };
 
 export const defaultStoreHashSize = 16; // Default is 16
@@ -146,6 +192,23 @@ export class CacheableMemory extends Hookified {
 		);
 
 		this.startIntervalCheck();
+	}
+
+	/**
+	 * Registers a handler for a hook. Built-in {@link CacheableMemoryHooks} names get a
+	 * strongly-typed payload (e.g. `BEFORE_SET` receives a {@link CacheableMemoryHookItem} whose
+	 * `key`, `value`, and `ttl` you can reassign); any other event name falls back to the loose
+	 * Hookified signature.
+	 * @param hook The hook to register the handler for
+	 * @param handler The handler to call when the hook is triggered
+	 */
+	public onHook<K extends CacheableMemoryHooks>(
+		hook: K,
+		handler: CacheableMemoryHookHandlerMap[K],
+	): void;
+	public onHook(event: string, handler: Hook): void;
+	public onHook(event: string, handler: Hook): void {
+		super.onHook(event, handler);
 	}
 
 	/**

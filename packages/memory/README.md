@@ -30,6 +30,7 @@ Here are some of the main features of `CacheableMemory`:
 * [CacheableMemory LRU Feature](#cacheablememory-lru-feature)
 * [CacheableMemory Performance](#cacheablememory-performance)
 * [CacheableMemory Statistics](#cacheablememory-statistics)
+* [CacheableMemory Hooks and Events](#cacheablememory-hooks-and-events)
 * [CacheableMemory Options](#cacheablememory-options)
 * [CacheableMemory - API](#cacheablememory---api)
 * [Keyv Storage Adapter - KeyvCacheableMemory](#keyv-storage-adapter---keyvcacheablememory)
@@ -296,6 +297,54 @@ The `count`, `ksize`, and `vsize` values are kept in sync as entries are added, 
 
 For accurate size counters, enable statistics before populating the cache: `count`/`ksize`/`vsize` only account for entries written while statistics were enabled, and are clamped at `0` so they never go negative if you enable stats after the cache already has data. Changing `storeHashSize` recreates the underlying stores and clears all entries, so the size counters are reset to `0` accordingly.
 
+## CacheableMemory Hooks and Events
+
+`CacheableMemory` extends [`Hookified`](https://github.com/jaredwray/hookified), so you can register handlers that run around cache operations via the `CacheableMemoryHooks` enum and the `onHook()` method:
+
+* `BEFORE_SET`: Called before `set()`. The handler receives `{ key, value, ttl }` and can reassign any of them to change what gets stored.
+* `AFTER_SET`: Called after `set()` with the (possibly modified) `{ key, value, ttl }`.
+* `BEFORE_SET_MANY`: Called before `setMany()` with the array of `CacheableItem`s. Items can be mutated.
+* `AFTER_SET_MANY`: Called after `setMany()` with the array of items.
+* `BEFORE_GET`: Called before `get()` with the `key`.
+* `AFTER_GET`: Called after `get()` with `{ key, result }` (`result` is `undefined` on a cache miss).
+* `BEFORE_GET_MANY`: Called before `getMany()` with the array of `keys`.
+* `AFTER_GET_MANY`: Called after `getMany()` with `{ keys, result }`.
+* `BEFORE_DELETE`: Called before `delete()` with the `key`.
+* `AFTER_DELETE`: Called after `delete()` with the `key`.
+* `BEFORE_DELETE_MANY`: Called before `deleteMany()` with the array of `keys`.
+* `AFTER_DELETE_MANY`: Called after `deleteMany()` with the array of `keys`.
+* `BEFORE_CLEAR`: Called before `clear()`.
+* `AFTER_CLEAR`: Called after `clear()`.
+
+An example of how to use these hooks:
+
+```javascript
+import { CacheableMemory, CacheableMemoryHooks } from '@cacheable/memory';
+
+const cache = new CacheableMemory();
+
+cache.onHook(CacheableMemoryHooks.BEFORE_SET, (item) => {
+  console.log(`before set: ${item.key} ${item.value}`);
+});
+
+cache.onHook(CacheableMemoryHooks.AFTER_GET, (item) => {
+  console.log(`after get: ${item.key} = ${item.result}`);
+});
+```
+
+A `BEFORE_SET` handler can change the `key`, `value`, or `ttl` before the entry is stored. The `ttl` accepts a number (milliseconds), a [shorthand string](#shorthand-for-time-to-live-ttl), or a `SetOptions` object (`{ ttl, expire }`):
+
+```javascript
+cache.onHook(CacheableMemoryHooks.BEFORE_SET, (item) => {
+  item.key = `user:${item.key}`;
+  item.ttl = '1h';
+});
+```
+
+Hooks run synchronously (via `hookSync`), so an `async` handler will not be awaited.
+
+> **TypeScript:** `onHook` is strongly typed for built-in `CacheableMemoryHooks` names — the handler argument is inferred (e.g. `BEFORE_SET` receives a `CacheableMemoryHookItem`), so no annotation is needed. The payload types are exported too: `CacheableMemoryHookItem`, `CacheableMemoryAfterGetItem`, and `CacheableMemoryAfterGetManyItem`.
+
 ## CacheableMemory Options
 
 * `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.
@@ -323,6 +372,7 @@ For accurate size counters, enable statistics before populating the cache: `coun
 * `takeMany([keys])`: Takes multiple values from the cache and deletes them.
 * `wrap(function, WrapSyncOptions)`: Wraps a `sync` function in a cache.
 * `clear()`: Clears the cache.
+* `onHook(hook, handler)`: Registers a handler for a `CacheableMemoryHooks` event. See [CacheableMemory Hooks and Events](#cacheablememory-hooks-and-events).
 * `ttl`: The default time to live for the cache in milliseconds. Default is `undefined` which is disabled.
 * `maxTtl`: The maximum time to live for any cache entry. When set, TTLs exceeding this value are capped. Default is `undefined` (no maximum).
 * `useClones`: If the cache should use clones for the values. Default is `true`.
