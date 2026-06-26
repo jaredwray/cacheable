@@ -195,8 +195,16 @@ export async function getOrSet<T>(
 				const error = caught instanceof ErrorEnvelope ? caught.error : caught;
 
 				options.cache.emit("error", error);
-				if (options.cacheErrors) {
-					await options.cache.set(keyString, error, options.ttl);
+				// Only cache errors that originated in the value function — a failed store write has
+				// no error worth caching and the store is already unhealthy. Wrapping the write also
+				// keeps a second failure from escaping as an uncaught rejection that bypasses the
+				// throwErrors handling below.
+				if (options.cacheErrors && errorType === "function") {
+					try {
+						await options.cache.set(keyString, error, options.ttl);
+					} catch (storeError) {
+						options.cache.emit("error", storeError);
+					}
 				}
 
 				if (options.throwErrors === true || options.throwErrors === errorType) {
@@ -269,8 +277,16 @@ export function getOrSetSync<T>(
 			const error = caught instanceof ErrorEnvelope ? caught.error : caught;
 
 			options.cache.emit("error", error);
-			if (options.cacheErrors) {
-				options.cache.set(keyString, error, options.ttl);
+			// Only cache errors that originated in the value function — a failed store write has no
+			// error worth caching and the store is already unhealthy. Wrapping the write also keeps a
+			// second failure from escaping as an uncaught throw that bypasses the throwErrors handling
+			// below.
+			if (options.cacheErrors && errorType === "function") {
+				try {
+					options.cache.set(keyString, error, options.ttl);
+				} catch (storeError) {
+					options.cache.emit("error", storeError);
+				}
 			}
 
 			if (options.throwErrors === true || options.throwErrors === errorType) {

@@ -145,4 +145,55 @@ describe("cacheable get or set", () => {
 		});
 		expect(result1).toBe(result2);
 	});
+
+	test("should not throw an uncaught store error when cacheErrors is enabled", async () => {
+		const cacheable = new MockCacheable();
+
+		cacheable.set = async () => {
+			throw new Error("Cache error");
+		};
+
+		const function_ = vi.fn(async () => 42);
+
+		let errorCallCount = 0;
+		cacheable.on("error", () => {
+			errorCallCount++;
+		});
+
+		// throwErrors defaults to false, so a failed store write must not surface as an unhandled
+		// rejection, and a store error must not be re-cached.
+		const result = await getOrSet("key", function_, {
+			cache: cacheable,
+			cacheErrors: true,
+		});
+		expect(result).toBe(42);
+		expect(function_).toHaveBeenCalledTimes(1);
+		expect(errorCallCount).toBe(1);
+	});
+
+	test("should emit and not throw when caching a function error fails", async () => {
+		const cacheable = new MockCacheable();
+
+		cacheable.set = async () => {
+			throw new Error("Cache write failed");
+		};
+
+		const function_ = vi.fn(async () => {
+			throw new Error("Function error");
+		});
+
+		const messages: string[] = [];
+		cacheable.on("error", (error: Error) => {
+			messages.push(error.message);
+		});
+
+		const result = await getOrSet("key", function_, {
+			cache: cacheable,
+			cacheErrors: true,
+		});
+
+		expect(result).toBeUndefined();
+		expect(messages).toContain("Function error");
+		expect(messages).toContain("Cache write failed");
+	});
 });
