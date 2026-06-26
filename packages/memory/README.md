@@ -363,6 +363,54 @@ If you would like to generate your own key for the wrapped function you can set 
 
 We will pass in the `function` that is being wrapped, the `arguments` passed to the function, and the `options` used to wrap the function. You can then use these to generate a custom key for the cache.
 
+# Get Or Set Memoization Function
+
+`CacheableMemory` also has a `getOrSet` method that implements the cache-aside pattern in a single synchronous call. It attempts to retrieve a value from the cache, and if it is not found it calls the provided function to compute the value, stores it, and returns it. This is the synchronous counterpart to the `getOrSet` method on `cacheable` and is backed by `getOrSetSync` from [@cacheable/utils](https://cacheable.org/docs/utils/).
+
+```javascript
+import { CacheableMemory } from '@cacheable/memory';
+
+const cache = new CacheableMemory();
+
+const getUser = () => ({ id: 1, name: 'Alice' });
+
+// First call computes the value and stores it
+const user1 = cache.getOrSet('user:1', getUser, { ttl: '1h' });
+// Second call returns the cached value without calling getUser again
+const user2 = cache.getOrSet('user:1', getUser, { ttl: '1h' });
+
+console.log(user1); // { id: 1, name: 'Alice' }
+console.log(user1 === user2); // true (served from cache)
+```
+
+The third argument accepts the following options:
+
+```typescript
+export type GetOrSetFunctionOptions = {
+	ttl?: number | string;
+	cacheErrors?: boolean;
+	throwErrors?: boolean | 'function' | 'store';
+};
+```
+
+* `ttl`: The time to live for the stored value. If omitted it falls back to the instance default `ttl`. Accepts milliseconds or the [shorthand](#shorthand-for-time-to-live-ttl) format such as `1h`.
+* `cacheErrors`: When `true`, errors thrown by the function are cached so the function is not retried until the entry expires. Default is `false`.
+* `throwErrors`: Controls whether errors are rethrown. `false` (default) emits errors on the `error` event and returns `undefined`; `true` rethrows any error; `'function'` only rethrows errors from the provided function; `'store'` only rethrows errors from reading/writing the cache.
+
+Because `CacheableMemory` is synchronous there is no request coalescing — synchronous code runs to completion without interleaving, so concurrent callers cannot stampede the setter the way they can with the async `getOrSet` on `cacheable`.
+
+You can also pass a function to compute the key:
+
+```javascript
+import { CacheableMemory, GetOrSetSyncKey } from '@cacheable/memory';
+
+const cache = new CacheableMemory();
+
+const generateKey: GetOrSetSyncKey = (options) => `user:${options?.ttl}`;
+
+const value = cache.getOrSet(generateKey, () => Math.random() * 100, { ttl: '1h' });
+```
+
 # How to Contribute
 
 You can contribute by forking the repo and submitting a pull request. Please make sure to add tests and update the documentation. To learn more about how to contribute go to our main README [https://github.com/jaredwray/cacheable](https://github.com/jaredwray/cacheable). This will talk about how to `Open a Pull Request`, `Ask a Question`, or `Post an Issue`.

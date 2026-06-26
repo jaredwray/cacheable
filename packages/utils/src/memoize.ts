@@ -59,6 +59,24 @@ export type GetOrSetOptions = Omit<GetOrSetFunctionOptions, "ttl"> & {
 	cache: CacheInstance;
 };
 
+/**
+ * Options for {@link getOrSetSync}, the synchronous counterpart to {@link GetOrSetOptions}. It
+ * targets a {@link CacheSyncInstance} and its `ttl` is always a single value (a number in
+ * milliseconds or a shorthand string), never a per-store object. The inherited `nonBlocking`
+ * option has no effect on a single, synchronous store.
+ */
+export type GetOrSetSyncOptions = GetOrSetFunctionOptions & {
+	cache: CacheSyncInstance;
+};
+
+/**
+ * A cache key for {@link getOrSetSync}: either a string or a function that derives the key from the
+ * resolved {@link GetOrSetSyncOptions}.
+ */
+export type GetOrSetSyncKey =
+	| string
+	| ((options?: GetOrSetSyncOptions) => string);
+
 export type CreateWrapKey = (
 	function_: AnyFunction,
 	// biome-ignore lint/suspicious/noExplicitAny: type format
@@ -177,8 +195,16 @@ export async function getOrSet<T>(
 				const error = caught instanceof ErrorEnvelope ? caught.error : caught;
 
 				options.cache.emit("error", error);
-				if (options.cacheErrors) {
-					await options.cache.set(keyString, error, options.ttl);
+				// Only cache errors that originated in the value function — a failed store write has
+				// no error worth caching and the store is already unhealthy. Wrapping the write also
+				// keeps a second failure from escaping as an uncaught rejection that bypasses the
+				// throwErrors handling below.
+				if (options.cacheErrors && errorType === "function") {
+					try {
+						await options.cache.set(keyString, error, options.ttl);
+					} catch (storeError) {
+						options.cache.emit("error", storeError);
+					}
 				}
 
 				if (options.throwErrors === true || options.throwErrors === errorType) {
@@ -187,6 +213,86 @@ export async function getOrSet<T>(
 			}
 			return result;
 		});
+	}
+
+	return value;
+}
+
+/**
+ * Synchronous counterpart to {@link getOrSet}. Reads `key` from the cache and, on a miss, computes
+ * the value with `function_`, stores it, and returns it.
+ *
+ * Unlike {@link getOrSet} there is no request coalescing: synchronous code runs to completion
+ * without interleaving, so concurrent callers cannot stampede the setter the way they can with an
+ * async cache.
+ *
+ * Error handling mirrors {@link getOrSet}: errors are emitted on the cache's `error` event, can be
+ * cached when `cacheErrors` is set, and can be rethrown selectively via `throwErrors` (`true` for
+ * any error, `"function"` for setter errors, `"store"` for cache read/write errors).
+ *
+ * @param key - The cache key, or a function that derives it from the resolved options.
+ * @param function_ - The setter invoked on a cache miss to compute the value.
+ * @param options - The {@link GetOrSetSyncOptions} including the target synchronous cache.
+ * @returns The cached or freshly computed value, or `undefined`.
+ */
+export function getOrSetSync<T>(
+	key: GetOrSetSyncKey,
+	function_: () => T,
+	options: GetOrSetSyncOptions,
+): T | undefined {
+	const keyString = typeof key === "function" ? key(options) : key;
+
+	let value: T | undefined;
+
+	try {
+		value = options.cache.get(keyString) as T | undefined;
+	} catch (error) {
+		options.cache.emit("error", error);
+		if (options.throwErrors === true || options.throwErrors === "store") {
+			throw error;
+		}
+	}
+
+	if (value === undefined) {
+		try {
+			// try to do the logic passed in as the setter
+			try {
+				value = function_();
+			} catch (error) {
+				throw new ErrorEnvelope<GetOrSetThrowErrorsContext>(error, "function");
+			}
+
+			// try to write the result to the cache
+			try {
+				options.cache.set(keyString, value, options.ttl);
+			} catch (error) {
+				throw new ErrorEnvelope<GetOrSetThrowErrorsContext>(error, "store");
+			}
+		} catch (caught) {
+			const errorType =
+				caught instanceof ErrorEnvelope
+					? (caught as ErrorEnvelope<GetOrSetThrowErrorsContext>).context
+					: /* c8 ignore next 1 */
+						undefined;
+			const error = caught instanceof ErrorEnvelope ? caught.error : caught;
+
+			options.cache.emit("error", error);
+			// Only cache errors that originated in the value function — a failed store write has no
+			// error worth caching and the store is already unhealthy. Wrapping the write also keeps a
+			// second failure from escaping as an uncaught throw that bypasses the throwErrors handling
+			// below.
+			if (options.cacheErrors && errorType === "function") {
+				try {
+					options.cache.set(keyString, error, options.ttl);
+				} catch (storeError) {
+					options.cache.emit("error", storeError);
+				}
+			}
+
+			if (options.throwErrors === true || options.throwErrors === errorType) {
+				throw error;
+			}
+		}
 	}
 
 	return value;

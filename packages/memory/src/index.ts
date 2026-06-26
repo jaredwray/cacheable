@@ -2,6 +2,10 @@ import {
 	type CacheableItem,
 	type CacheableStoreItem,
 	type CacheSyncInstance,
+	type GetOrSetFunctionOptions,
+	type GetOrSetSyncKey,
+	type GetOrSetSyncOptions,
+	getOrSetSync,
 	HashAlgorithm,
 	hashToNumberSync,
 	shorthandToTime,
@@ -791,6 +795,34 @@ export class CacheableMemory extends Hookified {
 		return wrapSync<T>(function_, wrapOptions);
 	}
 
+	/**
+	 * Gets the value of the key, or computes and stores it on a cache miss. This is the synchronous
+	 * cache-aside helper: if the key is present its value is returned, otherwise `function_` is
+	 * invoked, its result is stored, and that result is returned.
+	 *
+	 * The value is stored using `options.ttl`, falling back to the instance default `ttl`. Because
+	 * the cache is synchronous there is no request coalescing — concurrent callers cannot stampede
+	 * the setter the way they can with an async cache.
+	 * @param {GetOrSetSyncKey} key - The key to get or set. Can also be a function that returns the key.
+	 * @param {() => T} function_ - The function that computes the value on a cache miss.
+	 * @param {GetOrSetFunctionOptions} [options] - Options such as `ttl`, `cacheErrors`, and `throwErrors`.
+	 * @returns {T | undefined} - The cached or freshly computed value
+	 */
+	public getOrSet<T>(
+		key: GetOrSetSyncKey,
+		function_: () => T,
+		options?: GetOrSetFunctionOptions,
+	): T | undefined {
+		const getOrSetOptions: GetOrSetSyncOptions = {
+			cache: this as CacheSyncInstance,
+			ttl: options?.ttl ?? this._ttl,
+			cacheErrors: options?.cacheErrors,
+			throwErrors: options?.throwErrors,
+		};
+
+		return getOrSetSync<T>(key, function_, getOrSetOptions);
+	}
+
 	// biome-ignore lint/suspicious/noExplicitAny: type format
 	private isPrimitive(value: any): boolean {
 		const result = false;
@@ -843,6 +875,10 @@ export class CacheableMemory extends Hookified {
 export {
 	type CacheableItem,
 	type CacheableStoreItem,
+	type GetOrSetFunctionOptions,
+	type GetOrSetSyncKey,
+	type GetOrSetSyncOptions,
+	getOrSetSync,
 	HashAlgorithm,
 	hash,
 	hashToNumber,
