@@ -70,6 +70,7 @@ export type CacheableHookHandlerMap = {
 };
 
 export class Cacheable extends Hookified {
+	private static _instance?: Cacheable;
 	private _primary: Keyv = createKeyv();
 	private _secondary: Keyv | undefined;
 	private _nonBlocking = false;
@@ -139,6 +140,51 @@ export class Cacheable extends Hookified {
 			// Subscribe to sync events to update local cache
 			this._sync.subscribe(this._primary, this._cacheId);
 		}
+	}
+
+	/**
+	 * Gets a shared static (singleton) instance of {@link Cacheable}. The first call creates the
+	 * instance using the provided options; every later call returns that same instance. Passing
+	 * `options` again after the instance already exists does NOT reconfigure it — the options are
+	 * ignored and a {@link CacheableEvents.ERROR} event is emitted on the instance to surface the
+	 * conflict (listen with `instance.on("error", ...)`). To reconfigure, replace it via
+	 * {@link Cacheable.setStaticInstance} (clear with `undefined`, then call this again).
+	 *
+	 * Note: this package ships separate CommonJS and ESM builds, so an app that loads both formats
+	 * gets one shared instance per build. For a single shared cache, use one module format or share
+	 * an explicit instance via {@link Cacheable.setStaticInstance}.
+	 * @param {CacheableOptions} [options] Options applied only when the instance is first created
+	 * @returns {Cacheable} The shared static instance
+	 * @example
+	 * ```ts
+	 * const cache = Cacheable.getStaticInstance({ ttl: "1h" });
+	 * await cache.set("key", "value");
+	 * ```
+	 */
+	public static getStaticInstance(options?: CacheableOptions): Cacheable {
+		if (options && Cacheable._instance) {
+			Cacheable._instance.emit(
+				CacheableEvents.ERROR,
+				new Error(
+					"Cacheable static instance is already initialized; the options passed were ignored. To reconfigure, use Cacheable.setStaticInstance().",
+				),
+			);
+			return Cacheable._instance;
+		}
+		Cacheable._instance ??= new Cacheable(options);
+		return Cacheable._instance;
+	}
+
+	/**
+	 * Sets or clears the shared static instance returned by {@link Cacheable.getStaticInstance}.
+	 * Pass a {@link Cacheable} instance to make it the shared instance, or `undefined` to clear it
+	 * so the next {@link Cacheable.getStaticInstance} call creates a fresh one. Clearing only drops
+	 * the reference — it does not `disconnect()` or `clear()` the previous instance, so disconnect
+	 * it first if it holds open connections.
+	 * @param {Cacheable} [instance] The instance to share, or `undefined` to clear it
+	 */
+	public static setStaticInstance(instance?: Cacheable): void {
+		Cacheable._instance = instance;
 	}
 
 	/**
