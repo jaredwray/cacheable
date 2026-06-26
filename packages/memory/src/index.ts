@@ -16,6 +16,11 @@ import {
 import { Hookified } from "hookified";
 import { DoublyLinkedList } from "./memory-lru.js";
 
+/**
+ * Lifecycle hooks fired by {@link CacheableMemory}. Register handlers with the inherited
+ * `onHook(hook, handler)` method. Hooks are dispatched synchronously via `hookSync`, which skips
+ * `async` handler functions entirely — register only synchronous handlers.
+ */
 export enum CacheableMemoryHooks {
 	BEFORE_SET = "BEFORE_SET",
 	AFTER_SET = "AFTER_SET",
@@ -69,6 +74,31 @@ export type CacheableMemoryOptions = {
 export type SetOptions = {
 	ttl?: number | string;
 	expire?: number | Date;
+};
+
+/**
+ * The payload passed to the `BEFORE_SET` and `AFTER_SET` hooks. Inside a `BEFORE_SET` handler
+ * you can reassign `key`, `value`, or `ttl` to change what gets stored.
+ */
+export type CacheableMemoryHookItem<T = unknown> = {
+	key: string;
+	value: T;
+	ttl?: number | string | SetOptions;
+};
+
+/** The payload passed to the `AFTER_GET` hook. `result` is `undefined` on a cache miss. */
+export type CacheableMemoryAfterGetItem<T = unknown> = {
+	key: string;
+	result: T | undefined;
+};
+
+/**
+ * The payload passed to the `AFTER_GET_MANY` hook. Entries are `undefined` for keys that were
+ * missing or expired, mirroring what `getMany` collects.
+ */
+export type CacheableMemoryAfterGetManyItem<T = unknown> = {
+	keys: string[];
+	result: Array<T | undefined>;
 };
 
 export const defaultStoreHashSize = 16; // Default is 16
