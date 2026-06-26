@@ -199,6 +199,52 @@ async function fetchRegistryDoc(name, { retries = 4 } = {}) {
 	throw new Error(`failed to query the registry for ${name}: ${lastError?.message ?? lastError}`);
 }
 
+/** Compare two semver versions by precedence. Returns -1, 0, or 1; build metadata is ignored. */
+function compareSemver(a, b) {
+	const parse = (version) => {
+		const [main] = String(version).split("+"); // drop build metadata
+		const dash = main.indexOf("-");
+		const core = dash === -1 ? main : main.slice(0, dash);
+		const prerelease = dash === -1 ? "" : main.slice(dash + 1);
+		return { nums: core.split(".").map((n) => Number.parseInt(n, 10) || 0), prerelease };
+	};
+
+	const pa = parse(a);
+	const pb = parse(b);
+
+	for (let i = 0; i < 3; i++) {
+		const diff = (pa.nums[i] ?? 0) - (pb.nums[i] ?? 0);
+		if (diff !== 0) return diff < 0 ? -1 : 1;
+	}
+
+	// Equal cores: a prerelease has LOWER precedence than the matching release.
+	if (pa.prerelease === "" || pb.prerelease === "") {
+		if (pa.prerelease === pb.prerelease) return 0;
+		return pa.prerelease === "" ? 1 : -1;
+	}
+
+	const ida = pa.prerelease.split(".");
+	const idb = pb.prerelease.split(".");
+	for (let i = 0; i < Math.max(ida.length, idb.length); i++) {
+		const x = ida[i];
+		const y = idb[i];
+		if (x === undefined) return -1; // fewer identifiers → lower precedence
+		if (y === undefined) return 1;
+		const xNum = /^\d+$/.test(x);
+		const yNum = /^\d+$/.test(y);
+		if (xNum && yNum) {
+			const diff = Number.parseInt(x, 10) - Number.parseInt(y, 10);
+			if (diff !== 0) return diff < 0 ? -1 : 1;
+		} else if (xNum !== yNum) {
+			return xNum ? -1 : 1; // numeric identifiers rank below alphanumeric
+		} else if (x !== y) {
+			return x < y ? -1 : 1;
+		}
+	}
+
+	return 0;
+}
+
 /** Resolve whether a single package needs publishing. */
 async function resolvePlanEntry(pkg) {
 	const doc = await fetchRegistryDoc(pkg.name);
@@ -212,6 +258,18 @@ async function resolvePlanEntry(pkg) {
 
 	if (publishedVersions.has(pkg.version)) {
 		return { ...pkg, registryVersion: latest, action: "skip", reason: "already published" };
+	}
+
+	// Guard against an accidental rollback: publishing a version below the
+	// current `latest` would move the default dist-tag — and every consumer on
+	// a `^`/`~` range — backward. Refuse rather than silently downgrade.
+	if (latest && compareSemver(pkg.version, latest) < 0) {
+		return {
+			...pkg,
+			registryVersion: latest,
+			action: "error",
+			reason: `version ${pkg.version} is behind registry latest ${latest}`,
+		};
 	}
 
 	return { ...pkg, registryVersion: latest, action: "publish", reason: `new version (registry latest ${latest ?? "none"})` };
@@ -310,6 +368,19 @@ async function main() {
 	console.log(`Registry: ${REGISTRY}\n`);
 	renderTable(plan);
 	writeStepSummary(plan, { dryRun: args.dryRun });
+
+	// Fail closed on a known-bad plan before publishing anything (e.g. a version
+	// that would move `latest` backward). Reported even in a dry run.
+	const errors = plan.filter((entry) => entry.action === "error");
+	if (errors.length > 0) {
+		console.error("\nRefusing to release — resolve these first:");
+		for (const entry of errors) {
+			console.error(`  - ${entry.name}: ${entry.reason}`);
+		}
+
+		console.error("\nBump each to a version newer than the published latest, or drop it from this release.");
+		process.exit(1);
+	}
 
 	const toPublish = plan.filter((entry) => entry.action === "publish");
 

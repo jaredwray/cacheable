@@ -77,4 +77,7 @@ jobs:
         run: node scripts/test-build.mjs
 
       - name: Release
-        run: node scripts/release.mjs ${{ inputs.dry-run && '--dry-run' || '' }}
+        # Real publishing only ever happens on `main`. A manual run from any
+        # other branch/ref is forced to a dry run, so branch versions can never
+        # be pushed to npm (the publish step uses --no-git-checks).
+        run: node scripts/release.mjs ${{ (github.ref != 'refs/heads/main' || inputs.dry-run) && '--dry-run' || '' }}
