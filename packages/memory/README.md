@@ -294,6 +294,8 @@ You can get a plain-object snapshot via `cache.stats.toJSON()` and reset all cou
 
 The `count`, `ksize`, and `vsize` values are kept in sync as entries are added, removed, overwritten, and lazily expired, so they reflect the current contents of the cache. (Expired entries are not counted as `deletes`, since their removal is not user-initiated.) Methods that perform a read internally — such as `has()`, `take()`, and the `wrap()` / `getOrSet()` memoization helpers — flow through `get`/`set`, so they update the statistics as well.
 
+For accurate size counters, enable statistics before populating the cache: `count`/`ksize`/`vsize` only account for entries written while statistics were enabled, and are clamped at `0` so they never go negative if you enable stats after the cache already has data. Changing `storeHashSize` recreates the underlying stores and clears all entries, so the size counters are reset to `0` accordingly.
+
 ## CacheableMemory Options
 
 * `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.

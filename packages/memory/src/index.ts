@@ -293,6 +293,11 @@ export class CacheableMemory extends Hookified {
 			{ length: this._storeHashSize },
 			() => new Map<string, CacheableStoreItem>(),
 		);
+
+		// Recreating the store clears all data, so the size stats no longer describe the cache.
+		if (this._stats.enabled) {
+			this._stats.resetStoreValues();
+		}
 	}
 
 	/**

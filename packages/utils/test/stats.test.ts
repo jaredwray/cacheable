@@ -127,6 +127,18 @@ describe("cacheable stats", () => {
 		expect(stats.count).toBe(0);
 	});
 
+	test("should clamp size stats at 0 when decreasing untracked entries", () => {
+		const stats = new Stats({ enabled: true });
+		// Decreasing without a matching increment (e.g. stats enabled after entries
+		// already existed) must never produce negative counters.
+		stats.decreaseVSize("foo");
+		stats.decreaseKSize("foo");
+		stats.decreaseCount(5);
+		expect(stats.vsize).toBe(0);
+		expect(stats.ksize).toBe(0);
+		expect(stats.count).toBe(0);
+	});
+
 	test("should not keep going if stats are disabled", () => {
 		const stats = new Stats({ enabled: false });
 		stats.incrementHits();

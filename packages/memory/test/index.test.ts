@@ -1568,6 +1568,34 @@ describe("CacheableMemory Statistics", () => {
 		expect(cache.stats.count).toBe(1);
 	});
 
+	test("should not produce negative size stats when enabled after entries exist", () => {
+		const cache = new CacheableMemory();
+		cache.set("a", "value-a");
+		cache.set("b", "value-b");
+		// Enable stats after the cache already holds entries that were never counted.
+		cache.stats.enabled = true;
+		cache.delete("a");
+		cache.delete("b");
+		cache.set("a", "longer-replacement-value"); // overwrite an untracked key
+		expect(cache.stats.count).toBeGreaterThanOrEqual(0);
+		expect(cache.stats.ksize).toBeGreaterThanOrEqual(0);
+		expect(cache.stats.vsize).toBeGreaterThanOrEqual(0);
+	});
+
+	test("should reset size stats when storeHashSize changes and clears the store", () => {
+		const cache = new CacheableMemory({ stats: true });
+		cache.set("a", "value-a");
+		cache.set("b", "value-b");
+		expect(cache.stats.count).toBe(2);
+		expect(cache.stats.ksize).toBeGreaterThan(0);
+		expect(cache.stats.vsize).toBeGreaterThan(0);
+		cache.storeHashSize = 32; // recreates the store, clearing all entries
+		expect(cache.size).toBe(0);
+		expect(cache.stats.count).toBe(0);
+		expect(cache.stats.ksize).toBe(0);
+		expect(cache.stats.vsize).toBe(0);
+	});
+
 	test("should reset store values and increment clears on clear", () => {
 		const cache = new CacheableMemory({ stats: true });
 		cache.setMany([
