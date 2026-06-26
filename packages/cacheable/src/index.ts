@@ -70,6 +70,7 @@ export type CacheableHookHandlerMap = {
 };
 
 export class Cacheable extends Hookified {
+	private static _instance?: Cacheable;
 	private _primary: Keyv = createKeyv();
 	private _secondary: Keyv | undefined;
 	private _nonBlocking = false;
@@ -139,6 +140,37 @@ export class Cacheable extends Hookified {
 			// Subscribe to sync events to update local cache
 			this._sync.subscribe(this._primary, this._cacheId);
 		}
+	}
+
+	/**
+	 * Gets a shared static (singleton) instance of {@link Cacheable}. The first call creates the
+	 * instance using the provided options; every later call returns that same instance and ignores
+	 * any options passed. Use this when you want a single global cache shared across your
+	 * application without constructing and passing an instance around. To reset or reconfigure it,
+	 * use {@link Cacheable.setStaticInstance} (pass `undefined` to clear it).
+	 * @param {CacheableOptions} [options] Options applied only when the instance is first created
+	 * @returns {Cacheable} The shared static instance
+	 * @example
+	 * ```ts
+	 * const cache = Cacheable.getStaticInstance({ ttl: "1h" });
+	 * await cache.set("key", "value");
+	 * ```
+	 */
+	public static getStaticInstance(options?: CacheableOptions): Cacheable {
+		Cacheable._instance ??= new Cacheable(options);
+		return Cacheable._instance;
+	}
+
+	/**
+	 * Sets or clears the shared static instance returned by {@link Cacheable.getStaticInstance}.
+	 * Pass a {@link Cacheable} instance to make it the shared instance, or `undefined` to clear it
+	 * so the next {@link Cacheable.getStaticInstance} call creates a fresh one. Clearing only drops
+	 * the reference — it does not `disconnect()` or `clear()` the previous instance, so disconnect
+	 * it first if it holds open connections.
+	 * @param {Cacheable} [instance] The instance to share, or `undefined` to clear it
+	 */
+	public static setStaticInstance(instance?: Cacheable): void {
+		Cacheable._instance = instance;
 	}
 
 	/**

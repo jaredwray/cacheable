@@ -43,6 +43,7 @@
 * [Cacheable Options](#cacheable-options)
 * [Cacheable Statistics (Instance Only)](#cacheable-statistics-instance-only)
 * [Cacheable - API](#cacheable---api)
+* [Static Instance (Singleton)](#static-instance-singleton)
 * [CacheableMemory - In-Memory Cache](#cacheablememory---in-memory-cache)
 * [Keyv Storage Adapter - KeyvCacheableMemory](#keyv-storage-adapter---keyvcacheablememory)
 * [Wrap / Memoization for Sync and Async Functions](#wrap--memoization-for-sync-and-async-functions)
@@ -901,12 +902,49 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `removeListener(event, callback)`: Removes a listener.
 * `hash(object: any, algorithm = 'SHA-256'): Promise<string>`: Asynchronously hashes an object with a cryptographic algorithm (SHA-256, SHA-384, SHA-512). Default is `SHA-256`.
 * `hashSync(object: any, algorithm = 'djb2'): string`: Synchronously hashes an object with a non-cryptographic algorithm (djb2, fnv1, murmer, crc32). Default is `djb2`.
+* `getStaticInstance(options?)`: Static. Gets a shared singleton instance, creating it on the first call. Options apply only on first creation.
+* `setStaticInstance(instance?)`: Static. Sets or clears the shared singleton instance. Pass `undefined` to reset it.
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
 * `namespace`: The namespace for the cache. Default is `undefined`. This will set the namespace for the primary and secondary stores.
 * `maxTtl`: The maximum time to live for any cache entry. When set, TTLs exceeding this value are capped. Default is `undefined` (no maximum).
 * `nonBlocking`: If the secondary store is non-blocking. Default is `false`.
 * `stats`: The statistics for this instance which includes `hits`, `misses`, `sets`, `deletes`, `clears`, `errors`, `count`, `vsize`, `ksize`.
+
+# Static Instance (Singleton)
+
+If you want a single cache shared across your application without constructing a `Cacheable` instance and passing it around, use the static `getStaticInstance()` accessor. The first call creates the shared instance; every later call returns that same instance:
+
+```javascript
+import { Cacheable } from 'cacheable';
+
+const cache = Cacheable.getStaticInstance({ ttl: '1h' });
+await cache.set('key', 'value');
+
+// Anywhere else in your app, the same instance is returned:
+const same = Cacheable.getStaticInstance();
+```
+
+Options are only applied when the instance is first created. Any options passed on later calls are ignored and the existing instance is returned.
+
+You can replace or reset the shared instance with `setStaticInstance()`. Pass a `Cacheable` instance to swap it, or `undefined` to clear it so the next `getStaticInstance()` call creates a fresh one:
+
+```javascript
+import { Cacheable } from 'cacheable';
+import KeyvRedis from '@keyv/redis';
+
+// Provide a fully configured instance as the shared one
+Cacheable.setStaticInstance(new Cacheable({ secondary: new KeyvRedis('redis://localhost:6379') }));
+
+// Reset back to no shared instance
+Cacheable.setStaticInstance(undefined);
+```
+
+Things to know:
+
+* The shared instance is process-global and long-lived. Calling `clear()` or `disconnect()` on it affects every part of your app that uses it.
+* After `disconnect()`, `getStaticInstance()` keeps returning the same (now disconnected) instance — it is not recreated automatically. Call `setStaticInstance(undefined)` first, then `getStaticInstance()` to get a fresh one.
+* `setStaticInstance(undefined)` only drops the reference; it does not `disconnect()` or `clear()` the previous instance, so disconnect it first if it holds open connections.
 
 # CacheableMemory - In-Memory Cache
 
