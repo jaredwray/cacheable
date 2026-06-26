@@ -2,9 +2,9 @@ name: release
 
 # Publishes workspace packages to npm whose manually-set version is ahead of
 # the registry. Versions are never bumped here — a human bumps each package's
-# `version` (typically via a release PR); merging that to `main` triggers this
-# workflow, which figures out what actually needs publishing and publishes it
-# in dependency order. See scripts/release.mjs for the decision logic.
+# `version` (typically via a release PR); publishing a GitHub release then
+# triggers this workflow, which figures out what actually needs publishing and
+# publishes it in dependency order. See scripts/release.mjs for the decision logic.
 #
 # Authentication uses OIDC trusted publishing (tokenless) with provenance:
 #   - `id-token: write` lets GitHub mint the OIDC token pnpm exchanges for a
@@ -25,11 +25,10 @@ on:
         description: "Dry run (compute the plan + validate packaging, publish nothing)"
         type: boolean
         default: false
-  # A version bump always lands in a package.json, so only react to those.
-  push:
-    branches: [main]
-    paths:
-      - "packages/*/package.json"
+  # Publishing a (non-pre) GitHub release publishes the bumped packages to npm,
+  # in lockstep with the website deploy, which also runs on `released`.
+  release:
+    types: [released]
 
 # Never run two releases at once; let an in-flight publish finish rather than
 # cancelling it half-way through the package set.
@@ -77,7 +76,7 @@ jobs:
         run: node scripts/test-build.mjs
 
       - name: Release
-        # Real publishing only ever happens on `main`. A manual run from any
-        # other branch/ref is forced to a dry run, so branch versions can never
-        # be pushed to npm (the publish step uses --no-git-checks).
-        run: node scripts/release.mjs ${{ (github.ref != 'refs/heads/main' || inputs.dry-run) && '--dry-run' || '' }}
+        # A published release publishes for real. A manual (workflow_dispatch)
+        # run honors its dry-run input, and is forced to a dry run from any ref
+        # other than main so branch versions can't be pushed to npm.
+        run: node scripts/release.mjs ${{ (github.event_name == 'workflow_dispatch' && (inputs.dry-run || github.ref != 'refs/heads/main')) && '--dry-run' || '' }}

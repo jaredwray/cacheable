@@ -6,16 +6,18 @@ GitHub workflow, driven by [`scripts/release.mjs`](scripts/release.mjs).
 ## How it works
 
 1. **You set versions manually.** Bump the `version` field of each package you
-   want to release (usually in a "release" PR). The tooling never bumps
-   versions for you.
-2. **Merge to `main`.** Because a version bump always changes a
-   `packages/*/package.json`, merging triggers the `release` workflow.
+   want to release (usually in a "release" PR), and merge it to `main`. The
+   tooling never bumps versions for you.
+2. **Publish a GitHub release.** Publishing a (non-pre) release triggers the
+   `release` workflow — in lockstep with the website deploy, which also runs on
+   `released`. (You can also run it manually from the Actions tab.)
 3. **The script decides what to publish.** For every publishable workspace
    package it compares the local `version` against the npm registry:
    - already published → **skip**
    - new version, or package not yet on npm → **publish**
+   - below the registry's `latest` → **refuse** (won't roll `latest` back)
 4. **It publishes in dependency order** (e.g. `@cacheable/utils` before
-   `cacheable`), with provenance, using pnpm only.
+   `cacheable`), with provenance, using pnpm only, aborting on the first failure.
 
 Private packages and the internal `@cacheable/benchmark` harness are never
 published (see `IGNORED_PACKAGES` in the script).
