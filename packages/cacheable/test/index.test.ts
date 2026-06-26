@@ -1993,3 +1993,44 @@ describe("cacheable maxTtl", () => {
 		expect(raw.expires).toBeLessThanOrEqual(now + 210);
 	});
 });
+
+describe("Cacheable static instance", () => {
+	beforeEach(() => {
+		Cacheable.setStaticInstance(undefined);
+	});
+	afterEach(() => {
+		Cacheable.setStaticInstance(undefined);
+	});
+	test("should return a Cacheable instance", () => {
+		expect(Cacheable.getStaticInstance()).toBeInstanceOf(Cacheable);
+	});
+	test("should return the same instance on repeated calls", () => {
+		const first = Cacheable.getStaticInstance();
+		expect(Cacheable.getStaticInstance()).toBe(first);
+	});
+	test("should apply options when first created", () => {
+		const instance = Cacheable.getStaticInstance({ cacheId: "static-1" });
+		expect(instance.cacheId).toBe("static-1");
+	});
+	test("should emit an error and ignore options when called with options after creation", () => {
+		const first = Cacheable.getStaticInstance({ cacheId: "static-1" });
+		let emitted: Error | undefined;
+		first.on(CacheableEvents.ERROR, (error: Error) => {
+			emitted = error;
+		});
+		const second = Cacheable.getStaticInstance({ cacheId: "static-2" });
+		expect(second).toBe(first);
+		expect(second.cacheId).toBe("static-1");
+		expect(emitted).toBeInstanceOf(Error);
+	});
+	test("should replace the instance with setStaticInstance", () => {
+		const replacement = new Cacheable({ cacheId: "replacement" });
+		Cacheable.setStaticInstance(replacement);
+		expect(Cacheable.getStaticInstance()).toBe(replacement);
+	});
+	test("should clear the instance with setStaticInstance(undefined)", () => {
+		const first = Cacheable.getStaticInstance();
+		Cacheable.setStaticInstance(undefined);
+		expect(Cacheable.getStaticInstance()).not.toBe(first);
+	});
+});
