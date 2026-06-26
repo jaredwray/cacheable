@@ -29,6 +29,7 @@ Here are some of the main features of `CacheableMemory`:
 * [CacheableMemory Store Hashing](#cacheablememory-store-hashing)
 * [CacheableMemory LRU Feature](#cacheablememory-lru-feature)
 * [CacheableMemory Performance](#cacheablememory-performance)
+* [CacheableMemory Statistics](#cacheablememory-statistics)
 * [CacheableMemory Options](#cacheablememory-options)
 * [CacheableMemory - API](#cacheablememory---api)
 * [Keyv Storage Adapter - KeyvCacheableMemory](#keyv-storage-adapter---keyvcacheablememory)
@@ -255,6 +256,44 @@ cache.maxTtl = '10m'; // 10 minutes max
 cache.maxTtl = undefined; // disable maxTtl (no upper bound)
 ```
 
+## CacheableMemory Statistics
+
+`CacheableMemory` can track runtime statistics using the shared [`Stats`](https://cacheable.org/docs/utils/) implementation from `@cacheable/utils` (the same engine used by `cacheable` and `@cacheable/node-cache`). Statistics are disabled by default. Enable them with the `stats` option or by setting `cache.stats.enabled = true` at any time:
+
+```javascript
+import { CacheableMemory } from '@cacheable/memory';
+
+const cache = new CacheableMemory({ stats: true });
+
+cache.set('key', 'value');
+cache.get('key');     // hit
+cache.get('missing'); // miss
+
+console.log(cache.stats.hits);     // 1
+console.log(cache.stats.misses);   // 1
+console.log(cache.stats.gets);     // 2
+console.log(cache.stats.sets);     // 1
+console.log(cache.stats.count);    // 1
+console.log(cache.stats.hitRate);  // 0.5
+```
+
+The `stats` property exposes the following counters:
+
+* `hits`: The number of reads that found a (non-expired) value.
+* `misses`: The number of reads that did not find a value.
+* `gets`: The number of read operations. Every key read counts as one get, so `getMany(['a', 'b'])` records two gets.
+* `sets`: The number of writes. Every key written counts as one set, including overwrites.
+* `deletes`: The number of keys removed via `delete`/`deleteMany`/`take`, as well as keys evicted by the LRU.
+* `clears`: The number of times `clear()` was called.
+* `count`: The number of keys currently tracked in the cache.
+* `ksize`: The estimated byte size of the keys in the cache.
+* `vsize`: The estimated byte size of the values in the cache.
+* `hitRate` / `missRate`: The ratio of hits / misses to total lookups.
+
+You can get a plain-object snapshot via `cache.stats.toJSON()` and reset all counters with `cache.stats.reset()`.
+
+Because expiration is lazy, the `count`, `ksize`, and `vsize` values are maintained on `set`, `delete`, and `clear`. Methods that perform a read internally — such as `has()`, `take()`, and the `wrap()` / `getOrSet()` memoization helpers — flow through `get`/`set`, so they update the statistics as well.
+
 ## CacheableMemory Options
 
 * `ttl`: The time to live for the cache in milliseconds. Default is `undefined` which is means indefinitely.
@@ -264,6 +303,7 @@ cache.maxTtl = undefined; // disable maxTtl (no upper bound)
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
 * `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
 * `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2`. Supported: DJB2, FNV1, MURMER, CRC32.
+* `stats`: Whether to track runtime statistics (`hits`, `misses`, `gets`, `sets`, `deletes`, `clears`, `count`, `ksize`, `vsize`). Default is `false`.
 
 ## CacheableMemory - API
 
@@ -289,6 +329,7 @@ cache.maxTtl = undefined; // disable maxTtl (no upper bound)
 * `checkInterval`: The interval to check for expired keys in milliseconds. Default is `0` which is disabled.
 * `storeHashSize`: The number of `Map` objects to use for the cache. Default is `16`.
 * `storeHashAlgorithm`: The hashing algorithm to use for the cache. Default is `djb2`. Supported: DJB2, FNV1, MURMER, CRC32.
+* `stats`: The statistics for this instance which includes `hits`, `misses`, `gets`, `sets`, `deletes`, `clears`, `count`, `vsize`, and `ksize`. Disabled by default; enable via the `stats` option or `cache.stats.enabled = true`.
 * `keys`: Get the keys in the cache. Not able to be set.
 * `items`: Get the items in the cache as `CacheableStoreItem` example `{ key, value, expires? }`.
 * `store`: The hash store for the cache which is an array of `Map` objects.
