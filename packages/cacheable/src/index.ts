@@ -144,10 +144,15 @@ export class Cacheable extends Hookified {
 
 	/**
 	 * Gets a shared static (singleton) instance of {@link Cacheable}. The first call creates the
-	 * instance using the provided options; every later call returns that same instance and ignores
-	 * any options passed. Use this when you want a single global cache shared across your
-	 * application without constructing and passing an instance around. To reset or reconfigure it,
-	 * use {@link Cacheable.setStaticInstance} (pass `undefined` to clear it).
+	 * instance using the provided options; every later call returns that same instance. Passing
+	 * `options` again after the instance already exists does NOT reconfigure it — the options are
+	 * ignored and a {@link CacheableEvents.ERROR} event is emitted on the instance to surface the
+	 * conflict (listen with `instance.on("error", ...)`). To reconfigure, replace it via
+	 * {@link Cacheable.setStaticInstance} (clear with `undefined`, then call this again).
+	 *
+	 * Note: this package ships separate CommonJS and ESM builds, so an app that loads both formats
+	 * gets one shared instance per build. For a single shared cache, use one module format or share
+	 * an explicit instance via {@link Cacheable.setStaticInstance}.
 	 * @param {CacheableOptions} [options] Options applied only when the instance is first created
 	 * @returns {Cacheable} The shared static instance
 	 * @example
@@ -157,6 +162,15 @@ export class Cacheable extends Hookified {
 	 * ```
 	 */
 	public static getStaticInstance(options?: CacheableOptions): Cacheable {
+		if (options && Cacheable._instance) {
+			Cacheable._instance.emit(
+				CacheableEvents.ERROR,
+				new Error(
+					"Cacheable static instance is already initialized; the options passed were ignored. To reconfigure, use Cacheable.setStaticInstance().",
+				),
+			);
+			return Cacheable._instance;
+		}
 		Cacheable._instance ??= new Cacheable(options);
 		return Cacheable._instance;
 	}

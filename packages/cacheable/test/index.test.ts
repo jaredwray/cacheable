@@ -2012,11 +2012,16 @@ describe("Cacheable static instance", () => {
 		const instance = Cacheable.getStaticInstance({ cacheId: "static-1" });
 		expect(instance.cacheId).toBe("static-1");
 	});
-	test("should ignore options after the instance is created", () => {
+	test("should emit an error and ignore options when called with options after creation", () => {
 		const first = Cacheable.getStaticInstance({ cacheId: "static-1" });
+		let emitted: Error | undefined;
+		first.on(CacheableEvents.ERROR, (error: Error) => {
+			emitted = error;
+		});
 		const second = Cacheable.getStaticInstance({ cacheId: "static-2" });
 		expect(second).toBe(first);
 		expect(second.cacheId).toBe("static-1");
+		expect(emitted).toBeInstanceOf(Error);
 	});
 	test("should replace the instance with setStaticInstance", () => {
 		const replacement = new Cacheable({ cacheId: "replacement" });

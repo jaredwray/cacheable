@@ -902,7 +902,7 @@ _This does not enable statistics for your layer 2 cache as that is a distributed
 * `removeListener(event, callback)`: Removes a listener.
 * `hash(object: any, algorithm = 'SHA-256'): Promise<string>`: Asynchronously hashes an object with a cryptographic algorithm (SHA-256, SHA-384, SHA-512). Default is `SHA-256`.
 * `hashSync(object: any, algorithm = 'djb2'): string`: Synchronously hashes an object with a non-cryptographic algorithm (djb2, fnv1, murmer, crc32). Default is `djb2`.
-* `getStaticInstance(options?)`: Static. Gets a shared singleton instance, creating it on the first call. Options apply only on first creation.
+* `getStaticInstance(options?)`: Static. Gets a shared singleton instance, creating it on the first call. Options apply only on first creation; passing options after init emits an `error` event and is otherwise ignored.
 * `setStaticInstance(instance?)`: Static. Sets or clears the shared singleton instance. Pass `undefined` to reset it.
 * `primary`: The primary store for the cache (layer 1) defaults to in-memory by Keyv.
 * `secondary`: The secondary store for the cache (layer 2) usually a persistent cache by Keyv.
@@ -925,7 +925,7 @@ await cache.set('key', 'value');
 const same = Cacheable.getStaticInstance();
 ```
 
-Options are only applied when the instance is first created. Any options passed on later calls are ignored and the existing instance is returned.
+Options are only applied when the instance is first created. If you pass options again after the instance already exists, they are ignored and an `error` event is emitted on the instance to surface the conflict — listen with `cache.on('error', ...)`. To reconfigure, replace the instance with `setStaticInstance()` (shown below).
 
 You can replace or reset the shared instance with `setStaticInstance()`. Pass a `Cacheable` instance to swap it, or `undefined` to clear it so the next `getStaticInstance()` call creates a fresh one:
 
@@ -945,6 +945,7 @@ Things to know:
 * The shared instance is process-global and long-lived. Calling `clear()` or `disconnect()` on it affects every part of your app that uses it.
 * After `disconnect()`, `getStaticInstance()` keeps returning the same (now disconnected) instance — it is not recreated automatically. Call `setStaticInstance(undefined)` first, then `getStaticInstance()` to get a fresh one.
 * `setStaticInstance(undefined)` only drops the reference; it does not `disconnect()` or `clear()` the previous instance, so disconnect it first if it holds open connections.
+* This package ships separate CommonJS and ESM builds. An app (or dependency graph) that loads both formats gets one shared instance *per build*, not one process-wide. For a single shared cache, use one module format, or create the instance once and share it via `setStaticInstance()`.
 
 # CacheableMemory - In-Memory Cache
 
