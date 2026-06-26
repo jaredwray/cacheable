@@ -15,7 +15,7 @@
 * Optional response caching via [`cacheable`](https://npmjs.com/package/cacheable) — layered (Layer 1 / Layer 2) caching, LRU, TTL expiration, distributed sync, and more
 * [RFC 7234](http://httpwg.org/specs/rfc7234.html) compliant HTTP caching with `http-cache-semantics` (honors `Cache-Control`, `ETag`, `Last-Modified`, `Expires`, conditional revalidation, and `304 Not Modified`)
 * Simple TTL-based caching mode for when you don't want HTTP semantics (`httpCachePolicy: false`)
-* Smart, method-aware automatic cache key generation with request coalescing (concurrent identical misses share one request)
+* Smart, method-aware automatic cache key generation, with request coalescing in simple caching mode and for WHOIS/RDAP lookups (concurrent identical misses share one upstream request)
 * Custom serialization / deserialization with `stringify` and `parse` — at the instance level or per request
 * Request-level cache control with the `caching` option
 * `whois` and `rdap` lookups for domains, IPv4/IPv6 addresses, and ASNs with **both raw and JSON output**, dynamic IANA server discovery, referral following, and built-in caching
@@ -135,15 +135,15 @@ const head = await net.head('https://api.example.com/users/1');
 console.log(head.headers.get('content-length'));
 ```
 
-| Method | Signature | Returns | Cached by default |
-|--------|-----------|---------|-------------------|
+| Method | Signature | Returns | Caching |
+|--------|-----------|---------|---------|
 | `fetch` | `fetch(url, options?)` | `Promise<Response>` | GET requests only |
-| `get` | `get<T>(url, options?)` | `Promise<DataResponse<T>>` | Yes |
-| `post` | `post<T>(url, data?, options?)` | `Promise<DataResponse<T>>` | No |
-| `put` | `put<T>(url, data?, options?)` | `Promise<DataResponse<T>>` | No |
-| `patch` | `patch<T>(url, data?, options?)` | `Promise<DataResponse<T>>` | No |
-| `delete` | `delete<T>(url, data?, options?)` | `Promise<DataResponse<T>>` | No |
-| `head` | `head(url, options?)` | `Promise<Response>` | No |
+| `get` | `get<T>(url, options?)` | `Promise<DataResponse<T>>` | On by default (`caching: false` to disable) |
+| `post` | `post<T>(url, data?, options?)` | `Promise<DataResponse<T>>` | Never cached |
+| `put` | `put<T>(url, data?, options?)` | `Promise<DataResponse<T>>` | Opt-in with `caching: true` |
+| `patch` | `patch<T>(url, data?, options?)` | `Promise<DataResponse<T>>` | Never cached |
+| `delete` | `delete<T>(url, data?, options?)` | `Promise<DataResponse<T>>` | Never cached |
+| `head` | `head(url, options?)` | `Promise<Response>` | Never cached |
 
 **Body handling for `post` / `put` / `patch` / `delete`:** if `data` is a `string`, `FormData`, `URLSearchParams`, or `Blob` it is sent as-is; any other value is serialized with the [`stringify`](#custom-serialization) function (default `JSON.stringify`) and a `Content-Type: application/json` header is added when one is not already present.
 
@@ -195,9 +195,9 @@ if (response.ok) {
 
 You can control caching at the instance level and per request.
 
-* **GET** requests are cached by default.
-* **POST**, **PUT**, **PATCH**, and **DELETE** requests are **not** cached by default.
-* Use the `caching` option to override the default for a single request.
+* **GET** requests are cached by default. Pass `caching: false` to disable caching for a single GET request.
+* **PUT** requests are **not** cached by default. Pass `caching: true` to cache a PUT.
+* **POST**, **PATCH**, **DELETE**, and **HEAD** requests are **never** cached — the `caching` option has no effect on them and they always reach the network.
 
 ```javascript
 import { CacheableNet } from '@cacheable/net';
@@ -210,14 +210,14 @@ const data1 = await net.get('https://api.example.com/data');
 // Disable caching for a specific GET request
 const data2 = await net.get('https://api.example.com/data', { caching: false });
 
-// POST requests are NOT cached by default
+// POST requests are never cached
 const result1 = await net.post('https://api.example.com/data', { value: 1 });
 
-// Enable caching for a specific PUT/POST/PATCH/DELETE request
+// Enable caching for a PUT request (PUT is the only write method that caches)
 const result2 = await net.put('https://api.example.com/data', { value: 1 }, { caching: true });
 ```
 
-> **Note:** When caching is enabled on a write method, an identical request (same URL and body) can be served from the cache rather than re-sent. Only successful responses are ever cached.
+> **Note:** When caching is enabled on a PUT, an identical request is matched by **method and URL only** — the request body is not part of the cache key, so two PUTs to the same URL with different bodies share one cache entry. Only successful responses are ever cached.
 
 # HTTP Cache Semantics (RFC 7234)
 
@@ -377,7 +377,7 @@ net.cache.on(CacheableEvents.ERROR, (error) => {
 
 # Standalone Functions
 
-If you don't need an instance, the underlying functions are exported directly. Pass a `cache` in the options to enable caching; omit it for a plain request. These functions use `JSON.stringify` / `JSON.parse` for body handling.
+If you don't need an instance, the underlying functions are exported directly. Pass a `cache` in the options to enable caching; without one the request is still made, just not cached. These functions use `JSON.stringify` / `JSON.parse` for body handling.
 
 ```javascript
 import { fetch, get, post, patch, del, head } from '@cacheable/net';
@@ -394,7 +394,9 @@ const cached = await fetch('https://api.example.com/data', {
   httpCachePolicy: false // override per call (only available on the standalone fetch)
 });
 
-// get / post / patch / del — return { data, response }; pass `cache` to cache
+// get / post / patch / del — return { data, response }
+// Pass `cache` to enable caching. As with the class helpers, only GET
+// responses are cached; post/patch/del always bypass the cache.
 const { data } = await get('https://api.example.com/data', { cache });
 await post('https://api.example.com/data', { value: 1 }, { cache });
 await patch('https://api.example.com/data', { value: 1 }, { cache });
@@ -408,6 +410,8 @@ const headResponse = await head('https://api.example.com/data', { cache });
 ```
 
 > The standalone helpers cover `fetch`, `get`, `post`, `patch`, `del` (DELETE), and `head`. There is no standalone `put`; use `net.put` (or the `fetch` function with `method: 'PUT'`) for PUT requests. `del` is named `del` because `delete` is a reserved word.
+>
+> Except for `fetch` (whose options argument is optional), each standalone helper needs an options argument — pass at least `{}` to `get`, `post`, `patch`, and `head`, and pass `del` an options object (as its second argument, or third when you also send a body). Calling them with the options omitted throws.
 
 # WHOIS and RDAP Lookups
 
@@ -645,12 +649,12 @@ type FetchOptions = Omit<RequestInit, 'cache'> & {
 ### Methods
 
 * `fetch(url, options?)` — fetch with caching support; returns the raw `Response`.
-* `get<T>(url, options?)` — GET request; returns `DataResponse<T>`. Cached by default.
-* `post<T>(url, data?, options?)` — POST request; serializes `data` and returns `DataResponse<T>`. Not cached by default.
-* `put<T>(url, data?, options?)` — PUT request; serializes `data` and returns `DataResponse<T>`. Not cached by default.
-* `patch<T>(url, data?, options?)` — PATCH request; serializes `data` and returns `DataResponse<T>`. Not cached by default.
-* `delete<T>(url, data?, options?)` — DELETE request; optionally serializes `data` and returns `DataResponse<T>`. Not cached by default.
-* `head(url, options?)` — HEAD request; returns the raw `Response` (no body).
+* `get<T>(url, options?)` — GET request; returns `DataResponse<T>`. Cached by default (`caching: false` to disable).
+* `post<T>(url, data?, options?)` — POST request; serializes `data` and returns `DataResponse<T>`. Never cached.
+* `put<T>(url, data?, options?)` — PUT request; serializes `data` and returns `DataResponse<T>`. Not cached by default; pass `caching: true` to cache.
+* `patch<T>(url, data?, options?)` — PATCH request; serializes `data` and returns `DataResponse<T>`. Never cached.
+* `delete<T>(url, data?, options?)` — DELETE request; optionally serializes `data` and returns `DataResponse<T>`. Never cached.
+* `head(url, options?)` — HEAD request; returns the raw `Response` (no body). Never cached.
 * `whois(query, options?)` — WHOIS lookup; returns a `WhoisResult` with raw text and parsed fields.
 * `rdap(query, options?)` — RDAP lookup; returns an `RdapResult` with raw JSON and parsed data.
 
