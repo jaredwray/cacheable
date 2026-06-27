@@ -1,6 +1,6 @@
 {
 	"name": "@cacheable/net",
-	"version": "2.0.9",
+	"version": "2.1.0",
 	"description": "High Performance Network Caching for Node.js with fetch, http 1.1, http 2, and cached WHOIS and RDAP lookups",
 	"type": "module",
 	"main": "./dist/index.cjs",
