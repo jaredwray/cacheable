@@ -29,11 +29,11 @@ afterAll(async () => {
 // cache-connection error and automaticFailover code paths without depending
 // on a native database driver.
 const createUnopenableStore = () => {
-	const fail = () => {
-		const error: any = new Error(
-			"SQLITE_CANTOPEN: unable to open database file",
+	const fail = async () => {
+		const error = Object.assign(
+			new Error("SQLITE_CANTOPEN: unable to open database file"),
+			{ code: "SQLITE_CANTOPEN" },
 		);
-		error.code = "SQLITE_CANTOPEN";
 		throw error;
 	};
 	return { get: fail, set: fail, delete: fail, clear: fail };
