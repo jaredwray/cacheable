@@ -9,6 +9,5 @@ allowBuilds:
   rolldown: true
   rollup: true
   sharp: true
-  sqlite3: true
   unrs-resolver: true
   workerd: true

@@ -21,7 +21,7 @@
 		"test:ci": "biome check --error-on-warnings && vitest run --coverage",
 		"prepublishOnly": "pnpm build",
 		"build": "rimraf ./dist && tsc --project tsconfig.build.json",
-		"clean": "rimraf node_modules ./coverage ./test/testdb.sqlite ./dist"
+		"clean": "rimraf node_modules ./coverage ./dist"
 	},
 	"files": [
 		"dist",
@@ -52,14 +52,12 @@
 		"responselike": "^4.0.2"
 	},
 	"devDependencies": {
-		"@keyv/sqlite": "^4.0.8",
 		"@types/express": "^5.0.6",
 		"@types/responselike": "^1.0.3",
 		"body-parser": "^2.2.2",
 		"delay": "^7.0.0",
 		"express": "^5.2.1",
 		"pify": "^6.1.0",
-		"sqlite3": "^6.0.1",
 		"tsup": "^8.5.1",
 		"typescript": "^5.9.3"
 	}
