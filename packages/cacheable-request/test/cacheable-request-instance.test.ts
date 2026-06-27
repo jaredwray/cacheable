@@ -2,7 +2,6 @@
 import EventEmitter from "node:events";
 import { request } from "node:http";
 import stream from "node:stream";
-import { KeyvSqlite } from "@keyv/sqlite";
 import getStream from "get-stream";
 import { Keyv } from "keyv";
 import { afterAll, beforeAll, expect, test } from "vitest";
@@ -24,6 +23,21 @@ beforeAll(async () => {
 afterAll(async () => {
 	await s.close();
 });
+// A Keyv-compatible store that cannot open its backing database: every
+// operation rejects with a SQLITE_CANTOPEN-style error, mirroring an adapter
+// such as @keyv/sqlite pointed at an unwritable path. This exercises the
+// cache-connection error and automaticFailover code paths without depending
+// on a native database driver.
+const createUnopenableStore = () => {
+	const fail = () => {
+		const error: any = new Error(
+			"SQLITE_CANTOPEN: unable to open database file",
+		);
+		error.code = "SQLITE_CANTOPEN";
+		throw error;
+	};
+	return { get: fail, set: fail, delete: fail, clear: fail };
+};
 test("cacheableRequest is a class", () => {
 	const cacheableRequest = new CacheableRequest(request);
 	expect(typeof cacheableRequest).toBe("object");
@@ -121,7 +135,7 @@ test("cacheableRequest emits response event for cached responses", () => {
 test("cacheableRequest emits CacheError if cache adapter connection errors", () => {
 	const cacheableRequest = new CacheableRequest(
 		request,
-		new KeyvSqlite("sqlite://non/existent/database.sqlite"),
+		createUnopenableStore(),
 	).request();
 	cacheableRequest(parseWithWhatwg(s.url))
 		.on("error", (error: any) => {
@@ -298,7 +312,7 @@ test("cacheableRequest does not cache response if request is aborted after recei
 test("cacheableRequest makes request even if initial DB connection fails (when opts.automaticFailover is enabled)", async () => {
 	const cacheableRequest = new CacheableRequest(
 		request,
-		new KeyvSqlite("sqlite://non/existent/database.sqlite"),
+		createUnopenableStore(),
 	).request();
 	const options: any = parseWithWhatwg(s.url);
 	options.automaticFailover = true;
