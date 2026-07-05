@@ -37,7 +37,7 @@
 	"devDependencies": {
 		"@types/http-cache-semantics": "^4.2.0",
 		"tsdown": "^0.22.3",
-		"typescript": "^5.9.3"
+		"typescript": "^6.0.3"
 	},
 	"dependencies": {
 		"@cacheable/utils": "workspace:^",
