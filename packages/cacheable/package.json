@@ -39,7 +39,7 @@
 		"@keyv/valkey": "^1.0.11",
 		"@qified/redis": "^0.10.1",
 		"lru-cache": "^11.3.6",
-		"tsdown": "^0.22.0",
+		"tsdown": "^0.22.3",
 		"typescript": "^5.9.3"
 	},
 	"dependencies": {

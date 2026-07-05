@@ -71,7 +71,7 @@
     "@keyv/redis": "^5.1.6",
     "cache-manager-redis-yet": "^5.1.5",
     "cacheable": "workspace:^",
-    "tsdown": "^0.22.0",
+    "tsdown": "^0.22.3",
     "typescript": "^5.9.3"
   }
 }
