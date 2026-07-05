@@ -25,7 +25,7 @@
     "@arethetypeswrong/cli": "^0.18.4",
     "@biomejs/biome": "^2.5.2",
     "@faker-js/faker": "^10.5.0",
-    "@types/node": "^24.12.2",
+    "@types/node": "^24.13.2",
     "@vitest/coverage-v8": "^4.1.9",
     "@vitest/spy": "^4.1.9",
     "publint": "^0.3.21",
