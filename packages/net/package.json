@@ -36,7 +36,7 @@
 	},
 	"devDependencies": {
 		"@types/http-cache-semantics": "^4.2.0",
-		"tsdown": "^0.22.0",
+		"tsdown": "^0.22.3",
 		"typescript": "^5.9.3"
 	},
 	"dependencies": {
