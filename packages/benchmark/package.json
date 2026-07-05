@@ -47,7 +47,7 @@
 		"clean": "rimraf ./dist ./coverage ./node_modules"
 	},
 	"dependencies": {
-		"@faker-js/faker": "^10.4.0",
+		"@faker-js/faker": "^10.5.0",
 		"@monstermann/tinybench-pretty-printer": "^0.3.0",
 		"tinybench": "^6.0.1"
 	},
