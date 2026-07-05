@@ -99,10 +99,10 @@ importers:
         version: link:../cacheable
       tsdown:
         specifier: ^0.22.3
-        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@5.9.3)
+        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@6.0.3)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/cacheable:
     dependencies:
@@ -136,10 +136,10 @@ importers:
         version: 11.3.6
       tsdown:
         specifier: ^0.22.3
-        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@5.9.3)
+        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@6.0.3)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/cacheable-request:
     dependencies:
@@ -185,10 +185,10 @@ importers:
         version: 6.1.0
       tsup:
         specifier: ^8.5.1
-        version: 8.5.1(jiti@2.6.1)(postcss@8.5.14)(tsx@4.23.0)(typescript@5.9.3)
+        version: 8.5.1(jiti@2.6.1)(postcss@8.5.14)(tsx@4.23.0)(typescript@6.0.3)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/file-entry-cache:
     dependencies:
@@ -201,10 +201,10 @@ importers:
         version: 10.3.1
       tsdown:
         specifier: ^0.22.3
-        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@5.9.3)
+        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@6.0.3)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/flat-cache:
     dependencies:
@@ -220,10 +220,10 @@ importers:
     devDependencies:
       tsdown:
         specifier: ^0.22.3
-        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@5.9.3)
+        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@6.0.3)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/memory:
     dependencies:
@@ -242,10 +242,10 @@ importers:
     devDependencies:
       tsdown:
         specifier: ^0.22.3
-        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@5.9.3)
+        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@6.0.3)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/net:
     dependencies:
@@ -270,10 +270,10 @@ importers:
         version: 4.2.0
       tsdown:
         specifier: ^0.22.3
-        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@5.9.3)
+        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@6.0.3)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/node-cache:
     dependencies:
@@ -289,10 +289,10 @@ importers:
     devDependencies:
       tsdown:
         specifier: ^0.22.3
-        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@5.9.3)
+        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@6.0.3)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/utils:
     dependencies:
@@ -305,10 +305,10 @@ importers:
     devDependencies:
       tsdown:
         specifier: ^0.22.3
-        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@5.9.3)
+        version: 0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@6.0.3)
       typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
+        specifier: ^6.0.3
+        version: 6.0.3
 
   packages/website:
     devDependencies:
@@ -3814,8 +3814,8 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
-  typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+  typescript@6.0.3:
+    resolution: {integrity: sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -7267,7 +7267,7 @@ snapshots:
       glob: 13.0.6
       package-json-from-dist: 1.0.1
 
-  rolldown-plugin-dts@0.26.0(rolldown@1.1.4)(typescript@5.9.3):
+  rolldown-plugin-dts@0.26.0(rolldown@1.1.4)(typescript@6.0.3):
     dependencies:
       '@babel/generator': 8.0.0
       '@babel/helper-validator-identifier': 8.0.2
@@ -7279,7 +7279,7 @@ snapshots:
       obug: 2.1.3
       rolldown: 1.1.4
     optionalDependencies:
-      typescript: 5.9.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - oxc-resolver
 
@@ -7622,7 +7622,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsdown@0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@5.9.3):
+  tsdown@0.22.3(@arethetypeswrong/core@0.18.4)(publint@0.3.21)(tsx@4.23.0)(typescript@6.0.3):
     dependencies:
       ansis: 4.3.1
       cac: 7.0.0
@@ -7633,7 +7633,7 @@ snapshots:
       obug: 2.1.3
       picomatch: 4.0.4
       rolldown: 1.1.4
-      rolldown-plugin-dts: 0.26.0(rolldown@1.1.4)(typescript@5.9.3)
+      rolldown-plugin-dts: 0.26.0(rolldown@1.1.4)(typescript@6.0.3)
       semver: 7.8.5
       tinyexec: 1.2.4
       tinyglobby: 0.2.17
@@ -7643,7 +7643,7 @@ snapshots:
       '@arethetypeswrong/core': 0.18.4
       publint: 0.3.21
       tsx: 4.23.0
-      typescript: 5.9.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - '@ts-macro/tsc'
       - '@typescript/native-preview'
@@ -7652,7 +7652,7 @@ snapshots:
 
   tslib@2.8.1: {}
 
-  tsup@8.5.1(jiti@2.6.1)(postcss@8.5.14)(tsx@4.23.0)(typescript@5.9.3):
+  tsup@8.5.1(jiti@2.6.1)(postcss@8.5.14)(tsx@4.23.0)(typescript@6.0.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.27.7)
       cac: 6.7.14
@@ -7673,7 +7673,7 @@ snapshots:
       tree-kill: 1.2.2
     optionalDependencies:
       postcss: 8.5.14
-      typescript: 5.9.3
+      typescript: 6.0.3
     transitivePeerDependencies:
       - jiti
       - supports-color
@@ -7696,7 +7696,7 @@ snapshots:
 
   typescript@5.6.1-rc: {}
 
-  typescript@5.9.3: {}
+  typescript@6.0.3: {}
 
   ufo@1.6.4: {}
 
