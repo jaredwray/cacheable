@@ -31,6 +31,6 @@
     "publint": "^0.3.21",
     "rimraf": "^6.1.3",
     "vitest": "^4.1.9",
-    "wrangler": "^4.87.0"
+    "wrangler": "^4.107.0"
   }
 }
