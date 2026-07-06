@@ -14,7 +14,7 @@
     "clean": "rimraf ./dist"
   },
   "devDependencies": {
-    "docula": "^1.14.0",
+    "docula": "^2.1.0",
     "tsx": "4.23.0"
   }
 }
