@@ -54,7 +54,7 @@
 	"devDependencies": {
 		"@types/express": "^5.0.6",
 		"@types/responselike": "^1.0.3",
-		"body-parser": "^2.2.2",
+		"body-parser": "^2.3.0",
 		"delay": "^7.0.0",
 		"express": "^5.2.1",
 		"pify": "^6.1.0",

@@ -38,7 +38,7 @@
 		"@keyv/redis": "^5.1.6",
 		"@keyv/valkey": "^1.0.11",
 		"@qified/redis": "^0.10.1",
-		"lru-cache": "^11.3.6",
+		"lru-cache": "^11.5.1",
 		"tsdown": "^0.22.3",
 		"typescript": "^6.0.3"
 	},
