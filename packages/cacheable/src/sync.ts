@@ -48,7 +48,7 @@ export class CacheableSync extends Hookified {
 	 * @param options - Configuration options for CacheableSync
 	 */
 	constructor(options: CacheableSyncOptions) {
-		super(options);
+		super({ throwOnEmptyListeners: false, ...options });
 
 		this._namespace = options.namespace;
 		this._qified = this.createQified(options.qified);

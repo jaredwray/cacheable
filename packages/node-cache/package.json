@@ -53,7 +53,7 @@
 	},
 	"dependencies": {
 		"@cacheable/utils": "workspace:^",
-		"hookified": "^2.1.0",
+		"hookified": "^3.0.1",
 		"keyv": "^5.6.0"
 	},
 	"files": [

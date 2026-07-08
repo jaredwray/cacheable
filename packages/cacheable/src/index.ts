@@ -17,7 +17,7 @@ import {
 	shorthandToMilliseconds,
 	wrap,
 } from "@cacheable/utils";
-import { type Hook, Hookified } from "hookified";
+import { type HookFn, Hookified, type IHook } from "hookified";
 import {
 	Keyv,
 	type KeyvEntry,
@@ -86,7 +86,7 @@ export class Cacheable extends Hookified {
 	 * @param {CacheableOptions} [options] The options for the cacheable instance
 	 */
 	constructor(options?: CacheableOptions) {
-		super();
+		super({ throwOnEmptyListeners: false });
 
 		if (options?.primary) {
 			this.setPrimary(options.primary);
@@ -197,10 +197,10 @@ export class Cacheable extends Hookified {
 	public onHook<K extends CacheableHooks>(
 		hook: K,
 		handler: CacheableHookHandlerMap[K],
-	): void;
-	public onHook(event: string, handler: Hook): void;
-	public onHook(event: string, handler: Hook): void {
-		super.onHook(event, handler);
+	): IHook | undefined;
+	public onHook(event: string, handler: HookFn): IHook | undefined;
+	public onHook(event: string, handler: HookFn): IHook | undefined {
+		return super.onHook(event, handler);
 	}
 
 	/**

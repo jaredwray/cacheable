@@ -38,7 +38,7 @@ export class FlatCache extends Hookified {
 	private readonly _parse = parse;
 	private readonly _stringify = stringify;
 	constructor(options?: FlatCacheOptions) {
-		super();
+		super({ throwOnEmptyListeners: false });
 		if (options) {
 			this._cache = new CacheableMemory({
 				ttl: options.ttl,

@@ -113,7 +113,7 @@ export class CacheableNet extends Hookified {
 	private _parse: ParseType = JSON.parse;
 
 	constructor(options?: CacheableNetOptions) {
-		super(options);
+		super({ throwOnEmptyListeners: false, ...options });
 
 		if (options?.cache) {
 			this._cache =
