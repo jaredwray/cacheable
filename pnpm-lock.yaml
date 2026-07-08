@@ -159,8 +159,8 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       normalize-url:
-        specifier: ^8.1.1
-        version: 8.1.1
+        specifier: ^9.0.1
+        version: 9.0.1
       responselike:
         specifier: ^4.0.2
         version: 4.0.2
@@ -2889,9 +2889,9 @@ packages:
     resolution: {integrity: sha512-Z3lTE9pLaJF47NyMhd4ww1yFTAP8YhYI8SleJiHzM46Fgpm5cnNzSl9XfzFNqbaz+VlJrIj3fXQ4DeN1Rjm6cw==}
     engines: {node: '>=18'}
 
-  normalize-url@8.1.1:
-    resolution: {integrity: sha512-JYc0DPlpGWB40kH5g07gGTrYuMqV653k3uBKY6uITPWds3M0ov3GaWGp9lbE3Bzngx8+XkfzgvASb9vk9JDFXQ==}
-    engines: {node: '>=14.16'}
+  normalize-url@9.0.1:
+    resolution: {integrity: sha512-ARftfC5HdUNu9jJeL8pHj8debUIHA2b91FizCoMzY4lG6dDX13jdvTK0TBe24IBDRf2HvJSzzwEPvmbkQWHRSg==}
+    engines: {node: '>=20'}
 
   nunjucks@3.2.4:
     resolution: {integrity: sha512-26XRV6BhkgK0VOxfbU5cQI+ICFUtMLixv1noZn1tGU38kQH5A5nmmbk/O45xdyBhD1esk47nKrY0mvQpZIhRjQ==}
@@ -6513,7 +6513,7 @@ snapshots:
       emojilib: 2.4.0
       skin-tone: 2.0.0
 
-  normalize-url@8.1.1: {}
+  normalize-url@9.0.1: {}
 
   nunjucks@3.2.4:
     dependencies:
