@@ -127,7 +127,7 @@ export class CacheableMemory extends Hookified {
 	 * @param {CacheableMemoryOptions} [options] - The options for the CacheableMemory
 	 */
 	constructor(options?: CacheableMemoryOptions) {
-		super();
+		super({ throwOnEmptyListeners: false });
 
 		if (options?.ttl) {
 			this.setTtl(options.ttl);
