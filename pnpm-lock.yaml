@@ -262,8 +262,8 @@ importers:
         specifier: ^4.2.0
         version: 4.2.0
       undici:
-        specifier: ^8.6.0
-        version: 8.6.0
+        specifier: ^8.7.0
+        version: 8.7.0
     devDependencies:
       '@types/http-cache-semantics':
         specifier: ^4.2.0
@@ -3659,8 +3659,8 @@ packages:
     resolution: {integrity: sha512-RNHlB4fxZK0IrkhBsxhlbx7s8kFWwr7rzzOqj5nvZugw3ig3RsB7KW3zVlV0eu8POl+rx5d1hmL7rRg0z1owow==}
     engines: {node: '>=22.19.0'}
 
-  undici@8.6.0:
-    resolution: {integrity: sha512-l2FlC6I510GawyEd1qgcE/okihKrzy+BRTEBlu6T0fdbM9m5yxtIH5Oa3ysRsH0zC4EhmWUEaSDsy2QngBeRlw==}
+  undici@8.7.0:
+    resolution: {integrity: sha512-N7iQtfyLhIMOFgQubvmLV26svHpO0bqKnAiWotTQCVKCmWrcGbBotPuW1x+xwYZ2VHdSTVUfPQQnlEt1/LouTQ==}
     engines: {node: '>=22.19.0'}
 
   unenv@2.0.0-rc.24:
@@ -7412,7 +7412,7 @@ snapshots:
 
   undici@8.4.1: {}
 
-  undici@8.6.0: {}
+  undici@8.7.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:
