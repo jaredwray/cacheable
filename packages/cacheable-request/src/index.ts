@@ -319,8 +319,13 @@ class CacheableRequest {
 					// with the original function would never unregister them. Register
 					// with on() and remove the same reference on every termination path
 					// so the listener count stays bounded.
+					let pendingRequest: any;
 					const removeErrorHandler = () => {
 						cachek.removeListener("error", errorHandler);
+						pendingRequest?.removeListener("error", removeErrorHandler);
+						pendingRequest?.removeListener("abort", removeErrorHandler);
+						pendingRequest?.removeListener("close", removeErrorHandler);
+						pendingRequest = undefined;
 					};
 
 					cachek.on("error", errorHandler);
@@ -329,6 +334,7 @@ class CacheableRequest {
 					// Aborted or destroyed requests never emit "response", so clean up
 					// on the underlying request's termination events as well.
 					ee.on("request", (request_: any) => {
+						pendingRequest = request_;
 						request_.once("error", removeErrorHandler);
 						request_.once("abort", removeErrorHandler);
 						request_.once("close", removeErrorHandler);
