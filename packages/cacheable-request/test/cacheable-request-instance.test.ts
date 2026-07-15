@@ -451,3 +451,55 @@ test("cacheableRequest emits CacheError when underlying Keyv emits error event",
 		});
 	});
 });
+
+test("cacheableRequest removes Keyv error listener once the request settles", async () => {
+	const keyv = new Keyv();
+	const cacheableRequest = new CacheableRequest(request, keyv).request();
+	const baseline = keyv.listeners("error").length;
+
+	const get = async (path: string) =>
+		new Promise<void>((resolve, reject) => {
+			cacheableRequest(parseWithWhatwg(`${s.url}${path}`), (response: any) => {
+				response.resume();
+				response.once("end", resolve);
+			})
+				.on("error", reject)
+				.on("request", (request_: any) => request_.end());
+		});
+
+	// Repeated keys are served from cache while fresh keys hit the network;
+	// neither path may leave its error listener behind (issue #1685)
+	for (let index = 0; index < 6; index++) {
+		await get(`/?index=${index % 3}`);
+	}
+
+	await new Promise((resolve) => {
+		setImmediate(resolve);
+	});
+	expect(keyv.listeners("error").length).toBe(baseline);
+});
+
+test("cacheableRequest removes Keyv error listener when the request is aborted", async () => {
+	const keyv = new Keyv();
+	const cacheableRequest = new CacheableRequest(request, keyv).request();
+	const baseline = keyv.listeners("error").length;
+
+	await new Promise<void>((resolve) => {
+		cacheableRequest(parseWithWhatwg(s.url))
+			.on("error", () => {
+				/* swallow abort-induced errors */
+			})
+			.on("request", (request_: any) => {
+				request_.on("error", () => {
+					/* swallow abort-induced socket errors */
+				});
+				request_.once("close", resolve);
+				request_.abort();
+			});
+	});
+
+	await new Promise((resolve) => {
+		setImmediate(resolve);
+	});
+	expect(keyv.listeners("error").length).toBe(baseline);
+});

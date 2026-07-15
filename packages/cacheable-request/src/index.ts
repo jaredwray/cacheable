@@ -315,12 +315,23 @@ class CacheableRequest {
 					ee.emit("error", new CacheError(error));
 				if (this.cache instanceof Keyv) {
 					const cachek = this.cache;
-					cachek.once("error", errorHandler);
-					ee.on("error", () => {
+					// Keyv's event manager wraps once() listeners, so removeListener()
+					// with the original function would never unregister them. Register
+					// with on() and remove the same reference on every termination path
+					// so the listener count stays bounded.
+					const removeErrorHandler = () => {
 						cachek.removeListener("error", errorHandler);
-					});
-					ee.on("response", () => {
-						cachek.removeListener("error", errorHandler);
+					};
+
+					cachek.on("error", errorHandler);
+					ee.on("error", removeErrorHandler);
+					ee.on("response", removeErrorHandler);
+					// Aborted or destroyed requests never emit "response", so clean up
+					// on the underlying request's termination events as well.
+					ee.on("request", (request_: any) => {
+						request_.once("error", removeErrorHandler);
+						request_.once("abort", removeErrorHandler);
+						request_.once("close", removeErrorHandler);
 					});
 				}
 
