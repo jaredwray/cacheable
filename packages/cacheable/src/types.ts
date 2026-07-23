@@ -20,6 +20,12 @@ export type GetOrSetFunctionOptions = Omit<
 	"ttl"
 > & {
 	ttl?: number | string | PerStoreTtl;
+	/**
+	 * Tags to associate with a newly computed entry for tag-based invalidation. Tags are only
+	 * applied when `getOrSet` stores a value after a cache miss.
+	 * @type {string[]}
+	 */
+	tags?: string[];
 };
 
 /**
