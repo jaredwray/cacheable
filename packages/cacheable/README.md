@@ -796,6 +796,7 @@ const cache = new Cacheable({ tags: true });
 
 await cache.set('page:/products', html, { ttl: '10m', tags: ['entity:42', 'collection:products'] });
 await cache.set('page:/products/42', detailHtml, { ttl: '10m', tags: ['entity:42'] });
+await cache.getOrSet('summary:products', loadSummary, { ttl: '10m', tags: ['collection:products'] });
 
 // entity 42 changed - purge everything that referenced it
 await cache.tags.invalidateTag('entity:42');
@@ -1069,13 +1070,14 @@ The `getOrSet`  method that comes from [@cacheable/utils](https://cacheable.org/
 ```typescript
 export type GetOrSetFunctionOptions = {
 	ttl?: number | string | { primary?: number | string; secondary?: number | string };
+	tags?: string[];
 	cacheErrors?: boolean;
 	throwErrors?: boolean;
 	nonBlocking?: boolean;
 };
 ```
 
-The `ttl` also accepts a [per-store object](#per-store-ttl-per-operation) such as `{ primary: '10s', secondary: '5m' }` to give the primary and secondary stores different expirations for this operation.
+The `ttl` also accepts a [per-store object](#per-store-ttl-per-operation) such as `{ primary: '10s', secondary: '5m' }` to give the primary and secondary stores different expirations for this operation. The `tags` option associates a newly computed value with tags for [tag-based invalidation](#tag-based-invalidation).
 
 The `nonBlocking` option allows you to override the instance-level `nonBlocking` setting for the `get` call within `getOrSet`. When set to `false`, the `get` will block and wait for a response from the secondary store before deciding whether to call the provided function. When set to `true`, the primary store returns immediately and syncs from secondary in the background.
 
