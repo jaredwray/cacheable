@@ -1203,7 +1203,7 @@ export class Cacheable extends Hookified {
 	 * @param {GetOrSetKey} key - The key to retrieve or set in the cache. This can also be a function that returns a string key.
 	 * If a function is provided, it will be called with the cache options to generate the key.
 	 * @param {() => Promise<T>} function_ - The asynchronous function that computes the value to be cached if the key does not exist.
-	 * @param {GetOrSetFunctionOptions} [options] - Optional settings for caching, such as the time to live (TTL) or whether to cache errors.
+	 * @param {GetOrSetFunctionOptions} [options] - Optional settings for caching, such as the time to live (TTL), tags, or whether to cache errors.
 	 * @return {Promise<T | undefined>} - A promise that resolves to the cached or newly computed value, or undefined if an error occurs and caching is not configured for errors.
 	 */
 	public async getOrSet<T>(
@@ -1225,7 +1225,7 @@ export class Cacheable extends Hookified {
 				value: unknown,
 				ttl?: number | string | PerStoreTtl,
 			) => {
-				await this.set(key, value, { ttl });
+				await this.set(key, value, { ttl, tags: options?.tags });
 			},
 			/* v8 ignore next -- @preserve */
 			on: (event: string, listener: (...args: unknown[]) => void) => {

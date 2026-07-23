@@ -69,6 +69,46 @@ describe("cacheable tags", () => {
 		expect(await cacheable.get(key)).toBeUndefined();
 	});
 
+	test("getOrSet associates tags with a newly computed entry", async () => {
+		const cacheable = new Cacheable({ tags: true });
+		let calls = 0;
+		const options = { tags: ["entity:42"] };
+		const getValue = async () => {
+			calls++;
+			return `value-${calls}`;
+		};
+
+		expect(await cacheable.getOrSet("k", getValue, options)).toEqual("value-1");
+		expect(await cacheable.tags.getTags("k")).toEqual(["entity:42"]);
+		expect(await cacheable.getOrSet("k", getValue, options)).toEqual("value-1");
+		expect(calls).toBe(1);
+
+		await cacheable.tags.invalidateTag("entity:42");
+		expect(await cacheable.getOrSet("k", getValue, options)).toEqual("value-2");
+		expect(calls).toBe(2);
+		expect(await cacheable.tags.getTags("k")).toEqual(["entity:42"]);
+	});
+
+	test("getOrSet leaves a recomputed entry untagged when tags are omitted", async () => {
+		const cacheable = new Cacheable({ tags: true });
+		let calls = 0;
+		const getValue = async () => {
+			calls++;
+			return `value-${calls}`;
+		};
+
+		await cacheable.getOrSet("k", getValue, { tags: ["entity:42"] });
+		await cacheable.tags.invalidateTag("entity:42");
+
+		expect(await cacheable.getOrSet("k", getValue)).toEqual("value-2");
+		expect(calls).toBe(2);
+		expect(await cacheable.tags.getTags("k")).toBeUndefined();
+
+		await cacheable.tags.invalidateTag("entity:42");
+		expect(await cacheable.getOrSet("k", getValue)).toEqual("value-2");
+		expect(calls).toBe(2);
+	});
+
 	test("set still supports ttl as the third argument", async () => {
 		const cacheable = new Cacheable();
 		const key = faker.string.uuid();
