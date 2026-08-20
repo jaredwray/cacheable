@@ -367,7 +367,7 @@ See unit tests in [`test/del.test.ts`](./test/del.test.ts) for more information.
 
 `mdel(keys: [key]): Promise<true>`
 
-Delete multiple keys, an error will be throw on any failed.
+Delete multiple keys, an error will be throw on any failed. Keys are deleted with a single bulk operation per store, so stores with native multi-delete support (such as `@keyv/redis`) use one command instead of one per key.
 
 ```ts
 await cache.mset([

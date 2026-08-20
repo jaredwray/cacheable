@@ -289,10 +289,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 	const mdel = async (keys: string[]) => {
 		try {
-			const promises: Array<Promise<boolean>> = [];
-			for (const key of keys) {
-				promises.push(...stores.map(async (store) => store.delete(key)));
-			}
+			const promises = stores.map(async (store) => store.deleteMany(keys));
 
 			if (nonBlocking) {
 				Promise.all(promises);

@@ -33,6 +33,43 @@ describe("mdel", () => {
 		await expect(cache.get(list[2].key)).resolves.toEqual(list[2].value);
 	});
 
+	it("should delete every key with a single store call", async () => {
+		const cache = createCache({ stores: [keyv], nonBlocking: false });
+		await cache.mset(list);
+		const keys = list.map(({ key }) => key);
+		const deleteManyHandler = vi.spyOn(keyv, "deleteMany");
+
+		await expect(cache.mdel(keys)).resolves.toBe(true);
+
+		expect(deleteManyHandler).toHaveBeenCalledOnce();
+		expect(deleteManyHandler).toHaveBeenCalledWith(keys);
+	});
+
+	it("should call deleteMany once per store", async () => {
+		const secondKeyv = new Keyv();
+		const cache = createCache({
+			stores: [keyv, secondKeyv],
+			nonBlocking: false,
+		});
+		await cache.mset(list);
+		const keys = list.map(({ key }) => key);
+		const firstHandler = vi.spyOn(keyv, "deleteMany");
+		const secondHandler = vi.spyOn(secondKeyv, "deleteMany");
+
+		await cache.mdel(keys);
+
+		expect(firstHandler).toHaveBeenCalledOnce();
+		expect(firstHandler).toHaveBeenCalledWith(keys);
+		expect(secondHandler).toHaveBeenCalledOnce();
+		expect(secondHandler).toHaveBeenCalledWith(keys);
+	});
+
+	it("should resolve on an empty key list", async () => {
+		const cache = createCache({ stores: [keyv], nonBlocking: false });
+
+		await expect(cache.mdel([])).resolves.toBe(true);
+	});
+
 	it("should work blocking", async () => {
 		let resolveDeleted: (value: boolean) => void = () => undefined;
 		const deletePromise = new Promise<boolean>((_resolve) => {
@@ -41,7 +78,9 @@ describe("mdel", () => {
 		const cache = createCache({ stores: [keyv], nonBlocking: false });
 		await cache.mset(list);
 
-		const delHandler = vi.spyOn(keyv, "delete").mockReturnValue(deletePromise);
+		const delHandler = vi
+			.spyOn(keyv, "deleteMany")
+			.mockReturnValue(deletePromise);
 		const deleteResolved = vi.fn();
 		const deleteRejected = vi.fn();
 		cache
@@ -49,7 +88,7 @@ describe("mdel", () => {
 			.catch(deleteRejected)
 			.then(deleteResolved);
 
-		expect(delHandler).toBeCalledTimes(list.length);
+		expect(delHandler).toHaveBeenCalledOnce();
 
 		await sleep(200);
 
@@ -70,7 +109,9 @@ describe("mdel", () => {
 		const cache = createCache({ stores: [keyv], nonBlocking: true });
 		await cache.mset(list);
 
-		const delHandler = vi.spyOn(keyv, "delete").mockReturnValue(deletePromise);
+		const delHandler = vi
+			.spyOn(keyv, "deleteMany")
+			.mockReturnValue(deletePromise);
 		const deleteResolved = vi.fn();
 		const deleteRejected = vi.fn();
 		cache
@@ -78,7 +119,7 @@ describe("mdel", () => {
 			.catch(deleteRejected)
 			.then(deleteResolved);
 
-		expect(delHandler).toBeCalledTimes(list.length);
+		expect(delHandler).toHaveBeenCalledOnce();
 
 		await sleep(1);
 
