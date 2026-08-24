@@ -42,21 +42,23 @@ tooling never bumps them.
 2. **Publish a GitHub release.** Publishing a (non-pre) release triggers the
    `release` workflow — in lockstep with the website deploy, which also runs on
    `released`. (You can also run it manually from the Actions tab.)
-3. **The script decides what to publish.** For every publishable workspace
+3. **The script decides what to stage.** For every publishable workspace
    package it compares the local `version` against the npm registry:
    - already published → **skip**
-   - new version, or package not yet on npm → **publish**
+   - new version, or package not yet on npm → **stage**
    - below the registry's `latest` → **refuse** (won't roll `latest` back)
-4. **It publishes in dependency order** (e.g. `@cacheable/utils` before
-   `cacheable`), with provenance, using pnpm only, aborting on the first failure.
+4. **It packs and stages in dependency order** (e.g. `@cacheable/utils` before
+   `cacheable`) with `pnpm stage publish ./packed/*.tgz`, provenance, using
+   pnpm only, aborting on the first failure. A maintainer then promotes each
+   staged version with 2FA.
 
 Private packages and the internal `@cacheable/benchmark` harness are never
 published (see `IGNORED_PACKAGES` in the script).
 
 ## Dry run
 
-Validate a release without publishing anything — prints the plan and packs each
-package via `pnpm publish --dry-run`:
+Validate a release without staging anything — prints the plan and packs each
+package via `pnpm pack`:
 
 ```sh
 node scripts/release.mjs --dry-run   # locally
@@ -68,7 +70,7 @@ machine-readable JSON.
 
 ## Authentication: OIDC trusted publishing (+ provenance)
 
-The workflow publishes **tokenlessly** via npm
+The workflow stages **tokenlessly** via npm
 [trusted publishing](https://docs.npmjs.com/trusted-publishers/) over OIDC, and
 attaches a [provenance](https://docs.npmjs.com/generating-provenance-statements/)
 attestation. The job grants `id-token: write`, runs on a GitHub-hosted runner,
@@ -84,7 +86,8 @@ Publisher under *Settings → Publishing access*:
 
 The workflow is **fully tokenless** — there is no `NPM_TOKEN` secret. Every
 published package must have a trusted publisher configured before the workflow
-can publish it; until then that package's publish step fails to authenticate.
+can stage it; until then that package's stage step fails to authenticate.
+Configure the trusted publisher as **stage-only** so CI cannot publish live.
 
 One caveat: OIDC cannot perform the *first ever* publish of a brand-new package.
 When adding a new package, publish its initial version once manually (e.g.

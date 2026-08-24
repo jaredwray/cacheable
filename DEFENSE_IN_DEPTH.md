@@ -18,24 +18,24 @@ Profile: npm library · public
 - [x] `trustPolicy: no-downgrade`; no first-party `trustPolicyExclude` — PR #1700
 - [x] Lifecycle scripts blocked: `strictDepBuilds: true`, `dangerouslyAllowAllBuilds: false`, `allowBuilds: {}` baseline — PR #1700
 - [x] `blockExoticSubdeps: true` — PR #1700
-- [ ] Lockfile committed; CI installs with `pnpm install --frozen-lockfile` (PR #1701 pending)
+- [x] Lockfile committed; CI installs with `pnpm install --frozen-lockfile` — PR #1701
 - [x] No `.github/dependabot.yml`; other dependency-update tools (if any) open PRs only — never auto-merge — verified 2026-08-24
 
 ## 4. GitHub Actions
 - [x] `permissions: contents: read` (or `{}` + per-job grants) on every workflow — verified 2026-08-24
 - [x] No `contents: write` except jobs whose purpose is mutating the repo (GitHub Release, Changesets version PR); generated output is a workflow artifact, never committed back from CI — verified 2026-08-24
-- [ ] Every action pinned to a full commit SHA (`npx actions-up`) (PR #1701 pending)
-- [ ] Every job installs Socket Firewall (`SocketDev/action` SHA-pinned, `firewall-version` pinned); `pnpm install` / `npm install` run as `sfw pnpm install` / `sfw npm install` (PR #1701 pending)
-- [ ] `.github/workflows/check-workflows.yaml` lints workflows with zizmor on every PR (PR #1701 pending)
-- [ ] Workflow `name:` and job `name:` contain no spaces (kebab-case) so they can be set as required status checks (PR #1701 pending)
-- [ ] `persist-credentials: false` on checkouts that don't push (PR #1701 pending)
+- [x] Every action pinned to a full commit SHA (`npx actions-up`) — PR #1701
+- [x] Every job installs Socket Firewall (`SocketDev/action` SHA-pinned, `firewall-version` pinned); `pnpm install` / `npm install` run as `sfw pnpm install` / `sfw npm install` — PR #1701
+- [x] `.github/workflows/check-workflows.yaml` lints workflows with zizmor on every PR — PR #1701
+- [x] Workflow `name:` and job `name:` contain no spaces (kebab-case) so they can be set as required status checks — PR #1701
+- [x] `persist-credentials: false` on checkouts that don't push — PR #1701
 - [x] No `pull_request_target` on workflows that run untrusted PR code — verified 2026-08-24
-- [ ] Artifact-publishing workflows disable `actions/setup-node` default caching (`package-manager-cache: false`) to prevent cache poisoning (PR #1701 pending)
+- [x] Artifact-publishing workflows disable `actions/setup-node` default caching (`package-manager-cache: false`) to prevent cache poisoning — PR #1701
 - [x] No npm tokens (or other registry credentials) in Actions secrets — verified 2026-08-24
 
 ## 5. npm publishing — npm libraries only
 - [ ] OIDC trusted publishing configured **stage-only** on npmjs.com for the publish workflow — it can stage, never publish live (manual)
-- [ ] `.github/workflows/release.yaml` packs then stages with `pnpm stage publish ./packed/*.tgz --no-git-checks`
+- [ ] `.github/workflows/release.yaml` packs then stages with `pnpm stage publish ./packed/*.tgz --no-git-checks` (PR #1702 pending)
 - [ ] Maintainer promotes staged versions with 2FA (manual)
 - [ ] Drydock connected — staged releases reviewed before promotion (manual)
 - [ ] No direct publish rights: package requires 2FA and disallows tokens (manual)
@@ -43,7 +43,7 @@ Profile: npm library · public
 
 ## 6. Security tooling
 - [x] Aikido runs on every build — verified 2026-08-24
-- [ ] Aikido release gate: the release workflow's stage-publish job `needs:` a passing `scan-release`
+- [ ] Aikido release gate: the release workflow's stage-publish job `needs:` a passing `scan-release` (PR #1702 pending)
 - [x] Socket reviews every PR that changes dependencies — verified 2026-08-24
 
 ## 7. Repository lockdown
