@@ -19,6 +19,7 @@ yarn.lock
 
 # Dist
 dist
+packed
 packages/website/site/docs/*.md
 packages/flat-cache/.cache
 packages/file-entry-cache/.cache

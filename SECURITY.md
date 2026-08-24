@@ -24,7 +24,7 @@ This repository follows the [defense-in-depth](https://github.com/jaredwray/agen
 hardening checklist; progress is tracked in [DEFENSE_IN_DEPTH.md](./DEFENSE_IN_DEPTH.md). Measures currently in place:
 
 - CI workflows default to read-only `contents: read` permissions; generated output is never committed back from CI; every action is pinned to a full commit SHA; Socket Firewall (`sfw`) wraps `pnpm install`; workflows are security-linted with zizmor on every PR.
-- npm publishing authenticates with OIDC trusted publishing; there are no npm tokens in Actions secrets.
+- npm publishing authenticates with OIDC trusted publishing; there are no npm tokens in Actions secrets. CI packs tarballs and stages them with `pnpm stage publish`; a maintainer promotes the staged version. The release job `needs` a passing Aikido `scan-release`.
 - pnpm is pinned via `packageManager` (`pnpm@11.5.1`), and the lockfile is committed.
 - Dependencies install through pnpm with a 7-day cooldown on new versions, lifecycle scripts blocked by default, and `trustPolicy: no-downgrade`.
 - There is no `.github/dependabot.yml`.
