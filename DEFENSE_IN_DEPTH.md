@@ -34,11 +34,11 @@ Profile: npm library · public
 - [x] No npm tokens (or other registry credentials) in Actions secrets — verified 2026-08-24
 
 ## 5. npm publishing — npm libraries only
-- [x] OIDC trusted publishing configured **stage-only** on npmjs.com for the publish workflow — it can stage, never publish live — recorded 2026-08-24
+- [x] OIDC trusted publishing configured **stage-only** on npmjs.com for the publish workflow — it can stage, never publish live — PR #1706
 - [x] `.github/workflows/release.yaml` packs then stages with `pnpm stage publish ./packed/*.tgz --no-git-checks` — PR #1702
-- [x] Maintainer promotes staged versions with 2FA — recorded 2026-08-24
-- [x] Drydock connected — staged releases reviewed before promotion — recorded 2026-08-24
-- [x] No direct publish rights: package requires 2FA and disallows tokens — recorded 2026-08-24
+- [x] Maintainer promotes staged versions with 2FA — PR #1706
+- [x] Drydock connected — staged releases reviewed before promotion — PR #1706
+- [x] No direct publish rights: package requires 2FA and disallows tokens — PR #1706
 - [x] `package.json` `repository.url` accurate so provenance maps to this repo — verified 2026-08-24
 
 ## 6. Security tooling
@@ -47,6 +47,6 @@ Profile: npm library · public
 - [x] Socket reviews every PR that changes dependencies — verified 2026-08-24
 
 ## 7. Repository lockdown
-- [x] Phishing-resistant 2FA (passkeys / hardware keys) on the GitHub and npm accounts — recorded 2026-08-24
-- [x] Recovery codes stored offline in a password manager — recorded 2026-08-24
+- [x] Phishing-resistant 2FA (passkeys / hardware keys) on the GitHub and npm accounts — PR #1706
+- [x] Recovery codes stored offline in a password manager — PR #1706
 - [x] `lockdown-repo.sh` applied by a repo admin (never committed to this repo); `--check` with `--required-checks` and `--allowed-actions` passes (PRs required on the default branch, merges blocked unless required status checks pass, tag ruleset, immutable releases, fork-PR approval (public repos), read-only workflow tokens, Actions allowlist, secret scanning, Dependabot disabled, private vulnerability reporting (public repos)) — PR #1705
