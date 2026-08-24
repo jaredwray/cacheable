@@ -14,23 +14,23 @@ Profile: npm library · public
 
 ## 3. Dependencies (pnpm)
 - [x] `packageManager: pnpm@11.3+` pinned in `package.json` — verified 2026-08-24
-- [ ] 7-day cooldown: `minimumReleaseAge: 10080`, `minimumReleaseAgeStrict: true`, `minimumReleaseAgeIgnoreMissingTime: false`; no first-party `minimumReleaseAgeExclude` (PR #1700 pending)
-- [ ] `trustPolicy: no-downgrade`; no first-party `trustPolicyExclude` (PR #1700 pending)
-- [ ] Lifecycle scripts blocked: `strictDepBuilds: true`, `dangerouslyAllowAllBuilds: false`, `allowBuilds: {}` baseline (PR #1700 pending)
-- [ ] `blockExoticSubdeps: true` (PR #1700 pending)
-- [ ] Lockfile committed; CI installs with `pnpm install --frozen-lockfile`
+- [x] 7-day cooldown: `minimumReleaseAge: 10080`, `minimumReleaseAgeStrict: true`, `minimumReleaseAgeIgnoreMissingTime: false`; no first-party `minimumReleaseAgeExclude` — PR #1700
+- [x] `trustPolicy: no-downgrade`; no first-party `trustPolicyExclude` — PR #1700
+- [x] Lifecycle scripts blocked: `strictDepBuilds: true`, `dangerouslyAllowAllBuilds: false`, `allowBuilds: {}` baseline — PR #1700
+- [x] `blockExoticSubdeps: true` — PR #1700
+- [ ] Lockfile committed; CI installs with `pnpm install --frozen-lockfile` (PR pending)
 - [x] No `.github/dependabot.yml`; other dependency-update tools (if any) open PRs only — never auto-merge — verified 2026-08-24
 
 ## 4. GitHub Actions
 - [x] `permissions: contents: read` (or `{}` + per-job grants) on every workflow — verified 2026-08-24
 - [x] No `contents: write` except jobs whose purpose is mutating the repo (GitHub Release, Changesets version PR); generated output is a workflow artifact, never committed back from CI — verified 2026-08-24
-- [ ] Every action pinned to a full commit SHA (`npx actions-up`)
-- [ ] Every job installs Socket Firewall (`SocketDev/action` SHA-pinned, `firewall-version` pinned); `pnpm install` / `npm install` run as `sfw pnpm install` / `sfw npm install`
-- [ ] `.github/workflows/check-workflows.yaml` lints workflows with zizmor on every PR
-- [ ] Workflow `name:` and job `name:` contain no spaces (kebab-case) so they can be set as required status checks
-- [ ] `persist-credentials: false` on checkouts that don't push
+- [ ] Every action pinned to a full commit SHA (`npx actions-up`) (PR pending)
+- [ ] Every job installs Socket Firewall (`SocketDev/action` SHA-pinned, `firewall-version` pinned); `pnpm install` / `npm install` run as `sfw pnpm install` / `sfw npm install` (PR pending)
+- [ ] `.github/workflows/check-workflows.yaml` lints workflows with zizmor on every PR (PR pending)
+- [ ] Workflow `name:` and job `name:` contain no spaces (kebab-case) so they can be set as required status checks (PR pending)
+- [ ] `persist-credentials: false` on checkouts that don't push (PR pending)
 - [x] No `pull_request_target` on workflows that run untrusted PR code — verified 2026-08-24
-- [ ] Artifact-publishing workflows disable `actions/setup-node` default caching (`package-manager-cache: false`) to prevent cache poisoning
+- [ ] Artifact-publishing workflows disable `actions/setup-node` default caching (`package-manager-cache: false`) to prevent cache poisoning (PR pending)
 - [x] No npm tokens (or other registry credentials) in Actions secrets — verified 2026-08-24
 
 ## 5. npm publishing — npm libraries only
