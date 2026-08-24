@@ -30,3 +30,4 @@ hardening checklist; progress is tracked in [DEFENSE_IN_DEPTH.md](./DEFENSE_IN_D
 - There is no `.github/dependabot.yml`.
 - Codespaces and Cursor Cloud Agents install through Aikido Safe Chain; package-manager shims must not be bypassed.
 - Socket reviews every dependency change; Aikido scans every build.
+- `.github/CODEOWNERS` names owners for `/.github/`, `/.cursor/`, `/.devcontainer/`, and `/scripts/`.
