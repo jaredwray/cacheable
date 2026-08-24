@@ -38,36 +38,43 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write # required for OIDC trusted publishing + provenance
 
 jobs:
   release:
-    name: Release
     runs-on: ubuntu-latest # provenance/OIDC require a cloud-hosted runner
+    permissions:
+      contents: read
+      id-token: write # required for OIDC trusted publishing + provenance
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # This job only reads the repo (it never pushes), so don't leave the
           # GITHUB_TOKEN in .git/config for later steps / actions to read.
           persist-credentials: false
 
+      - name: Install Socket Firewall
+        uses: SocketDev/action@ba6de6cc0565af1f42295590380973573297e31f # v1.3.2
+        with:
+          mode: firewall-free
+          firewall-version: "1.15.0"
+
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org # writes the .npmrc the registry expects
-          cache: pnpm
+          package-manager-cache: false
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: sfw pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm build
