@@ -27,3 +27,5 @@ hardening checklist; progress is tracked in [DEFENSE_IN_DEPTH.md](./DEFENSE_IN_D
 - npm publishing authenticates with OIDC trusted publishing; there are no npm tokens in Actions secrets.
 - pnpm is pinned via `packageManager` (`pnpm@11.5.1`), and the lockfile is committed.
 - There is no `.github/dependabot.yml`.
+- Codespaces and Cursor Cloud Agents install through Aikido Safe Chain; package-manager shims must not be bypassed.
+- Socket reviews every dependency change; Aikido scans every build.
