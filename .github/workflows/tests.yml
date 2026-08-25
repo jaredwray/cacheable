@@ -11,7 +11,10 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  # Matrix check names must be kebab-case. GitHub otherwise reports
+  # "test (22)", which rulesets cannot require (spaces are rejected).
+  test-node:
+    name: test-${{ matrix.node-version }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -56,3 +59,18 @@ jobs:
 
       - name: Test
         run: pnpm test:ci
+
+  # Space-free required check (`test`) so the branch ruleset can match.
+  test:
+    needs: test-node
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Socket Firewall
+        uses: SocketDev/action@ba6de6cc0565af1f42295590380973573297e31f # v1.3.2
+        with:
+          mode: firewall-free
+          firewall-version: "1.15.0"
+
+      - name: Require matrix success
+        run: test "${{ needs.test-node.result }}" = "success"
