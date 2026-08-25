@@ -27,18 +27,18 @@ Profile: npm library · public
 - [x] Every action pinned to a full commit SHA (`npx actions-up`) — PR #1701
 - [x] Every job installs Socket Firewall (`SocketDev/action` SHA-pinned, `firewall-version` pinned); `pnpm install` / `npm install` run as `sfw pnpm install` / `sfw npm install` — PR #1701
 - [x] `.github/workflows/check-workflows.yaml` lints workflows with zizmor on every PR — PR #1701
-- [x] Workflow `name:` and job `name:` contain no spaces (kebab-case) so they can be set as required status checks — PR #1701
+- [x] Workflow `name:` and job `name:` contain no spaces (kebab-case) so they can be set as required status checks; matrix checks are `test-22` / `test-24` / `test-26` plus a `test` gate — PR #1701, PR #1706
 - [x] `persist-credentials: false` on checkouts that don't push — PR #1701
 - [x] No `pull_request_target` on workflows that run untrusted PR code — verified 2026-08-24
 - [x] Artifact-publishing workflows disable `actions/setup-node` default caching (`package-manager-cache: false`) to prevent cache poisoning — PR #1701
 - [x] No npm tokens (or other registry credentials) in Actions secrets — verified 2026-08-24
 
 ## 5. npm publishing — npm libraries only
-- [ ] OIDC trusted publishing configured **stage-only** on npmjs.com for the publish workflow — it can stage, never publish live (manual)
+- [x] OIDC trusted publishing configured **stage-only** on npmjs.com for the publish workflow — it can stage, never publish live — PR #1706
 - [x] `.github/workflows/release.yaml` packs then stages with `pnpm stage publish ./packed/*.tgz --no-git-checks` — PR #1702
-- [ ] Maintainer promotes staged versions with 2FA (manual)
-- [ ] Drydock connected — staged releases reviewed before promotion (manual)
-- [ ] No direct publish rights: package requires 2FA and disallows tokens (manual)
+- [x] Maintainer promotes staged versions with 2FA — PR #1706
+- [x] Drydock connected — staged releases reviewed before promotion — PR #1706
+- [x] No direct publish rights: package requires 2FA and disallows tokens — PR #1706
 - [x] `package.json` `repository.url` accurate so provenance maps to this repo — verified 2026-08-24
 
 ## 6. Security tooling
@@ -47,6 +47,6 @@ Profile: npm library · public
 - [x] Socket reviews every PR that changes dependencies — verified 2026-08-24
 
 ## 7. Repository lockdown
-- [ ] Phishing-resistant 2FA (passkeys / hardware keys) on the GitHub and npm accounts (manual)
-- [ ] Recovery codes stored offline in a password manager (manual)
+- [x] Phishing-resistant 2FA (passkeys / hardware keys) on the GitHub and npm accounts — PR #1706
+- [x] Recovery codes stored offline in a password manager — PR #1706
 - [x] `lockdown-repo.sh` applied by a repo admin (never committed to this repo); `--check` with `--required-checks` and `--allowed-actions` passes (PRs required on the default branch, merges blocked unless required status checks pass, tag ruleset, immutable releases, fork-PR approval (public repos), read-only workflow tokens, Actions allowlist, secret scanning, Dependabot disabled, private vulnerability reporting (public repos)) — PR #1705
