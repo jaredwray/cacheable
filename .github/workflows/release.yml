@@ -1,10 +1,11 @@
 name: release
 
-# Publishes workspace packages to npm whose manually-set version is ahead of
+# Stages workspace packages to npm whose manually-set version is ahead of
 # the registry. Versions are never bumped here — a human bumps each package's
 # `version` (typically via a release PR); publishing a GitHub release then
-# triggers this workflow, which figures out what actually needs publishing and
-# publishes it in dependency order. See scripts/release.mjs for the decision logic.
+# triggers this workflow, which figures out what actually needs staging and
+# stages it in dependency order. See scripts/release.mjs for the decision logic.
+# A maintainer promotes each staged version (2FA); CI cannot publish live.
 #
 # Authentication uses OIDC trusted publishing (tokenless) with provenance:
 #   - `id-token: write` lets GitHub mint the OIDC token pnpm exchanges for a
@@ -12,9 +13,10 @@ name: release
 #   - Configure a "Trusted Publisher" for each package on npmjs.com pointing at
 #     repo `jaredwray/cacheable` + workflow `release.yml`. Once configured, no
 #     npm token is needed (pnpm 11 performs the OIDC exchange natively).
-#   - This workflow is fully tokenless: every published package must have a
-#     trusted publisher configured first. A brand-new package's first-ever
-#     publish (which OIDC cannot do) needs a one-time manual `pnpm publish`.
+#   - This workflow is fully tokenless: every package must have a
+#     trusted publisher configured first (stage-only on npmjs.com). A brand-new
+#     package's first-ever publish (which OIDC cannot do) needs a one-time
+#     manual `pnpm publish`.
 
 on:
   # Manual runs — supports a dry run that prints the plan and validates
@@ -38,36 +40,77 @@ concurrency:
 
 permissions:
   contents: read
-  id-token: write # required for OIDC trusted publishing + provenance
 
 jobs:
+  aikido-gate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Install Socket Firewall
+        uses: SocketDev/action@ba6de6cc0565af1f42295590380973573297e31f # v1.3.2
+        with:
+          mode: firewall-free
+          firewall-version: "1.15.0"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install Aikido CI client
+        # zizmor: ignore[adhoc-packages] pinned Aikido CI client for the release gate
+        run: sfw npm install --global @aikidosec/ci-api-client@1.0.17
+
+      # Fails on new SAST/IaC/secrets findings. The API key comes from Aikido's
+      # Continuous Integration settings — it grants no publish authority.
+      - name: Run Aikido release scan
+        env:
+          REPO_NAME: ${{ github.event.repository.name }}
+          AIKIDO_CLIENT_API_KEY: ${{ secrets.AIKIDO_CLIENT_API_KEY }}
+        run: >
+          aikido-api-client scan-release
+          "$REPO_NAME" "$GITHUB_SHA"
+          --apikey "$AIKIDO_CLIENT_API_KEY"
+          --fail-on-sast-scan --fail-on-iac-scan --fail-on-secrets-scan
+
   release:
-    name: Release
+    needs: [aikido-gate]
     runs-on: ubuntu-latest # provenance/OIDC require a cloud-hosted runner
+    permissions:
+      contents: read
+      id-token: write # required for OIDC trusted publishing + provenance
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # This job only reads the repo (it never pushes), so don't leave the
           # GITHUB_TOKEN in .git/config for later steps / actions to read.
           persist-credentials: false
 
+      - name: Install Socket Firewall
+        uses: SocketDev/action@ba6de6cc0565af1f42295590380973573297e31f # v1.3.2
+        with:
+          mode: firewall-free
+          firewall-version: "1.15.0"
+
       - name: Install pnpm
-        uses: pnpm/action-setup@v6
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org # writes the .npmrc the registry expects
-          cache: pnpm
+          package-manager-cache: false
 
       - name: Enable Corepack
         run: corepack enable
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: sfw pnpm install --frozen-lockfile
 
       - name: Build
         run: pnpm build

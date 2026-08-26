@@ -5,8 +5,8 @@
  * Versions are set **manually** (each package's `version` in package.json is
  * bumped by a human / release PR). This script never changes versions. Its job
  * is to decide, for every publishable workspace package, whether the locally
- * declared version still needs to be published, and — unless running a dry run
- * — to publish the ones that do.
+ * declared version still needs to be staged, and — unless running a dry run
+ * — to stage the ones that do. A maintainer promotes staged versions later.
  *
  * How "needs publishing" is decided:
  *   1. Enumerate workspace packages with `pnpm -r ls --depth -1 --json`.
@@ -16,27 +16,28 @@
  *        - 404            → the package has never been published   → publish
  *        - version listed → this exact version is already on npm    → skip
  *        - version absent → a newer (manually-set) version is ready → publish
- *   4. The full plan is computed before anything is published. If the registry
+ *   4. The full plan is computed before anything is staged. If the registry
  *      state of any package cannot be determined (after retries), the run aborts
- *      *before* publishing anything — a release is all-or-nothing on a known
+ *      *before* staging anything — a release is all-or-nothing on a known
  *      plan, never a partial guess.
  *
- * Publishing happens in **dependency order** (topological sort over the
- * workspace's runtime deps): a package is always published after the workspace
+ * Staging happens in **dependency order** (topological sort over the
+ * workspace's runtime deps): a package is always staged after the workspace
  * dependencies it relies on, because pnpm rewrites each `workspace:^` reference
- * to the dependency's concrete version at publish time, and a dependent must
+ * to the dependency's concrete version at pack time, and a dependent must
  * never be released ahead of a dependency it points at. If a run fails partway,
- * dependencies are already published before their dependents.
+ * dependencies are already staged before their dependents.
  *
- * Publishing uses pnpm only (never npm) with provenance, so packages are
+ * Staging uses pnpm only (never npm) with provenance, so packages are
  * cryptographically linked to this repo + workflow when run from CI with an
  * OIDC `id-token: write` permission:
  *
- *     pnpm --filter <name> publish --provenance --access public --no-git-checks
+ *     pnpm --filter <name> pack --pack-destination packed
+ *     pnpm stage publish ./packed/<tarball>.tgz --access public --provenance --no-git-checks
  *
  * Usage:
- *   node scripts/release.mjs              # publish every package whose version is new
- *   node scripts/release.mjs --dry-run    # print the plan + validate packaging, publish nothing
+ *   node scripts/release.mjs              # stage every package whose version is new
+ *   node scripts/release.mjs --dry-run    # print the plan + validate packaging, stage nothing
  *   node scripts/release.mjs --json       # emit the plan as JSON (implies no publishing noise)
  *
  * Environment:
@@ -49,7 +50,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { appendFileSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
@@ -92,8 +93,8 @@ function parseArgs(argv) {
 const HELP = `Release orchestrator for the cacheable monorepo.
 
 Usage:
-  node scripts/release.mjs            Publish every package whose version is not yet on npm
-  node scripts/release.mjs --dry-run  Print the plan and validate packaging without publishing
+  node scripts/release.mjs            Stage every package whose version is not yet on npm
+  node scripts/release.mjs --dry-run  Print the plan and validate packaging without staging
   node scripts/release.mjs --json     Emit the publish plan as JSON
 
 Versions are set manually; this script never bumps them.`;
@@ -333,20 +334,44 @@ function writeOutputs(published) {
 	);
 }
 
-/** Publish a single package with pnpm + provenance. Returns true on success. */
+/** Pack a package; on a real run, stage the tarball with pnpm + provenance. */
 function publishPackage(entry, { dryRun }) {
-	const args = ["--filter", entry.name, "publish", "--access", "public", "--no-git-checks"];
+	const packDir = path.resolve("packed");
+	mkdirSync(packDir, { recursive: true });
 
-	// Provenance attestations require the CI OIDC token; only meaningful for a
-	// real publish. A dry run just validates the tarball/packaging locally.
-	if (dryRun) {
-		args.push("--dry-run");
-	} else {
-		args.push("--provenance");
+	const packArgs = ["--filter", entry.name, "pack", "--pack-destination", packDir];
+	console.log(`\n$ pnpm ${packArgs.join(" ")}`);
+	const packResult = spawnSync("pnpm", packArgs, { stdio: "inherit" });
+	if (packResult.status !== 0) {
+		return false;
 	}
 
-	console.log(`\n$ pnpm ${args.join(" ")}`);
-	const result = spawnSync("pnpm", args, { stdio: "inherit" });
+	const tarballName = `${entry.name.replace(/^@/, "").replace("/", "-")}-${entry.version}.tgz`;
+	const tarballAbs = path.join(packDir, tarballName);
+	if (!existsSync(tarballAbs)) {
+		console.error(`Expected tarball missing: ${tarballAbs}`);
+		return false;
+	}
+
+	const localTarball = `./${path.relative(process.cwd(), tarballAbs)}`;
+	if (dryRun) {
+		console.log(`[dry run] packed ${localTarball}`);
+		return true;
+	}
+
+	// --no-git-checks: git-checks run even for a tarball and fail on a detached
+	// release-tag checkout and on the untracked pack output.
+	const stageArgs = [
+		"stage",
+		"publish",
+		localTarball,
+		"--access",
+		"public",
+		"--provenance",
+		"--no-git-checks",
+	];
+	console.log(`\n$ pnpm ${stageArgs.join(" ")}`);
+	const result = spawnSync("pnpm", stageArgs, { stdio: "inherit" });
 	return result.status === 0;
 }
 
@@ -391,7 +416,7 @@ async function main() {
 	}
 
 	console.log(
-		`\n${args.dryRun ? "[dry run] would publish" : "Publishing"} ${toPublish.length} package(s): ${toPublish
+		`\n${args.dryRun ? "[dry run] would stage" : "Staging"} ${toPublish.length} package(s): ${toPublish
 			.map((entry) => `${entry.name}@${entry.version}`)
 			.join(", ")}`,
 	);
@@ -421,7 +446,7 @@ async function main() {
 
 	console.log("");
 	if (failed.length > 0) {
-		console.error(`Failed to publish ${failed.length} package(s):`);
+		console.error(`Failed to stage ${failed.length} package(s):`);
 		for (const entry of failed) {
 			console.error(`  - ${entry.name}@${entry.version}`);
 		}
@@ -440,8 +465,8 @@ async function main() {
 
 	console.log(
 		args.dryRun
-			? `Dry run complete — ${toPublish.length} package(s) would be published.`
-			: `Published ${published.length} package(s) successfully.`,
+			? `Dry run complete — ${toPublish.length} package(s) would be staged.`
+			: `Staged ${published.length} package(s) successfully.`,
 	);
 }
 
