@@ -545,6 +545,7 @@ export class Cacheable extends Hookified {
 			result = await this._primary.getRaw(key);
 			// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 			let ttl;
+			let primaryBackfill: (() => void) | undefined;
 			// Emit cache hit or miss for primary store
 			if (result) {
 				this.emit(CacheableEvents.CACHE_HIT, {
@@ -563,6 +564,7 @@ export class Cacheable extends Hookified {
 					| {
 							result: StoredDataRaw<T>;
 							ttl?: number | string;
+							backfill?: () => void;
 					  }
 					| undefined;
 				if (nonBlocking) {
@@ -582,12 +584,18 @@ export class Cacheable extends Hookified {
 				if (secondaryProcessResult) {
 					result = secondaryProcessResult.result;
 					ttl = secondaryProcessResult.ttl;
+					primaryBackfill = secondaryProcessResult.backfill;
 				}
 			}
 
 			if (result && this._tags.enabled && (await this._tags.isKeyStale(key))) {
 				await this.delete(key);
 				result = undefined;
+			} else {
+				// A secondary value must be known fresh before its fire-and-forget primary
+				// backfill starts. Otherwise a delayed stale write can race with deletion and
+				// overwrite a value recomputed by getOrSet.
+				primaryBackfill?.();
 			}
 
 			await this.hook(CacheableHooks.AFTER_GET, { key, result, ttl });
@@ -643,15 +651,20 @@ export class Cacheable extends Hookified {
 			}
 
 			const nonBlocking = options?.nonBlocking ?? this._nonBlocking;
+			let primaryBackfills: Array<{
+				index: number;
+				backfill: () => void;
+			}> = [];
 
 			if (this._secondary) {
 				if (nonBlocking) {
-					await this.processSecondaryForGetManyRawNonBlocking(
-						this._primary,
-						this._secondary,
-						keys,
-						result,
-					);
+					primaryBackfills =
+						await this.processSecondaryForGetManyRawNonBlocking(
+							this._primary,
+							this._secondary,
+							keys,
+							result,
+						);
 				} else {
 					await this.processSecondaryForGetManyRaw(
 						this._primary,
@@ -674,6 +687,13 @@ export class Cacheable extends Hookified {
 					}
 
 					await this.deleteMany(staleKeys);
+				}
+			}
+
+			// Start only backfills whose secondary values survived the tag freshness check.
+			for (const { index, backfill } of primaryBackfills) {
+				if (result[index] !== undefined) {
+					backfill();
 				}
 			}
 
@@ -1413,6 +1433,7 @@ export class Cacheable extends Hookified {
 		| {
 				result: StoredDataRaw<T>;
 				ttl?: number | string;
+				backfill: () => void;
 		  }
 		| undefined
 	> {
@@ -1429,23 +1450,26 @@ export class Cacheable extends Hookified {
 			const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 			const setItem = { key, value: secondaryResult.value, ttl };
 
-			// In non-blocking mode, fire and forget the hook and primary store update
-			/* v8 ignore next -- @preserve */
-			this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
-				.then(async () => {
-					await primary.set(
-						setItem.key,
-						setItem.value,
-						resolvePerStoreTtl(setItem.ttl).primary,
-					);
-				})
+			// The caller starts this only after tag freshness has been checked.
+			const backfill = () => {
+				// In non-blocking mode, fire and forget the hook and primary store update
 				/* v8 ignore next -- @preserve */
-				.catch((error) => {
+				this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
+					.then(async () => {
+						await primary.set(
+							setItem.key,
+							setItem.value,
+							resolvePerStoreTtl(setItem.ttl).primary,
+						);
+					})
 					/* v8 ignore next -- @preserve */
-					this.emit(CacheableEvents.ERROR, error);
-				});
+					.catch((error) => {
+						/* v8 ignore next -- @preserve */
+						this.emit(CacheableEvents.ERROR, error);
+					});
+			};
 
-			return { result: secondaryResult, ttl };
+			return { result: secondaryResult, ttl, backfill };
 		} else {
 			// Emit cache miss for secondary store
 			this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
@@ -1529,15 +1553,19 @@ export class Cacheable extends Hookified {
 	 * @param secondary - the secondary store to use
 	 * @param keys - The original array of keys requested
 	 * @param result - The result array from primary store (will be modified)
-	 * @returns Promise<void>
+	 * @returns Deferred primary backfills, keyed by their result index
 	 */
 	private async processSecondaryForGetManyRawNonBlocking<T>(
 		primary: Keyv,
 		secondary: Keyv,
 		keys: string[],
 		result: Array<StoredDataRaw<T>>,
-	): Promise<void> {
+	): Promise<Array<{ index: number; backfill: () => void }>> {
 		const missingKeys = [];
+		const primaryBackfills: Array<{
+			index: number;
+			backfill: () => void;
+		}> = [];
 		for (const [i, key] of keys.entries()) {
 			if (!result[i]) {
 				missingKeys.push(key);
@@ -1573,21 +1601,25 @@ export class Cacheable extends Hookified {
 
 					const setItem = { key, value: secondaryResult.value, ttl };
 
-					// In non-blocking mode, fire and forget the hook and primary store update
-					/* v8 ignore next -- @preserve */
-					this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
-						.then(async () => {
-							await primary.set(
-								setItem.key,
-								setItem.value,
-								resolvePerStoreTtl(setItem.ttl).primary,
-							);
-						})
+					// The caller starts this only after tag freshness has been checked.
+					const backfill = () => {
+						// In non-blocking mode, fire and forget the hook and primary store update
 						/* v8 ignore next -- @preserve */
-						.catch((error) => {
+						this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
+							.then(async () => {
+								await primary.set(
+									setItem.key,
+									setItem.value,
+									resolvePerStoreTtl(setItem.ttl).primary,
+								);
+							})
 							/* v8 ignore next -- @preserve */
-							this.emit(CacheableEvents.ERROR, error);
-						});
+							.catch((error) => {
+								/* v8 ignore next -- @preserve */
+								this.emit(CacheableEvents.ERROR, error);
+							});
+					};
+					primaryBackfills.push({ index: i, backfill });
 				} else {
 					// Emit cache miss for secondary store
 					this.emit(CacheableEvents.CACHE_MISS, {
@@ -1598,6 +1630,8 @@ export class Cacheable extends Hookified {
 				secondaryIndex++;
 			}
 		}
+
+		return primaryBackfills;
 	}
 
 	private setTtl(ttl: number | string | undefined): void {

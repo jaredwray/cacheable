@@ -111,6 +111,51 @@ describe("cacheable tags", () => {
 		expect(calls).toBe(2);
 	});
 
+	test("getOrSet does not backfill a stale secondary value after recomputing", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary, tags: true });
+		const key = "get-or-set-race";
+		const tag = "entity:42";
+
+		await cacheable.set(key, "stale", { tags: [tag] });
+		await primary.delete(key);
+		await cacheable.tags.invalidateTag(tag);
+
+		let releaseStaleBackfill: () => void = () => {};
+		const staleBackfillGate = new Promise<void>((resolve) => {
+			releaseStaleBackfill = resolve;
+		});
+		const originalSet = primary.set.bind(primary);
+		vi.spyOn(primary, "set").mockImplementation(
+			async (setKey: string, value: unknown, ttl?: number) => {
+				if (setKey === key && value === "stale") {
+					await staleBackfillGate;
+				}
+
+				return originalSet(setKey, value, ttl);
+			},
+		);
+
+		const getValue = vi.fn(async () => "fresh");
+		expect(
+			await cacheable.getOrSet(key, getValue, {
+				tags: [tag],
+				nonBlocking: true,
+			}),
+		).toEqual("fresh");
+
+		releaseStaleBackfill();
+		await new Promise<void>((resolve) => {
+			setImmediate(resolve);
+		});
+
+		expect(getValue).toHaveBeenCalledTimes(1);
+		expect(await primary.get(key)).toEqual("fresh");
+		expect(await secondary.get(key)).toEqual("fresh");
+		expect(await cacheable.get(key)).toEqual("fresh");
+	});
+
 	test("set still supports ttl as the third argument", async () => {
 		const cacheable = new Cacheable();
 		const key = faker.string.uuid();
@@ -216,6 +261,50 @@ describe("cacheable tags", () => {
 		expect(await cacheable.getMany(["a", "b", "c"])).toEqual([1, 2, 3]);
 		await cacheable.tags.invalidateTag("x");
 		expect(await cacheable.getMany(["a", "b", "c"])).toEqual([undefined, 2, 3]);
+	});
+
+	test("getMany only backfills tag-fresh secondary values in non-blocking mode", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary, tags: true });
+		const staleKey = "stale-many";
+		const freshKey = "fresh-many";
+
+		await cacheable.setMany([
+			{ key: staleKey, value: "stale", tags: ["stale-tag"] },
+			{ key: freshKey, value: "fresh", tags: ["fresh-tag"] },
+		]);
+		await primary.deleteMany([staleKey, freshKey]);
+		await cacheable.tags.invalidateTag("stale-tag");
+
+		let releaseStaleBackfill: () => void = () => {};
+		const staleBackfillGate = new Promise<void>((resolve) => {
+			releaseStaleBackfill = resolve;
+		});
+		const originalSet = primary.set.bind(primary);
+		vi.spyOn(primary, "set").mockImplementation(
+			async (setKey: string, value: unknown, ttl?: number) => {
+				if (setKey === staleKey && value === "stale") {
+					await staleBackfillGate;
+				}
+
+				return originalSet(setKey, value, ttl);
+			},
+		);
+
+		expect(
+			await cacheable.getMany([staleKey, freshKey], { nonBlocking: true }),
+		).toEqual([undefined, "fresh"]);
+
+		releaseStaleBackfill();
+		await new Promise<void>((resolve) => {
+			setImmediate(resolve);
+		});
+
+		expect(await primary.get(staleKey)).toBeUndefined();
+		expect(await primary.get(freshKey)).toEqual("fresh");
+		expect(await cacheable.get(staleKey)).toBeUndefined();
+		expect(await cacheable.get(freshKey)).toEqual("fresh");
 	});
 
 	test("setMany with tags while disabled stores values without tracking", async () => {
