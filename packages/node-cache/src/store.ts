@@ -1,7 +1,7 @@
 import { Stats, shorthandToMilliseconds } from "@cacheable/utils";
 import { Hookified } from "hookified";
-import type { NodeCacheStats, PartialNodeCacheItem } from "index.js";
 import Keyv from "keyv";
+import type { NodeCacheStats, PartialNodeCacheItem } from "./index.js";
 
 export type NodeCacheStoreOptions<T> = {
 	/**

@@ -1,11 +1,11 @@
 import { NodeCache as CacheableNodeCache } from "@cacheable/node-cache";
+import NodeCache from "node-cache";
 import {
 	createBenchmark,
 	generateAlphaNumeric,
 	getModuleName,
 	printToConsole,
-} from "index.js";
-import NodeCache from "node-cache";
+} from "./src/index.js";
 
 const bench = createBenchmark("NodeCache Benchmark", 100000);
 

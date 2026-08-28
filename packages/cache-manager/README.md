@@ -367,7 +367,7 @@ See unit tests in [`test/del.test.ts`](./test/del.test.ts) for more information.
 
 `mdel(keys: [key]): Promise<true>`
 
-Delete multiple keys, an error will be throw on any failed.
+Delete multiple keys, an error will be throw on any failed. Cache manager makes one bulk deletion call per store, allowing adapters with native multi-delete support (such as `@keyv/redis`) to batch the work into fewer network round trips.
 
 ```ts
 await cache.mset([

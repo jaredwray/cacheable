@@ -7,7 +7,7 @@ import {
 	generateAlphaNumeric,
 	getModuleName,
 	printToConsole,
-} from "index.js";
+} from "./src/index.js";
 
 const bench = createBenchmark("Memory Cache Benchmark", 100000);
 
