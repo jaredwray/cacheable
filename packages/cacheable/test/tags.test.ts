@@ -1,9 +1,32 @@
 import { faker } from "@faker-js/faker";
 import { Keyv } from "keyv";
 import { describe, expect, test, vi } from "vitest";
-import { Cacheable, CacheableEvents, CacheTags } from "../src/index.js";
+import {
+	Cacheable,
+	CacheableEvents,
+	CacheableHooks,
+	CacheTags,
+} from "../src/index.js";
 
 const TAG_PREFIX = "--cacheable--tags--";
+
+type Deferred = {
+	promise: Promise<void>;
+	resolve: () => void;
+};
+
+const createDeferred = (): Deferred => {
+	let resolve: () => void = () => {};
+	const promise = new Promise<void>((promiseResolve) => {
+		resolve = promiseResolve;
+	});
+	return { promise, resolve };
+};
+
+const nextEventLoopTurn = () =>
+	new Promise<void>((resolve) => {
+		setImmediate(resolve);
+	});
 
 describe("cacheable tags", () => {
 	test("tag service is created by default and disabled until enabled", () => {
@@ -111,49 +134,390 @@ describe("cacheable tags", () => {
 		expect(calls).toBe(2);
 	});
 
-	test("getOrSet does not backfill a stale secondary value after recomputing", async () => {
+	test("a scheduled secondary backfill cannot overwrite a newer getOrSet value", async () => {
 		const primary = new Keyv();
 		const secondary = new Keyv();
 		const cacheable = new Cacheable({ primary, secondary, tags: true });
-		const key = "get-or-set-race";
+		const key = "scheduled-backfill-race";
 		const tag = "entity:42";
 
 		await cacheable.set(key, "stale", { tags: [tag] });
 		await primary.delete(key);
-		await cacheable.tags.invalidateTag(tag);
 
-		let releaseStaleBackfill: () => void = () => {};
-		const staleBackfillGate = new Promise<void>((resolve) => {
-			releaseStaleBackfill = resolve;
-		});
-		const originalSet = primary.set.bind(primary);
-		vi.spyOn(primary, "set").mockImplementation(
-			async (setKey: string, value: unknown, ttl?: number) => {
-				if (setKey === key && value === "stale") {
-					await staleBackfillGate;
+		const staleBackfillGate = createDeferred();
+		const staleBackfillStarted = createDeferred();
+		const staleBackfillReleased = createDeferred();
+		cacheable.onHook(
+			CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
+			async (item) => {
+				if (item.key === key && item.value === "stale") {
+					staleBackfillStarted.resolve();
+					await staleBackfillGate.promise;
+					staleBackfillReleased.resolve();
 				}
-
-				return originalSet(setKey, value, ttl);
 			},
 		);
 
-		const getValue = vi.fn(async () => "fresh");
-		expect(
-			await cacheable.getOrSet(key, getValue, {
-				tags: [tag],
-				nonBlocking: true,
-			}),
-		).toEqual("fresh");
+		const freshPrimaryWritten = createDeferred();
+		const originalSet = primary.set.bind(primary);
+		vi.spyOn(primary, "set").mockImplementation(
+			async (setKey: string, value: unknown, ttl?: number) => {
+				const result = await originalSet(setKey, value, ttl);
+				if (setKey === key && value === "fresh") {
+					freshPrimaryWritten.resolve();
+				}
+				return result;
+			},
+		);
 
-		releaseStaleBackfill();
-		await new Promise<void>((resolve) => {
-			setImmediate(resolve);
+		// The secondary value is fresh when this non-blocking backfill is scheduled.
+		expect(await cacheable.get(key, { nonBlocking: true })).toEqual("stale");
+		await staleBackfillStarted.promise;
+
+		await cacheable.tags.invalidateTag(tag);
+		const getValue = vi.fn(async () => "fresh");
+		const recompute = cacheable.getOrSet(key, getValue, {
+			tags: [tag],
+			nonBlocking: true,
 		});
+
+		// Allow cancellation to write immediately, or serialization to wait for the gate.
+		await Promise.race([freshPrimaryWritten.promise, nextEventLoopTurn()]);
+		staleBackfillGate.resolve();
+
+		expect(await recompute).toEqual("fresh");
+		await Promise.all([
+			freshPrimaryWritten.promise,
+			staleBackfillReleased.promise,
+		]);
+		await nextEventLoopTurn();
 
 		expect(getValue).toHaveBeenCalledTimes(1);
 		expect(await primary.get(key)).toEqual("fresh");
 		expect(await secondary.get(key)).toEqual("fresh");
 		expect(await cacheable.get(key)).toEqual("fresh");
+	});
+
+	test("getOrSet waits for an in-flight secondary backfill write", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary, tags: true });
+		const key = "writing-backfill-race";
+		const tag = "entity:42";
+
+		await cacheable.set(key, "stale", { tags: [tag] });
+		await primary.delete(key);
+
+		const staleWriteGate = createDeferred();
+		const staleWriteStarted = createDeferred();
+		const staleWriteFinished = createDeferred();
+		const originalPrimarySet = primary.set.bind(primary);
+		vi.spyOn(primary, "set").mockImplementation(
+			async (setKey: string, value: unknown, ttl?: number) => {
+				const result = await originalPrimarySet(setKey, value, ttl);
+				if (setKey === key && value === "stale") {
+					staleWriteStarted.resolve();
+					await staleWriteGate.promise;
+					staleWriteFinished.resolve();
+				}
+				return result;
+			},
+		);
+
+		expect(await cacheable.get(key, { nonBlocking: true })).toEqual("stale");
+		await staleWriteStarted.promise;
+		expect(await primary.get(key)).toEqual("stale");
+
+		await cacheable.tags.invalidateTag(tag);
+		const getValue = vi.fn(async () => "fresh");
+		let recomputeSettled = false;
+		const recompute = cacheable
+			.getOrSet(key, getValue, { tags: [tag], nonBlocking: true })
+			.finally(() => {
+				recomputeSettled = true;
+			});
+
+		await nextEventLoopTurn();
+		const settledBeforeRelease = recomputeSettled;
+		staleWriteGate.resolve();
+
+		expect(await recompute).toEqual("fresh");
+		await staleWriteFinished.promise;
+		expect(settledBeforeRelease).toBe(false);
+		expect(getValue).toHaveBeenCalledTimes(1);
+		expect(await primary.get(key)).toEqual("fresh");
+		expect(await secondary.get(key)).toEqual("fresh");
+		expect(await cacheable.get(key)).toEqual("fresh");
+	});
+
+	test("a rejected non-blocking secondary read releases its controller", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary });
+		const key = "rejected-secondary-read";
+		const error = new Error("secondary read failed");
+		const errors = vi.fn();
+		cacheable.on(CacheableEvents.ERROR, errors);
+		vi.spyOn(secondary, "getRaw").mockRejectedValueOnce(error);
+
+		expect(await cacheable.get(key, { nonBlocking: true })).toBeUndefined();
+		expect(errors).toHaveBeenCalledWith(error);
+
+		let setSettled = false;
+		const setResult = cacheable.set(key, "fresh").finally(() => {
+			setSettled = true;
+		});
+		await nextEventLoopTurn();
+
+		expect(setSettled).toBe(true);
+		expect(await setResult).toBe(true);
+		expect(await cacheable.get(key)).toEqual("fresh");
+	});
+
+	test("a rejected non-blocking batched secondary read releases its controllers", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary });
+		const keys = ["rejected-secondary-many-a", "rejected-secondary-many-b"];
+		const error = new Error("secondary batched read failed");
+		const errors = vi.fn();
+		cacheable.on(CacheableEvents.ERROR, errors);
+		vi.spyOn(secondary, "getManyRaw").mockRejectedValueOnce(error);
+
+		expect(await cacheable.getMany(keys, { nonBlocking: true })).toEqual([
+			undefined,
+			undefined,
+		]);
+		expect(errors).toHaveBeenCalledWith(error);
+
+		let setManySettled = false;
+		const setManyResult = cacheable
+			.setMany([
+				{ key: keys[0], value: "fresh-a" },
+				{ key: keys[1], value: "fresh-b" },
+			])
+			.finally(() => {
+				setManySettled = true;
+			});
+		await nextEventLoopTurn();
+
+		expect(setManySettled).toBe(true);
+		expect(await setManyResult).toBe(true);
+		expect(await cacheable.getMany(keys)).toEqual(["fresh-a", "fresh-b"]);
+	});
+
+	test("an authoritative set cancels a backfill before its secondary read returns", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary });
+		const key = "cancelled-pending-backfill";
+
+		await secondary.set(key, "stale");
+		const secondaryReadGate = createDeferred();
+		const secondaryReadStarted = createDeferred();
+		const originalSecondaryGetRaw = secondary.getRaw.bind(secondary);
+		vi.spyOn(secondary, "getRaw").mockImplementation(
+			async (readKey: string) => {
+				const result = await originalSecondaryGetRaw(readKey);
+				if (readKey === key) {
+					secondaryReadStarted.resolve();
+					await secondaryReadGate.promise;
+				}
+				return result;
+			},
+		);
+		const backfillHook = vi.fn();
+		cacheable.onHook(
+			CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY,
+			backfillHook,
+		);
+
+		const oldRead = cacheable.get(key, { nonBlocking: true });
+		await secondaryReadStarted.promise;
+		expect(await cacheable.set(key, "fresh")).toBe(true);
+		secondaryReadGate.resolve();
+
+		expect(await oldRead).toEqual("stale");
+		await nextEventLoopTurn();
+		expect(backfillHook).not.toHaveBeenCalled();
+		expect(await primary.get(key)).toEqual("fresh");
+		expect(await secondary.get(key)).toEqual("fresh");
+		expect(await cacheable.get(key)).toEqual("fresh");
+	});
+
+	test("a rejected non-blocking primary backfill releases its controller", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary });
+		const key = "rejected-primary-backfill";
+		const error = new Error("primary backfill failed");
+
+		await secondary.set(key, "stale");
+		const backfillErrorEmitted = createDeferred();
+		const errors = vi.fn((emittedError: unknown) => {
+			if (emittedError === error) {
+				backfillErrorEmitted.resolve();
+			}
+		});
+		cacheable.on(CacheableEvents.ERROR, errors);
+
+		const originalPrimarySet = primary.set.bind(primary);
+		let shouldRejectBackfill = true;
+		vi.spyOn(primary, "set").mockImplementation(
+			async (setKey: string, value: unknown, ttl?: number) => {
+				if (setKey === key && value === "stale" && shouldRejectBackfill) {
+					shouldRejectBackfill = false;
+					throw error;
+				}
+				return originalPrimarySet(setKey, value, ttl);
+			},
+		);
+
+		expect(await cacheable.get(key, { nonBlocking: true })).toEqual("stale");
+		await backfillErrorEmitted.promise;
+		expect(errors).toHaveBeenCalledWith(error);
+
+		let setSettled = false;
+		const setResult = cacheable.set(key, "fresh").finally(() => {
+			setSettled = true;
+		});
+		await nextEventLoopTurn();
+
+		expect(setSettled).toBe(true);
+		expect(await setResult).toBe(true);
+		expect(await primary.get(key)).toEqual("fresh");
+		expect(await secondary.get(key)).toEqual("fresh");
+		expect(await cacheable.get(key)).toEqual("fresh");
+	});
+
+	test("a delayed stale secondary delete cannot erase a recomputed value", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({
+			primary,
+			secondary,
+			nonBlocking: true,
+			tags: true,
+		});
+		const key = "secondary-delete-race";
+		const tag = "entity:42";
+
+		await cacheable.set(key, "stale", {
+			nonBlocking: false,
+			tags: [tag],
+		});
+		await cacheable.tags.invalidateTag(tag);
+
+		const staleDeleteGate = createDeferred();
+		const staleDeleteStarted = createDeferred();
+		const staleDeleteFinished = createDeferred();
+		const originalDelete = secondary.delete.bind(secondary);
+		vi.spyOn(secondary, "delete").mockImplementation(
+			async (deleteKey: string | string[]) => {
+				if (deleteKey === key) {
+					staleDeleteStarted.resolve();
+					await staleDeleteGate.promise;
+					const result = await originalDelete(deleteKey);
+					staleDeleteFinished.resolve();
+					return result;
+				}
+				return originalDelete(deleteKey);
+			},
+		);
+
+		const freshSecondaryWritten = createDeferred();
+		const originalSecondarySet = secondary.set.bind(secondary);
+		vi.spyOn(secondary, "set").mockImplementation(
+			async (setKey: string, value: unknown, ttl?: number) => {
+				const result = await originalSecondarySet(setKey, value, ttl);
+				if (setKey === key && value === "fresh") {
+					freshSecondaryWritten.resolve();
+				}
+				return result;
+			},
+		);
+
+		const recompute = cacheable.getOrSet(key, async () => "fresh", {
+			tags: [tag],
+		});
+		await staleDeleteStarted.promise;
+		await Promise.race([freshSecondaryWritten.promise, nextEventLoopTurn()]);
+		staleDeleteGate.resolve();
+
+		expect(await recompute).toEqual("fresh");
+		await Promise.all([
+			staleDeleteFinished.promise,
+			freshSecondaryWritten.promise,
+		]);
+		await nextEventLoopTurn();
+
+		expect(await secondary.get(key)).toEqual("fresh");
+		expect(await cacheable.get(key)).toEqual("fresh");
+	});
+
+	test("a delayed stale snapshot delete cannot erase a newer tag snapshot", async () => {
+		const primary = new Keyv();
+		const cacheable = new Cacheable({
+			primary,
+			nonBlocking: true,
+			tags: true,
+		});
+		const key = "snapshot-delete-race";
+		const tag = "entity:42";
+		const snapshotKey = `${TAG_PREFIX}:default:key:${key}`;
+
+		await cacheable.set(key, "stale", {
+			nonBlocking: false,
+			tags: [tag],
+		});
+		await cacheable.tags.invalidateTag(tag);
+
+		const staleSnapshotDeleteGate = createDeferred();
+		const staleSnapshotDeleteStarted = createDeferred();
+		const staleSnapshotDeleteFinished = createDeferred();
+		const originalDeleteMany = primary.deleteMany.bind(primary);
+		let shouldDelaySnapshotDelete = true;
+		vi.spyOn(primary, "deleteMany").mockImplementation(
+			async (keys: string[]) => {
+				if (shouldDelaySnapshotDelete && keys.includes(snapshotKey)) {
+					shouldDelaySnapshotDelete = false;
+					staleSnapshotDeleteStarted.resolve();
+					await staleSnapshotDeleteGate.promise;
+					const result = await originalDeleteMany(keys);
+					staleSnapshotDeleteFinished.resolve();
+					return result;
+				}
+				return originalDeleteMany(keys);
+			},
+		);
+
+		const freshSnapshotWritten = createDeferred();
+		const originalPrimarySet = primary.set.bind(primary);
+		vi.spyOn(primary, "set").mockImplementation(
+			async (setKey: string, value: unknown, ttl?: number) => {
+				const result = await originalPrimarySet(setKey, value, ttl);
+				if (setKey === snapshotKey) {
+					freshSnapshotWritten.resolve();
+				}
+				return result;
+			},
+		);
+
+		const recompute = cacheable.getOrSet(key, async () => "fresh", {
+			tags: [tag],
+		});
+		await staleSnapshotDeleteStarted.promise;
+		await Promise.race([freshSnapshotWritten.promise, nextEventLoopTurn()]);
+		staleSnapshotDeleteGate.resolve();
+
+		expect(await recompute).toEqual("fresh");
+		await Promise.all([
+			staleSnapshotDeleteFinished.promise,
+			freshSnapshotWritten.promise,
+		]);
+		await nextEventLoopTurn();
+
+		expect(await cacheable.tags.getTags(key)).toEqual([tag]);
+		await cacheable.tags.invalidateTag(tag);
+		expect(await cacheable.get(key)).toBeUndefined();
 	});
 
 	test("set still supports ttl as the third argument", async () => {

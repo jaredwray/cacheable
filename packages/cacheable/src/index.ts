@@ -69,6 +69,16 @@ export type CacheableHookHandlerMap = {
 	) => void | Promise<void>;
 };
 
+type PrimaryBackfillPhase = "pending" | "hook" | "writing" | "done";
+
+type PrimaryBackfillController = {
+	key: string;
+	cancelled: boolean;
+	phase: PrimaryBackfillPhase;
+	done: Promise<void>;
+	resolveDone: () => void;
+};
+
 export class Cacheable extends Hookified {
 	private static _instance?: Cacheable;
 	private _primary: Keyv = createKeyv();
@@ -81,6 +91,10 @@ export class Cacheable extends Hookified {
 	private _cacheId: string = Math.random().toString(36).slice(2);
 	private _sync?: CacheableSync;
 	private _tags: CacheTags = this.createCacheTags();
+	private readonly _primaryBackfills = new Map<
+		string,
+		Set<PrimaryBackfillController>
+	>();
 	/**
 	 * Creates a new cacheable instance
 	 * @param {CacheableOptions} [options] The options for the cacheable instance
@@ -539,13 +553,15 @@ export class Cacheable extends Hookified {
 		options?: GetOptions,
 	): Promise<StoredDataRaw<T>> {
 		let result: StoredDataRaw<T>;
+		let primaryBackfill:
+			| { backfill: () => void; discard: () => void }
+			| undefined;
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET, key);
 			result = await this._primary.getRaw(key);
 			// biome-ignore lint/suspicious/noImplicitAnyLet: allowed
 			let ttl;
-			let primaryBackfill: (() => void) | undefined;
 			// Emit cache hit or miss for primary store
 			if (result) {
 				this.emit(CacheableEvents.CACHE_HIT, {
@@ -565,6 +581,7 @@ export class Cacheable extends Hookified {
 							result: StoredDataRaw<T>;
 							ttl?: number | string;
 							backfill?: () => void;
+							discard?: () => void;
 					  }
 					| undefined;
 				if (nonBlocking) {
@@ -584,22 +601,34 @@ export class Cacheable extends Hookified {
 				if (secondaryProcessResult) {
 					result = secondaryProcessResult.result;
 					ttl = secondaryProcessResult.ttl;
-					primaryBackfill = secondaryProcessResult.backfill;
+					if (
+						secondaryProcessResult.backfill &&
+						secondaryProcessResult.discard
+					) {
+						primaryBackfill = {
+							backfill: secondaryProcessResult.backfill,
+							discard: secondaryProcessResult.discard,
+						};
+					}
 				}
 			}
 
 			if (result && this._tags.enabled && (await this._tags.isKeyStale(key))) {
-				await this.delete(key);
+				primaryBackfill?.discard();
+				primaryBackfill = undefined;
+				await this.deleteInternal(key, false);
 				result = undefined;
 			} else {
 				// A secondary value must be known fresh before its fire-and-forget primary
 				// backfill starts. Otherwise a delayed stale write can race with deletion and
 				// overwrite a value recomputed by getOrSet.
-				primaryBackfill?.();
+				primaryBackfill?.backfill();
+				primaryBackfill = undefined;
 			}
 
 			await this.hook(CacheableHooks.AFTER_GET, { key, result, ttl });
 		} catch (error: unknown) {
+			primaryBackfill?.discard();
 			this.emit(CacheableEvents.ERROR, error);
 		}
 
@@ -633,6 +662,11 @@ export class Cacheable extends Hookified {
 		options?: GetOptions,
 	): Promise<Array<StoredDataRaw<T>>> {
 		let result: Array<StoredDataRaw<T>> = [];
+		let primaryBackfills: Array<{
+			index: number;
+			backfill: () => void;
+			discard: () => void;
+		}> = [];
 
 		try {
 			await this.hook(CacheableHooks.BEFORE_GET_MANY, keys);
@@ -651,10 +685,6 @@ export class Cacheable extends Hookified {
 			}
 
 			const nonBlocking = options?.nonBlocking ?? this._nonBlocking;
-			let primaryBackfills: Array<{
-				index: number;
-				backfill: () => void;
-			}> = [];
 
 			if (this._secondary) {
 				if (nonBlocking) {
@@ -686,19 +716,25 @@ export class Cacheable extends Hookified {
 						}
 					}
 
-					await this.deleteMany(staleKeys);
+					await this.deleteManyInternal(staleKeys, false);
 				}
 			}
 
 			// Start only backfills whose secondary values survived the tag freshness check.
-			for (const { index, backfill } of primaryBackfills) {
+			for (const { index, backfill, discard } of primaryBackfills) {
 				if (result[index] !== undefined) {
 					backfill();
+				} else {
+					discard();
 				}
 			}
+			primaryBackfills = [];
 
 			await this.hook(CacheableHooks.AFTER_GET_MANY, { keys, result });
 		} catch (error: unknown) {
+			for (const { discard } of primaryBackfills) {
+				discard();
+			}
 			this.emit(CacheableEvents.ERROR, error);
 		}
 
@@ -752,6 +788,7 @@ export class Cacheable extends Hookified {
 		value: T,
 		ttlOrOptions?: number | string | SetOptions,
 	): Promise<boolean> {
+		const primaryBackfillBarrier = this.cancelPrimaryBackfills([key]);
 		let result = false;
 		const options: SetOptions =
 			typeof ttlOrOptions === "object" && ttlOrOptions !== null
@@ -762,6 +799,7 @@ export class Cacheable extends Hookified {
 			resolvePerStoreTtl(options.ttl);
 		const maxTtlMs = shorthandToMilliseconds(this._maxTtl);
 		try {
+			await primaryBackfillBarrier;
 			let primaryTtl = getCascadingTtl(
 				this._ttl,
 				this._primary.ttl,
@@ -902,8 +940,12 @@ export class Cacheable extends Hookified {
 	 * @returns {boolean} Whether the values were set
 	 */
 	public async setMany(items: CacheableSetItem[]): Promise<boolean> {
+		const primaryBackfillBarrier = this.cancelPrimaryBackfills(
+			items.map((item) => item.key),
+		);
 		let result = false;
 		try {
+			await primaryBackfillBarrier;
 			await this.hook(CacheableHooks.BEFORE_SET_MANY, items);
 			result = await this.setManyKeyv(this._primary, items, "primary");
 			if (this._secondary) {
@@ -1042,6 +1084,15 @@ export class Cacheable extends Hookified {
 	 * @returns {Promise<boolean>} Whether the key was deleted
 	 */
 	public async delete(key: string): Promise<boolean> {
+		return this.deleteInternal(key, this.nonBlocking);
+	}
+
+	private async deleteInternal(
+		key: string,
+		nonBlocking: boolean,
+	): Promise<boolean> {
+		const primaryBackfillBarrier = this.cancelPrimaryBackfills([key]);
+		await primaryBackfillBarrier;
 		let result = false;
 		const promises = [];
 		if (this.stats.enabled) {
@@ -1060,7 +1111,7 @@ export class Cacheable extends Hookified {
 			promises.push(this._secondary.delete(key));
 		}
 
-		if (this.nonBlocking) {
+		if (nonBlocking) {
 			result = await Promise.race(promises);
 			// Catch any rejected promises to avoid unhandled rejections
 			for (const promise of promises) {
@@ -1074,7 +1125,7 @@ export class Cacheable extends Hookified {
 		}
 
 		if (this._tags.enabled) {
-			await this._tags.removeKeys([key], { nonBlocking: this.nonBlocking });
+			await this._tags.removeKeys([key], { nonBlocking });
 		}
 
 		// Publish to sync if enabled
@@ -1094,6 +1145,15 @@ export class Cacheable extends Hookified {
 	 * @returns {Promise<boolean>} Whether the keys were deleted
 	 */
 	public async deleteMany(keys: string[]): Promise<boolean> {
+		return this.deleteManyInternal(keys, this._nonBlocking);
+	}
+
+	private async deleteManyInternal(
+		keys: string[],
+		nonBlocking: boolean,
+	): Promise<boolean> {
+		const primaryBackfillBarrier = this.cancelPrimaryBackfills(keys);
+		await primaryBackfillBarrier;
 		if (this.stats.enabled) {
 			const statResult = (await this._primary.get(keys)) as unknown;
 			for (const key of keys) {
@@ -1106,7 +1166,7 @@ export class Cacheable extends Hookified {
 
 		const result = await this._primary.deleteMany(keys);
 		if (this._secondary) {
-			if (this._nonBlocking) {
+			if (nonBlocking) {
 				// Catch any errors to avoid unhandled promise rejections
 				this._secondary.deleteMany(keys).catch((error) => {
 					this.emit(CacheableEvents.ERROR, error);
@@ -1117,7 +1177,7 @@ export class Cacheable extends Hookified {
 		}
 
 		if (this._tags.enabled) {
-			await this._tags.removeKeys(keys, { nonBlocking: this._nonBlocking });
+			await this._tags.removeKeys(keys, { nonBlocking });
 		}
 
 		// Publish to sync if enabled
@@ -1371,6 +1431,99 @@ export class Cacheable extends Hookified {
 
 		await Promise.all(promises);
 	}
+	private createPrimaryBackfill(key: string): PrimaryBackfillController {
+		let resolveDone!: () => void;
+		const done = new Promise<void>((resolve) => {
+			resolveDone = resolve;
+		});
+		const controller: PrimaryBackfillController = {
+			key,
+			cancelled: false,
+			phase: "pending",
+			done,
+			resolveDone,
+		};
+		const controllers =
+			this._primaryBackfills.get(key) ?? new Set<PrimaryBackfillController>();
+		controllers.add(controller);
+		this._primaryBackfills.set(key, controllers);
+		return controller;
+	}
+
+	private finishPrimaryBackfill(controller: PrimaryBackfillController): void {
+		if (controller.phase === "done") {
+			return;
+		}
+
+		controller.phase = "done";
+		controller.resolveDone();
+		const controllers = this._primaryBackfills.get(controller.key);
+		controllers?.delete(controller);
+		if (controllers?.size === 0) {
+			this._primaryBackfills.delete(controller.key);
+		}
+	}
+
+	private discardPrimaryBackfill(controller: PrimaryBackfillController): void {
+		controller.cancelled = true;
+		/* v8 ignore next -- @preserve */
+		if (controller.phase !== "writing") {
+			this.finishPrimaryBackfill(controller);
+		}
+	}
+
+	private cancelPrimaryBackfills(keys: string[]): Promise<void> {
+		const writing: Promise<void>[] = [];
+		for (const key of new Set(keys)) {
+			const controllers = this._primaryBackfills.get(key);
+			if (!controllers) {
+				continue;
+			}
+
+			for (const controller of [...controllers]) {
+				controller.cancelled = true;
+				if (controller.phase === "writing") {
+					writing.push(controller.done);
+				} else {
+					this.finishPrimaryBackfill(controller);
+				}
+			}
+		}
+
+		return Promise.all(writing).then(() => undefined);
+	}
+
+	private startPrimaryBackfill(
+		controller: PrimaryBackfillController,
+		primary: Keyv,
+		setItem: CacheableSecondarySetsPrimaryItem,
+	): void {
+		if (controller.cancelled || controller.phase === "done") {
+			this.finishPrimaryBackfill(controller);
+			return;
+		}
+
+		controller.phase = "hook";
+		void (async () => {
+			try {
+				await this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem);
+				if (controller.cancelled) {
+					return;
+				}
+
+				controller.phase = "writing";
+				await primary.set(
+					setItem.key,
+					setItem.value,
+					resolvePerStoreTtl(setItem.ttl).primary,
+				);
+			} catch (error: unknown) {
+				this.emit(CacheableEvents.ERROR, error);
+			} finally {
+				this.finishPrimaryBackfill(controller);
+			}
+		})();
+	}
 
 	/**
 	 * Processes a single key from secondary store for getRaw operation
@@ -1434,12 +1587,20 @@ export class Cacheable extends Hookified {
 				result: StoredDataRaw<T>;
 				ttl?: number | string;
 				backfill: () => void;
+				discard: () => void;
 		  }
 		| undefined
 	> {
-		const secondaryResult = await secondary.getRaw<T>(key);
+		const controller = this.createPrimaryBackfill(key);
+		let secondaryResult: StoredDataRaw<T> | undefined;
+		try {
+			secondaryResult = await secondary.getRaw<T>(key);
+		} catch (error: unknown) {
+			this.discardPrimaryBackfill(controller);
+			throw error;
+		}
+
 		if (secondaryResult?.value) {
-			// Emit cache hit for secondary store
 			this.emit(CacheableEvents.CACHE_HIT, {
 				key,
 				value: secondaryResult.value,
@@ -1449,32 +1610,19 @@ export class Cacheable extends Hookified {
 			const expires = secondaryResult.expires ?? undefined;
 			const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
 			const setItem = { key, value: secondaryResult.value, ttl };
-
-			// The caller starts this only after tag freshness has been checked.
 			const backfill = () => {
-				// In non-blocking mode, fire and forget the hook and primary store update
-				/* v8 ignore next -- @preserve */
-				this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
-					.then(async () => {
-						await primary.set(
-							setItem.key,
-							setItem.value,
-							resolvePerStoreTtl(setItem.ttl).primary,
-						);
-					})
-					/* v8 ignore next -- @preserve */
-					.catch((error) => {
-						/* v8 ignore next -- @preserve */
-						this.emit(CacheableEvents.ERROR, error);
-					});
+				this.startPrimaryBackfill(controller, primary, setItem);
+			};
+			const discard = () => {
+				this.discardPrimaryBackfill(controller);
 			};
 
-			return { result: secondaryResult, ttl, backfill };
-		} else {
-			// Emit cache miss for secondary store
-			this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
-			return undefined;
+			return { result: secondaryResult, ttl, backfill, discard };
 		}
+
+		this.discardPrimaryBackfill(controller);
+		this.emit(CacheableEvents.CACHE_MISS, { key, store: "secondary" });
+		return undefined;
 	}
 
 	/**
@@ -1560,74 +1708,73 @@ export class Cacheable extends Hookified {
 		secondary: Keyv,
 		keys: string[],
 		result: Array<StoredDataRaw<T>>,
-	): Promise<Array<{ index: number; backfill: () => void }>> {
-		const missingKeys = [];
-		const primaryBackfills: Array<{
+	): Promise<
+		Array<{
 			index: number;
 			backfill: () => void;
+			discard: () => void;
+		}>
+	> {
+		const missingItems: Array<{
+			index: number;
+			key: string;
+			controller: PrimaryBackfillController;
 		}> = [];
-		for (const [i, key] of keys.entries()) {
-			if (!result[i]) {
-				missingKeys.push(key);
+		for (const [index, key] of keys.entries()) {
+			if (!result[index]) {
+				missingItems.push({
+					index,
+					key,
+					controller: this.createPrimaryBackfill(key),
+				});
 			}
 		}
 
-		// Get secondary results synchronously but don't wait for primary store updates
-		const secondaryResults = await secondary.getManyRaw<T>(missingKeys);
+		let secondaryResults: Array<StoredDataRaw<T>>;
+		try {
+			secondaryResults = await secondary.getManyRaw<T>(
+				missingItems.map((item) => item.key),
+			);
+		} catch (error: unknown) {
+			for (const { controller } of missingItems) {
+				this.discardPrimaryBackfill(controller);
+			}
+			throw error;
+		}
 
-		let secondaryIndex = 0;
-		for await (const [i, key] of keys.entries()) {
-			if (!result[i]) {
-				const secondaryResult = secondaryResults[secondaryIndex];
-				if (secondaryResult && secondaryResult.value !== undefined) {
-					result[i] = secondaryResult;
-					// Emit cache hit for secondary store
-					this.emit(CacheableEvents.CACHE_HIT, {
-						key,
-						value: secondaryResult.value,
-						store: "secondary",
-					});
+		const primaryBackfills: Array<{
+			index: number;
+			backfill: () => void;
+			discard: () => void;
+		}> = [];
+		for (const [secondaryIndex, item] of missingItems.entries()) {
+			const { index, key, controller } = item;
+			const secondaryResult = secondaryResults[secondaryIndex];
+			if (secondaryResult && secondaryResult.value !== undefined) {
+				result[index] = secondaryResult;
+				this.emit(CacheableEvents.CACHE_HIT, {
+					key,
+					value: secondaryResult.value,
+					store: "secondary",
+				});
 
-					const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
-
-					let { expires } = secondaryResult;
-
-					/* v8 ignore next -- @preserve */
-					if (expires === null) {
-						expires = undefined;
-					}
-
-					const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
-
-					const setItem = { key, value: secondaryResult.value, ttl };
-
-					// The caller starts this only after tag freshness has been checked.
-					const backfill = () => {
-						// In non-blocking mode, fire and forget the hook and primary store update
-						/* v8 ignore next -- @preserve */
-						this.hook(CacheableHooks.BEFORE_SECONDARY_SETS_PRIMARY, setItem)
-							.then(async () => {
-								await primary.set(
-									setItem.key,
-									setItem.value,
-									resolvePerStoreTtl(setItem.ttl).primary,
-								);
-							})
-							/* v8 ignore next -- @preserve */
-							.catch((error) => {
-								/* v8 ignore next -- @preserve */
-								this.emit(CacheableEvents.ERROR, error);
-							});
-					};
-					primaryBackfills.push({ index: i, backfill });
-				} else {
-					// Emit cache miss for secondary store
-					this.emit(CacheableEvents.CACHE_MISS, {
-						key,
-						store: "secondary",
-					});
-				}
-				secondaryIndex++;
+				const cascadeTtl = getCascadingTtl(this._ttl, this._primary.ttl);
+				const expires = secondaryResult.expires ?? undefined;
+				const ttl = calculateTtlFromExpiration(cascadeTtl, expires);
+				const setItem = { key, value: secondaryResult.value, ttl };
+				const backfill = () => {
+					this.startPrimaryBackfill(controller, primary, setItem);
+				};
+				const discard = () => {
+					this.discardPrimaryBackfill(controller);
+				};
+				primaryBackfills.push({ index, backfill, discard });
+			} else {
+				this.discardPrimaryBackfill(controller);
+				this.emit(CacheableEvents.CACHE_MISS, {
+					key,
+					store: "secondary",
+				});
 			}
 		}
 

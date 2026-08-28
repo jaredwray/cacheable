@@ -1,5 +1,8 @@
 {
   "name": "Node.js",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:latest",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {}
+  },
   "postCreateCommand": "bash ./scripts/setup-cloud-environment.sh"
 }

@@ -10,10 +10,11 @@ import type { CacheableSync, CacheableSyncOptions } from "./sync.js";
 export type { PerStoreTtl } from "@cacheable/utils";
 
 /**
- * Options for {@link Cacheable.getOrSet}. Identical to the shared
- * `GetOrSetFunctionOptions` from `@cacheable/utils`, except `ttl` also accepts a per-store object
+ * Options for {@link Cacheable.getOrSet}. Extends the shared `GetOrSetFunctionOptions` from
+ * `@cacheable/utils` with per-store TTLs and tags. The `ttl` option also accepts a per-store object
  * (`{ primary, secondary }`) so the primary and secondary stores can be given different
- * expirations for that operation.
+ * expirations for that operation, while `tags` associates newly computed entries with tags for
+ * invalidation.
  */
 export type GetOrSetFunctionOptions = Omit<
 	UtilsGetOrSetFunctionOptions,
