@@ -796,12 +796,17 @@ const cache = new Cacheable({ tags: true });
 
 await cache.set('page:/products', html, { ttl: '10m', tags: ['entity:42', 'collection:products'] });
 await cache.set('page:/products/42', detailHtml, { ttl: '10m', tags: ['entity:42'] });
+await cache.getOrSet('summary:products', loadSummary, { ttl: '10m', tags: ['collection:products'] });
 
 // entity 42 changed - purge everything that referenced it
 await cache.tags.invalidateTag('entity:42');
 
 await cache.get('page:/products'); // undefined
 await cache.get('page:/products/42'); // undefined
+
+// the product collection changed - purge values tagged with the collection
+await cache.tags.invalidateTag('collection:products');
+await cache.get('summary:products'); // undefined
 ```
 
 You can also pass tags per item with `setMany`, and invalidate several tags at once:
@@ -1064,20 +1069,21 @@ To learn more visit [@cacheable/utils](https://cacheable.org/docs/utils/)
 
 # Get Or Set Memoization Function
 
-The `getOrSet`  method that comes from [@cacheable/utils](https://cacheable.org/docs/utils/) provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value from cache, and if not found, calls the provided function to compute the value and store it in cache before returning it. Here are the options:
+The `Cacheable#getOrSet` method is backed by [@cacheable/utils](https://cacheable.org/docs/utils/) and provides a convenient way to implement the cache-aside pattern. It attempts to retrieve a value from cache, and if not found, calls the provided function to compute the value and store it in cache before returning it. `Cacheable#getOrSet` extends the standalone utility with per-store TTL and tag options; the standalone `@cacheable/utils` `getOrSet` function does not support tags. Here are the `Cacheable#getOrSet` options:
 
 ```typescript
 export type GetOrSetFunctionOptions = {
 	ttl?: number | string | { primary?: number | string; secondary?: number | string };
+	tags?: string[];
 	cacheErrors?: boolean;
-	throwErrors?: boolean;
+	throwErrors?: boolean | 'function' | 'store';
 	nonBlocking?: boolean;
 };
 ```
 
-The `ttl` also accepts a [per-store object](#per-store-ttl-per-operation) such as `{ primary: '10s', secondary: '5m' }` to give the primary and secondary stores different expirations for this operation.
+The `ttl` also accepts a [per-store object](#per-store-ttl-per-operation) such as `{ primary: '10s', secondary: '5m' }` to give the primary and secondary stores different expirations for this operation. The `tags` option associates a newly computed value with tags for [tag-based invalidation](#tag-based-invalidation). Tag tracking must be enabled with `new Cacheable({ tags: true })`. Tags are applied only when `getOrSet` stores a newly computed value after a cache miss; a cache hit returns the existing value without replacing its tags.
 
-The `nonBlocking` option allows you to override the instance-level `nonBlocking` setting for the `get` call within `getOrSet`. When set to `false`, the `get` will block and wait for a response from the secondary store before deciding whether to call the provided function. When set to `true`, the primary store returns immediately and syncs from secondary in the background.
+The `nonBlocking` option overrides the instance-level `nonBlocking` setting for the `get` call within `getOrSet` only. After a primary miss, both modes await the secondary-store read before deciding whether to call the provided function. If the secondary store has a value, `nonBlocking: true` returns it while the secondary-to-primary backfill and its hook run on a fire-and-forget basis; `nonBlocking: false` waits for the hook and backfill to complete before returning.
 
 Here is an example of how to use the `getOrSet` method:
 
@@ -1092,8 +1098,9 @@ console.log(value); // e.g. 42.123456789
 
 You can also use a function to compute the key for the function:
 
-```javascript
-import { Cacheable, GetOrSetOptions } from 'cacheable';
+```typescript
+import { Cacheable } from 'cacheable';
+import type { GetOrSetOptions } from 'cacheable';
 const cache = new Cacheable();
 
 // Function to generate a key based on options
@@ -1102,7 +1109,7 @@ const generateKey = (options?: GetOrSetOptions) => {
 };
 
 const function_ = async () => Math.random() * 100;
-const value = await cache.getOrSet(generateKey(), function_, { ttl: '1h' });
+const value = await cache.getOrSet(generateKey, function_, { ttl: '1h' });
 ```
 
 To learn more go to [@cacheable/utils](https://cacheable.org/docs/utils/)
