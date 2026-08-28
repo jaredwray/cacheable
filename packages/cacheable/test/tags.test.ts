@@ -319,6 +319,36 @@ describe("cacheable tags", () => {
 		expect(await cacheable.getMany(keys)).toEqual(["fresh-a", "fresh-b"]);
 	});
 
+	test("a rejected tag check discards pending batched backfills", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ primary, secondary, tags: true });
+		const keys = ["rejected-tag-check-a", "rejected-tag-check-b"];
+		const error = new Error("tag freshness check failed");
+		const errors = vi.fn();
+		cacheable.on(CacheableEvents.ERROR, errors);
+		await secondary.setMany([
+			{ key: keys[0], value: "stale-a" },
+			{ key: keys[1], value: "stale-b" },
+		]);
+		vi.spyOn(cacheable.tags, "getStaleKeys").mockRejectedValueOnce(error);
+
+		expect(await cacheable.getMany(keys, { nonBlocking: true })).toEqual([
+			"stale-a",
+			"stale-b",
+		]);
+		expect(errors).toHaveBeenCalledWith(error);
+		await nextEventLoopTurn();
+		expect(await primary.getMany(keys)).toEqual([undefined, undefined]);
+
+		expect(
+			await cacheable.setMany([
+				{ key: keys[0], value: "fresh-a" },
+				{ key: keys[1], value: "fresh-b" },
+			]),
+		).toBe(true);
+	});
+
 	test("an authoritative set cancels a backfill before its secondary read returns", async () => {
 		const primary = new Keyv();
 		const secondary = new Keyv();
