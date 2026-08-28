@@ -1,9 +1,9 @@
 // biome-ignore-all lint/suspicious/noExplicitAny: benchmarks
 import { faker } from "@faker-js/faker";
 import { tinybenchPrinter } from "@monstermann/tinybench-pretty-printer";
-import { ObjectGenerator } from "object-generator.js";
 import { Bench } from "tinybench";
 import pkg from "../package.json" with { type: "json" };
+import { ObjectGenerator } from "./object-generator.js";
 
 export function createBenchmark(name: string, iterations: number) {
 	const bench = new Bench({

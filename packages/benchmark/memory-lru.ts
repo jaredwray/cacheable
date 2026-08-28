@@ -1,12 +1,12 @@
 import { CacheableMemory } from "@cacheable/memory";
+import { createLRU } from "lru.min";
+import QuickLRU from "quick-lru";
 import {
 	createBenchmark,
 	generateAlphaNumeric,
 	getModuleName,
 	printToConsole,
-} from "index.js";
-import { createLRU } from "lru.min";
-import QuickLRU from "quick-lru";
+} from "./src/index.js";
 
 const bench = createBenchmark("Memory LRU Benchmark", 100000);
 
