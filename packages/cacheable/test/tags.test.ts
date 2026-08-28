@@ -273,6 +273,21 @@ describe("cacheable tags", () => {
 		expect(await cacheable.get(key)).toEqual("fresh");
 	});
 
+	test("a non-blocking secondary miss releases its controller", async () => {
+		const secondary = new Keyv();
+		const cacheable = new Cacheable({ secondary });
+		const key = "secondary-miss";
+		const misses = vi.fn();
+		cacheable.on(CacheableEvents.CACHE_MISS, misses);
+
+		expect(await cacheable.get(key, { nonBlocking: true })).toBeUndefined();
+		expect(misses).toHaveBeenNthCalledWith(1, { key, store: "primary" });
+		expect(misses).toHaveBeenNthCalledWith(2, { key, store: "secondary" });
+
+		expect(await cacheable.set(key, "fresh")).toBe(true);
+		expect(await cacheable.get(key)).toEqual("fresh");
+	});
+
 	test("a rejected non-blocking batched secondary read releases its controllers", async () => {
 		const secondary = new Keyv();
 		const cacheable = new Cacheable({ secondary });
