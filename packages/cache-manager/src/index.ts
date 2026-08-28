@@ -288,6 +288,10 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	};
 
 	const mdel = async (keys: string[]) => {
+		if (keys.length === 0) {
+			return true;
+		}
+
 		try {
 			const promises = stores.map(async (store) => store.deleteMany(keys));
 

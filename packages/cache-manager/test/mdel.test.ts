@@ -1,4 +1,5 @@
 import { faker } from "@faker-js/faker";
+import { createKeyv } from "@keyv/redis";
 import { Keyv } from "keyv";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCache } from "../src/index.js";
@@ -64,10 +65,17 @@ describe("mdel", () => {
 		expect(secondHandler).toHaveBeenCalledWith(keys);
 	});
 
-	it("should resolve on an empty key list", async () => {
-		const cache = createCache({ stores: [keyv], nonBlocking: false });
+	it("should not dispatch an empty key list to Redis", async () => {
+		const redis = createKeyv();
+		const cache = createCache({ stores: [redis], nonBlocking: false });
+		const deleteManyHandler = vi.spyOn(redis, "deleteMany");
 
-		await expect(cache.mdel([])).resolves.toBe(true);
+		try {
+			await expect(cache.mdel([])).resolves.toBe(true);
+			expect(deleteManyHandler).not.toHaveBeenCalled();
+		} finally {
+			await redis.disconnect();
+		}
 	});
 
 	it("should work blocking", async () => {
