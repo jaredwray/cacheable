@@ -80,6 +80,7 @@ export type Events = {
 		error?: unknown;
 	}) => void;
 	del: (data: { key: string; error?: unknown }) => void;
+	mdel: (data: { keys: string[]; error?: unknown }) => void;
 	clear: (error?: unknown) => void;
 	refresh: <T>(data: { key: string; value: T; error?: unknown }) => void;
 };
@@ -288,11 +289,12 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	};
 
 	const mdel = async (keys: string[]) => {
-		if (keys.length === 0) {
-			return true;
-		}
-
 		try {
+			if (keys.length === 0) {
+				eventEmitter.emit("mdel", { keys });
+				return true;
+			}
+
 			const promises = stores.map(async (store) => store.deleteMany(keys));
 
 			if (nonBlocking) {

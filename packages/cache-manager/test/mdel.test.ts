@@ -69,11 +69,39 @@ describe("mdel", () => {
 		const redis = createKeyv();
 		const cache = createCache({ stores: [redis], nonBlocking: false });
 		const deleteManyHandler = vi.spyOn(redis, "deleteMany");
+		const listener = vi.fn();
+		cache.on("mdel", listener);
 
 		try {
 			await expect(cache.mdel([])).resolves.toBe(true);
 			expect(deleteManyHandler).not.toHaveBeenCalled();
+			expect(listener).toHaveBeenCalledOnce();
+			expect(listener).toHaveBeenCalledWith({ keys: [] });
 		} finally {
+			await redis.disconnect();
+		}
+	});
+
+	it("should delete keys through the native Redis deleteMany", async () => {
+		const redis = createKeyv();
+		redis.throwOnErrors = true;
+		const cache = createCache({ stores: [redis], nonBlocking: false });
+
+		try {
+			await cache.mset(list);
+			const nativeDeleteManyHandler = vi.spyOn(redis.store, "deleteMany");
+			const keys = [list[0].key, list[1].key];
+
+			await expect(cache.mdel(keys)).resolves.toBe(true);
+
+			expect(nativeDeleteManyHandler).toHaveBeenCalledOnce();
+			await expect(redis.get(list.map(({ key }) => key))).resolves.toEqual([
+				undefined,
+				undefined,
+				list[2].value,
+			]);
+		} finally {
+			await Promise.allSettled(list.map(async ({ key }) => redis.delete(key)));
 			await redis.disconnect();
 		}
 	});
