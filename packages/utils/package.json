@@ -39,8 +39,8 @@
 		"keyv": "^5.6.0"
 	},
 	"devDependencies": {
-		"tsdown": "^0.22.3",
-		"typescript": "^6.0.3"
+		"tsdown": "^0.23.0",
+		"typescript": "^7.0.2"
 	},
 	"keywords": [
 		"cacheable",
