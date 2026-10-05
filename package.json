@@ -20,7 +20,7 @@
   "keywords": [],
   "author": "Jared Wray <me@jaredwray.com>",
   "license": "MIT",
-  "packageManager": "pnpm@11.5.1+sha512.93f7b57422ea7068257235b4c16eb60762eb68e1dc23723199cc739043ea9be2c4143274a399d8c6defa2b1176226d9ca1c4b63482d6200c1a8fbaa78c1d1485",
+  "packageManager": "pnpm@12.8.0+sha512.3916e9559cdfbddf7dc921e8999076584425161de773f6cabf7f47467f0d9452bfa89a689ec245753ad3d55abcb3cf706e667ac12062dbc9c625fbd72bca20dc",
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.5",
     "@biomejs/biome": "^2.5.14",
