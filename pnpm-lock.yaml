@@ -164,7 +164,6 @@ settings:
 
 overrides:
   chokidar: 4.0.1
-  style-to-object: 2.0.2
 
 importers:
 
