@@ -293,8 +293,8 @@ importers:
         specifier: ^0.12.0
         version: 0.12.0(@opentelemetry/api@1.9.0)(qified@0.12.0)
       lru-cache:
-        specifier: ^11.5.1
-        version: 11.5.1
+        specifier: ^11.5.3
+        version: 11.5.3
       tsdown:
         specifier: ^0.23.0
         version: 0.23.0(@arethetypeswrong/core@0.18.5)(publint@0.3.24)(tsx@4.23.15)(typescript@7.0.2)
@@ -2984,6 +2984,10 @@ packages:
 
   lru-cache@11.5.1:
     resolution: {integrity: sha512-RPimw/7aMdv2oqRrxKwvZXcPfwBrn/JZ2xYcY9Hus/6LaS3VOAKVWKWgNLCFSiOm1ESXinjsDlidVU7JlnCN2A==}
+    engines: {node: 20 || >=22}
+
+  lru-cache@11.5.3:
+    resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
     engines: {node: 20 || >=22}
 
   lru.min@1.1.4:
@@ -6368,6 +6372,8 @@ snapshots:
   lru-cache@11.3.6: {}
 
   lru-cache@11.5.1: {}
+
+  lru-cache@11.5.3: {}
 
   lru.min@1.1.4: {}
 
