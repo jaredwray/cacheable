@@ -20,4 +20,3 @@ allowBuilds:
 # Pin transitive deps that later published without provenance (trust downgrade).
 overrides:
   chokidar: 4.0.1
-  style-to-object: 2.0.2
