@@ -7,7 +7,7 @@ export default defineConfig({
 			reporter: ['json', 'text', 'lcov'],
 			exclude: [
 				'src/index.ts',
-				'test',
+				'test/**',
 				'src/cacheable-item-types.ts',
 				'vitest.config.ts',
 				'dist',

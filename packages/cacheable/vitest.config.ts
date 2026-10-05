@@ -6,7 +6,7 @@ export default defineConfig({
 		coverage: {
 			reporter: ['json', 'text', 'lcov'],
 			exclude: [
-				'test',
+				'test/**',
 				'src/types.ts',
 				'src/enums.ts',
 				'vitest.config.ts',

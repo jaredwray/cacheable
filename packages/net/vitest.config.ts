@@ -6,7 +6,7 @@ export default defineConfig({
 		coverage: {
 			reporter: ['json', 'text', 'lcov'],
 			exclude: [
-				'test',
+				'test/**',
 				'src/cacheable-item-types.ts',
 				'vitest.config.ts',
 				'dist',
