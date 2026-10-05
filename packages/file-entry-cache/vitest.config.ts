@@ -5,7 +5,7 @@ export default defineConfig({
 		coverage: {
 			reporter: ['json', 'text', 'lcov'],
 			exclude: [
-				'test',
+				'test/**',
 				'vitest.config.ts',
 				'dist',
 				'node_modules',
