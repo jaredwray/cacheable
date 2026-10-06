@@ -37,7 +37,7 @@
 	"devDependencies": {
 		"@keyv/redis": "^5.1.6",
 		"@keyv/valkey": "^1.0.11",
-		"@qified/redis": "^0.12.0",
+		"@qified/redis": "^0.13.2",
 		"lru-cache": "^11.5.3",
 		"tsdown": "^0.23.0",
 		"typescript": "^7.0.2"
@@ -47,7 +47,7 @@
 		"@cacheable/utils": "workspace:^",
 		"hookified": "^3.0.1",
 		"keyv": "^5.6.0",
-		"qified": "^0.12.0"
+		"qified": "^0.13.2"
 	},
 	"keywords": [
 		"cacheable",
