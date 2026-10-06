@@ -71,7 +71,7 @@
 	},
 	"dependencies": {
 		"cacheable": "workspace:^",
-		"flatted": "^3.4.2",
+		"flatted": "^3.4.4",
 		"hookified": "^3.0.1"
 	},
 	"files": [
