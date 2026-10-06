@@ -14,8 +14,10 @@ out
 # Lock Files
 yarn.lock
 
-# AI
-.claude
+# AI (keep the shared Claude Code settings and hooks; ignore local state)
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
 
 # Dist
 dist
