@@ -458,8 +458,8 @@ importers:
   packages/utils:
     dependencies:
       hashery:
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.0.2
+        version: 3.0.2
       keyv:
         specifier: ^5.6.0
         version: 5.6.0
@@ -2682,10 +2682,6 @@ packages:
   hashery@1.5.1:
     resolution: {integrity: sha512-iZyKG96/JwPz1N55vj2Ie2vXbhu440zfUfJvSwEqEbeLluk7NnapfGqa7LH0mOsnDxTF85Mx8/dyR6HfqcbmbQ==}
     engines: {node: '>=20'}
-
-  hashery@3.0.0:
-    resolution: {integrity: sha512-0Qf1UYWmzQ7IgJbciYmxfbH3TXGR8CJQx7syxue+XptHPXYiEO1lmkYQen2PBWLikgei0kwylMZHoUmP8G96lg==}
-    engines: {node: '>=22.18'}
 
   hashery@3.0.2:
     resolution: {integrity: sha512-840jNJwXnqjLg43qvTwE/MFCq/+RkeSgYqunLgmUyycW09IWC/MGv7qsfampIUCYb6Mjk4cGmtw/AmlzFz/UTA==}
@@ -6039,10 +6035,6 @@ snapshots:
   hashery@1.5.1:
     dependencies:
       hookified: 1.15.1
-
-  hashery@3.0.0:
-    dependencies:
-      hookified: 3.0.1
 
   hashery@3.0.2:
     dependencies:
