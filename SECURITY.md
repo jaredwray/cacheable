@@ -30,7 +30,7 @@ hardening checklist; progress is tracked in [DEFENSE_IN_DEPTH.md](./DEFENSE_IN_D
 - npm publishing authenticates with OIDC trusted publishing configured **stage-only** on each published package (GitHub Actions → `jaredwray/cacheable` → workflow `release.yml`). There are no npm tokens in Actions secrets, and packages disallow tokens. CI packs tarballs and stages them with `pnpm stage publish`; Drydock reviews staged releases; a maintainer promotes with 2FA. The release job `needs` a passing Aikido `scan-release`.
 - GitHub and npm maintainer accounts use phishing-resistant 2FA (passkeys / hardware keys).
 - `packageManager` pins pnpm at 12.8.1. The lockfile is committed.
-- Dependencies install through pnpm with a 7-day cooldown, blocked lifecycle scripts, and `trustPolicy: no-downgrade`.
+- pnpm installs dependencies with a 7-day cooldown, blocks lifecycle scripts by default, and sets `trustPolicy` to `no-downgrade`.
 - There is no `.github/dependabot.yml`.
 - Codespaces, Cursor Cloud Agents, and Claude Code on the web install through Aikido Safe Chain. Do not bypass the package-manager shims.
 - The Dev Container image uses a digest pin. The tag is not `latest`.
