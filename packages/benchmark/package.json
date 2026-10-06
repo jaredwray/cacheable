@@ -61,7 +61,7 @@
 		"bentocache": "^1.6.1",
 		"cache-manager": "workspace:^",
 		"cacheable": "workspace:^",
-		"lru.min": "^1.1.4",
+		"lru.min": "^1.1.5",
 		"node-cache": "^5.1.2",
 		"quick-lru": "^7.3.0",
 		"tsx": "^4.23.15"
