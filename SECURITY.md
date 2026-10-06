@@ -29,9 +29,10 @@ hardening checklist; progress is tracked in [DEFENSE_IN_DEPTH.md](./DEFENSE_IN_D
 - CI workflows default to read-only `contents: read` permissions; generated output is never committed back from CI; every action is pinned to a full commit SHA; Socket Firewall (`sfw`) wraps `pnpm install`; workflows are security-linted with zizmor on every PR.
 - npm publishing authenticates with OIDC trusted publishing configured **stage-only** on each published package (GitHub Actions → `jaredwray/cacheable` → workflow `release.yml`). There are no npm tokens in Actions secrets, and packages disallow tokens. CI packs tarballs and stages them with `pnpm stage publish`; Drydock reviews staged releases; a maintainer promotes with 2FA. The release job `needs` a passing Aikido `scan-release`.
 - GitHub and npm maintainer accounts use phishing-resistant 2FA (passkeys / hardware keys).
-- pnpm is pinned via `packageManager` (`pnpm@11.5.1`), and the lockfile is committed.
-- Dependencies install through pnpm with a 7-day cooldown on new versions, lifecycle scripts blocked by default, and `trustPolicy: no-downgrade`.
+- `packageManager` pins pnpm at 12.8.1. The lockfile is committed.
+- pnpm installs dependencies with a 7-day cooldown, blocks lifecycle scripts by default, and sets `trustPolicy` to `no-downgrade`.
 - There is no `.github/dependabot.yml`.
-- Codespaces and Cursor Cloud Agents install through Aikido Safe Chain; package-manager shims must not be bypassed.
-- Socket reviews every dependency change; Aikido scans every build.
-- `.github/CODEOWNERS` names owners for `/.github/`, `/.cursor/`, `/.devcontainer/`, and `/scripts/`.
+- Codespaces, Cursor Cloud Agents, and Claude Code on the web install through Aikido Safe Chain. Do not bypass the package-manager shims.
+- The Dev Container image uses a digest pin. The tag is not `latest`.
+- Socket reviews every dependency change. Aikido scans every build.
+- `.github/CODEOWNERS` names owners for `/.github/`, `/.vscode/`, `/.cursor/`, `/.devcontainer/`, `/.claude/`, `/.codex/`, and `/scripts/`.
