@@ -1096,7 +1096,7 @@ describe("cacheable stats enabled", async () => {
 		const cacheable = new Cacheable({ stats: true });
 		await cacheable.setMany([
 			{ key: "key1", value: { id: "value1" } },
-			{ key: "key2", value: { id: "value2" } },
+			{ key: "key2", value: undefined },
 			{ key: "key3", value: { id: "value3" } },
 		]);
 		// The stats of a cache that holds only key3 are the expected result.
