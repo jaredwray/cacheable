@@ -1155,10 +1155,17 @@ export class Cacheable extends Hookified {
 		const primaryBackfillBarrier = this.cancelPrimaryBackfills(keys);
 		await primaryBackfillBarrier;
 		if (this.stats.enabled) {
-			const statResult = (await this._primary.get(keys)) as unknown;
-			for (const key of keys) {
+			// Use the raw entries, because a cached value can be undefined.
+			const statResults = await this._primary.getManyRaw<unknown>(keys);
+			for (const [index, key] of keys.entries()) {
+				// Skip a key that is not in the cache. Size only the value of this key.
+				const statResult = statResults[index];
+				if (statResult === undefined) {
+					continue;
+				}
+
 				this.stats.decreaseKSize(key);
-				this.stats.decreaseVSize(statResult);
+				this.stats.decreaseVSize(statResult.value);
 				this.stats.decreaseCount();
 				this.stats.incrementDeletes();
 			}

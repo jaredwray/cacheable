@@ -1095,12 +1095,19 @@ describe("cacheable stats enabled", async () => {
 	test("should get stats on delete many", async () => {
 		const cacheable = new Cacheable({ stats: true });
 		await cacheable.setMany([
-			{ key: "key1", value: "value1" },
-			{ key: "key2", value: "value2" },
+			{ key: "key1", value: { id: "value1" } },
+			{ key: "key2", value: undefined },
+			{ key: "key3", value: { id: "value3" } },
 		]);
-		await cacheable.deleteMany(["key1", "key2"]);
+		// The stats of a cache that holds only key3 are the expected result.
+		const expected = new Cacheable({ stats: true });
+		await expected.set("key3", { id: "value3" });
+
+		await cacheable.deleteMany(["key1", "key2", "missing"]);
 		expect(cacheable.stats.deletes).toBe(2);
-		expect(cacheable.stats.count).toBe(0);
+		expect(cacheable.stats.count).toBe(1);
+		expect(cacheable.stats.ksize).toBe(expected.stats.ksize);
+		expect(cacheable.stats.vsize).toBe(expected.stats.vsize);
 	});
 	test("should get stats on clear", async () => {
 		const cacheable = new Cacheable({ stats: true });

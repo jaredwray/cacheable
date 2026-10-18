@@ -483,7 +483,8 @@ export class Stats {
 	}
 
 	public roughSizeOfObject(object: any): number {
-		const objectList: any[] = [];
+		// Use a Set so that the visited check is O(1) and the full walk stays linear.
+		const objectList = new Set<any>();
 		const stack: any[] = [object];
 		let bytes = 0;
 
@@ -504,12 +505,12 @@ export class Stats {
 				}
 
 				// Check for circular references - if this object was already processed, skip it
-				if (objectList.includes(value)) {
+				if (objectList.has(value)) {
 					continue;
 				}
 
 				// object as default
-				objectList.push(value);
+				objectList.add(value);
 
 				// Estimate object overhead, and then recursively estimate the size of properties
 				for (const key in value) {
