@@ -28,8 +28,9 @@ export const shorthandToMilliseconds = (
 
 		// Check if the string is purely numeric
 		if (Number.isNaN(Number(shorthand))) {
-			// Use a case-insensitive regex that supports decimals and 'ms' unit
-			const match = /^([\d.]+)\s*(ms|s|m|h|hr|d)$/i.exec(shorthand);
+			// Use a case-insensitive regex that supports decimals and 'ms' unit.
+			// The number must be well-formed (at most one decimal point and at least one digit).
+			const match = /^(\d+\.?\d*|\.\d+)\s*(ms|s|m|h|hr|d)$/i.exec(shorthand);
 
 			if (!match) {
 				throw new Error(
