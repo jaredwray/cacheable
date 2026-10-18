@@ -1087,10 +1087,47 @@ describe("cacheable stats enabled", async () => {
 	});
 	test("should get stats on delete", async () => {
 		const cacheable = new Cacheable({ stats: true });
+		// Falsy values are cached values, and delete must count them.
+		const deletedItems = [
+			{ key: "key", value: "value" },
+			{ key: "zero", value: 0 },
+			{ key: "empty", value: "" },
+			{ key: "false", value: false },
+			{ key: "null", value: null },
+			{ key: "undefined", value: undefined },
+		];
+		await cacheable.setMany([
+			...deletedItems,
+			{ key: "remain", value: { id: "remain" } },
+		]);
+		// The stats of a cache that holds only "remain" are the expected result.
+		const expected = new Cacheable({ stats: true });
+		await expected.set("remain", { id: "remain" });
+
+		for (const item of deletedItems) {
+			await cacheable.delete(item.key);
+		}
+
+		await cacheable.delete("missing");
+		expect(cacheable.stats.deletes).toBe(deletedItems.length);
+		expect(cacheable.stats.count).toBe(1);
+		expect(cacheable.stats.ksize).toBe(expected.stats.ksize);
+		expect(cacheable.stats.vsize).toBe(expected.stats.vsize);
+	});
+	test("should delete with stats when the primary store read fails", async () => {
+		const store = new KeyvCacheableMemory();
+		const cacheable = new Cacheable({
+			primary: new Keyv({ store }),
+			stats: true,
+		});
 		await cacheable.set("key", "value");
-		await cacheable.delete("key");
-		expect(cacheable.stats.deletes).toBe(1);
-		expect(cacheable.stats.count).toBe(0);
+		// A store error on the stats read must not stop the delete.
+		const getSpy = vi
+			.spyOn(store, "get")
+			.mockRejectedValue(new Error("store get error"));
+		await expect(cacheable.delete("key")).resolves.toBe(true);
+		getSpy.mockRestore();
+		expect(await cacheable.get("key")).toBeUndefined();
 	});
 	test("should get stats on delete many", async () => {
 		const cacheable = new Cacheable({ stats: true });
