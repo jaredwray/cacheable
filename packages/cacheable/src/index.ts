@@ -1096,11 +1096,12 @@ export class Cacheable extends Hookified {
 		let result = false;
 		const promises = [];
 		if (this.stats.enabled) {
-			const statResult = await this._primary.get<Record<string, unknown>>(key);
-			/* v8 ignore next -- @preserve */
-			if (statResult) {
+			// Use the raw entry, because a cached value can be falsy or undefined.
+			// Use get() and not getRaw(), because get() catches a store error.
+			const statResult = await this._primary.get<unknown>(key, { raw: true });
+			if (statResult !== undefined) {
 				this.stats.decreaseKSize(key);
-				this.stats.decreaseVSize(statResult);
+				this.stats.decreaseVSize(statResult.value);
 				this.stats.decreaseCount();
 				this.stats.incrementDeletes();
 			}
