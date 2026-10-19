@@ -34,6 +34,20 @@ describe("time parser", () => {
 			"Unsupported time format: \"1z\". Use 'ms', 's', 'm', 'h', 'hr', or 'd'.",
 		);
 	});
+	test.each(["1.2.3s", "1..5s", "..s", ".s", ".m"])(
+		'reject a malformed number in "%s"',
+		(value) => {
+			expect(() => shorthandToMilliseconds(value)).toThrowError(
+				`Unsupported time format: "${value}"`,
+			);
+		},
+	);
+	test.each([
+		[".5s", 500],
+		["5.s", 5000],
+	])('convert "%s" to milliseconds', (value, expected) => {
+		expect(shorthandToMilliseconds(value)).toBe(expected);
+	});
 	test("send in string with number", () => {
 		expect(shorthandToMilliseconds("1000")).toBe(1000);
 	});
