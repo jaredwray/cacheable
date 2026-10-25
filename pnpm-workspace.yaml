@@ -36,9 +36,10 @@ overrides:
   "brace-expansion@>=2.0.0 <3.0.0": 2.1.7
   "brace-expansion@>=3.0.0 <4.0.0": 3.0.9
   "brace-expansion@>=5.0.0 <6.0.0": 5.0.12
-  # GHSA-p9ff-h696-f583, GHSA-v2wj-q39q-566r, and GHSA-fx2h-pf6j-xcff.
-  # Vitest accepts vite 7. The peer range leaves the version at 7.3.1.
-  vite: 7.3.5
+  # GHSA-587h-7wmj-h5pm (CVE-2026-112942). Vite 7.3.7 has the 8.3.3 fix.
+  # Vitest accepts vite 7. The peer range selects 7.3.1.
+  # This pin also keeps the earlier vite advisories closed.
+  vite: 7.3.7
   # GHSA-r28c-9q8g-f849. Vite accepts postcss ^8.5.6.
   postcss: 8.5.18
   # GHSA-28wg-ghj8-5hjv and GHSA-2v37-7h3g-55p8. PostCSS accepts nanoid ^3.3.12.
