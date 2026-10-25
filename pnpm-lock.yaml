@@ -171,7 +171,7 @@ overrides:
   brace-expansion@>=2.0.0 <3.0.0: 2.1.7
   brace-expansion@>=3.0.0 <4.0.0: 3.0.9
   brace-expansion@>=5.0.0 <6.0.0: 5.0.12
-  vite: 7.3.5
+  vite: 7.3.7
   postcss: 8.5.18
   nanoid: 3.3.18
 
@@ -205,7 +205,7 @@ importers:
         version: 6.1.3
       vitest:
         specifier: ^5.0.2
-        version: 5.0.2(@opentelemetry/api@1.9.0)(@types/node@24.19.0)(@vitest/coverage-v8@5.0.2)(vite@7.3.5(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15))
+        version: 5.0.2(@opentelemetry/api@1.9.0)(@types/node@24.19.0)(@vitest/coverage-v8@5.0.2)(vite@7.3.7(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15))
       wrangler:
         specifier: ^4.149.0
         version: 4.149.0(@types/node@24.19.0)
@@ -1852,7 +1852,7 @@ packages:
     resolution: {integrity: sha512-Z5FS00Q1SJHkB35xATsmWGdQ5WA1/0MV3CDjqyv7GavHv1OfOj145MNfHOlHk7QLes21dKFDHr8EO2zvL+9WGA==}
     peerDependencies:
       msw: ^2.4.9
-      vite: 7.3.5
+      vite: 7.3.7
     peerDependenciesMeta:
       msw:
         optional: true
@@ -4099,8 +4099,8 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
-  vite@7.3.5:
-    resolution: {integrity: sha512-KuOaNhcnGFN2zIPGA7wRmzF+lJA1sea7rHq17aiJ++9lzY1WWG6Jpwqwe1KNbRVPIqHmr8GLYx7jbrQcN/7/ww==}
+  vite@7.3.7:
+    resolution: {integrity: sha512-AHEzTORMbi7/7aXp7w7KZ5+DCUdSeLsJz0grY8xHpc9DHdYb0vQu6DqJfm2tOw3gDExNgPgnJTXxM6syYFHaCA==}
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
     peerDependencies:
@@ -4155,7 +4155,7 @@ packages:
       '@vitest/ui': 5.0.2
       happy-dom: '*'
       jsdom: '*'
-      vite: 7.3.5
+      vite: 7.3.7
     peerDependenciesMeta:
       '@edge-runtime/vm':
         optional: true
@@ -5233,7 +5233,7 @@ snapshots:
       obug: 2.2.1
       std-env: 4.2.0
       tinyrainbow: 3.1.1
-      vitest: 5.0.2(@opentelemetry/api@1.9.0)(@types/node@24.19.0)(@vitest/coverage-v8@5.0.2)(vite@7.3.5(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15))
+      vitest: 5.0.2(@opentelemetry/api@1.9.0)(@types/node@24.19.0)(@vitest/coverage-v8@5.0.2)(vite@7.3.7(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15))
 
   '@vitest/istanbul-lib-coverage@1.0.2': {}
 
@@ -5241,14 +5241,14 @@ snapshots:
     dependencies:
       '@vitest/istanbul-lib-coverage': 1.0.2
 
-  '@vitest/mocker@5.0.2(vite@7.3.5(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15))':
+  '@vitest/mocker@5.0.2(vite@7.3.7(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15))':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       '@vitest/spy': 5.0.2
       estree-walker: 3.0.3
       magic-string: 1.4.2
     optionalDependencies:
-      vite: 7.3.5(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15)
+      vite: 7.3.7(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15)
 
   '@vitest/spy@5.0.2': {}
 
@@ -7925,9 +7925,9 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite@7.3.5(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15):
+  vite@7.3.7(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15):
     dependencies:
-      esbuild: 0.27.7
+      esbuild: 0.28.2
       fdir: 6.5.0(picomatch@4.0.7)
       picomatch: 4.0.7
       postcss: 8.5.18
@@ -7939,10 +7939,10 @@ snapshots:
       jiti: 2.7.0
       tsx: 4.23.15
 
-  vitest@5.0.2(@opentelemetry/api@1.9.0)(@types/node@24.19.0)(@vitest/coverage-v8@5.0.2)(vite@7.3.5(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15)):
+  vitest@5.0.2(@opentelemetry/api@1.9.0)(@types/node@24.19.0)(@vitest/coverage-v8@5.0.2)(vite@7.3.7(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15)):
     dependencies:
       '@types/chai': 5.2.3
-      '@vitest/mocker': 5.0.2(vite@7.3.5(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15))
+      '@vitest/mocker': 5.0.2(vite@7.3.7(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15))
       chai: 6.2.2
       es-module-lexer: 2.3.2
       expect-type: 1.4.0
@@ -7953,7 +7953,7 @@ snapshots:
       tinybench: 6.2.0
       tinyexec: 1.3.1
       tinyglobby: 0.2.17
-      vite: 7.3.5(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15)
+      vite: 7.3.7(@types/node@24.19.0)(jiti@2.7.0)(tsx@4.23.15)
       why-is-node-running: 3.2.1
     optionalDependencies:
       '@opentelemetry/api': 1.9.0
