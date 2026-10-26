@@ -11,6 +11,8 @@ minimumReleaseAgeExclude:
   - '@babel/*'
   # undici 7.30.1 and 8.12.2 fix the High advisories. Both releases are younger than 7 days.
   - 'undici@7.30.1 || 8.12.2'
+  # body-parser 2.4.0 fixes GHSA-27r3-jxmh-p828. The release is younger than 7 days.
+  - 'body-parser@2.4.0'
 allowBuilds:
   esbuild: true
   protobufjs: true
