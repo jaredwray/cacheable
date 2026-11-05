@@ -4,7 +4,7 @@ services:
     ports:
       - '6379:6379'
   mockhttp:
-    image: jaredwray/mockhttp:2.0.0@sha256:e9b773549f223fc60e10805cd47cc4d825d02a8d70bca24f462f672032eed7d4
+    image: jaredwray/mockhttp:2.1.0@sha256:83b215132a3db2da14814be687cde6729813ed3504e861de39bf4e5b8d0da8b4
     platform: linux/amd64
     ports:
       - '3737:3000'
