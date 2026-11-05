@@ -5,6 +5,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createCache } from "../src/index.js";
 import { sleep } from "./sleep.js";
 
+// Each call uses a private namespace so a parallel clear() cannot delete these keys.
+function createIsolatedRedis() {
+	return createKeyv("redis://localhost:6379", {
+		namespace: `mdel-${faker.string.alphanumeric(16)}`,
+	});
+}
+
 describe("mdel", () => {
 	let keyv: Keyv;
 	let cache: ReturnType<typeof createCache>;
@@ -66,7 +73,7 @@ describe("mdel", () => {
 	});
 
 	it("should not dispatch an empty key list to Redis", async () => {
-		const redis = createKeyv();
+		const redis = createIsolatedRedis();
 		const cache = createCache({ stores: [redis], nonBlocking: false });
 		const deleteManyHandler = vi.spyOn(redis, "deleteMany");
 		const listener = vi.fn();
@@ -83,7 +90,7 @@ describe("mdel", () => {
 	});
 
 	it("should delete keys through the native Redis deleteMany", async () => {
-		const redis = createKeyv();
+		const redis = createIsolatedRedis();
 		redis.throwOnErrors = true;
 		const cache = createCache({ stores: [redis], nonBlocking: false });
 
