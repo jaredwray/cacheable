@@ -9,6 +9,11 @@ import {
 	KeyvAdapter,
 } from "../src/index.js";
 
+// Database 1 keeps flushDb away from the shared Redis database.
+function createRedisYetStore() {
+	return redisYetStore({ url: "redis://localhost:6379/1" });
+}
+
 const mockCacheManagerStore: CacheManagerStore = {
 	name: "MockCacheManagerStore",
 	isCacheable: vi.fn((value: unknown) => value !== undefined),
@@ -34,7 +39,7 @@ const mockCacheManagerStore: CacheManagerStore = {
 
 describe("keyv-adapter", async () => {
 	it("able to handle redis yet third party conversion", async () => {
-		const store = await redisYetStore();
+		const store = await createRedisYetStore();
 		const adapter = new KeyvAdapter(store);
 		const keyv = new Keyv({ store: adapter });
 		const cache = createCache({ stores: [keyv] });
@@ -46,7 +51,7 @@ describe("keyv-adapter", async () => {
 	});
 
 	it("returns undefined on get", async () => {
-		const store = await redisYetStore();
+		const store = await createRedisYetStore();
 		const adapter = new KeyvAdapter(store);
 		const keyv = new Keyv({ store: adapter });
 		const cache = createCache({ stores: [keyv] });
@@ -55,7 +60,7 @@ describe("keyv-adapter", async () => {
 	});
 
 	it("deletes a key", async () => {
-		const store = await redisYetStore();
+		const store = await createRedisYetStore();
 		const adapter = new KeyvAdapter(store);
 		const keyv = new Keyv({ store: adapter });
 		const cache = createCache({ stores: [keyv] });
@@ -70,7 +75,7 @@ describe("keyv-adapter", async () => {
 	});
 
 	it("clears the cache", async () => {
-		const store = await redisYetStore();
+		const store = await createRedisYetStore();
 		const adapter = new KeyvAdapter(store);
 		const keyv = new Keyv({ store: adapter });
 		const cache = createCache({ stores: [keyv] });
@@ -85,7 +90,7 @@ describe("keyv-adapter", async () => {
 	});
 
 	it("returns false on has", async () => {
-		const store = await redisYetStore();
+		const store = await createRedisYetStore();
 		const adapter = new KeyvAdapter(store);
 		const keyv = new Keyv({ store: adapter });
 		const result = await keyv.has("key");
@@ -93,7 +98,7 @@ describe("keyv-adapter", async () => {
 	});
 
 	it("returns true on has", async () => {
-		const store = await redisYetStore();
+		const store = await createRedisYetStore();
 		const adapter = new KeyvAdapter(store);
 		const keyv = new Keyv({ store: adapter });
 		const key = faker.string.alpha(20);
@@ -104,7 +109,7 @@ describe("keyv-adapter", async () => {
 	});
 
 	it("gets many keys", async () => {
-		const store = await redisYetStore();
+		const store = await createRedisYetStore();
 		const adapter = new KeyvAdapter(store);
 		const keyv = new Keyv({ store: adapter });
 		const cache = createCache({ stores: [keyv] });
@@ -121,7 +126,7 @@ describe("keyv-adapter", async () => {
 	});
 
 	it("should delete many keys", async () => {
-		const store = await redisYetStore();
+		const store = await createRedisYetStore();
 		const adapter = new KeyvAdapter(store);
 		const keyv = new Keyv({ store: adapter });
 		const list = [
@@ -138,7 +143,7 @@ describe("keyv-adapter", async () => {
 
 	it("should disconnect", async () => {
 		// Store without disconnect
-		const storeNoDisconnect = await redisYetStore();
+		const storeNoDisconnect = await createRedisYetStore();
 		const adapterNoDisconnect = new KeyvAdapter(storeNoDisconnect);
 		const keyvNoDisconnect = new Keyv({ store: adapterNoDisconnect });
 
