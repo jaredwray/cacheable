@@ -1,6 +1,6 @@
 {
   "name": "cache-manager",
-  "version": "7.2.9",
+  "version": "7.2.10",
   "description": "Cache Manager for Node.js",
   "type": "module",
   "main": "./dist/index.cjs",
