@@ -183,6 +183,8 @@ class CacheableRequest {
 					}
 
 					if (!response.fromCache) {
+						// http-cache-semantics reads the status code from `status`, not `statusCode`
+						response.status = response.statusCode;
 						response.cachePolicy = new CachePolicy(
 							options_,
 							response,

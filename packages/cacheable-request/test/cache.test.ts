@@ -172,6 +172,28 @@ beforeAll(async () => {
 			body,
 		});
 	});
+	s.get("/partial-content", (request_: any, response_: any) => {
+		response_.setHeader("Cache-Control", "public, max-age=60");
+		if (request_.headers.range === "bytes=0-4") {
+			response_.statusCode = 206;
+			response_.setHeader("Content-Range", "bytes 0-4/11");
+			response_.end("hello");
+			return;
+		}
+
+		response_.end("hello world");
+	});
+	let serviceUnavailableIndex = 0;
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: legacy
+	s.get("/service-unavailable", (request_: any, response_: any) => {
+		serviceUnavailableIndex++;
+		response_.statusCode = 503;
+		response_.setHeader(
+			"Last-Modified",
+			new Date(Date.now() - 86_400_000).toUTCString(),
+		);
+		response_.end(serviceUnavailableIndex.toString());
+	});
 	const etag = "foobar";
 
 	const payload = JSON.stringify({ foo: "bar" });
@@ -672,6 +694,39 @@ test("checks status codes when comparing cache & response", async () => {
 	const secondResponse: any = await cacheableRequestHelper(options);
 	expect(firstResponse.body).toBe("received 502");
 	expect(secondResponse.body).toBe("ok");
+});
+
+test("A 206 response to a range request is not served for a full request", async () => {
+	const endpoint = "/partial-content";
+	const cache = new Map();
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest.request());
+	const options = parseWithWhatwg(s.url + endpoint);
+	const partialResponse: any = await cacheableRequestHelper({
+		...options,
+		headers: { range: "bytes=0-4" },
+	});
+	const fullResponse: any = await cacheableRequestHelper(options);
+	expect(partialResponse.statusCode).toBe(206);
+	expect(partialResponse.body).toBe("hello");
+	expect(fullResponse.statusCode).toBe(200);
+	expect(fullResponse.fromCache).toBe(false);
+	expect(fullResponse.body).toBe("hello world");
+});
+
+test("Error responses with heuristic freshness are not cached", async () => {
+	const endpoint = "/service-unavailable";
+	const cache = new Map();
+	const cacheableRequest = new CacheableRequest(request, cache);
+	const cacheableRequestHelper = promisify(cacheableRequest.request());
+	const options = parseWithWhatwg(s.url + endpoint);
+	const firstResponse: any = await cacheableRequestHelper(options);
+	const secondResponse: any = await cacheableRequestHelper(options);
+	expect(cache.size).toBe(0);
+	expect(firstResponse.statusCode).toBe(503);
+	expect(secondResponse.statusCode).toBe(503);
+	expect(secondResponse.fromCache).toBe(false);
+	expect(Number(secondResponse.body)).toBe(Number(firstResponse.body) + 1);
 });
 
 test("304 responses with forceRefresh do not clobber cache", async () => {
