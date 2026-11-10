@@ -185,7 +185,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		if (nonBlocking) {
 			try {
 				result = await Promise.race(
-					stores.map(async (store) => store.get(key, { raw: true })),
+					stores.map(async (store) => store.getRaw(key)),
 				);
 				if (result === undefined) {
 					return undefined;
@@ -196,7 +196,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		} else {
 			for (const store of stores) {
 				try {
-					const cacheValue = await store.get(key, { raw: true });
+					const cacheValue = await store.getRaw(key);
 					if (cacheValue !== undefined) {
 						result = cacheValue;
 						eventEmitter.emit("ttl", { key, value: result });
@@ -349,7 +349,7 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 			for (; i < stores.length; i++) {
 				try {
-					const data = await stores[i].get<T>(key, { raw: true });
+					const data = await stores[i].getRaw<T>(key);
 					if (data !== undefined) {
 						value = data.value;
 						rawData = data;
