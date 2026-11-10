@@ -247,7 +247,7 @@ describe("wrap", () => {
 
 	it("store get failed", async () => {
 		const getValue = vi.fn(() => data.value);
-		keyv.get = () => {
+		keyv.getRaw = () => {
 			throw new Error("get failed");
 		};
 
