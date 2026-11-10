@@ -31,7 +31,7 @@ describe("get", () => {
 
 	it("error", async () => {
 		await cache.set(data.key, data.value);
-		keyv.get = () => {
+		keyv.getRaw = () => {
 			throw new Error("get error");
 		};
 
@@ -39,7 +39,7 @@ describe("get", () => {
 	});
 	it("error on non-blocking enabled", async () => {
 		const secondKeyv = new Keyv();
-		keyv.get = () => {
+		keyv.getRaw = () => {
 			throw new Error("get error");
 		};
 
