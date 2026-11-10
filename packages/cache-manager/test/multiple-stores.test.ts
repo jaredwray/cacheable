@@ -70,7 +70,7 @@ describe("multiple stores", () => {
 		await expect(keyv2.get(data.key)).resolves.toEqual(data.value);
 
 		// Store 1 get error
-		keyv1.get = () => {
+		keyv1.getRaw = () => {
 			throw new Error("store 1 get error");
 		};
 
@@ -92,12 +92,12 @@ describe("multiple stores", () => {
 		await expect(keyv2.get(data.key)).resolves.toEqual(data.value);
 
 		// Store 1 get error
-		const getOk = keyv1.get;
+		const getOk = keyv1.getRaw;
 		const getError = () => {
 			throw new Error("store 1 get error");
 		};
 
-		keyv1.get = getError;
+		keyv1.getRaw = getError;
 
 		await sleep(ttl - refreshThreshold + 100);
 
@@ -105,7 +105,7 @@ describe("multiple stores", () => {
 			cache.wrap(data.key, () => "new", ttl, refreshThreshold),
 		).resolves.toEqual(data.value);
 
-		keyv1.get = getOk;
+		keyv1.getRaw = getOk;
 		// Store 1 has been updated the latest value
 		await expect(keyv1.get(data.key)).resolves.toEqual("new");
 		await expect(cache.wrap(data.key, () => "latest", ttl)).resolves.toEqual(
