@@ -275,8 +275,7 @@ export class NodeCache<T> extends Hookified {
 
 		for (const key of keys) {
 			const value = this.get(key);
-			/* v8 ignore next -- @preserve */
-			if (value) {
+			if (value !== undefined) {
 				result[this.formatKey(key)] = value as V;
 			}
 		}
@@ -379,6 +378,11 @@ export class NodeCache<T> extends Hookified {
 
 		const result = this.store.get(this.formatKey(key));
 		if (result) {
+			if (result.ttl > 0 && result.ttl < Date.now()) {
+				this.handleExpired(key, result);
+				return false;
+			}
+
 			if (this.isNegativeTtl(ttl)) {
 				// Negative TTL: set past timestamp so it expires immediately on next access.
 				// Math.max(1, ...) ensures the timestamp is always > 0, since the expiration
@@ -424,6 +428,11 @@ export class NodeCache<T> extends Hookified {
 		if (result) {
 			if (result.ttl === 0) {
 				return 0;
+			}
+
+			if (result.ttl < Date.now()) {
+				this.handleExpired(key, result);
+				return undefined;
 			}
 
 			return result.ttl;

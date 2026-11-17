@@ -92,6 +92,18 @@ describe("NodeCache", () => {
 		expect(list[key2]).toBe(value2);
 	});
 
+	test("mget() should return falsy values like node-cache", () => {
+		const cache = new NodeCache<unknown>({ checkperiod: 0 });
+		cache.set("zero", 0);
+		cache.set("false", false);
+		cache.set("empty", "");
+		cache.set("null", null);
+		const list = cache.mget(["zero", "false", "empty", "null", "missing"]);
+		expect(list).toEqual({ zero: 0, false: false, empty: "", null: null });
+		expect(cache.getStats().hits).toBe(4);
+		expect(cache.getStats().misses).toBe(1);
+	});
+
 	test("should not pollute Object.prototype via mget with __proto__ key", () => {
 		cache.set("__proto__", { polluted: true });
 		const result = cache.mget(["__proto__"]);
@@ -189,6 +201,45 @@ describe("NodeCache", () => {
 		const cache = new NodeCache({ checkperiod: 0 });
 		const ttl = cache.getTtl(faker.string.uuid());
 		expect(ttl).toBe(undefined);
+	});
+
+	test("getTtl() should return undefined and emit expired for an expired key", async () => {
+		const cache = new NodeCache<string>({ checkperiod: 0 });
+		const key = faker.string.uuid();
+		const value = faker.lorem.word();
+		cache.set(key, value, 0.05);
+		let expired: [string, string] | undefined;
+		cache.on("expired", (k, v) => {
+			expired = [k, v];
+		});
+		await sleep(100);
+		expect(cache.getTtl(key)).toBeUndefined();
+		expect(expired).toEqual([key, value]);
+		expect(cache.keys()).not.toContain(key);
+	});
+
+	test("ttl() should not give a new ttl to an expired key", async () => {
+		const cache = new NodeCache<string>({ checkperiod: 0 });
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word(), 0.05);
+		await sleep(100);
+		expect(cache.ttl(key, 100)).toBe(false);
+		expect(cache.get(key)).toBeUndefined();
+		expect(cache.keys()).not.toContain(key);
+	});
+
+	test("ttl() should not give a new ttl to an expired key when deleteOnExpire is false", async () => {
+		const cache = new NodeCache<string>({
+			checkperiod: 0,
+			deleteOnExpire: false,
+		});
+		const key = faker.string.uuid();
+		cache.set(key, faker.lorem.word(), 0.05);
+		await sleep(100);
+		expect(cache.ttl(key, 100)).toBe(false);
+		expect(cache.getTtl(key)).toBeUndefined();
+		expect(cache.get(key)).toBeUndefined();
+		expect(cache.keys()).toContain(key);
 	});
 
 	test("ttl should default to 0 if no ttl is set", () => {
