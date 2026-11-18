@@ -1,6 +1,6 @@
 // biome-ignore-all lint/style/noNonNullAssertion: test file
 import { faker } from "@faker-js/faker";
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 import NodeCache from "../src/index.js";
 
 const sleep = async (ms: number) =>
@@ -92,7 +92,7 @@ describe("NodeCache", () => {
 		expect(list[key2]).toBe(value2);
 	});
 
-	test("mget() should return falsy values like node-cache", () => {
+	test("mget returns falsy values and omits absent keys", () => {
 		const cache = new NodeCache<unknown>({ checkperiod: 0 });
 		cache.set("zero", 0);
 		cache.set("false", false);
@@ -100,6 +100,7 @@ describe("NodeCache", () => {
 		cache.set("null", null);
 		const list = cache.mget(["zero", "false", "empty", "null", "missing"]);
 		expect(list).toEqual({ zero: 0, false: false, empty: "", null: null });
+		expect(Object.hasOwn(list, "missing")).toBe(false);
 		expect(cache.getStats().hits).toBe(4);
 		expect(cache.getStats().misses).toBe(1);
 	});
@@ -203,43 +204,58 @@ describe("NodeCache", () => {
 		expect(ttl).toBe(undefined);
 	});
 
-	test("getTtl() should return undefined and emit expired for an expired key", async () => {
-		const cache = new NodeCache<string>({ checkperiod: 0 });
-		const key = faker.string.uuid();
-		const value = faker.lorem.word();
-		cache.set(key, value, 0.05);
-		let expired: [string, string] | undefined;
-		cache.on("expired", (k, v) => {
-			expired = [k, v];
-		});
-		await sleep(100);
-		expect(cache.getTtl(key)).toBeUndefined();
-		expect(expired).toEqual([key, value]);
-		expect(cache.keys()).not.toContain(key);
-	});
+	test.each(["getTtl", "ttl"] as const)(
+		"%s deletes an expired key and emits one expired event",
+		(method) => {
+			const cache = new NodeCache<string>({ checkperiod: 0 });
+			const expired = vi.fn();
+			cache.on("expired", expired);
+			cache.set("key", "value", -1);
 
-	test("ttl() should not give a new ttl to an expired key", async () => {
-		const cache = new NodeCache<string>({ checkperiod: 0 });
-		const key = faker.string.uuid();
-		cache.set(key, faker.lorem.word(), 0.05);
-		await sleep(100);
-		expect(cache.ttl(key, 100)).toBe(false);
-		expect(cache.get(key)).toBeUndefined();
-		expect(cache.keys()).not.toContain(key);
-	});
+			if (method === "getTtl") {
+				expect(cache.getTtl("key")).toBeUndefined();
+			} else {
+				expect(cache.ttl("key", 100)).toBe(false);
+			}
 
-	test("ttl() should not give a new ttl to an expired key when deleteOnExpire is false", async () => {
+			expect(cache.keys()).not.toContain("key");
+			expect(expired.mock.calls).toEqual([["key", "value"]]);
+		},
+	);
+
+	test("an expired event listener can read and renew the TTL of a retained key", () => {
 		const cache = new NodeCache<string>({
 			checkperiod: 0,
 			deleteOnExpire: false,
 		});
-		const key = faker.string.uuid();
-		cache.set(key, faker.lorem.word(), 0.05);
-		await sleep(100);
-		expect(cache.ttl(key, 100)).toBe(false);
-		expect(cache.getTtl(key)).toBeUndefined();
-		expect(cache.get(key)).toBeUndefined();
-		expect(cache.keys()).toContain(key);
+		cache.set("key", "value", -1);
+		const expiration = cache.getTtl("key");
+		expect(expiration).toBeGreaterThan(0);
+		expect(expiration).toBeLessThan(Date.now());
+
+		let events = 0;
+		cache.on("expired", (key) => {
+			events++;
+			expect(events).toBe(1);
+			expect(cache.getTtl(key)).toBe(expiration);
+			expect(cache.ttl(key, 0)).toBe(true);
+		});
+
+		expect(cache.getTtl("key")).toBe(0);
+		expect(events).toBe(1);
+		expect(cache.get("key")).toBe("value");
+	});
+
+	test("ttl respects a listener that deletes a retained key", () => {
+		const cache = new NodeCache<string>({
+			checkperiod: 0,
+			deleteOnExpire: false,
+		});
+		cache.set("key", "value", -1);
+		cache.on("expired", (key) => cache.del(key));
+
+		expect(cache.ttl("key", 100)).toBe(false);
+		expect(cache.keys()).not.toContain("key");
 	});
 
 	test("ttl should default to 0 if no ttl is set", () => {

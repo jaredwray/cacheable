@@ -93,6 +93,8 @@ export class NodeCache<T> extends Hookified {
 
 	public readonly store = new Map<string, NodeCacheItem<T>>();
 
+	private readonly activeExpiryEvents = new WeakSet<NodeCacheItem<T>>();
+
 	private _stats: Stats = new Stats({ enabled: true });
 
 	private intervalId: number | NodeJS.Timeout = 0;
@@ -376,13 +378,8 @@ export class NodeCache<T> extends Hookified {
 			throw this.createError(NodeCacheErrors.ETTLTYPE, this.formatKey(key));
 		}
 
-		const result = this.store.get(this.formatKey(key));
+		const result = this.getTtlEntry(key);
 		if (result) {
-			if (result.ttl > 0 && result.ttl < Date.now()) {
-				this.handleExpired(key, result);
-				return false;
-			}
-
 			if (this.isNegativeTtl(ttl)) {
 				// Negative TTL: set past timestamp so it expires immediately on next access.
 				// Math.max(1, ...) ensures the timestamp is always > 0, since the expiration
@@ -424,21 +421,7 @@ export class NodeCache<T> extends Hookified {
 	 * a timestamp in ms representing the time at which this key will expire
 	 */
 	public getTtl(key: string | number): number | undefined {
-		const result = this.store.get(this.formatKey(key));
-		if (result) {
-			if (result.ttl === 0) {
-				return 0;
-			}
-
-			if (result.ttl < Date.now()) {
-				this.handleExpired(key, result);
-				return undefined;
-			}
-
-			return result.ttl;
-		}
-
-		return undefined;
+		return this.getTtlEntry(key)?.ttl;
 	}
 
 	/**
@@ -617,6 +600,19 @@ export class NodeCache<T> extends Hookified {
 		}
 	}
 
+	private getTtlEntry(key: string | number): NodeCacheItem<T> | undefined {
+		const keyValue = this.formatKey(key);
+		const entry = this.store.get(keyValue);
+		if (entry && entry.ttl > 0 && entry.ttl < Date.now()) {
+			const { deleteOnExpire } = this.options;
+			this.handleExpired(keyValue, entry);
+			// A listener can change or delete a retained entry.
+			return deleteOnExpire ? undefined : this.store.get(keyValue);
+		}
+
+		return entry;
+	}
+
 	/**
 	 * Handles expiration for a cache entry. Deletes the entry when
 	 * `deleteOnExpire` is enabled and emits the "expired" event.
@@ -628,7 +624,16 @@ export class NodeCache<T> extends Hookified {
 			this.del(key);
 		}
 
-		this.emit("expired", keyValue, entry.value);
+		if (this.activeExpiryEvents.has(entry)) {
+			return;
+		}
+
+		this.activeExpiryEvents.add(entry);
+		try {
+			this.emit("expired", keyValue, entry.value);
+		} finally {
+			this.activeExpiryEvents.delete(entry);
+		}
 	}
 
 	private createError(errorCode: string, key?: string): Error {
