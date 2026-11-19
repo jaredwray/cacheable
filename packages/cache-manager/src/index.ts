@@ -6,6 +6,7 @@ import {
 	runIfFn,
 } from "@cacheable/utils";
 import { Keyv, type StoredDataRaw } from "keyv";
+import { type WrapScope, WrapWrites } from "./wrap-writes.js";
 
 const _storeLabel = (i: number) => (i === 0 ? "primary" : `secondary:${i - 1}`);
 
@@ -14,6 +15,7 @@ export type CreateCacheOptions = {
 	ttl?: number;
 	refreshThreshold?: number;
 	refreshAllStores?: boolean;
+	preventStaleWrapWrites?: boolean;
 	nonBlocking?: boolean;
 	cacheId?: string;
 };
@@ -93,6 +95,39 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 	const stores = options?.stores?.length ? options.stores : [keyv];
 	const nonBlocking = options?.nonBlocking ?? false;
 	const _cacheId = options?.cacheId ?? Math.random().toString(36).slice(2);
+	const writes = options?.preventStaleWrapWrites
+		? new Map<string, WrapWrites>()
+		: undefined;
+
+	const writesFor = (key: string) => {
+		if (!writes) return undefined;
+		let state = writes.get(key);
+		if (!state) {
+			state = new WrapWrites(() => writes.delete(key));
+			writes.set(key, state);
+		}
+		return state;
+	};
+
+	const mutate = <T>(key: string, value: T, operation: () => Promise<T>) => {
+		const state = writesFor(key);
+		if (!state) return operation();
+		const done = state.mutate(operation);
+		return nonBlocking ? Promise.resolve(value) : done;
+	};
+
+	const waitForWrites = async (operations: Array<Promise<unknown>>) => {
+		if (!writes) {
+			await Promise.all(operations);
+			return;
+		}
+
+		// Another tier can still write after the first store fails.
+		const results = await Promise.allSettled(operations);
+		for (const result of results) {
+			if (result.status === "rejected") throw result.reason;
+		}
+	};
 
 	const get = async <T>(key: string): Promise<T | undefined> => {
 		// biome-ignore lint/suspicious/noImplicitAnyLet: need to fix
@@ -227,13 +262,13 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 				eventEmitter.emit("set", { key, value, store: _storeLabel(i) });
 			});
 
-			if (nonBlocking) {
+			if (nonBlocking && !writes) {
 				Promise.all(promises);
 				eventEmitter.emit("set", { key, value });
 				return value;
 			}
 
-			await Promise.all(promises);
+			await waitForWrites(promises);
 			eventEmitter.emit("set", { key, value });
 			return value;
 		} catch (error) {
@@ -273,13 +308,14 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 
 	const del = async (key: string) => {
 		try {
-			if (nonBlocking) {
-				Promise.all(stores.map(async (store) => store.delete(key)));
+			const operations = stores.map(async (store) => store.delete(key));
+			if (nonBlocking && !writes) {
+				Promise.all(operations);
 				eventEmitter.emit("del", { key });
 				return true;
 			}
 
-			await Promise.all(stores.map(async (store) => store.delete(key)));
+			await waitForWrites(operations);
 			eventEmitter.emit("del", { key });
 			return true;
 		} catch (error) {
@@ -336,8 +372,8 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		fnc: () => T | Promise<T>,
 		ttlOrOptions?: number | ((value: T) => number) | Partial<WrapOptionsRaw<T>>,
 		refreshThresholdParameter?: number | ((value: T) => number),
-	): Promise<T | StoredDataRaw<T>> =>
-		coalesceAsync(`${_cacheId}::${key}`, async () => {
+	): Promise<T | StoredDataRaw<T>> => {
+		const read = async (scope?: WrapScope) => {
 			let value: T | undefined;
 			let rawData: StoredDataRaw<T> | undefined;
 			let i = 0;
@@ -346,6 +382,10 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 				? ttlOrOptions
 				: { ttl: ttlOrOptions, refreshThreshold: refreshThresholdParameter };
 			const resolveTtl = (result: T) => runIfFn(ttl, result) ?? options?.ttl;
+			const fill = (targets: Keyv[], value: T, ttl?: number) => {
+				const write = () => set(targets, key, value, ttl);
+				return scope ? scope.write(write) : write().then(() => true);
+			};
 
 			for (; i < stores.length; i++) {
 				try {
@@ -368,7 +408,8 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 				const result = await fnc();
 				// biome-ignore lint/style/noNonNullAssertion: need to fix
 				const ttl = resolveTtl(result)!;
-				await set(stores, key, result, ttl);
+				const done = fill(stores, result, ttl);
+				if (!scope || !nonBlocking) await done;
 				return raw ? { value: result, expires: Date.now() + ttl } : result;
 			}
 
@@ -378,31 +419,37 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 			);
 
 			if (shouldRefresh) {
-				coalesceAsync(`+++${_cacheId}__${key}`, fnc)
-					.then(async (result) => {
-						try {
-							await set(
-								options?.refreshAllStores ? stores : stores.slice(0, i + 1),
-								key,
-								result,
-								resolveTtl(result),
-							);
-							eventEmitter.emit("refresh", { key, value: result });
-						} catch (error) {
-							eventEmitter.emit("refresh", { key, value, error });
-						}
-					})
-					.catch((error) => {
+				const refresh = async () => {
+					try {
+						const result = scope
+							? await fnc()
+							: await coalesceAsync(`+++${_cacheId}__${key}`, fnc);
+						const saved = await fill(
+							options?.refreshAllStores ? stores : stores.slice(0, i + 1),
+							result,
+							resolveTtl(result),
+						);
+						if (saved) eventEmitter.emit("refresh", { key, value: result });
+					} catch (error) {
 						eventEmitter.emit("refresh", { key, value, error });
-					});
+					}
+				};
+				if (scope) void scope.refresh(refresh);
+				else void refresh();
 			}
 
 			if (!shouldRefresh && i > 0) {
-				await set(stores.slice(0, i), key, value, resolveTtl(value));
+				const done = fill(stores.slice(0, i), value, resolveTtl(value));
+				if (!scope || !nonBlocking) await done;
 			}
 
 			return raw ? rawData : value;
-		});
+		};
+		const state = writesFor(key);
+		return state
+			? state.wrap(read)
+			: coalesceAsync(`${_cacheId}::${key}`, read);
+	};
 
 	const on = <E extends keyof Events>(event: E, listener: Events[E]) =>
 		eventEmitter.addListener(event, listener);
@@ -426,10 +473,10 @@ export const createCache = (options?: CreateCacheOptions): Cache => {
 		mget,
 		ttl,
 		set: async <T>(key: string, value: T, ttl?: number) =>
-			set(stores, key, value, ttl),
+			mutate(key, value, () => set(stores, key, value, ttl)),
 		mset: async <T>(list: Array<{ key: string; value: T; ttl?: number }>) =>
 			mset(stores, list),
-		del,
+		del: (key) => mutate(key, true, () => del(key)),
 		mdel,
 		clear,
 		wrap,

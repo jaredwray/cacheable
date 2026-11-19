@@ -1,3 +1,4 @@
+import { setImmediate as nextTurn } from "node:timers/promises";
 import { faker } from "@faker-js/faker";
 import { Keyv } from "keyv";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -367,4 +368,171 @@ describe("wrap with multi-layer stores", () => {
 		expect(await keyv1.get(data.key)).toEqual(4);
 		expect(await keyv2.get(data.key)).toEqual(4);
 	});
+});
+
+describe("preventStaleWrapWrites", () => {
+	const pauseLoader = () => {
+		const started = Promise.withResolvers<void>();
+		const result = Promise.withResolvers<string>();
+		const load = () => {
+			started.resolve();
+			return result.promise;
+		};
+		return { load, started: started.promise, finish: result.resolve };
+	};
+
+	const pauseNextSet = (store: Keyv) => {
+		const started = Promise.withResolvers<void>();
+		const resume = Promise.withResolvers<void>();
+		const set = store.set.bind(store);
+		vi.spyOn(store, "set").mockImplementationOnce(async (key, value, ttl) => {
+			started.resolve();
+			await resume.promise;
+			return set(key, value, ttl);
+		});
+		return { started: started.promise, resume: resume.resolve };
+	};
+
+	it.each([
+		{ enabled: true, expected: undefined },
+		{ enabled: false, expected: "old" },
+	])(
+		"handles a cold fill after del when protection is $enabled",
+		async ({ enabled, expected }) => {
+			const cache = createCache(
+				enabled ? { preventStaleWrapWrites: true } : {},
+			);
+			const loader = pauseLoader();
+			const fill = cache.wrap("key", loader.load);
+
+			await loader.started;
+			await cache.del("key");
+			loader.finish("old");
+			await expect(fill).resolves.toBe("old");
+			await expect(cache.get("key")).resolves.toBe(expected);
+		},
+	);
+
+	it("shares a new loader after deletion while the old loader is active", async () => {
+		const cache = createCache({ preventStaleWrapWrites: true });
+		const oldLoader = pauseLoader();
+		const old = cache.wrap("key", oldLoader.load);
+		await oldLoader.started;
+		await cache.del("key");
+
+		const loader = vi.fn(() => "new");
+		const first = cache.wrap("key", loader);
+		const second = cache.wrap("key", loader);
+		oldLoader.finish("old");
+		await expect(Promise.all([old, first, second])).resolves.toEqual([
+			"old",
+			"new",
+			"new",
+		]);
+		expect(loader).toHaveBeenCalledOnce();
+		await expect(cache.get("key")).resolves.toBe("new");
+	});
+
+	it("discards an old refresh after set and emits only the new refresh", async () => {
+		const cache = createCache({
+			ttl: 60_000,
+			refreshThreshold: 120_000,
+			preventStaleWrapWrites: true,
+		});
+		const oldLoader = pauseLoader();
+		const refreshed = vi.fn();
+		cache.on("refresh", refreshed);
+		await cache.set("key", "original");
+		await expect(cache.wrap("key", oldLoader.load)).resolves.toBe("original");
+		await oldLoader.started;
+		await cache.set("key", "explicit");
+		await expect(cache.wrap("key", () => "fresh")).resolves.toBe("explicit");
+
+		oldLoader.finish("stale");
+		await nextTurn();
+		await expect(cache.get("key")).resolves.toBe("fresh");
+		expect(refreshed.mock.calls).toEqual([[{ key: "key", value: "fresh" }]]);
+	});
+
+	it.each([false, true])(
+		"orders an active store write before set with nonBlocking=%s",
+		async (nonBlocking) => {
+			const store = new Keyv();
+			const cache = createCache({
+				stores: [store],
+				nonBlocking,
+				preventStaleWrapWrites: true,
+			});
+			const write = pauseNextSet(store);
+			const fill = cache.wrap("key", () => "old");
+			await write.started;
+			const update = cache.set("key", "new");
+			const read = cache.wrap("key", () => "unexpected");
+			if (nonBlocking) {
+				await expect(fill).resolves.toBe("old");
+				await expect(update).resolves.toBe("new");
+			}
+			await cache.set("other", "independent");
+			await nextTurn();
+			await expect(store.get("other")).resolves.toBe("independent");
+			write.resume();
+			await Promise.all([fill, update]);
+			await expect(read).resolves.toBe("new");
+			await expect(store.get("key")).resolves.toBe("new");
+		},
+	);
+
+	it("waits for every tier before deletion even if one fill fails", async () => {
+		const primary = new Keyv();
+		const secondary = new Keyv();
+		const cache = createCache({
+			stores: [primary, secondary],
+			preventStaleWrapWrites: true,
+		});
+		const write = pauseNextSet(secondary);
+		vi.spyOn(primary, "set").mockRejectedValueOnce(
+			new Error("store unavailable"),
+		);
+		const failure = expect(cache.wrap("key", () => "old")).rejects.toThrow(
+			"store unavailable",
+		);
+		await write.started;
+		const deletion = cache.del("key");
+		await nextTurn();
+		write.resume();
+		await Promise.all([failure, deletion]);
+		await nextTurn();
+		await expect(secondary.get("key")).resolves.toBeUndefined();
+	});
+
+	it.each([false, true])(
+		"discards an old copy from a lower tier with nonBlocking=%s",
+		async (nonBlocking) => {
+			const primary = new Keyv();
+			const secondary = new Keyv();
+			const cache = createCache({
+				stores: [primary, secondary],
+				nonBlocking,
+				preventStaleWrapWrites: true,
+			});
+			await secondary.set("key", "old");
+			const started = Promise.withResolvers<void>();
+			const resume = Promise.withResolvers<void>();
+			const store = secondary.store;
+			const get = store.get.bind(store);
+			vi.spyOn(store, "get").mockImplementationOnce(async (key) => {
+				const snapshot = await get(key);
+				started.resolve();
+				await resume.promise;
+				return snapshot;
+			});
+			const read = cache.wrap("key", () => "unexpected");
+			await started.promise;
+			await cache.set("key", "new");
+			resume.resolve();
+			await expect(read).resolves.toBe("old");
+			await nextTurn();
+			await expect(primary.get("key")).resolves.toBe("new");
+		},
+	);
 });
