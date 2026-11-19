@@ -203,7 +203,9 @@ cache.mdel(['foo', 'bar']); // 2
 
 ## `ttl(key: string | number, ttl?: number | string): boolean`
 
-Redefine the ttl of a key. Returns true if the key has been found and changed. Otherwise returns false. If the ttl-argument isn't passed the default-TTL will be used.
+Set a new TTL for a key. If you omit the TTL, the cache uses the default TTL. The method returns `true` if it updates the key. It returns `false` for an absent key.
+
+By default, `ttl()` deletes an expired key and returns `false`. If `deleteOnExpire` is `false`, you can renew an expired key. You can also renew it from an `expired` event listener.
 
 ```javascript
 cache.ttl('foo', 10); // true
@@ -211,7 +213,9 @@ cache.ttl('foo', 10); // true
 
 ## `getTtl(key: string | number): number | undefined`
 
-Get the ttl expiration from `Date.now()` of a key. If the key does not exist it will return `undefined`.
+Get the expiration time of a key in milliseconds since the Unix epoch. The method returns `0` for a key without a time limit. It returns `undefined` for an absent key.
+
+By default, `getTtl()` deletes an expired key and returns `undefined`. If `deleteOnExpire` is `false`, it returns the expiration time of the retained key. You can also read this time from an `expired` event listener.
 
 ```javascript
 cache.getTtl('foo'); // 1725993344859
