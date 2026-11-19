@@ -259,6 +259,17 @@ const cache = createCache({ stores: [keyv] });
 
     If set to true, the system will update the value of all stores when the refreshThreshold is met. Otherwise, it will only update from the top to the store that triggered the refresh.
 
+- **preventStaleWrapWrites**?: boolean - Default `false`.
+
+    Set this option to `true` to protect explicit `set(key, value)` and `del(key)` calls from older `wrap()` operations on the same cache instance.
+    The original caller still receives its result. A later `wrap()` can start a new loader for that key.
+    The option also protects writes from a background refresh or a copy from a lower store.
+    The cache emits a successful `refresh` event only if it saves the result.
+
+    Store writes for the same key run in order. Other keys can proceed independently.
+    With `nonBlocking: true`, a caller can return before its write completes. A subsequent `wrap()` for that key waits for the preceding writes.
+    Bulk operations, `clear()`, and writes from other cache instances are outside the scope of this option.
+
 - **nonBlocking**?: boolean - Default false
 
     If set to true, the system will not block when multiple stores are used. Here is how it affects the type of functions:
