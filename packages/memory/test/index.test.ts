@@ -406,6 +406,20 @@ describe("CacheableMemory Has", async () => {
 		expect(result[2]).toBe(true);
 		expect(result[3]).toBe(true);
 	});
+	test("should return true for falsy values", () => {
+		const cache = new CacheableMemory();
+		const values = [0, false, "", null];
+		for (const [index, value] of values.entries()) {
+			cache.set(`falsy${index}`, value);
+		}
+
+		const keys = values.map((_, index) => `falsy${index}`);
+		for (const key of keys) {
+			expect(cache.has(key)).toBe(true);
+		}
+
+		expect(cache.hasMany(keys)).toEqual([true, true, true, true]);
+	});
 });
 
 describe("CacheableMemory Take", async () => {
@@ -418,6 +432,17 @@ describe("CacheableMemory Take", async () => {
 	test("should be able to take undefined value", () => {
 		const cache = new CacheableMemory();
 		expect(cache.take("key")).toBe(undefined);
+	});
+	test("should take and delete falsy values", () => {
+		const cache = new CacheableMemory();
+		const values = [0, false, "", null];
+		for (const [index, value] of values.entries()) {
+			cache.set(`falsy${index}`, value);
+		}
+
+		const keys = values.map((_, index) => `falsy${index}`);
+		expect(cache.takeMany(keys)).toEqual(values);
+		expect(cache.size).toBe(0);
 	});
 	test("should be able to take many values", () => {
 		const cache = new CacheableMemory();
