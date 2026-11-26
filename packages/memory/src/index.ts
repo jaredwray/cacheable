@@ -608,8 +608,7 @@ export class CacheableMemory extends Hookified {
 	 * @returns {boolean} - If true, the key exists. If false, the key does not exist.
 	 */
 	public has(key: string): boolean {
-		const item = this.get(key);
-		return Boolean(item);
+		return this.get(key) !== undefined;
 	}
 
 	/**
@@ -620,8 +619,7 @@ export class CacheableMemory extends Hookified {
 	public hasMany(keys: string[]): boolean[] {
 		const result: boolean[] = [];
 		for (const key of keys) {
-			const item = this.get(key);
-			result.push(Boolean(item));
+			result.push(this.get(key) !== undefined);
 		}
 
 		return result;
@@ -634,7 +632,7 @@ export class CacheableMemory extends Hookified {
 	 */
 	public take<T>(key: string): T | undefined {
 		const item = this.get(key);
-		if (!item) {
+		if (item === undefined) {
 			return undefined;
 		}
 

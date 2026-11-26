@@ -85,6 +85,20 @@ describe("Keyv Cacheable Memory", () => {
 		const value = await keyvCacheableMemory.get("key1");
 		expect(value).toBe("value1");
 	});
+	test("should keep falsy values in has(), get(), and getMany()", async () => {
+		const keyvCacheableMemory = new KeyvCacheableMemory();
+		const falsyValues = [0, false, "", null];
+		const keys = falsyValues.map((_, index) => `falsy${index}`);
+		await keyvCacheableMemory.setMany(
+			falsyValues.map((value, index) => ({ key: keys[index], value })),
+		);
+		for (const [index, value] of falsyValues.entries()) {
+			expect(await keyvCacheableMemory.has?.(keys[index])).toBe(true);
+			expect(await keyvCacheableMemory.get(keys[index])).toBe(value);
+		}
+
+		expect(await keyvCacheableMemory.getMany(keys)).toEqual(falsyValues);
+	});
 	test("should be able to get the store based on namespace", async () => {
 		const cache = new KeyvCacheableMemory();
 		await cache.set("key1", "default");

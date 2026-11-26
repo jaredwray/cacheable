@@ -42,12 +42,7 @@ export class KeyvCacheableMemory implements KeyvStoreAdapter {
 	}
 
 	async get<Value>(key: string): Promise<StoredData<Value> | undefined> {
-		const result = this.getStore(this._namespace).get<Value>(key);
-		if (result) {
-			return result;
-		}
-
-		return undefined;
+		return this.getStore(this._namespace).get<Value>(key);
 	}
 
 	async getMany<Value>(
